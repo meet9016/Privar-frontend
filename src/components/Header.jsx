@@ -28,7 +28,7 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between px-8 py-5 bg-surface/85 backdrop-blur-md border-b border-border shadow-glass-sm select-none">
+    <header className="sticky top-0 z-20 flex items-center justify-between px-8 py-5 bg-surface/85 backdrop-blur-md border-b border-border shadow-glass-sm">
       {/* Title block */}
       <div className="flex items-center gap-3">
         {/* Dynamic Global Search box */}

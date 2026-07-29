@@ -88,7 +88,7 @@ const handleDownload = async () => {
 }
 
     return (
-        <div className="space-y-6 animate-slide-up select-none text-text">
+        <div className="space-y-6 animate-slide-up text-text">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h2 className="text-xl font-semibold text-text">Event Registrations</h2>
                 <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">

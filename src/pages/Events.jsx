@@ -247,7 +247,7 @@ export default function Events() {
   }
 
   return (
-    <div className="space-y-6 animate-slide-up select-none text-text">
+    <div className="space-y-6 animate-slide-up text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Events</h2>

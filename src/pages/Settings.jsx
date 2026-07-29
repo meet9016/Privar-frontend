@@ -351,7 +351,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-slide-up select-none text-text">
+    <div className="space-y-6 animate-slide-up text-text">
 
       {/* Alerts */}
       {error && (
@@ -533,7 +533,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-text-secondary leading-relaxed mb-6">
                   Preview represents the layout of the mobile application dashboard using current theme tokens.
                 </p>
-                <div className="w-full rounded-2xl border-4 border-text overflow-hidden shadow-glass-lg relative select-none" style={{ backgroundColor: config.backgroundColor }}>
+                <div className="w-full rounded-2xl border-4 border-text overflow-hidden shadow-glass-lg relative" style={{ backgroundColor: config.backgroundColor }}>
                   <div className="h-28 p-4 flex flex-col justify-between relative" style={{ backgroundImage: `linear-gradient(to bottom right, ${config.gradientStart}, ${config.gradientEnd})` }}>
                     <div className="flex items-center justify-between">
                       <span className="w-5 h-2 rounded bg-white/20"></span>

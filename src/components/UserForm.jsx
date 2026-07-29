@@ -180,7 +180,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 px-1 select-none text-text">
+    <form onSubmit={handleSubmit} className="space-y-5 px-1 text-text">
 
       {/* SECTION 1: Personal Name details */}
       <div>
@@ -337,7 +337,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
         <div>
           <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Roles & Committee Status</h4>
           <div className="bg-surface-secondary border border-border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-6">
-            <label className="flex items-center gap-3 cursor-pointer select-none">
+            <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.is_committee}

@@ -56,7 +56,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-text relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen flex items-center justify-center bg-background text-text relative overflow-hidden font-sans">
       
       {/* Dynamic ambient backgrounds */}
       <div className="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] pointer-events-none animate-pulse-slow"></div>

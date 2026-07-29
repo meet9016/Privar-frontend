@@ -130,7 +130,7 @@ export default function Post() {
   }
 
   return (
-    <div className="space-y-6 animate-slide-up select-none text-text">
+    <div className="space-y-6 animate-slide-up text-text">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

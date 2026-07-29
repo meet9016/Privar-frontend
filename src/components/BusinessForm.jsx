@@ -177,7 +177,7 @@ export default function BusinessForm({ business, onSubmit, isLoading }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 max-h-[76vh] overflow-y-auto pr-1 select-none text-text">
+    <form onSubmit={handleSubmit} className="space-y-5 max-h-[76vh] overflow-y-auto pr-1 text-text">
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

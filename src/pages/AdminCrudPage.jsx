@@ -182,7 +182,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   }
 
   return (
-    <div className="space-y-6 animate-slide-up select-none text-text">
+    <div className="space-y-6 animate-slide-up text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">{title}</h2>
@@ -202,7 +202,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 }}
                 className="rounded text-primary focus:ring-primary/20 bg-input-bg border-border"
               />
-              <span className="text-sm font-medium text-text-secondary select-none">My Records</span>
+              <span className="text-sm font-medium text-text-secondary">My Records</span>
             </label>
           )}
           <div className="relative flex-1 sm:w-64">

@@ -141,7 +141,7 @@ export default function Students() {
   const sortedYears = Object.keys(groupedStudents).sort((a, b) => b === 'Unknown' ? 1 : a === 'Unknown' ? -1 : b - a);
 
   return (
-    <div className="space-y-6 animate-slide-up select-none text-text">
+    <div className="space-y-6 animate-slide-up text-text">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

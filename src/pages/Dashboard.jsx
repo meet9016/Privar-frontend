@@ -221,7 +221,7 @@ export default function Dashboard() {
           <h2 className="text-2xl font-semibold text-text tracking-tight">Dashboard</h2>
 
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-secondary border border-border text-sm text-text font-medium select-none shadow-sm">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-secondary border border-border text-sm text-text font-medium shadow-sm">
           <Clock className="w-3.5 h-3.5 text-primary" />
           <span>Last Sync: Just now</span>
         </div>
