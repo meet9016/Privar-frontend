@@ -187,7 +187,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
         <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Primary Identity</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">First Name *</label>
+            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">First Name <span className="text-red-500">*</span></label>
             <input
               type="text"
               value={formData.first_name}
@@ -195,11 +195,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
               className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.first_name ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
               disabled={isLoading}
             />
-            {errors.first_name && <p className="text-error-text text-xs mt-1 font-semibold">{errors.first_name}</p>}
+            {errors.first_name && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.first_name}</p>}
           </div>
 
           <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Middle Name *</label>
+            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Middle Name <span className="text-red-500">*</span></label>
             <input
               type="text"
               value={formData.middle_name}
@@ -207,11 +207,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
               className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.middle_name ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
               disabled={isLoading}
             />
-            {errors.middle_name && <p className="text-error-text text-xs mt-1 font-semibold">{errors.middle_name}</p>}
+            {errors.middle_name && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.middle_name}</p>}
           </div>
 
           <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Last Name *</label>
+            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Last Name <span className="text-red-500">*</span></label>
             <input
               type="text"
               value={formData.last_name}
@@ -219,7 +219,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
               className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.last_name ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={isLoading || !!(user && user.last_name)}
             />
-            {errors.last_name && <p className="text-error-text text-xs mt-1 font-semibold">{errors.last_name}</p>}
+            {errors.last_name && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.last_name}</p>}
           </div>
         </div>
       </div>
@@ -229,7 +229,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
         <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Contact & Login Credentials</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Email Address *</label>
+            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Email Address <span className="text-red-500">*</span></label>
             <input
               type="email"
               value={formData.email}
@@ -237,20 +237,20 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
               className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
               disabled={isLoading}
             />
-            {errors.email && <p className="text-error-text text-xs mt-1 font-semibold">{errors.email}</p>}
+            {errors.email && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.email}</p>}
           </div>
 
           <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Mobile Number *</label>
+            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Mobile Number <span className="text-red-500">*</span></label>
             <input
               type="tel"
               value={formData.number}
               maxLength={10}
               onChange={(e) => handleChange('number', e.target.value)}
-              className="w-full px-3 py-2 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+              className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.number ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
               disabled={isLoading}
             />
-            {errors.number && <p className="text-error-text text-xs mt-1 font-semibold">{errors.number}</p>}
+            {errors.number && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.number}</p>}
           </div>
 
 
@@ -273,7 +273,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
                 <option key={rel} value={rel} className="bg-surface text-text">{rel}</option>
               ))}
             </select>
-            {errors.relation && <p className="text-error-text text-xs mt-1 font-semibold">{errors.relation}</p>}
+            {errors.relation && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.relation}</p>}
           </div>
 
           <div>
@@ -400,7 +400,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
         </div>
         {!isHead && (
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">Select Family Head *</label>
+            <label className="block text-sm font-semibold text-text-secondary mb-1.5">Select Family Head <span className="text-red-500">*</span></label>
             <select
               value={formData.family_head_id}
               onChange={(e) => handleChange('family_head_id', e.target.value)}
@@ -413,7 +413,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
                 </option>
               ))}
             </select>
-            {errors.family_head_id && <p className="text-error-text text-xs mt-1 font-semibold">{errors.family_head_id}</p>}
+            {errors.family_head_id && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.family_head_id}</p>}
           </div>
         )}
       </div>
@@ -434,7 +434,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">State *</label>
+            <label className="block text-sm font-semibold text-text-secondary mb-1.5">State <span className="text-red-500">*</span></label>
             <select
               value={formData.state_id}
               onChange={(e) => handleChange('state_id', e.target.value)}
@@ -443,10 +443,10 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
               <option value="">Select State</option>
               {states.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
             </select>
-            {errors.state_id && <p className="text-error-text text-xs mt-1 font-semibold">{errors.state_id}</p>}
+            {errors.state_id && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.state_id}</p>}
           </div>
           <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">City *</label>
+            <label className="block text-sm font-semibold text-text-secondary mb-1.5">City <span className="text-red-500">*</span></label>
             <select
               value={formData.city_id}
               onChange={(e) => handleChange('city_id', e.target.value)}
@@ -455,11 +455,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
               <option value="">Select City</option>
               {cities.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
             </select>
-            {errors.city_id && <p className="text-error-text text-xs mt-1 font-semibold">{errors.city_id}</p>}
+            {errors.city_id && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.city_id}</p>}
           </div>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Address *</label>
+          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Address <span className="text-red-500">*</span></label>
           <textarea
             rows="3"
             value={formData.address}
@@ -467,7 +467,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
             className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.address ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
             disabled={isLoading}
           />
-          {errors.address && <p className="text-error-text text-xs mt-1 font-semibold">{errors.address}</p>}
+          {errors.address && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.address}</p>}
         </div>
       </div>
 
