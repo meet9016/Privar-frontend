@@ -1,9 +1,16 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { Edit2, Plus, RefreshCw, Search, Trash2, Settings } from 'lucide-react'
 import api, { assetUrl } from '../lib/api'
+import Loader from '../components/common/Loader'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import usePagination from '../hooks/usePagination'
+import Button from '../components/common/Button'
+import Input from '../components/common/Input'
+import Select from '../components/common/Select'
+import DatePicker from '../components/DatePicker'
+import Table from '../components/common/Table'
+import FileDropzone from '../components/common/FileDropzone'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 const limit = 10
@@ -188,9 +195,9 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
           <h2 className="text-xl font-semibold text-text">{title}</h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button onClick={fetchRows} className="p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all" title="Refresh">
+          <Button onClick={fetchRows} variant="secondary" className="!p-2.5" title="Refresh">
             <RefreshCw className="w-4 h-4" />
-          </button>
+          </Button>
           {supportIsOwn && (
             <label className="flex items-center gap-2 cursor-pointer bg-surface border border-border px-4 py-2.5 rounded-xl">
               <input
@@ -200,7 +207,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   setIsOwn(e.target.checked)
                   resetPage()
                 }}
-                className="rounded text-primary focus:ring-primary/20 bg-input-bg border-border"
+                className="rounded text-primary focus:ring-primary/20 bg-input-bg border-border accent-primary"
               />
               <span className="text-sm font-medium text-text-secondary">My Records</span>
             </label>
@@ -215,182 +222,164 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
             />
           </div>
-          <button onClick={openCreate} className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary">
-            <Plus className="w-4 h-4" /> Add
-          </button>
+          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+            Add
+          </Button>
         </div>
       </div>
 
       {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
       {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm">{success}</div>}
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
-          <span className="text-text-secondary text-sm">Loading records...</span>
-        </div>
+      {loading && rows.length === 0 ? (
+        <div className="py-20"><Loader text="Loading records..." /></div>
       ) : (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-glass-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border bg-surface-secondary text-text-secondary text-sm font-semibold  tracking-wider">
-                  {columns.map((column) => <th key={column.key} className="p-4">{column.label}</th>)}
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-surface-secondary/40 text-sm text-text">
-                    {columns.map((column) => (
-                      <td key={column.key} className="p-4 max-w-md">
-                        {column.type === 'image' && row[column.key] ? (
-                          <img src={assetUrl(row[column.key])} alt={row.title || title} className="h-12 w-16 rounded-lg object-cover border border-border" />
-                        ) : (
-                          <span className="line-clamp-2">{column.render ? column.render(row) : row[column.key] || '-'}</span>
-                        )}
-                      </td>
-                    ))}
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {rows.length === 0 && (
-                  <tr>
-                    <td colSpan={columns.length + 1} className="p-12 text-center text-sm text-text-secondary">No records found</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-border bg-surface-secondary/40 text-sm">
-              <span className="text-text-secondary">
-                Page {page} of {totalPages} {total ? `(${total} total)` : ''}
-              </span>
-              <div className="flex items-center gap-2">
-                <button type="button" disabled={loading || page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-                  Previous
-                </button>
-                {pageNumbers.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    disabled={loading || item === currentPage}
-                    onClick={() => setPage(item)}
-                    className={`min-w-10 px-3 py-2 rounded-lg border transition-all ${item === currentPage
-                      ? 'border-primary bg-primary/10 text-primary font-semibold disabled:opacity-100 disabled:cursor-default'
-                      : 'border-border bg-card text-text hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed'
-                      }`}
-                  >
-                    {item}
+        <Table
+          columns={[
+            ...columns.map(c => ({
+              header: c.label,
+              key: c.key,
+              render: (row) => (
+                c.type === 'image' && row[c.key] ? (
+                  <img src={assetUrl(row[c.key])} alt={row.title || title} className="h-12 w-16 rounded-lg object-cover border border-border" />
+                ) : (
+                  <span className="line-clamp-2">{c.render ? c.render(row) : row[c.key] || '-'}</span>
+                )
+              )
+            })),
+            {
+              header: 'Actions',
+              key: 'actions',
+              align: 'right',
+              render: (row) => (
+                <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
                   </button>
-                ))}
-                <button type="button" disabled={loading || page >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )
+            }
+          ]}
+          data={rows}
+          keyField="id"
+          loading={loading}
+          emptyState={{
+            icon: Settings,
+            title: 'No records found',
+            description: 'Try expanding your search criteria or add a new record'
+          }}
+          pagination={{
+            currentPage: page,
+            totalPages,
+            total,
+            pageNumbers,
+            loading,
+            onPageChange: setPage
+          }}
+        />
       )}
 
       <Modal isOpen={isModalOpen} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-4 max-h-[76vh] overflow-y-auto pr-1 text-text">
+        <form onSubmit={handleSave} className="space-y-4 text-text">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {fields.map((field) => (
               <div key={field.name}>
-                <label className="block text-sm  font-semibold text-text-secondary mb-1.5">{field.label}</label>
                 {field.type === 'textarea' ? (
-                  <textarea rows="4" value={formData[field.name] || ''} onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} className={fieldClass} disabled={saving} />
+                  <>
+                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">{field.label}</label>
+                    <textarea rows="4" value={formData[field.name] || ''} onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} className={fieldClass} disabled={saving} />
+                  </>
                 ) : field.type === 'select' ? (
-                  <select value={formData[field.name] ?? ''} onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} className={fieldClass} disabled={saving}>
-                    <option value="" className="bg-surface text-text">Select {field.label}</option>
-                    {field.options.map((option) => <option key={option.value} value={option.value} className="bg-surface text-text">{option.label}</option>)}
-                  </select>
+                  <Select 
+                    label={field.label}
+                    value={formData[field.name] ?? ''} 
+                    onChange={(val) => setFormData({ ...formData, [field.name]: val })} 
+                    disabled={saving}
+                    options={field.options}
+                  />
                 ) : field.type === 'select-remote' ? (
-                  <select value={formData[field.name] ?? ''} onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} className={fieldClass} disabled={saving}>
-                    <option value="" className="bg-surface text-text">Select {field.label}</option>
-                    {(remoteOptions[field.name] || []).map((option) => (
-                      <option key={option.id} value={option.id} className="bg-surface text-text">{option.name || option.country || option.state || option.city || option.business}</option>
-                    ))}
-                  </select>
+                  <Select 
+                    label={field.label}
+                    value={formData[field.name] ?? ''} 
+                    onChange={(val) => setFormData({ ...formData, [field.name]: val })} 
+                    disabled={saving}
+                    options={(remoteOptions[field.name] || []).map((option) => ({
+                      label: option.name || option.country || option.state || option.city || option.business,
+                      value: option.id
+                    }))}
+                  />
                 ) : field.type === 'file' ? (
-                  <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
-                        {imagePreview?.[field.name] && (
-                      <div className="relative w-fit">
-                        <img src={imagePreview[field.name]} alt="Preview" className="h-20 w-28 rounded-lg object-cover border border-border" />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImagePreview((prev) => ({ ...prev, [field.name]: null }))
-                            setFormData({ ...formData, [field.name]: '' })
-                          }}
-                          className="absolute -top-1.5 -right-1.5 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold"
-                        >
-                          X
-                        </button>
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept={field.accept || 'image/*'}
-                      multiple={field.multiple}
-                      onChange={(e) => {
-                        const file = field.multiple ? e.target.files : e.target.files?.[0] || ''
-                        setFormData({ ...formData, [field.name]: file })
-                        if (!field.multiple && file) {
-                          setImagePreview((prev) => ({ ...prev, [field.name]: URL.createObjectURL(file) }))
-                          setRemovedImages((prev) => ({ ...prev, [field.name]: false }))
-                        }
-                      }}
-                      className="w-full text-sm text-text file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
-                      disabled={saving}
-                    />
-                    {/* New file preview */}
-                
-                    {/* Existing image from server */}
-                    {!imagePreview?.[field.name] && selected?.[field.name] && !removedImages[field.name] && !field.multiple && (
-                      <div className="flex items-center gap-3">
-                        <img src={assetUrl(selected[field.name])} alt="Current" className="h-16 w-20 rounded-lg object-cover border border-border" />
-                        <div className="flex flex-col gap-1">
-                          <a href={assetUrl(selected[field.name])} target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline font-semibold">
-                            View Current
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => {
+                  <>
+                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">{field.label}</label>
+                    <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
+                      <FileDropzone
+                        accept={field.accept || 'image/*'}
+                        multiple={field.multiple}
+                        onFilesSelected={(files) => {
+                          const file = field.multiple ? files : files?.[0] || ''
+                          setFormData({ ...formData, [field.name]: file })
+                          if (!field.multiple && file) {
+                            setImagePreview((prev) => ({ ...prev, [field.name]: URL.createObjectURL(file) }))
+                            setRemovedImages((prev) => ({ ...prev, [field.name]: false }))
+                          }
+                        }}
+                        disabled={saving}
+                        label={`Click or Drag ${field.label}`}
+                        previews={[
+                          ...(!imagePreview?.[field.name] && selected?.[field.name] && !removedImages[field.name] && !field.multiple ? [{
+                            url: assetUrl(selected[field.name]),
+                            onRemove: () => {
                               setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
                               setFormData({ ...formData, [field.name]: '' })
-                            }}
-                            className="flex items-center gap-1 text-xs text-error-text hover:underline"
-                          >
-                            <Trash2 className="w-3 h-3" /> Remove
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {removedImages[field.name] && (
-                      <span className="text-xs text-error-text">Image will be removed on save.</span>
-                    )}
-                  </div>
+                            }
+                          }] : []),
+                          ...(imagePreview?.[field.name] ? [{
+                            url: imagePreview[field.name],
+                            onRemove: () => {
+                              setImagePreview((prev) => ({ ...prev, [field.name]: null }))
+                              setFormData({ ...formData, [field.name]: '' })
+                            }
+                          }] : [])
+                        ]}
+                      />
+                      {removedImages[field.name] && (
+                        <span className="text-xs text-error-text">Image will be removed on save.</span>
+                      )}
+                    </div>
+                  </>
+                ) : field.type === 'date' ? (
+                  <>
+                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">{field.label}</label>
+                    <DatePicker 
+                      value={formData[field.name] || ''} 
+                      onChange={(val) => setFormData({ ...formData, [field.name]: val })} 
+                      disabled={saving}
+                      placeholder="Select Date"
+                    />
+                  </>
                 ) : (
-                  <input type={field.type || 'text'} value={formData[field.name] || ''} onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} className={fieldClass} disabled={saving} />
+                  <Input 
+                    type={field.type || 'text'} 
+                    label={field.label}
+                    value={formData[field.name] || ''} 
+                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} 
+                    disabled={saving} 
+                  />
                 )}
               </div>
             ))}
           </div>
-          <button type="submit" disabled={saving} className="flex justify-self-end bg-primary hover:bg-primary-hover text-white p-3 rounded-xl font-semibold text-sm tracking-wider  disabled:opacity-50 shadow-glow-primary">
-            {saving ? 'Saving...' : 'Save Record'}
-          </button>
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" isLoading={saving}>
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
         </form>
       </Modal>
     </div>

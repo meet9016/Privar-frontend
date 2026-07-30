@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import api from '../lib/api'
-
+import Input from './common/Input'
+import Select from './common/Select'
+import Button from './common/Button'
+import ImageUpload from './common/ImageUpload'
+import FileDropzone from './common/FileDropzone'
 const initialState = {
   id: '',
   member_id: '',
@@ -26,7 +30,7 @@ const initialState = {
   status: 0
 }
 
-export default function BusinessForm({ business, onSubmit, isLoading }) {
+export default function BusinessForm({ business, onSubmit, isLoading, onCancel }) {
   const [formData, setFormData] = useState(initialState)
   const [errors, setErrors] = useState({})
   const [businessCategories, setBusinessCategories] = useState([])
@@ -40,7 +44,6 @@ export default function BusinessForm({ business, onSubmit, isLoading }) {
 
   const [existingGalleryImages, setExistingGalleryImages] = useState([])
   const newGalleryFiles = (formData.gallery_images || []).filter((img) => img instanceof File)
-
 
   const removeNewGalleryImage = (newIndex) => {
     let currentFileIndex = -1
@@ -58,7 +61,6 @@ export default function BusinessForm({ business, onSubmit, isLoading }) {
   const removeExistingGalleryImage = (idx) => {
     setExistingGalleryImages((prev) => prev.filter((_, i) => i !== idx))
   }
-
 
   useEffect(() => {
     fetchBusinessCategories()
@@ -177,308 +179,193 @@ export default function BusinessForm({ business, onSubmit, isLoading }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 max-h-[76vh] overflow-y-auto pr-1 text-text">
+    <form onSubmit={handleSubmit} className="space-y-5 text-text">
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Business Name *</label>
-          <input
-            type="text"
-            value={formData.business_name}
-            onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-          {errors.business_name && <p className="text-error-text text-sm mt-1 font-semibold">{errors.business_name}</p>}
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Business Category *</label>
-          <select
-            value={formData.business_category_id}
-            onChange={(e) => setFormData({ ...formData, business_category_id: e.target.value })}
-            className="w-full bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 cursor-pointer"
-            disabled={isLoading}
-          >
-            <option value="" className="bg-surface text-text">Select Business Category</option>
-            {businessCategories.map((category) => (
-              <option key={category.id} value={category.id} className="bg-surface text-text">{category.business}</option>
-            ))}
-          </select>
-          {errors.business_category_id && <p className="text-error-text text-sm mt-1 font-semibold">{errors.business_category_id}</p>}
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Email *</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-          {errors.email && <p className="text-error-text text-sm mt-1 font-semibold">{errors.email}</p>}
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">WhatsApp Number</label>
-          <input
-            value={formData.whatsapp_number}
-            onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Number</label>
-          <input
-            value={formData.number}
-            onChange={(e) => setFormData({ ...formData, number: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">GST Number</label>
-          <input
-            value={formData.GST_number}
-            onChange={(e) => setFormData({ ...formData, GST_number: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Country *</label>
-          <select
-            value={formData.country_id}
-            onChange={(e) => setFormData({ ...formData, country_id: e.target.value })}
-            className="w-full bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 cursor-pointer"
-            disabled={isLoading}
-          >
-            <option value="" className="bg-surface text-text">Select Country</option>
-            {countries.map((country) => (
-              <option key={country._id} value={country._id} className="bg-surface text-text">{country.name}</option>
-            ))}
-          </select>
-          {errors.country_id && <p className="text-error-text text-sm mt-1 font-semibold">{errors.country_id}</p>}
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">State *</label>
-          <select
-            value={formData.state_id}
-            onChange={(e) => setFormData({ ...formData, state_id: e.target.value })}
-            className="w-full bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 cursor-pointer"
-            disabled={isLoading}
-          >
-            <option value="" className="bg-surface text-text">Select State</option>
-            {states.map((state) => (
-              <option key={state._id} value={state._id} className="bg-surface text-text">{state.name}</option>
-            ))}
-          </select>
-          {errors.state_id && <p className="text-error-text text-sm mt-1 font-semibold">{errors.state_id}</p>}
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">City *</label>
-          <select
-            value={formData.city_id}
-            onChange={(e) => setFormData({ ...formData, city_id: e.target.value })}
-            className="w-full bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 cursor-pointer"
-            disabled={isLoading}
-          >
-            <option value="" className="bg-surface text-text">Select City</option>
-            {cities.map((city) => (
-              <option key={city._id} value={city._id} className="bg-surface text-text">{city.name}</option>
-            ))}
-          </select>
-          {errors.city_id && <p className="text-error-text text-sm mt-1 font-semibold">{errors.city_id}</p>}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Location Link (Google Maps) *</label>
-        <input
-          value={formData.location_link}
-          onChange={(e) => setFormData({ ...formData, location_link: e.target.value })}
-          placeholder="https://maps.google.com/..."
-          className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
+        <Input
+          label="Business Name"
+          required
+          value={formData.business_name}
+          onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+          disabled={isLoading}
+          error={errors.business_name}
+        />
+        <Select
+          label="Business Category"
+          required
+          value={formData.business_category_id}
+          onChange={(val) => setFormData({ ...formData, business_category_id: val })}
+          disabled={isLoading}
+          options={businessCategories.map(c => ({ label: c.business, value: c.id }))}
+          error={errors.business_category_id}
+        />
+        <Input
+          type="email"
+          label="Email"
+          required
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          disabled={isLoading}
+          error={errors.email}
+        />
+        <Input
+          label="WhatsApp Number"
+          value={formData.whatsapp_number}
+          onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
           disabled={isLoading}
         />
-        {errors.location_link && <p className="text-error-text text-sm mt-1 font-semibold">{errors.location_link}</p>}
-      </div>
-
-      <div>
-        <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Address *</label>
-        <textarea
-          rows="3"
-          value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-          className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
+        <Input
+          label="Number"
+          value={formData.number}
+          onChange={(e) => setFormData({ ...formData, number: e.target.value })}
           disabled={isLoading}
+          error={errors.number}
         />
-        {errors.address && <p className="text-error-text text-sm mt-1 font-semibold">{errors.address}</p>}
-      </div>
-
-      <div>
-        <label className="block text-sm  font-semibold text-text-secondary mb-1.5">About Business</label>
-        <textarea
-          rows="4"
-          value={formData.about_us}
-          onChange={(e) => setFormData({ ...formData, about_us: e.target.value })}
-          className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
+        <Input
+          label="GST Number"
+          value={formData.GST_number}
+          onChange={(e) => setFormData({ ...formData, GST_number: e.target.value })}
           disabled={isLoading}
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Website</label>
-          <input
-            value={formData.website}
-            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Facebook</label>
-          <input
-            value={formData.facebook}
-            onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Instagram</label>
-          <input
-            value={formData.instagram}
-            onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Pinterest</label>
-          <input
-            value={formData.pinterest}
-            onChange={(e) => setFormData({ ...formData, pinterest: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-        </div>
-        <div>
-          <label className="block text-sm  font-semibold text-text-secondary mb-1.5">YouTube</label>
-          <input
-            value={formData.youtube}
-            onChange={(e) => setFormData({ ...formData, youtube: e.target.value })}
-            className="w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10"
-            disabled={isLoading}
-          />
-        </div>
+        <Select
+          label="Country"
+          required
+          value={formData.country_id}
+          onChange={(val) => setFormData({ ...formData, country_id: val })}
+          disabled={isLoading}
+          options={countries.map(c => ({ label: c.name, value: c._id || c.id }))}
+          error={errors.country_id}
+        />
+        <Select
+          label="State"
+          required
+          value={formData.state_id}
+          onChange={(val) => setFormData({ ...formData, state_id: val })}
+          disabled={isLoading}
+          options={states.map(s => ({ label: s.name, value: s._id || s.id }))}
+          error={errors.state_id}
+        />
+        <Select
+          label="City"
+          required
+          value={formData.city_id}
+          onChange={(val) => setFormData({ ...formData, city_id: val })}
+          disabled={isLoading}
+          options={cities.map(c => ({ label: c.name, value: c._id || c.id }))}
+          error={errors.city_id}
+        />
       </div>
 
-      <div>
-        <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Profile Image</label>
-        {(profilePreview || formData.image) && (
-          <div className="relative w-20 h-20 mb-3 rounded-lg overflow-hidden border border-border">
-            <img
-              src={profilePreview || formData.image}
-              alt="preview"
-              className="w-full h-full object-cover"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setProfilePreview(null)
-                setFormData({ ...formData, image: '' })
-              }}
-              className="absolute top-1 right-1 bg-error rounded-full p-1 text-white text-sm hover:bg-error-bg hover:text-error-text"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-        <input
-          type="file"
-          onChange={(e) => {
-            const file = e.target.files[0]
+      <Input
+        label="Location Link (Google Maps)"
+        required
+        placeholder="https://maps.google.com/..."
+        value={formData.location_link}
+        onChange={(e) => setFormData({ ...formData, location_link: e.target.value })}
+        disabled={isLoading}
+        error={errors.location_link}
+      />
+
+      <Input
+        type="textarea"
+        rows={3}
+        label="Address"
+        required
+        value={formData.address}
+        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+        disabled={isLoading}
+        error={errors.address}
+      />
+
+      <Input
+        type="textarea"
+        rows={4}
+        label="About Business"
+        value={formData.about_us}
+        onChange={(e) => setFormData({ ...formData, about_us: e.target.value })}
+        disabled={isLoading}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input label="Website" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} disabled={isLoading} />
+        <Input label="Facebook" value={formData.facebook} onChange={(e) => setFormData({ ...formData, facebook: e.target.value })} disabled={isLoading} />
+        <Input label="Instagram" value={formData.instagram} onChange={(e) => setFormData({ ...formData, instagram: e.target.value })} disabled={isLoading} />
+        <Input label="Pinterest" value={formData.pinterest} onChange={(e) => setFormData({ ...formData, pinterest: e.target.value })} disabled={isLoading} />
+        <Input label="YouTube" value={formData.youtube} onChange={(e) => setFormData({ ...formData, youtube: e.target.value })} disabled={isLoading} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ImageUpload
+          label="Profile Image"
+          value={formData.image || profilePreview}
+          onChange={(file) => {
+            setFormData({ ...formData, image: file || '' })
             if (file) {
               setProfilePreview(URL.createObjectURL(file))
-              setFormData({ ...formData, image: file })
+            } else {
+              setProfilePreview(null)
             }
           }}
-          className="w-full bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50"
           disabled={isLoading}
-          accept="image/*"
         />
+
+        <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
+          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Gallery Images</label>
+          <FileDropzone
+            multiple
+            accept="image/*"
+            onFilesSelected={(files) => {
+              const validFiles = files.filter((file) => file.type.startsWith('image/'))
+              const previews = validFiles.map(f => URL.createObjectURL(f))
+              setGalleryPreviews([...galleryPreviews, ...previews])
+              setFormData({ ...formData, gallery_images: [...formData.gallery_images, ...validFiles] })
+            }}
+            disabled={isLoading}
+            label="Drag & Drop or Click"
+            subLabel="Multiple images supported"
+            previews={[
+              ...existingGalleryImages.map((img, idx) => ({
+                url: img,
+                onRemove: () => removeExistingGalleryImage(idx)
+              })),
+              ...galleryPreviews.map((preview, idx) => ({
+                url: preview,
+                onRemove: () => removeNewGalleryImage(idx)
+              }))
+            ]}
+          />
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Gallery Images</label>
-        {(galleryPreviews.length > 0 || existingGalleryImages.length > 0) && (
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {newGalleryFiles.map((file, idx) => (
-              <div key={`new-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
-                <img src={galleryPreviews[idx]} alt={file.name || `preview-${idx}`} className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeNewGalleryImage(idx)}
-                  className="absolute top-1 right-1 bg-error rounded-full p-1 text-white text-sm hover:bg-error-bg hover:text-error-text"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            {existingGalleryImages.map((img, idx) => (
-              <div key={`old-${img}-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
-                <img src={img} alt={`gallery-${idx}`} className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeExistingGalleryImage(idx)}
-                  className="absolute top-1 right-1 bg-error rounded-full p-1 text-white text-sm hover:bg-error-bg hover:text-error-text"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        <input
-          type="file"
-          multiple
-          onChange={(e) => {
-            const files = Array.from(e.target.files || []).filter((file) => file.type.startsWith('image/'))
-            const previews = files.map(f => URL.createObjectURL(f))
-            setGalleryPreviews([...galleryPreviews, ...previews])
-            setFormData({ ...formData, gallery_images: [...formData.gallery_images, ...files] })
-            e.target.value = ''
-          }}
-          className="w-full bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50"
-          disabled={isLoading}
-          accept="image/*"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Status</label>
-        <select
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: Number(e.target.value) })}
-          className="w-full md:w-56 bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 cursor-pointer"
-          disabled={isLoading}
-        >
-          <option value={1} className="bg-surface text-text">Active</option>
-          <option value={0} className="bg-surface text-text">Inactive</option>
-        </select>
-      </div>
-
-      <button
-        type="submit"
+      <Select
+        label="Status"
+        value={formData.status}
+        onChange={(val) => setFormData({ ...formData, status: Number(val) })}
         disabled={isLoading}
-        className="flex justify-self-end bg-primary hover:bg-primary-hover text-white p-3 rounded-xl font-semibold text-sm tracking-wider  transition-all duration-300 disabled:opacity-50 shadow-glow-primary"
-      >
-        {isLoading ? 'Saving business...' : 'Save Business'}
-      </button>
+        options={[
+          { label: 'Active', value: 1 },
+          { label: 'Inactive', value: 0 }
+        ]}
+      />
+
+      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+            Cancel
+          </Button>
+        )}
+        <Button
+          type="submit"
+          disabled={isLoading}
+          isLoading={isLoading}
+          variant="primary"
+        >
+          Save
+        </Button>
+      </div>
     </form>
   )
 }

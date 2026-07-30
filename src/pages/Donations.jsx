@@ -10,13 +10,17 @@ import {
   MapPin,
   CalendarDays,
   User2,
-  Copy
+  Copy,
+  Landmark,
+  FileDown
 } from 'lucide-react'
 import api, { getDonationsList, getBankDetailsList, exportDonationsExcel } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import Modal from '../components/Modal'
+import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
+import Table from '../components/common/Table'
 
 import { Download } from 'lucide-react'
 const limit = 10
@@ -306,115 +310,92 @@ export default function Donations() {
       )}
 
       {/* Donation Cards Grid */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
-          <span className="text-text-secondary text-sm">Loading donations...</span>
-        </div>
-      ) : donations.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-16 text-center shadow-glass-sm flex flex-col items-center justify-center gap-4">
-          <HeartHandshake className="w-12 h-12 text-text-secondary/40 animate-pulse-slow" />
-          <div>
-            <h4 className="font-semibold text-text">No donations found</h4>
-            <p className="text-text-secondary text-sm mt-1">There are no donation records matching your criteria</p>
-          </div>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
-          >
-            <Plus className="w-4 h-4" /> Record First Donation
-          </button>
-        </div>
+      {loading && donations.length === 0 ? (
+        <div className="py-20"><Loader text="Loading donations..." /></div>
       ) : (
-
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-glass-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border bg-surface-secondary text-text-secondary text-sm font-semibold tracking-wider">
-                  <th className="p-4">Donator</th>
-                  <th className="p-4">Amount</th>
-                  <th className="p-4">Purpose</th>
-                  <th className="p-4">Date</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {donations.map((donation) => (
-                  <tr key={donation.id} className="hover:bg-surface-secondary/40 text-sm text-text">
-                    <td className="p-4 font-semibold">{donation.donator_name || '-'}</td>
-                    <td className="p-4">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-success/10 border border-success/20 text-success font-semibold text-sm">
-                        <IndianRupee className="w-3.5 h-3.5" />
-                        {Number(donation.donate_amount || 0).toLocaleString('en-IN')}
-                      </span>
-                    </td>
-                    <td className="p-4 text-text-secondary max-w-xs">
-                      <div className="line-clamp-2 italic">"{(donation.donation_purpose || '-').slice(0, 60)}"</div>
-                    </td>
-                    <td className="p-4 whitespace-nowrap text-text-secondary">
-                      <div className="flex items-center gap-1.5">
-                        <CalendarDays className="w-3.5 h-3.5 text-primary shrink-0" />
-                        {donation.date || '-'}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-lg border text-sm font-semibold ${Number(donation.status) === 1
-                        ? 'bg-success-bg border-success-border text-success-text'
-                        : 'bg-surface-secondary border-border text-text-secondary'
-                        }`}>
-                        {Number(donation.status) === 1 ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => handleEdit(donation)}
-                          className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete(donation.id)}
-                          className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border border-border bg-surface-secondary/40 rounded-xl text-sm">
-          <span className="text-text-secondary">
-            Page {page} of {totalPages} {total ? `(${total} total)` : ''}
-          </span>
-          <div className="flex items-center gap-2">
-            <button type="button" disabled={loading || page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-              Previous
-            </button>
-            {pageNumbers.map((item) => (
-              <button
-                key={item}
-                type="button"
-                disabled={loading || item === currentPage}
-                onClick={() => setPage(item)}
-                className={`min-w-10 px-3 py-2 rounded-lg border transition-all ${item === currentPage
-                  ? 'border-primary bg-primary/10 text-primary font-semibold disabled:opacity-100 disabled:cursor-default'
-                  : 'border-border bg-card text-text hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed'
-                  }`}
-              >
-                {item}
-              </button>
-            ))}
-            <button type="button" disabled={loading || page >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-              Next
-            </button>
-          </div>
-        </div>
+        <Table
+          columns={[
+            {
+              header: 'Donator',
+              key: 'donator',
+              render: (donation) => <span className="font-semibold">{donation.donator_name || '-'}</span>
+            },
+            {
+              header: 'Amount',
+              key: 'amount',
+              render: (donation) => (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-success/10 border border-success/20 text-success font-semibold text-sm">
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  {Number(donation.donate_amount || 0).toLocaleString('en-IN')}
+                </span>
+              )
+            },
+            {
+              header: 'Purpose',
+              key: 'purpose',
+              render: (donation) => (
+                <div className="text-text-secondary max-w-xs">
+                  <div className="line-clamp-2 italic">"{(donation.donation_purpose || '-').slice(0, 60)}"</div>
+                </div>
+              )
+            },
+            {
+              header: 'Date',
+              key: 'date',
+              render: (donation) => (
+                <div className="flex items-center gap-1.5 whitespace-nowrap text-text-secondary">
+                  <CalendarDays className="w-3.5 h-3.5 text-primary shrink-0" />
+                  {donation.date || '-'}
+                </div>
+              )
+            },
+            {
+              header: 'Status',
+              key: 'status',
+              render: (donation) => (
+                <span className={`inline-flex px-2.5 py-1 rounded-lg border text-sm font-semibold ${Number(donation.status) === 1
+                  ? 'bg-success-bg border-success-border text-success-text'
+                  : 'bg-surface-secondary border-border text-text-secondary'
+                  }`}>
+                  {Number(donation.status) === 1 ? 'Active' : 'Inactive'}
+                </span>
+              )
+            },
+            {
+              header: 'Actions',
+              key: 'actions',
+              align: 'right',
+              render: (donation) => (
+                <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => handleEdit(donation)}
+                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleDelete(donation.id)}
+                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )
+            }
+          ]}
+          data={donations}
+          keyField="id"
+          loading={loading}
+          emptyState={{
+            icon: Landmark,
+            title: 'No donations found',
+            description: 'There are no donation records matching your criteria'
+          }}
+          pagination={{
+            currentPage: page,
+            totalPages,
+            total,
+            pageNumbers,
+            loading,
+            onPageChange: setPage
+          }}
+        />
       )}
 
       {/* Add/Edit Modal */}
@@ -492,7 +473,7 @@ export default function Donations() {
               disabled={formLoading}
               className="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 shadow-glow-primary"
             >
-              {formLoading ? 'Saving...' : selectedDonation ? 'Update Donation' : 'Add Donation'}
+              {formLoading ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>

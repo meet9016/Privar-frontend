@@ -1,9 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2 ,Eye } from 'lucide-react'
+import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
+import Loader from '../components/common/Loader'
 import { useNavigate } from 'react-router-dom'
+import Input from '../components/common/Input'
+import Select from '../components/common/Select'
+import Button from '../components/common/Button'
+import Table from '../components/common/Table'
+import FileDropzone from '../components/common/FileDropzone'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 const limit = 10
@@ -254,9 +260,9 @@ export default function Events() {
 
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button onClick={fetchRows} className="p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all" title="Refresh">
+          <Button onClick={fetchRows} variant="secondary" title="Refresh">
             <RefreshCw className="w-4 h-4" />
-          </button>
+          </Button>
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
             <input
@@ -267,254 +273,226 @@ export default function Events() {
               className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
             />
           </div>
-          <button onClick={openCreate} className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary">
-            <Plus className="w-4 h-4" /> Add
-          </button>
+          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+            Add Event
+          </Button>
         </div>
       </div>
 
       {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
       {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm">{success}</div>}
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
-          <span className="text-text-secondary text-sm">Loading events...</span>
-        </div>
+      {loading && rows.length === 0 ? (
+        <div className="py-20"><Loader text="Loading events..." /></div>
       ) : (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-glass-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border bg-surface-secondary text-text-secondary text-sm font-semibold  tracking-wider">
-                  <th className="p-4">Image</th>
-                  <th className="p-4">Event</th>
-                  <th className="p-4">Start Date</th>
-                  <th className="p-4">Location</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-
-                {rows.map((row) => (
-                  <tr key={row.id || row._id} className="hover:bg-surface-secondary/40 text-sm text-text">
-                    <td className="p-4 max-w-[120px]">
-                      {row.image ? (
-                        <img src={assetUrl(row.image)} alt={row.title || 'Event'} className="h-12 w-16 rounded-lg object-cover border border-border" />
-                      ) : (
-                        <span className="text-text-secondary">No image</span>
-                      )}
-                    </td>
-                    <td className="p-4 max-w-md">
-                      <div className="font-semibold">{row.title || '-'}</div>
-                      <div className="text-text-secondary text-sm line-clamp-2">{row.description.slice(0, 50) || '-'}</div>
-                    </td>
-
-                    <td className="p-4 max-w-md">
-                      <div className="text-text-secondary text-sm line-clamp-2">{row.start_time.slice(0, 10).split('-').reverse().join('-') || '-'}</div>
-                    </td>
-                    <td className="p-4">{row.event_location || '-'}</td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => navigate(`/admin/event-registrations?event_id=${row._id || row.id}`)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="View Registrations">
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {rows.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-12 text-center text-sm text-text-secondary">No events found</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          {pagination.totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-border bg-surface-secondary/40 text-sm">
-              <span className="text-text-secondary">
-                Page {pagination.page} of {pagination.totalPages} {pagination.total ? `(${pagination.total} total)` : ''}
-              </span>
-              <div className="flex items-center gap-2">
-                <button type="button" disabled={loading || page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-                  Previous
-                </button>
-                {pageNumbers.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    disabled={loading || item === currentPage}
-                    onClick={() => setPage(item)}
-                    className={`min-w-10 px-3 py-2 rounded-lg border transition-all ${item === currentPage
-                      ? 'border-primary bg-primary/10 text-primary font-semibold disabled:opacity-100 disabled:cursor-default'
-                      : 'border-border bg-card text-text hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed'
-                      }`}
-                  >
-                    {item}
+        <Table
+          columns={[
+            {
+              header: 'Image',
+              key: 'image',
+              render: (row) => row.image ? (
+                <img src={assetUrl(row.image)} alt={row.title || 'Event'} className="h-12 w-16 rounded-lg object-cover border border-border" />
+              ) : (
+                <span className="text-text-secondary">No image</span>
+              )
+            },
+            {
+              header: 'Event',
+              key: 'event',
+              render: (row) => (
+                <div className="max-w-md">
+                  <div className="font-semibold">{row.title || '-'}</div>
+                  <div className="text-text-secondary text-sm line-clamp-2">{row.description.slice(0, 50) || '-'}</div>
+                </div>
+              )
+            },
+            {
+              header: 'Start Date',
+              key: 'start_date',
+              render: (row) => (
+                <div className="text-text-secondary text-sm line-clamp-2 max-w-md">
+                  {row.start_time.slice(0, 10).split('-').reverse().join('-') || '-'}
+                </div>
+              )
+            },
+            {
+              header: 'Location',
+              key: 'location',
+              render: (row) => row.event_location || '-'
+            },
+            {
+              header: 'Actions',
+              key: 'actions',
+              align: 'right',
+              render: (row) => (
+                <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => navigate(`/admin/event-registrations?event_id=${row._id || row.id}`)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="View Registrations">
+                    <Eye className="w-3.5 h-3.5" />
                   </button>
-                ))}
-                <button type="button" disabled={loading || page >= pagination.totalPages} onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )
+            }
+          ]}
+          data={rows}
+          keyField={(row) => row.id || row._id}
+          loading={loading}
+          emptyState={{
+            icon: Calendar,
+            title: 'No events found',
+            description: 'There are no events registered under this search criteria'
+          }}
+          pagination={{
+            currentPage: page,
+            totalPages: pagination.totalPages,
+            total: pagination.total,
+            pageNumbers,
+            loading,
+            onPageChange: setPage
+          }}
+        />
       )}
 
       <Modal isOpen={isModalOpen} title={selectedId ? 'Edit Event' : 'Add Event'} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-4 max-h-[76vh] overflow-y-auto pr-1 text-text">
+        <form onSubmit={handleSave} className="space-y-4 text-text">
           <div className="grid gap-4 sm:grid-cols-2">
 
-            <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Title</label>
-              <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={fieldClass} disabled={saving} />
-            </div>
+            <Input
+              label="Title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              disabled={saving}
+            />
 
-            <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Category</label>
-              <select
-                value={formData.event_category_id}
-                onChange={(e) => {
-                  const selectedOption = categories.find((item) => String(item.id) === String(e.target.value)) || {}
-                  setFormData({
-                    ...formData,
-                    event_category_id: e.target.value,
-                    event_category_name: selectedOption.name || ''
-                  })
-                }}
-                className={fieldClass}
-                disabled={saving}
-              >
-                <option value="" className="bg-surface text-text">Select category</option>
-                {categories.map((category) => (
-                  <option key={category._id} value={category.id} className="bg-surface text-text">{category.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Category"
+              value={formData.event_category_id}
+              onChange={(val) => {
+                const selectedOption = categories.find((item) => String(item.id) === String(val)) || {}
+                setFormData({
+                  ...formData,
+                  event_category_id: val,
+                  event_category_name: selectedOption.name || ''
+                })
+              }}
+              disabled={saving}
+              options={categories.map((c) => ({ label: c.name, value: c.id }))}
+            />
           </div>
 
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Description</label>
-              <textarea rows="4" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={fieldClass} disabled={saving} />
-            </div>
+            <Input
+              type="textarea"
+              rows={4}
+              label="Description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              disabled={saving}
+            />
             <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Image</label>
 
-              {/* Preview */}
-              {(formData.image instanceof File || (formData.image instanceof FileList && formData.image.length > 0)) ? (
-                <div className="relative w-20 h-20 mb-2">
-                  <img
-                    src={URL.createObjectURL(formData.image instanceof FileList ? formData.image[0] : formData.image)}
-                    alt="preview"
-                    className="w-20 h-20 rounded-lg object-cover border border-border"
-                  />
-                  <button type="button" onClick={() => setFormData({ ...formData, image: '', remove_image: false })}
-                    className="absolute -top-1.5 -right-1.5 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold" disabled={saving}>×</button>
-                </div>
-              ) : existingImage && !formData.remove_image ? (
-                <div className="relative w-20 h-20 mb-2">
-                  <img src={assetUrl(existingImage)} alt="current" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                  <button type="button" onClick={() => setFormData({ ...formData, remove_image: true })}
-                    className="absolute -top-1.5 -right-1.5 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold" disabled={saving}>×</button>
-                </div>
-              ) : null}
-
-              <input
-                type="file" accept="image/*"
-                onChange={(e) => setFormData({ ...formData, image: e.target.files, remove_image: false })}
-                className="w-full text-sm text-text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
+              <FileDropzone
+                accept="image/*"
+                onFilesSelected={(files) => setFormData({ ...formData, image: files, remove_image: false })}
                 disabled={saving}
+                label="Click or Drag Event Image"
+                previews={[
+                  ...(existingImage && !formData.remove_image ? [{
+                    url: assetUrl(existingImage),
+                    onRemove: () => setFormData({ ...formData, remove_image: true })
+                  }] : []),
+                  ...((formData.image instanceof File || (formData.image instanceof FileList && formData.image.length > 0)) ? [{
+                    url: URL.createObjectURL(formData.image instanceof FileList ? formData.image[0] : formData.image),
+                    onRemove: () => setFormData({ ...formData, image: '', remove_image: false })
+                  }] : [])
+                ]}
               />
             </div>
           </div>
 
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Start Time</label>
-              <input type="datetime-local" value={formData.start_time} onChange={(e) => setFormData({ ...formData, start_time: e.target.value })} className={fieldClass} disabled={saving} />
-            </div>
-            <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">End Time</label>
-              <input type="datetime-local" value={formData.end_time} onChange={(e) => setFormData({ ...formData, end_time: e.target.value })} className={fieldClass} disabled={saving} />
-            </div>
-            <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Entry Type</label>
-              <select value={formData.entry_type} onChange={(e) => setFormData({ ...formData, entry_type: e.target.value })} className={fieldClass} disabled={saving}>
-                <option value="free" className="bg-surface text-text">Free</option>
-                <option value="paid" className="bg-surface text-text">Paid</option>
-              </select>
-            </div>
+            <Input
+              type="datetime-local"
+              label="Start Time"
+              value={formData.start_time}
+              onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+              disabled={saving}
+            />
+            <Input
+              type="datetime-local"
+              label="End Time"
+              value={formData.end_time}
+              onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+              disabled={saving}
+            />
+            <Select
+              label="Entry Type"
+              value={formData.entry_type}
+              onChange={(val) => setFormData({ ...formData, entry_type: val })}
+              disabled={saving}
+              options={[
+                { label: 'Free', value: 'free' },
+                { label: 'Paid', value: 'paid' }
+              ]}
+            />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">Venue / Location</label>
-            <input type="text" value={formData.event_location} onChange={(e) => setFormData({ ...formData, event_location: e.target.value })} className={fieldClass} disabled={saving} />
-          </div>
+          
+          <Input
+            label="Venue / Location"
+            value={formData.event_location}
+            onChange={(e) => setFormData({ ...formData, event_location: e.target.value })}
+            disabled={saving}
+          />
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Country</label>
-              <select
-                value={formData.country_id}
-                onChange={(e) => setFormData({ ...formData, country_id: e.target.value })}
-                className={fieldClass} disabled={saving}
-              >
-                <option value="">Select Country</option>
-                {countryList.map((c) => (
-                  <option key={c.id || c._id} value={c.id || c._id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">State</label>
-              <select
-                value={formData.state_id}
-                onChange={(e) => setFormData({ ...formData, state_id: e.target.value })}
-                className={fieldClass} disabled={saving}
-              >
-                <option value="">Select State</option>
-                {stateList.map((s) => (
-                  <option key={s.id || s._id} value={s.id || s._id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">City</label>
-              <select
-                value={formData.city_id}
-                onChange={(e) => setFormData({ ...formData, city_id: e.target.value })}
-                className={fieldClass} disabled={saving}
-              >
-                <option value="">Select City</option>
-                {cityList.map((c) => (
-                  <option key={c.id || c._id} value={c.id || c._id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Country"
+              value={formData.country_id}
+              onChange={(val) => setFormData({ ...formData, country_id: val })}
+              disabled={saving}
+              options={countryList.map((c) => ({ label: c.name, value: c.id || c._id }))}
+            />
+            <Select
+              label="State"
+              value={formData.state_id}
+              onChange={(val) => setFormData({ ...formData, state_id: val })}
+              disabled={saving}
+              options={stateList.map((s) => ({ label: s.name, value: s.id || s._id }))}
+            />
+            <Select
+              label="City"
+              value={formData.city_id}
+              onChange={(val) => setFormData({ ...formData, city_id: val })}
+              disabled={saving}
+              options={cityList.map((c) => ({ label: c.name, value: c.id || c._id }))}
+            />
           </div>
 
 
 
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Location Link</label>
-            <input type="text" value={formData.location_link} onChange={(e) => setFormData({ ...formData, location_link: e.target.value })} className={fieldClass} disabled={saving} />
+          <Input
+            label="Location Link"
+            value={formData.location_link}
+            onChange={(e) => setFormData({ ...formData, location_link: e.target.value })}
+            disabled={saving}
+          />
+
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" isLoading={saving} disabled={saving}>
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
           </div>
-
-
-
-          <button type="submit" disabled={saving} className="flex justify-self-end  bg-primary hover:bg-primary-hover text-white py-3 px-3 rounded-xl font-semibold text-sm tracking-wider  disabled:opacity-50 shadow-glow-primary">
-            {saving ? 'Saving...' : 'Save Event'}
-          </button>
         </form>
       </Modal>
     </div>

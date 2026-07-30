@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Eye, RefreshCw, Search, X ,Download} from 'lucide-react'
+import { Eye, RefreshCw, Search, Download, Ticket } from 'lucide-react'
 import api, { getEventsList } from '../lib/api'
 import Modal from '../components/Modal'
+import Loader from '../components/common/Loader'
+import Table from '../components/common/Table'
 
 const limit = 10
 
@@ -130,83 +132,81 @@ const handleDownload = async () => {
 
             {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin" />
-                    <span className="text-text-secondary text-sm">Loading registrations...</span>
-                </div>
+            {loading && rows.length === 0 ? (
+                <div className="py-20"><Loader text="Loading registrations..." /></div>
             ) : (
-                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-glass-sm">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-border bg-surface-secondary text-text-secondary text-sm font-semibold tracking-wider">
-                                    <th className="p-4">Name</th>
-                                    <th className="p-4">Email</th>
-                                    <th className="p-4">Number</th>
-                                    <th className="p-4">Event</th>
-                                    <th className="p-4">Attendees</th>
-                                    <th className="p-4">Status</th>
-                                    <th className="p-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {rows.map((row) => (
-                                    <tr key={row._id || row.id} className="hover:bg-surface-secondary/40 text-sm text-text">
-                                        <td className="p-4 font-semibold">{row.name || '-'}</td>
-                                        <td className="p-4 text-text-secondary">{row.email || '-'}</td>
-                                        <td className="p-4 text-text-secondary">{row.number || '-'}</td>
-                                        <td className="p-4">{row.event_name || '-'}</td>
-                                        <td className="p-4">{row.total_attendee ?? 1}</td>
-                                        <td className="p-4">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                        ${row.status === 'confirmed' ? 'bg-success-bg text-success-text border border-success-border' : ''}
-                        ${row.status === 'cancelled' ? 'bg-error-bg text-error-text border border-error-border' : ''}
-                        ${row.status === 'waitlisted' ? 'bg-warning-bg text-warning-text border border-warning-border' : ''}
-                      `}>
-                                                {row.status || 'confirmed'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-right">
-                                            <button
-                                                onClick={() => setSelectedReg(row)}
-                                                className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl"
-                                                title="View"
-                                            >
-                                                <Eye className="w-3.5 h-3.5" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {rows.length === 0 && (
-                                    <tr>
-                                        <td colSpan={7} className="p-12 text-center text-sm text-text-secondary">No registrations found</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {pagination.totalPages > 1 && (
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-border bg-surface-secondary/40 text-sm">
-                            <span className="text-text-secondary">
-                                Page {pagination.page} of {pagination.totalPages} {pagination.total ? `(${pagination.total} total)` : ''}
-                            </span>
-                            <div className="flex items-center gap-2">
-                                <button type="button" disabled={loading || page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
-                                {pageNumbers.map((item) => (
-                                    <button
-                                        key={item} type="button"
-                                        disabled={loading || item === currentPage}
-                                        onClick={() => setPage(item)}
-                                        className={`min-w-10 px-3 py-2 rounded-lg border transition-all ${item === currentPage ? 'border-primary bg-primary/10 text-primary font-semibold disabled:opacity-100 disabled:cursor-default' : 'border-border bg-card text-text hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed'}`}
-                                    >{item}</button>
-                                ))}
-                                <button type="button" disabled={loading || page >= pagination.totalPages} onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                <Table
+                    columns={[
+                        {
+                            header: 'Name',
+                            key: 'name',
+                            render: (row) => <span className="font-semibold">{row.name || '-'}</span>
+                        },
+                        {
+                            header: 'Email',
+                            key: 'email',
+                            render: (row) => <span className="text-text-secondary">{row.email || '-'}</span>
+                        },
+                        {
+                            header: 'Number',
+                            key: 'number',
+                            render: (row) => <span className="text-text-secondary">{row.number || '-'}</span>
+                        },
+                        {
+                            header: 'Event',
+                            key: 'event',
+                            render: (row) => row.event_name || '-'
+                        },
+                        {
+                            header: 'Attendees',
+                            key: 'attendees',
+                            render: (row) => row.total_attendee ?? 1
+                        },
+                        {
+                            header: 'Status',
+                            key: 'status',
+                            render: (row) => (
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                                    ${row.status === 'confirmed' ? 'bg-success-bg text-success-text border border-success-border' : ''}
+                                    ${row.status === 'cancelled' ? 'bg-error-bg text-error-text border border-error-border' : ''}
+                                    ${row.status === 'waitlisted' ? 'bg-warning-bg text-warning-text border border-warning-border' : ''}
+                                `}>
+                                    {row.status || 'confirmed'}
+                                </span>
+                            )
+                        },
+                        {
+                            header: 'Actions',
+                            key: 'actions',
+                            align: 'right',
+                            render: (row) => (
+                                <button
+                                    onClick={() => setSelectedReg(row)}
+                                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
+                                    title="View"
+                                >
+                                    <Eye className="w-3.5 h-3.5" />
+                                </button>
+                            )
+                        }
+                    ]}
+                    data={rows}
+                    keyField={(row) => row._id || row.id}
+                    loading={loading}
+                    emptyState={{
+                        icon: Ticket,
+                        title: 'No registrations found',
+                        description: 'There are no event registrations matching your criteria'
+                    }}
+                    pagination={{
+                        currentPage: page,
+                        totalPages: pagination.totalPages,
+                        total: pagination.total,
+                        pageNumbers,
+                        loading,
+                        onPageChange: setPage
+                    }}
+                />
             )}
 
             {/* View Modal */}

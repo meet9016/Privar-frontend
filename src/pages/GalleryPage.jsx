@@ -3,8 +3,13 @@ import { Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, X } from 'l
 import api, { assetUrl, getGalleryList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
-// import PageHeader from '../components/PageHeader'
+import FileDropzone from '../components/common/FileDropzone'
+import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
+import Input from '../components/common/Input'
+import Select from '../components/common/Select'
+import Button from '../components/common/Button'
+import Table from '../components/common/Table'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 const limit = 12
@@ -258,9 +263,9 @@ export default function GalleryPage() {
 
         </div>
         <div className="flex flex-wrap items-center sm:justify-end gap-3 flex-1">
-          <button onClick={() => { fetchGallery(); fetchCategories() }} className="p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all" title="Refresh">
+          <Button onClick={() => { fetchGallery(); fetchCategories() }} variant="secondary" title="Refresh">
             <RefreshCw className="w-4 h-4" />
-          </button>
+          </Button>
           <div className="relative w-full sm:w-64 sm:flex-none">
             <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
             <input
@@ -280,131 +285,105 @@ export default function GalleryPage() {
               className="w-full sm:w-40 bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
             />
           </div>
-          <select
+          <Select
             value={filterCategoryId}
-            onChange={handleFilterCategory}
-            className="w-full sm:w-auto bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
-          >
-            <option value="" className="bg-surface text-text">All Categories</option>
-            {filterCategories.map((item) => (
-              <option key={item.id} value={item.id} className="bg-surface text-text">{item.category}</option>
-            ))}
-          </select>
-          <button onClick={openCreate} className="w-full sm:w-auto flex justify-center items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary">
-            <Plus className="w-4 h-4" /> Add
-          </button>
+            onChange={(val) => handleFilterCategory({ target: { value: val } })}
+            options={[{ label: 'All Categories', value: '' }, ...filterCategories.map((item) => ({ label: item.category, value: item.id }))]}
+          />
+          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+            Add Images
+          </Button>
         </div>
       </div>
 
       {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
       {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm">{success}</div>}
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
-          <span className="text-text-secondary text-sm">Loading gallery...</span>
-        </div>
+      {loading && rows.length === 0 ? (
+        <div className="py-20"><Loader text="Loading gallery..." /></div>
       ) : (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-glass-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border bg-surface-secondary text-text-secondary text-sm font-semibold  tracking-wider">
-                  <th className="p-4">Preview</th>
-                  <th className="p-4">Category</th>
-                  <th className="p-4">Month/Year</th>
-                  <th className="p-4 text-center">Images</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-surface-secondary/40 text-sm text-text border-b border-border/50 last:border-0 group">
-                    <td className="p-4 max-w-[100px]">
-                      {row.images?.[0] ? (
-                        <div className="relative inline-block">
-                          <img src={assetUrl(row.images[0])} alt={row.category || 'Gallery'} className="h-12 w-16 rounded-lg object-cover border border-border" />
-                          <span className="absolute -top-1.5 -right-2.5 bg-primary text-white text-xs font-semibold rounded-full p-1 w-5 h-5 flex items-center justify-center">
-                            {row.images.length}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-text-secondary">No image</span>
-                      )}
-                    </td>
-                    <td className="p-4 font-medium max-w-xs line-clamp-1">{row.category || 'General'}</td>
-                    <td className="p-4">
-                      {row.year ? new Date(row.year + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '-'}
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className="inline-flex items-center px-2 py-1 rounded-lg bg-surface border border-border text-xs font-semibold">
-                        {row.images?.length || 0}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {rows.length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="p-12 text-center text-sm text-text-secondary">No gallery items found</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          {pagination.totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-border bg-surface-secondary/40 text-sm">
-              <span className="text-text-secondary">
-                Page {pagination.page} of {pagination.totalPages} {pagination.total ? `(${pagination.total} total)` : ''}
-              </span>
-              <div className="flex items-center gap-2">
-                <button type="button" disabled={loading || page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-                  Previous
-                </button>
-                {pageNumbers.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    disabled={loading || item === currentPage}
-                    onClick={() => setPage(item)}
-                    className={`min-w-10 px-3 py-2 rounded-lg border transition-all ${item === currentPage
-                      ? 'border-primary bg-primary/10 text-primary font-semibold disabled:opacity-100 disabled:cursor-default'
-                      : 'border-border bg-card text-text hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed'
-                      }`}
-                  >
-                    {item}
+        <Table
+          columns={[
+            {
+              header: 'Preview',
+              key: 'preview',
+              render: (row) => row.images?.[0] ? (
+                <div className="relative inline-block">
+                  <img src={assetUrl(row.images[0])} alt={row.category || 'Gallery'} className="h-12 w-16 rounded-lg object-cover border border-border" />
+                  <span className="absolute -top-1.5 -right-2.5 bg-primary text-white text-xs font-semibold rounded-full p-1 w-5 h-5 flex items-center justify-center">
+                    {row.images.length}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-text-secondary">No image</span>
+              )
+            },
+            {
+              header: 'Category',
+              key: 'category',
+              render: (row) => <span className="font-medium max-w-xs line-clamp-1">{row.category || 'General'}</span>
+            },
+            {
+              header: 'Month/Year',
+              key: 'month_year',
+              render: (row) => row.year ? new Date(row.year + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '-'
+            },
+            {
+              header: 'Images',
+              key: 'images',
+              align: 'center',
+              render: (row) => (
+                <span className="inline-flex items-center px-2 py-1 rounded-lg bg-surface border border-border text-xs font-semibold">
+                  {row.images?.length || 0}
+                </span>
+              )
+            },
+            {
+              header: 'Actions',
+              key: 'actions',
+              align: 'right',
+              render: (row) => (
+                <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
                   </button>
-                ))}
-                <button type="button" disabled={loading || page >= pagination.totalPages} onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )
+            }
+          ]}
+          data={rows}
+          keyField="id"
+          loading={loading}
+          emptyState={{
+            icon: ImageIcon,
+            title: 'No gallery items found',
+            description: 'There are no images registered under this search criteria'
+          }}
+          pagination={{
+            currentPage: page,
+            totalPages: pagination.totalPages,
+            total: pagination.total,
+            pageNumbers,
+            loading,
+            onPageChange: setPage
+          }}
+        />
       )}
 
       <Modal isOpen={isModalOpen} title={selected ? 'Edit Images' : 'Add Images'} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-4 max-h-[76vh] overflow-y-auto pr-1 text-text">
+        <form onSubmit={handleSave} className="space-y-4 text-text">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Category <span className='text-red-500'>*</span></label>
-              <select value={categoryId} onChange={handleCategorySelect} className={fieldClass} disabled={saving}>
-                <option value="" className="bg-surface text-text">Select Category</option>
-                {categories.map((item) => (
-                  <option key={item.id} value={item.id} className="bg-surface text-text">{item.category}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Category"
+              required
+              value={categoryId}
+              onChange={(val) => handleCategorySelect({ target: { value: val } })}
+              disabled={saving}
+              options={categories.map((item) => ({ label: item.category, value: item.id }))}
+            />
 
             <div>
               <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Month & Year</label>
@@ -422,42 +401,38 @@ export default function GalleryPage() {
 
             <div>
               <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Gallery Images</label>
-              <input
-                type="file"
-                accept="image/*"
+              <FileDropzone
                 multiple
-                onChange={handleFileChange}
-                className="w-full text-sm text-text file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
+                accept="image/*"
+                onFilesSelected={(files) => {
+                  const fakeEvent = { target: { files } };
+                  handleFileChange(fakeEvent);
+                }}
                 disabled={saving}
+                label="Click or Drag Gallery Images"
+                subLabel="Upload multiple images. Existing images stay unless removed below."
+                previews={[
+                  ...existingImages.map((image, index) => ({
+                    url: assetUrl(image),
+                    onRemove: () => removeExistingImage(index)
+                  })),
+                  ...filePreviews.map((preview, index) => ({
+                    url: preview.url,
+                    onRemove: () => removeNewImage(index)
+                  }))
+                ]}
               />
-              <p className="my-2 text-sm text-text-secondary">Upload multiple images. Existing images stay unless removed below.</p>
             </div>
-
-            {(existingImages.length > 0 || filePreviews.length > 0) && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-10 gap-2 sm:gap-3 [&>div]:max-w-[100px]">
-                {existingImages.map((image, index) => (
-                  <div key={`existing-${index}`} className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-surface-secondary">
-                    <img src={assetUrl(image)} alt={`Existing ${index + 1}`} className="h-full w-full object-cover" />
-                    <button type="button" onClick={() => removeExistingImage(index)} className="absolute top-2 right-2 rounded-full bg-black/50 p-1 text-white">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-                {filePreviews.map((preview, index) => (
-                  <div key={`new-${index}`} className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-surface-secondary">
-                    <img src={preview.url} alt={`New ${index + 1}`} className="h-full w-full object-cover" />
-                    <button type="button" onClick={() => removeNewImage(index)} className="absolute top-2 right-2 rounded-full bg-black/50 p-1 text-white">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
-          <button type="submit" disabled={saving} className="flex justify-self-end bg-primary hover:bg-primary-hover text-white py-3 px-3 rounded-xl font-semibold text-sm tracking-wider  disabled:opacity-50 shadow-glow-primary">
-            {saving ? 'Saving...' : 'Save Gallery'}
-          </button>
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" isLoading={saving} disabled={saving}>
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
         </form>
       </Modal>
     </div>

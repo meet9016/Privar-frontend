@@ -5,6 +5,9 @@ import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import usePagination from '../hooks/usePagination'
 import YearSelect from '../components/YearSelect'
+import FileDropzone from '../components/common/FileDropzone'
+import Select from '../components/common/Select'
+import Input from '../components/common/Input'
 
 const limit = 10
 
@@ -156,16 +159,13 @@ export default function Students() {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
-            <input
-              type="search"
-              placeholder="Search students..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
-            />
-          </div>
+          <Input
+            icon={<Search className="w-4 h-4" />}
+            type="search"
+            placeholder="Search students..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           <button
             onClick={handleCreate}
             className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
@@ -412,60 +412,55 @@ export default function Students() {
             {/* Student Image */}
             <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Student Image</label>
-              {(imageData.student_image instanceof File || (imageData.student_image instanceof FileList && imageData.student_image.length > 0)) ? (
-                <div className="relative w-20 h-20 mb-2">
-                  <img src={URL.createObjectURL(imageData.student_image instanceof FileList ? imageData.student_image[0] : imageData.student_image)}
-                    alt="preview" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                  <button type="button" onClick={() => setImageData({ ...imageData, student_image: null, remove_student_image: false })}
-                    className="absolute -top-1.5 -right-1.5 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold" disabled={formLoading}>×</button>
-                </div>
-              ) : existingStudentImage && !imageData.remove_student_image ? (
-                <div className="relative w-20 h-20 mb-2">
-                  <img src={assetUrl(existingStudentImage)} alt="current" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                  <button type="button" onClick={() => setImageData({ ...imageData, remove_student_image: true })}
-                    className="absolute -top-1.5 -right-1.5 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold" disabled={formLoading}>×</button>
-                </div>
-              ) : null}
-              <input type="file" accept="image/*"
-                onChange={(e) => setImageData({ ...imageData, student_image: e.target.files, remove_student_image: false })}
-                className="w-full text-sm text-text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
-                disabled={formLoading} />
+              <FileDropzone
+                accept="image/*"
+                onFilesSelected={(files) => setImageData({ ...imageData, student_image: files, remove_student_image: false })}
+                disabled={formLoading}
+                label="Click or Drag Student Image"
+                previews={[
+                  ...(existingStudentImage && !imageData.remove_student_image ? [{
+                    url: assetUrl(existingStudentImage),
+                    onRemove: () => setImageData({ ...imageData, remove_student_image: true })
+                  }] : []),
+                  ...((imageData.student_image instanceof File || (imageData.student_image instanceof FileList && imageData.student_image.length > 0)) ? [{
+                    url: URL.createObjectURL(imageData.student_image instanceof FileList ? imageData.student_image[0] : imageData.student_image),
+                    onRemove: () => setImageData({ ...imageData, student_image: null, remove_student_image: false })
+                  }] : [])
+                ]}
+              />
             </div>
 
             {/* Result Image */}
             <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Result Image</label>
-              {(imageData.result_image instanceof File || (imageData.result_image instanceof FileList && imageData.result_image.length > 0)) ? (
-                <div className="relative w-20 h-20 mb-2">
-                  <img src={URL.createObjectURL(imageData.result_image instanceof FileList ? imageData.result_image[0] : imageData.result_image)}
-                    alt="preview" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                  <button type="button" onClick={() => setImageData({ ...imageData, result_image: null, remove_result_image: false })}
-                    className="absolute -top-1.5 -right-1.5 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold" disabled={formLoading}>×</button>
-                </div>
-              ) : existingResultImage && !imageData.remove_result_image ? (
-                <div className="relative w-20 h-20 mb-2">
-                  <img src={assetUrl(existingResultImage)} alt="current" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                  <button type="button" onClick={() => setImageData({ ...imageData, remove_result_image: true })}
-                    className="absolute -top-1.5 -right-1.5 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold" disabled={formLoading}>×</button>
-                </div>
-              ) : null}
-              <input type="file" accept="image/*"
-                onChange={(e) => setImageData({ ...imageData, result_image: e.target.files, remove_result_image: false })}
-                className="w-full text-sm text-text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
-                disabled={formLoading} />
+              <FileDropzone
+                accept="image/*"
+                onFilesSelected={(files) => setImageData({ ...imageData, result_image: files, remove_result_image: false })}
+                disabled={formLoading}
+                label="Click or Drag Result Image"
+                previews={[
+                  ...(existingResultImage && !imageData.remove_result_image ? [{
+                    url: assetUrl(existingResultImage),
+                    onRemove: () => setImageData({ ...imageData, remove_result_image: true })
+                  }] : []),
+                  ...((imageData.result_image instanceof File || (imageData.result_image instanceof FileList && imageData.result_image.length > 0)) ? [{
+                    url: URL.createObjectURL(imageData.result_image instanceof FileList ? imageData.result_image[0] : imageData.result_image),
+                    onRemove: () => setImageData({ ...imageData, result_image: null, remove_result_image: false })
+                  }] : [])
+                ]}
+              />
             </div>
           </div>
-          <div>
-            <label className="text-sm text-text-secondary mb-1.5 block">Status</label>
-            <select
-              name="status"
-              defaultValue={selectedStudent?.status ?? 0}
-              className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-            >
-              <option value={1}>Active</option>
-              <option value={0}>Pending</option>
-            </select>
-          </div>
+          <Select
+            label="Status"
+            value={selectedStudent?.status ?? 0}
+            onChange={() => {}}
+            searchable={false}
+            options={[
+              { label: 'Active', value: 1 },
+              { label: 'Pending', value: 0 }
+            ]}
+          />
 
           <button
             type="submit"

@@ -6,6 +6,8 @@ import {
   Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2
 } from 'lucide-react'
 import api, { assetUrl } from '../lib/api'
+import Loader from '../components/common/Loader'
+import { AuthContext } from '../context/AuthContext'
 import { confirm } from '../lib/confirm'
 
 const DEFAULT_COLORS = {
@@ -342,12 +344,7 @@ export default function SettingsPage() {
   const existingBanners = config.bannerImages.filter(u => !deletedBannerUrls.includes(u))
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
-        <span className="text-text-secondary text-sm">Querying platform configuration...</span>
-      </div>
-    )
+      return <div className="py-20"><Loader text="Loading settings..." /></div>
   }
 
   return (

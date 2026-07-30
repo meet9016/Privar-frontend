@@ -2,8 +2,13 @@ import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { normalizeRoleId } from '../lib/roles'
 import api from '../lib/api'
+import Input from './common/Input'
+import Select from './common/Select'
+import Button from './common/Button'
+import RadioGroup from './common/RadioGroup'
+import DatePicker from './DatePicker'
 
-export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
+export default function UserForm({ user, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
   const [countries, setCountries] = useState([])
   const [states, setStates] = useState([])
@@ -58,7 +63,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
     if (user) {
       // Format ISO date to YYYY-MM-DD for date inputs
       let formattedDob = ''
-      let formattedAnniversary
+      let formattedAnniversary = ''
       if (user.dob) {
         const d = new Date(user.dob)
         if (!isNaN(d.getTime())) {
@@ -179,6 +184,19 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
     onSubmit(payload)
   }
 
+  // Formatting options for Select components
+  const countryOptions = countries.map(c => ({ label: c.name, value: c._id || c.id }))
+  const stateOptions = states.map(s => ({ label: s.name, value: s._id || s.id }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c._id || c.id }))
+  const headOptions = heads.map(h => ({ label: `${h.name || `${h.first_name} ${h.last_name}`} - ${h.number}`, value: h._id || h.id }))
+  const relationOptions = ['Self', 'Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Grandfather', 'Grandmother', 'Other'].map(rel => ({ label: rel, value: rel }))
+  const genderOptions = [
+    { label: 'Unspecified', value: '' },
+    { label: 'Male', value: 'Male' },
+    { label: 'Female', value: 'Female' },
+    { label: 'Other', value: 'Other' },
+  ]
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5 px-1 text-text">
 
@@ -186,41 +204,30 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
       <div>
         <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Primary Identity</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">First Name <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              value={formData.first_name}
-              onChange={(e) => handleChange('first_name', e.target.value)}
-              className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.first_name ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
-              disabled={isLoading}
-            />
-            {errors.first_name && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.first_name}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Middle Name <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              value={formData.middle_name}
-              onChange={(e) => handleChange('middle_name', e.target.value)}
-              className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.middle_name ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
-              disabled={isLoading}
-            />
-            {errors.middle_name && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.middle_name}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Last Name <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              value={formData.last_name}
-              onChange={(e) => handleChange('last_name', e.target.value)}
-              className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.last_name ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-              disabled={isLoading || !!(user && user.last_name)}
-            />
-            {errors.last_name && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.last_name}</p>}
-          </div>
+          <Input
+            label="First Name"
+            value={formData.first_name}
+            onChange={(e) => handleChange('first_name', e.target.value)}
+            disabled={isLoading}
+            required={true}
+            error={errors.first_name}
+          />
+          <Input
+            label="Middle Name"
+            value={formData.middle_name}
+            onChange={(e) => handleChange('middle_name', e.target.value)}
+            disabled={isLoading}
+            required={true}
+            error={errors.middle_name}
+          />
+          <Input
+            label="Last Name"
+            value={formData.last_name}
+            onChange={(e) => handleChange('last_name', e.target.value)}
+            disabled={isLoading || !!(user && user.last_name)}
+            required={true}
+            error={errors.last_name}
+          />
         </div>
       </div>
 
@@ -228,192 +235,117 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
       <div>
         <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Contact & Login Credentials</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Email Address <span className="text-red-500">*</span></label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
-              disabled={isLoading}
-            />
-            {errors.email && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.email}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Mobile Number <span className="text-red-500">*</span></label>
-            <input
-              type="tel"
-              value={formData.number}
-              maxLength={10}
-              onChange={(e) => handleChange('number', e.target.value)}
-              className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.number ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
-              disabled={isLoading}
-            />
-            {errors.number && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.number}</p>}
-          </div>
-
-
+          <Input
+            label="Email Address"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            disabled={isLoading}
+            required={true}
+            error={errors.email}
+          />
+          <Input
+            label="Mobile Number"
+            type="tel"
+            maxLength={10}
+            value={formData.number}
+            onChange={(e) => handleChange('number', e.target.value)}
+            disabled={isLoading}
+            required={true}
+            error={errors.number}
+          />
         </div>
       </div>
 
       {/* SECTION 3: Bio Metrics & Relation */}
       <div>
-        <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Family </h4>
+        <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Family</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Relationship</label>
-            <select
-              value={formData.relation}
-              onChange={(e) => handleChange('relation', e.target.value)}
-              className={`w-full bg-input-bg text-text border ${errors.relation ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl py-2 px-3 text-sm outline-none cursor-pointer`}
-              disabled={isLoading}
-            >
-              {['Self', 'Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Grandfather', 'Grandmother', 'Other'].map(rel => (
-                <option key={rel} value={rel} className="bg-surface text-text">{rel}</option>
-              ))}
-            </select>
-            {errors.relation && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.relation}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Gender</label>
-            <select
-              value={formData.gender}
-              onChange={(e) => handleChange('gender', e.target.value)}
-              className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 cursor-pointer"
-              disabled={isLoading}
-            >
-              <option value="" className="bg-surface text-text">Unspecified</option>
-              <option value="Male" className="bg-surface text-text">Male</option>
-              <option value="Female" className="bg-surface text-text">Female</option>
-              <option value="Other" className="bg-surface text-text">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Date of Birth</label>
-            <input
-              type="date"
+          <Select
+            label="Relationship"
+            value={formData.relation}
+            onChange={(val) => handleChange('relation', val)}
+            options={relationOptions}
+            disabled={isLoading}
+            searchable={false}
+            error={errors.relation}
+          />
+          <Select
+            label="Gender"
+            value={formData.gender}
+            onChange={(val) => handleChange('gender', val)}
+            options={genderOptions}
+            disabled={isLoading}
+            searchable={false}
+          />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-text-secondary">Date of Birth</label>
+            <DatePicker
               value={formData.dob}
-              onChange={(e) => handleChange('dob', e.target.value)}
-              className="w-full px-3 py-2 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer"
+              onChange={(val) => handleChange('dob', val)}
               disabled={isLoading}
+              placeholder="Select DOB"
             />
           </div>
-          <div>
-            <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Anniversary</label>
-            <input
-              type="date"
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-text-secondary">Anniversary</label>
+            <DatePicker
               value={formData.anniversary}
-              onChange={(e) => handleChange('anniversary', e.target.value)}
-              className="w-full px-3 py-2 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer"
+              onChange={(val) => handleChange('anniversary', val)}
               disabled={isLoading}
+              placeholder="Select Anniversary"
             />
           </div>
 
-
-
-          <div className="" >
+          <div className="">
             <label className="block text-sm font-semibold text-text-secondary mb-1.5">Status</label>
             <div className="flex align-center item-center gap-2">
               <input
-                className="h-5 w-5 px-3 py-2 self-end"
+                className="h-5 w-5 px-3 py-2 self-end accent-primary"
                 type="checkbox"
                 id="status"
                 name="Approved"
                 checked={formData.status == 1 || formData.status == '1'}
                 onChange={(e) => handleChange('status', e.target.checked ? 1 : 0)}
                 disabled={isLoading}
-              /> <span className=''>
+              /> <span className="">
                 {formData.status == 1 ? 'Approved' : 'Pending'}
               </span>
             </div>
           </div>
         </div>
       </div>
-      {/* 
-      {canManageRoleFields && (
-        <div>
-          <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Roles & Committee Status</h4>
-          <div className="bg-surface-secondary border border-border rounded-2xl p-4 flex flex-col md:flex-row items-center gap-6">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.is_committee}
-                onChange={(e) => setFormData({ ...formData, is_committee: e.target.checked })}
-                className="w-4.5 h-4.5 rounded bg-input-bg border-border text-primary focus:ring-primary/10 transition cursor-pointer"
-                disabled={isLoading || isEditingSelf}
-                title={isEditingSelf ? 'You cannot change your own role' : undefined}
-              />
-              <div className="text-sm">
-                <div className="font-semibold text-text">Flag as Committee Member</div>
-                <div className="text-sm text-text-secondary">Grants administrative privileges in core app</div>
-              </div>
-            </label>
-
-            {formData.is_committee && (
-              <div className="flex-1 w-full animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Admin Role</label>
-                  <select
-                    value={formData.role_id}
-                    onChange={(e) => handleChange('role_id', e.target.value)}
-                    className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
-                    disabled={isLoading || isEditingSelf}
-                    title={isEditingSelf ? 'You cannot change your own role' : undefined}
-                  >
-                    <option value="" className="bg-surface text-text">Select Role</option>
-                    {activeRoles.map((role) => <option key={role.id} value={role.id} className="bg-surface text-text">{role.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Committee Designation</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. President, Vice President, Secretary"
-                    value={formData.committee_role}
-                    onChange={(e) => handleChange('committee_role', e.target.value)}
-                    className="w-full px-3 py-2 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all disabled:cursor-not-allowed disabled:opacity-70"
-                    disabled={isLoading || isEditingSelf}
-                    title={isEditingSelf ? 'You cannot change your own role' : undefined}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )} */}
 
       {/* SECTION 4: Family Hierarchy */}
       <div>
         <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Family Hierarchy</h4>
-        <div className="flex gap-4 mb-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="radio" checked={isHead} onChange={(e) => { setIsHead(true); if (errors.relation) setErrors(prev => ({...prev, relation: null})) }} className="w-4 h-4 text-primary focus:ring-primary" />
-            <span className="text-sm font-semibold text-text">Head</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="radio" checked={!isHead} onChange={(e) => { setIsHead(false); if (errors.family_head_id) setErrors(prev => ({...prev, family_head_id: null})) }} className="w-4 h-4 text-primary focus:ring-primary" />
-            <span className="text-sm font-semibold text-text">Under Head</span>
-          </label>
-        </div>
+        <RadioGroup
+          name="hierarchy"
+          options={[
+            { label: 'Head', value: 'head' },
+            { label: 'Under Head', value: 'under_head' }
+          ]}
+          value={isHead ? 'head' : 'under_head'}
+          onChange={(val) => {
+            const headStatus = val === 'head';
+            setIsHead(headStatus);
+            if (headStatus && errors.relation) setErrors(prev => ({...prev, relation: null}));
+            if (!headStatus && errors.family_head_id) setErrors(prev => ({...prev, family_head_id: null}));
+          }}
+          className="mb-4"
+        />
+        
         {!isHead && (
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">Select Family Head <span className="text-red-500">*</span></label>
-            <select
+            <Select
+              label="Select Family Head"
               value={formData.family_head_id}
-              onChange={(e) => handleChange('family_head_id', e.target.value)}
-              className={`w-full bg-input-bg text-text border ${errors.family_head_id ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl py-2 px-3 text-sm outline-none cursor-pointer`}
-            >
-              <option value="">Select Head</option>
-              {heads.map(h => (
-                <option key={h._id || h.id} value={h._id || h.id}>
-                  {h.name || `${h.first_name} ${h.last_name}`} - {h.number}
-                </option>
-              ))}
-            </select>
-            {errors.family_head_id && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.family_head_id}</p>}
+              onChange={(val) => handleChange('family_head_id', val)}
+              options={headOptions}
+              required={true}
+              error={errors.family_head_id}
+              placeholder="Search and select head..."
+            />
           </div>
         )}
       </div>
@@ -422,41 +354,31 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
       <div>
         <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Location Details</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">Country</label>
-            <select
-              value={formData.country_id}
-              onChange={(e) => handleChange('country_id', e.target.value)}
-              className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 cursor-pointer"
-            >
-              <option value="">Select Country</option>
-              {countries.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">State <span className="text-red-500">*</span></label>
-            <select
-              value={formData.state_id}
-              onChange={(e) => handleChange('state_id', e.target.value)}
-              className={`w-full bg-input-bg text-text border ${errors.state_id ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl py-2 px-3 text-sm outline-none cursor-pointer`}
-            >
-              <option value="">Select State</option>
-              {states.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-            </select>
-            {errors.state_id && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.state_id}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">City <span className="text-red-500">*</span></label>
-            <select
-              value={formData.city_id}
-              onChange={(e) => handleChange('city_id', e.target.value)}
-              className={`w-full bg-input-bg text-text border ${errors.city_id ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl py-2 px-3 text-sm outline-none cursor-pointer`}
-            >
-              <option value="">Select City</option>
-              {cities.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-            </select>
-            {errors.city_id && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.city_id}</p>}
-          </div>
+          <Select
+            label="Country"
+            value={formData.country_id}
+            onChange={(val) => handleChange('country_id', val)}
+            options={countryOptions}
+            placeholder="Select Country"
+          />
+          <Select
+            label="State"
+            value={formData.state_id}
+            onChange={(val) => handleChange('state_id', val)}
+            options={stateOptions}
+            required={true}
+            error={errors.state_id}
+            placeholder="Select State"
+          />
+          <Select
+            label="City"
+            value={formData.city_id}
+            onChange={(val) => handleChange('city_id', val)}
+            options={cityOptions}
+            required={true}
+            error={errors.city_id}
+            placeholder="Select City"
+          />
         </div>
         <div>
           <label className="block text-sm font-semibold text-text-secondary mb-1.5">Address <span className="text-red-500">*</span></label>
@@ -472,13 +394,20 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading }) {
       </div>
 
       {/* SUBMIT BUTTON */}
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="flex justify-self-end mt-4 bg-primary hover:bg-primary-hover text-white p-3 rounded-xl font-semibold text-sm tracking-wider  transition-all duration-300 disabled:opacity-50 shadow-glow-primary"
-      >
-        {isLoading ? 'Processing ...' : user ? 'Save Changes' : 'Add Member'}
-      </button>
+      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+            Cancel
+          </Button>
+        )}
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={isLoading}
+        >
+          {isLoading ? 'Processing...' : 'Save'}
+        </Button>
+      </div>
     </form>
   )
 }
