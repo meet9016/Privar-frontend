@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { Camera } from 'lucide-react'
 import { assetUrl, memberApi } from '../../lib/api'
 
 
@@ -36,7 +37,7 @@ const getStoredWebTheme = () => {
     'textColor',
   ]
 
-   return colorKeys.reduce((theme, key) => {
+  return colorKeys.reduce((theme, key) => {
     const value = localStorage.getItem(`web_${key}`)
     return value ? { ...theme, [key]: value } : theme
   }, {})
@@ -108,49 +109,44 @@ export default function Memories() {
   const visibleMemories = memories.length > 0 ? memories : []
   const visibleTabs = memories.length > 0 ? categoryTabs : []
 
-const filteredMemories = useMemo(() => {
-  const list = activeTab === 'all'
-    ? visibleMemories
-    : visibleMemories.filter((memory) => memory.category === activeTab)
-  return list ? list.slice(0, 9) : []
-}, [activeTab, visibleMemories])
+  const filteredMemories = useMemo(() => {
+    const list = activeTab === 'all'
+      ? visibleMemories
+      : visibleMemories.filter((memory) => memory.category === activeTab)
+    return list ? list.slice(0, 9) : []
+  }, [activeTab, visibleMemories])
 
   return (
     <section
       id="gallery"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20"
+      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
       style={{ backgroundColor: theme.backgroundColor }}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-10">
-          <p
-            className="text-sm sm:text-base font-semibold tracking-wide mb-2"
-            style={{ color: theme?.primaryColor }}
-          >
-            - Gallery -
-          </p>
-          <h2
-            className="text-3xl sm:text-4xl font-semibold tracking-tight"
-            style={{ color: theme?.textColor }}
-          >
-            Memories That{' '}
-            <span
+      <div className="max-w-[1600px] mx-auto">
+        <div className="text-center mb-10  relative">
+
+
+          <div className="relative z-10 flex flex-col items-center text-center">
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"
               style={{
-                backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.secondaryColor})`,
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
+                color: theme.primaryColor,
+                borderColor: `${theme.primaryColor}30`,
               }}
             >
-              Last Forever
-            </span>
-          </h2>
-          <div
-            className="w-12 h-1 rounded-full mx-auto mt-4"
-            style={{
-              backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`,
-            }}
-          />
+              <Camera className="w-4 h-4" style={{ color: theme.primaryColor }} />
+              <span>Gallery</span>
+            </div>
+
+            {/* Heading */}
+            <h2
+              className="text-3xl sm:text-4xl lg:text-4xl font-bold tracking-tight mb-3"
+              style={{ color: theme.textColor }}
+            >
+              Memories That Last Forever
+            </h2>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-8">
@@ -162,11 +158,11 @@ const filteredMemories = useMemo(() => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className="min-w-24 rounded-full border px-5 py-2 text-sm font-semibold transition-all duration-200"
+                className="rounded-full px-6 py-2.5 text-sm sm:text-base font-bold transition-all duration-300 hover:-translate-y-1"
                 style={{
-                  borderColor: isActive ? theme.primaryColor : theme.borderColor,
-                  backgroundColor: isActive ? theme.primaryColor : '#FFFFFF',
-                  color: isActive ? theme.fontColor : theme.textColor,
+                  backgroundColor: isActive ? theme.primaryColor : `${theme.primaryColor}10`,
+                  color: isActive ? '#ffffff' : theme.textColor,
+                  boxShadow: isActive ? `0 10px 20px -5px ${theme.primaryColor}80` : 'none',
                 }}
               >
                 {tab.label}
@@ -188,24 +184,34 @@ const filteredMemories = useMemo(() => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6 w-full">
           {filteredMemories.map((memory, index) => (
             <article
               key={`${memory.src}-${memory.category}-${index}`}
-              className="group overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              style={{ borderColor: theme.borderColor }}
+              className="group relative overflow-hidden rounded-3xl bg-white transition-all duration-500 hover:-translate-y-2 break-inside-avoid"
+              style={{
+                boxShadow: `0 10px 30px -10px ${theme.borderColor}80`
+              }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = `0 20px 40px -10px ${theme.primaryColor}50`}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = `0 10px 30px -10px ${theme.borderColor}80`}
             >
-              <div className="aspect-[2/1] overflow-hidden">
+              <div className="relative w-full">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
                 <img
                   src={memory.src}
                   alt={memory.alt}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading={index < 3 ? 'eager' : 'lazy'}
+                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+                  loading={index < 4 ? 'eager' : 'lazy'}
                   onError={(event) => {
                     if (event.currentTarget.src.endsWith(memory.fallback)) return
                     event.currentTarget.src = memory.fallback
                   }}
                 />
+                <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 z-20 pointer-events-none flex flex-col justify-end">
+                  <span className="inline-block self-start px-4 py-1.5 rounded-full text-[11px] sm:text-[12px] font-black tracking-widest uppercase text-white shadow-lg backdrop-blur-md bg-white/20 border border-white/30">
+                    {memory.category}
+                  </span>
+                </div>
               </div>
             </article>
           ))}

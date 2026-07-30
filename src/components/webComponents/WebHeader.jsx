@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, Menu, X, LogIn } from 'lucide-react'
+import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, Menu, X, LogIn, Home, Info, Users, Image as ImageIcon, Calendar, GraduationCap, HeartHandshake } from 'lucide-react'
 import NotificationDropdown from '../NotificationDropdown'
 import { assetUrl } from '../../lib/api'
 
@@ -56,13 +56,13 @@ export default function WebHeader() {
   }, [])
 
   const navigationLinks = [
-    { label: 'Home', href: '#home' },
-    { label: 'About', href: '#about' },
-    { label: 'Members', href: '#members' },
-    { label: 'Gallery', href: '#gallery' },
-    { label: 'Events', href: '#events' },
-    { label: 'Students', href: '#students' },
-    { label: 'Donors', href: '#donors' },
+    { label: 'Home', href: '#home', icon: Home },
+    { label: 'About', href: '#about', icon: Info },
+    { label: 'Members', href: '#members', icon: Users },
+    { label: 'Gallery', href: '#gallery', icon: ImageIcon },
+    { label: 'Events', href: '#events', icon: Calendar },
+    { label: 'Students', href: '#students', icon: GraduationCap },
+    { label: 'Donors', href: '#donors', icon: HeartHandshake },
   ]
 
   const socialLinks = [
@@ -87,10 +87,9 @@ export default function WebHeader() {
     <>
       {/* TOP CONTACT BAR */}
       <div
-        className="sticky top-0 z-40 border-b transition-colors duration-300"
+        className="sticky top-0 z-40 transition-colors duration-300"
         style={{
-          backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`,
-          borderColor: shadeColor(theme.primaryColor, -30)
+          backgroundColor: theme.primaryColor || '#0a2342', // Matching the dark blue in the image
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -145,14 +144,13 @@ export default function WebHeader() {
 
                     aria-label={social.label}
                     title={social.label}
-                    className="rounded-full transition-all duration-200 p-1.5"
+                    className="rounded-md transition-all duration-200 p-1 border border-white/30 hover:border-white/80"
                     style={{
-                      backgroundColor: shadeColor(theme.fontColor || '#FFFFFF', -80),
+                      backgroundColor: 'transparent',
                       color: '#FFFFFF'
                     }}
-
                   >
-                    <Icon className="w-4 h-4" aria-hidden="true" />
+                    <Icon className="w-3.5 h-3.5" aria-hidden="true" />
                   </a>
                 )
               })}
@@ -189,16 +187,23 @@ export default function WebHeader() {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-sm font-medium relative group transition-colors duration-200"
+                  className="text-sm font-semibold flex items-center gap-1.5 relative group transition-colors duration-200"
                   style={{
                     color: theme.textColor || '#123524'
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = theme.primaryColor
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = theme.textColor || '#123524'
+                  }}
                 >
+                  <link.icon className="w-4 h-4" style={{ color: theme.primaryColor }} aria-hidden="true" />
                   {link.label}
                   <span
-                    className="absolute bottom-0 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300"
+                    className="absolute -bottom-1 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300"
                     style={{
-                      backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`
+                      backgroundColor: theme.primaryColor
                     }}
                   ></span>
                 </a>
@@ -218,13 +223,13 @@ export default function WebHeader() {
               {/* Login Button */}
               <a
                 href="/login"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200"
+                className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all duration-200 hover:-translate-y-0.5"
                 style={{
-                  backgroundImage: `linear-gradient(to right, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                  backgroundColor: theme.primaryColor || '#0a2342',
                   color: theme.fontColor || '#FFFFFF'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = `0 0 20px ${theme.primaryColor}40`
+                  e.currentTarget.style.boxShadow = `0 4px 12px ${theme.primaryColor}60`
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.boxShadow = 'none'

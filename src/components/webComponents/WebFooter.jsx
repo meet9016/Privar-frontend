@@ -85,97 +85,185 @@ export default function WebFooter() {
 
   return (
     <>
-      {/* FOOTER */}
+      {/* ═══════════════════════════════════════
+          SIMPLE CLEAN FOOTER
+      ═══════════════════════════════════════ */}
       <footer
-        className="border-t mt-auto"
+        className="relative mt-auto overflow-hidden"
         style={{
-          backgroundColor: theme.backgroundColor || '#F5FFF7',
-          borderColor: theme.borderColor || '#D7EFD9',
-          color: theme.textColor || '#123524'
+          background: `linear-gradient(to right, ${theme.primaryColor || '#1a3c2e'}, ${theme.gradientEnd || '#0d2418'})`
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Logo & Name - left */}
-            <div className="flex items-center gap-3">
-              {theme?.webLogo ? (
-                <img src={assetUrl(theme.webLogo)} alt={`${theme.name} logo`} className="h-9 object-contain" />
-              ) : null}
-              <span className="text-sm font-medium">{theme?.name}</span>
-            </div>
 
-            {/* Contact & Social - right */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 text-sm">
-              <a
-                href={theme?.phone ? `tel:${theme.phone}` : '#'}
-                className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-70"
-                style={{ color: theme.textColor || '#123524' }}
-              >
-                <Phone className="w-4 h-4" aria-hidden="true" />
-                <span>{theme?.phone}</span>
-              </a>
-              <a
-              
-                href={theme?.email ? `mailto:${theme.email}` : '#'}
-                className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-70"
-                style={{ color: theme.textColor || '#123524' }}
-              >
-                <Mail className="w-4 h-4" aria-hidden="true" />
-                <span>{theme?.email}</span>
-              </a>
-              <div className="flex items-center gap-3">
+        {/* ── Content ── */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-6">
+
+          {/* ── Top 4-column grid ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-white/10">
+
+            {/* Col 1 — Brand */}
+            <div className="flex flex-col gap-5 sm:col-span-2 lg:col-span-1">
+              {theme?.webLogo && (
+                <img
+                  src={assetUrl(theme.webLogo)}
+                  alt={theme.name}
+                  className="h-14 w-auto object-contain drop-shadow-lg"
+                  style={{ filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }}
+                />
+              )}
+              <div>
+                <h2 className="text-white text-2xl font-black leading-tight tracking-tight">
+                  {theme?.name || 'Parivar'}
+                </h2>
+                <p className="text-white/40 text-[11px] font-bold uppercase tracking-[0.2em] mt-0.5">
+                  Community Platform
+                </p>
+              </div>
+              <p className="text-white/55 text-sm leading-relaxed">
+                Connecting families, celebrating traditions, and building a stronger community — together.
+              </p>
+
+              {/* Social icons */}
+              <div className="flex items-center gap-2 flex-wrap mt-1">
                 {socialLinks.map((social) => {
                   const Icon = social.icon
                   return (
-              <a
-                    
+                    <a
                       key={social.label}
                       href={social.href}
                       target="_blank"
                       rel="noreferrer"
                       aria-label={social.label}
                       title={social.label}
-                      className="rounded-full p-1.5 transition-all duration-200"
+                      className="group flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
                       style={{
-                        border: `1px solid ${shadeColor(theme.textColor || '#123524', -80)}`,
-                        color: theme.textColor || '#123524'
+                        backgroundColor: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.12)',
                       }}
                     >
-                      <Icon className="w-4 h-4" aria-hidden="true" />
+                      <Icon className="w-4 h-4 text-white/60 group-hover:text-white transition-colors duration-200" />
                     </a>
                   )
                 })}
               </div>
             </div>
+
+            {/* Col 2 — Quick Links */}
+            <div className="flex flex-col gap-5">
+              <div>
+                <h3 className="text-white text-[13px] font-black uppercase tracking-[0.18em]">Quick Links</h3>
+                <div className="w-8 h-[2px] rounded-full mt-2" style={{ backgroundColor: theme.primaryColor || '#4caf50' }} />
+              </div>
+              <nav className="flex flex-col gap-2.5">
+                {navigationLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="group flex items-center gap-2.5 text-white/60 text-sm font-semibold hover:text-white transition-colors duration-200"
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-transform duration-200 group-hover:scale-150"
+                      style={{ backgroundColor: theme.primaryColor || '#4caf50' }}
+                    />
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+            </div>
+
+            {/* Col 3 — Contact */}
+            <div className="flex flex-col gap-5">
+              <div>
+                <h3 className="text-white text-[13px] font-black uppercase tracking-[0.18em]">Contact Us</h3>
+                <div className="w-8 h-[2px] rounded-full mt-2" style={{ backgroundColor: theme.primaryColor || '#4caf50' }} />
+              </div>
+              <div className="flex flex-col gap-4">
+                {theme?.phone && (
+                  <a
+                    href={`tel:${theme.phone}`}
+                    className="group flex items-start gap-3 text-white/60 text-sm font-semibold hover:text-white transition-colors duration-200"
+                  >
+                    <div
+                      className="mt-0.5 p-2 rounded-lg flex-shrink-0"
+                      style={{ backgroundColor: `${theme.primaryColor || '#4caf50'}30` }}
+                    >
+                      <Phone className="w-3.5 h-3.5" style={{ color: theme.primaryColor || '#4caf50' }} />
+                    </div>
+                    <div>
+                      <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest mb-0.5">Phone</p>
+                      {theme.phone}
+                    </div>
+                  </a>
+                )}
+                {theme?.email && (
+                  <a
+                    href={`mailto:${theme.email}`}
+                    className="group flex items-start gap-3 text-white/60 text-sm font-semibold hover:text-white transition-colors duration-200"
+                  >
+                    <div
+                      className="mt-0.5 p-2 rounded-lg flex-shrink-0"
+                      style={{ backgroundColor: `${theme.primaryColor || '#4caf50'}30` }}
+                    >
+                      <Mail className="w-3.5 h-3.5" style={{ color: theme.primaryColor || '#4caf50' }} />
+                    </div>
+                    <div>
+                      <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest mb-0.5">Email</p>
+                      {theme.email}
+                    </div>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Col 4 — Community tagline / quote */}
+            <div className="flex flex-col gap-5">
+              <div>
+                <h3 className="text-white text-[13px] font-black uppercase tracking-[0.18em]">Our Values</h3>
+                <div className="w-8 h-[2px] rounded-full mt-2" style={{ backgroundColor: theme.primaryColor || '#4caf50' }} />
+              </div>
+              <blockquote className="border-l-2 pl-4 text-white/55 text-sm leading-relaxed italic" style={{ borderColor: theme.primaryColor || '#4caf50' }}>
+                "Family is not an important thing, it's everything. We bring community closer through shared values and traditions."
+              </blockquote>
+              <div
+                className="flex items-center gap-3 mt-2 px-4 py-3 rounded-xl"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-lg flex-shrink-0"
+                  style={{ backgroundImage: `linear-gradient(135deg, ${theme.primaryColor || '#4caf50'}, ${theme.gradientEnd || '#0d6e3a'})` }}
+                >
+                  {(theme?.name || 'P')[0]}
+                </div>
+                <div>
+                  <p className="text-white font-black text-sm">{theme?.name || 'Parivar'}</p>
+                  <p className="text-white/40 text-[11px]">Est. Community</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Bottom: Legal Links + Copyright */}
-          <div
-            className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
-            style={{ borderColor: theme.borderColor || '#D7EFD9' }}
-          >
-            <span style={{ opacity: 0.7 }}>
-              © {new Date().getFullYear()} {theme?.name} Parivar. All rights reserved.
+          {/* ── Bottom bar ── */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/35">
+            <span>
+              © {new Date().getFullYear()} {theme?.name || 'Parivar'}. All rights reserved.
             </span>
-            <nav className="flex flex-wrap items-center gap-x-6 gap-y-2" aria-label="Legal">
+            <nav className="flex items-center gap-1" aria-label="Legal">
               <a
-              
                 href="/privacy-policy"
-                className="transition-opacity duration-200 hover:opacity-70"
-                style={{ color: theme.textColor || '#123524' }}
+                className="px-3 py-1 rounded-md hover:text-white/70 hover:bg-white/5 transition-all duration-200"
               >
                 Privacy Policy
               </a>
+              <span className="opacity-30">·</span>
               <a
-              
                 href="/terms-and-conditions"
-                className="transition-opacity duration-200 hover:opacity-70"
-                style={{ color: theme.textColor || '#123524' }}
+                className="px-3 py-1 rounded-md hover:text-white/70 hover:bg-white/5 transition-all duration-200"
               >
-                Terms & Conditions
+                Terms &amp; Conditions
               </a>
             </nav>
           </div>
+
         </div>
       </footer>
     </>

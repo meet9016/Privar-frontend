@@ -43,7 +43,7 @@ const Carousel = ({
       const colorKeys = [
         'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
         'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
-        'name','webLogo','favicon','phone','email','facebook','instagram','twitter','youtube','whatsapp',"bannerImages"
+        'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp', "bannerImages"
       ];
 
 
@@ -134,34 +134,50 @@ const Carousel = ({
 
   return (
     <div
-      className="relative w-full h-80 sm:h-96 md:h-[500px] lg:h-[600px] overflow-hidden rounded-2xl shadow-2xl group transition-all"
-      style={{ backgroundColor: theme.backgroundColor }}
+      className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[3/1] max-h-[500px] overflow-hidden group bg-transparent"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Images Container */}
+      {/* Full-width crossfade slides */}
       <div className="relative w-full h-full">
         {images.length ? images.map((image, index) => {
-          const isActive = index === currentIndex;
-          const isNext = (index === (currentIndex + 1) % images.length && direction > 0) ||
-                        (index === (currentIndex - 1 + images.length) % images.length && direction < 0);
+          let diff = (index - currentIndex) % images.length;
+
+          // Normalize diff
+          const half = Math.floor(images.length / 2);
+          if (diff > half) diff -= images.length;
+          if (diff < -half) diff += images.length;
+
+          // For 2 images, special direction handling
+          if (images.length === 2) {
+            if (direction > 0 && diff === -1) diff = 1;
+            if (direction < 0 && diff === 1) diff = -1;
+          }
+
+          const isActive = diff === 0;
 
           return (
             <div
               key={index}
-              className="absolute inset-0 transition-all duration-700 ease-in-out"
+              className="absolute inset-0 w-full h-full"
               style={{
-                opacity: isActive ? 1 : isNext ? 0 : 0,
-                transform: `scale(${isActive ? 1 : 0.95})`,
-                zIndex: isActive ? 10 : isNext ? 5 : 0,
+                opacity: isActive ? 1 : 0,
+                transition: 'opacity 1000ms cubic-bezier(0.4,0,0.2,1)',
+                zIndex: isActive ? 10 : 0,
+                pointerEvents: isActive ? 'auto' : 'none',
               }}
             >
+              {/* Image without zoom */}
               <img
                 src={image}
                 alt={`Slide ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover origin-center"
                 draggable={false}
               />
+              {/* Subtle vignette gradient — bottom for dots, edges for depth */}
+              <div className="absolute inset-0 pointer-events-none" style={{
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.45) 100%)'
+              }} />
             </div>
           );
         }) : (
@@ -171,15 +187,15 @@ const Carousel = ({
         )}
       </div>
 
-        
+
 
       {/* Left Arrow */}
       {showArrows && images.length > 1 && (
         <button
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm"
+          className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-md border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
           style={{
-            backgroundColor: `${theme.primaryColor}cc`,
+            backgroundColor: `${theme.primaryColor}E6`,
             color: theme.fontColor,
           }}
           aria-label="Previous slide"
@@ -192,9 +208,9 @@ const Carousel = ({
       {showArrows && images.length > 1 && (
         <button
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm"
+          className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-md border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
           style={{
-            backgroundColor: `${theme.primaryColor}cc`,
+            backgroundColor: `${theme.primaryColor}E6`,
             color: theme.fontColor,
           }}
           aria-label="Next slide"
@@ -205,15 +221,15 @@ const Carousel = ({
 
       {/* Dots */}
       {showDots && images.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2.5 bg-black/20 p-2 rounded-full backdrop-blur-md border border-white/10 shadow-sm">
           {images.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className="rounded-full transition-all duration-300 hover:scale-125"
+              className="rounded-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
               style={{
                 backgroundColor:
-                  index === currentIndex ? theme.primaryColor : `${theme.secondaryColor}99`,
+                  index === currentIndex ? theme.primaryColor : '#ffffff80',
                 width: index === currentIndex ? '36px' : '10px',
                 height: '10px',
               }}
@@ -224,7 +240,7 @@ const Carousel = ({
         </div>
       )}
 
-    
+
     </div>
   );
 };

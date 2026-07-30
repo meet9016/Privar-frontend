@@ -1,4 +1,4 @@
-  import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { HeartHandshake, IndianRupee, MapPin, Sparkles } from 'lucide-react'
 import { memberApi } from '../../lib/api'
 
@@ -84,40 +84,30 @@ export default function Donors() {
   return (
     <section
       id="donors"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20"
+      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
       style={{ backgroundColor: '#FFFFFF' }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10 sm:mb-12">
-          <p
-            className="text-sm sm:text-base font-semibold tracking-wide mb-2"
-            style={{ color: theme.primaryColor }}
+        <div className="relative z-10 flex flex-col items-center text-center mb-12 sm:mb-16">
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"
+            style={{
+              color: theme.primaryColor,
+              borderColor: `${theme.primaryColor}30`,
+            }}
           >
-            - Donors -
-          </p>
+            <HeartHandshake className="w-4 h-4" style={{ color: theme.primaryColor }} />
+            <span>Generous Supporters</span>
+          </div>
+
+          {/* Heading */}
           <h2
-            className="text-3xl sm:text-4xl font-semibold tracking-tight"
+            className="text-3xl sm:text-4xl lg:text-4xl font-bold tracking-tight mb-3"
             style={{ color: theme.textColor }}
           >
-            Our Generous{' '}
-            <span
-              style={{
-                backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.secondaryColor})`,
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
-              }}
-            >
-              Supporters   
-        
-            </span>
+            Our Donors
           </h2>
-          <div
-            className="w-12 h-1 rounded-full mx-auto mt-4"
-            style={{
-              backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`,
-            }}
-          />
         </div>
 
 
@@ -134,46 +124,64 @@ export default function Donors() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visibleDonors.map((donor) => (
-            <article
-              key={donor.id}
-              className="rounded-lg border bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              style={{ borderColor: theme.borderColor }}
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`,
-                    color: theme.fontColor,
-                  }}
-                >
-                  <HeartHandshake className="h-6 w-6" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-lg font-semibold" style={{ color: theme.textColor }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {visibleDonors.map((donor) => {
+            const initials = (donor.donator_name || 'D')
+              .split(' ')
+              .map(w => w[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase()
+
+            return (
+              <article
+                key={donor.id}
+                className="group flex flex-col overflow-hidden bg-white rounded-lg border shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+                style={{ borderColor: `${theme.borderColor}40` }}
+              >
+                <div className="p-5 flex-1 flex flex-col">
+                  {/* Top Row: Avatar & Amount */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm"
+                      style={{
+                        backgroundColor: `${theme.primaryColor}15`,
+                        color: theme.primaryColor,
+                        border: `1px solid ${theme.primaryColor}30`
+                      }}
+                    >
+                      {initials}
+                    </div>
+                    <div
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
+                      style={{ backgroundColor: theme.primaryColor, color: '#ffffff' }}
+                    >
+                      <IndianRupee className="h-3 w-3" />
+                      {formatAmount(donor.donate_amount)}
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <h3 className="text-[17px] font-bold leading-snug mb-3 line-clamp-2" style={{ color: theme.primaryColor }}>
                     {donor.donator_name}
                   </h3>
-                  <p className="mt-1 flex items-center text-xl font-semibold" style={{ color: theme.primaryColor }}>
-                    <IndianRupee className="h-5 w-5" />
-                    {formatAmount(donor.donate_amount)}
-                  </p>
-                </div>
-              </div>
 
-              <div className="mt-5 space-y-3 text-sm" style={{ color: shadeColor(theme.textColor, 25) }}>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 flex-shrink-0" style={{ color: theme.primaryColor }} />
-                  <span>{donor.donation_purpose || 'Community support'}</span>
+                  <div className="space-y-2.5 mt-auto">
+                    <div className="flex items-start gap-2.5 text-xs font-medium text-[#475569]">
+                      <Sparkles className="h-3.5 w-3.5 shrink-0 opacity-80 mt-0.5" style={{ color: theme.primaryColor }} />
+                      <span className="line-clamp-2 leading-relaxed">{donor.donation_purpose || 'Community support'}</span>
+                    </div>
+                    {donor.location && (
+                      <div className="flex items-center gap-2.5 text-xs font-medium text-[#475569]">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 opacity-80" style={{ color: theme.primaryColor }} />
+                        <span className="truncate">{donor.location}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 flex-shrink-0" style={{ color: theme.primaryColor }} />
-                  <span>{donor.location || ''}</span>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            )
+          })}
         </div>
       </div>
     </section>

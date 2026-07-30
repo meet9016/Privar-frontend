@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Briefcase } from 'lucide-react'
 import { memberApi } from '../../lib/api'
 
 const normalizeBusiness = (biz, index) => ({
@@ -67,46 +68,39 @@ export default function Businesses() {
   }, [])
 
   const visibleBusinesses = businesses.length > 0 ? businesses : []
-  const doubled = [...visibleBusinesses, ...visibleBusinesses]
+  // Duplicate items heavily to ensure they fill wide screens and prevent white space.
+  // Using an even number of duplications ensures translateX(-50%) works perfectly.
+  const doubled = Array(12).fill(visibleBusinesses).flat()
 
   return (
     <section
       id="businesses"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20"
+      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
       style={{
         backgroundColor: theme.backgroundColor,
       }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10 sm:mb-12">
-          <p
-            className="text-sm sm:text-base font-semibold tracking-wide mb-2"
-            style={{ color: theme.primaryColor }}
+        <div className="relative z-10 flex flex-col items-center text-center mb-12 sm:mb-16">
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"
+            style={{
+              color: theme.primaryColor,
+              borderColor: `${theme.primaryColor}30`,
+            }}
           >
-            - Businesses -
-          </p>
+            <Briefcase className="w-4 h-4" style={{ color: theme.primaryColor }} />
+            <span>Businesses</span>
+          </div>
+
+          {/* Heading */}
           <h2
-            className="text-3xl sm:text-4xl font-semibold tracking-tight"
+            className="text-3xl sm:text-4xl lg:text-4xl font-bold tracking-tight mb-3"
             style={{ color: theme.textColor }}
           >
-            Our{' '}
-            <span
-              style={{
-                backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.secondaryColor})`,
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
-              }}
-            >
-              Businesses
-            </span>
+            Our Community Businesses
           </h2>
-          <div
-            className="w-12 h-1 rounded-full mx-auto mt-4"
-            style={{
-              backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`,
-            }}
-          />
         </div>
         {loading && (
           <div
@@ -120,7 +114,8 @@ export default function Businesses() {
             Loading businesses...
           </div>
         )}
-        <div style={{ overflow: 'hidden', position: 'relative',
+        <div style={{
+          overflow: 'hidden', position: 'relative',
           maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
         }}>
@@ -129,7 +124,8 @@ export default function Businesses() {
               display: 'flex',
               gap: '24px',
               width: 'max-content',
-              animation: 'scroll-left 28s linear infinite',
+              padding: '10px 12px', // 12px + 12px = 24px (equals gap) to make the -50% scroll mathematically seamless
+              animation: 'scroll-left 90s linear infinite', // Slowed down slightly for smoother readability
             }}
             onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
             onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
@@ -137,42 +133,46 @@ export default function Businesses() {
             {doubled.map((biz, i) => (
               <article
                 key={`${biz.id}-${i}`}
+                className="group relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden transition-all duration-500 bg-white border"
                 style={{
-                  width: '220px',
-                  flexShrink: 0,
-                  borderRadius: '12px',
-                  border: `1px solid ${theme.borderColor}`,
-                  overflow: 'hidden',
-                  backgroundColor: theme.backgroundColor,
-                  transition: 'transform 0.3s',
+                  borderColor: `${theme.borderColor}50`,
                 }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-5px)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0px)'
+                }}
               >
-                <div style={{ aspectRatio: '1/1', overflow: 'hidden' }}>
+                {/* Flat Square Image (Edge-to-Edge) */}
+                <div className="relative w-full aspect-square bg-gray-50 overflow-hidden">
                   <img
                     src={biz.image}
                     alt={biz.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    draggable={false}
                     loading="lazy"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
                 </div>
-                <div style={{ padding: '14px 16px', textAlign: 'center' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: theme.textColor, margin: '0 0 6px' }}>
+
+                {/* Text Content */}
+                <div className="px-4 pt-3 pb-4 text-center relative z-20 bg-white flex flex-col items-center">
+                  <h3
+                    className="text-base sm:text-[17px] font-bold mb-1.5 w-full truncate transition-colors duration-300"
+                    style={{ color: theme.primaryColor }}
+                  >
                     {biz.name}
                   </h3>
-                  <span style={{
-                    display: 'inline-block',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    padding: '3px 14px',
-                    borderRadius: '999px',
-                    border: `1px solid ${theme.primaryColor}`,
-                    color: theme.primaryColor,
-                    backgroundColor: shadeColor(theme.backgroundColor, 3),
-                  }}>
+                  <div
+                    className="inline-flex items-center justify-center text-[11px] sm:text-[12px] font-medium tracking-wide px-3 py-0.5 rounded-full border bg-white"
+                    style={{
+                      color: theme.primaryColor,
+                      borderColor: theme.primaryColor,
+                    }}
+                  >
                     {biz.role}
-                  </span>
+                  </div>
                 </div>
               </article>
             ))}

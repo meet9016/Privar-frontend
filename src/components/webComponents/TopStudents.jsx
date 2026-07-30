@@ -96,39 +96,37 @@ export default function TopStudents() {
   return (
     <section
       id="students"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20"
+      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
       style={{ backgroundColor: theme.backgroundColor }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10 sm:mb-12">
-          <p
-            className="text-sm sm:text-base font-semibold tracking-wide mb-2"
-            style={{ color: theme.primaryColor }}
-          >
-            - Top Students -
-          </p>
-          <h2
-            className="text-3xl sm:text-4xl font-semibold tracking-tight"
-            style={{ color: theme.textColor }}
-          >
-            Students Who{' '}
-            <span
+        <div className="text-center mb-10 sm:mb-14 relative">
+          {/* Faint Background Text */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-full text-[4rem] sm:text-[6rem] md:text-[9rem] font-black opacity-[0.02] pointer-events-none tracking-tighter uppercase whitespace-nowrap select-none" style={{ color: theme.primaryColor }}>
+            Achievers
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center text-center">
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"
               style={{
-                backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.secondaryColor})`,
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
+                color: theme.primaryColor,
+                borderColor: `${theme.primaryColor}30`,
               }}
             >
-              Achieved Ranks
-            </span>
-          </h2>
-          <div
-            className="w-12 h-1 rounded-full mx-auto mt-4"
-            style={{
-              backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`,
-            }}
-          />
+              <GraduationCap className="w-4 h-4" style={{ color: theme.primaryColor }} />
+              <span>Top Students</span>
+            </div>
+
+            {/* Heading */}
+            <h2
+              className="text-3xl sm:text-4xl lg:text-4xl font-bold tracking-tight mb-3"
+              style={{ color: theme.textColor }}
+            >
+              Students Who Achieved Ranks
+            </h2>
+          </div>
         </div>
 
         {loading && (
@@ -144,76 +142,70 @@ export default function TopStudents() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 mt-12 ">
           {visibleStudents.map((student, index) => (
             <article
               key={student.name}
-              className="group overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              style={{ borderColor: theme.borderColor }}
+              className="group flex flex-col overflow-hidden bg-white rounded-lg border shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+              style={{
+                borderColor: `${theme.borderColor}40`
+              }}
             >
-              <div className="relative h-56 overflow-hidden">
+              {/* Card Header / Image */}
+              <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100">
                 <img
                   src={student.image}
                   alt={student.name}
-                  className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                {/* Sleek Rank Badge */}
                 <div
-                  className="absolute left-4 top-4 flex h-12 w-12 items-center justify-center rounded-full shadow-lg"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`,
-                    color: theme.fontColor,
-                  }}
+                  className="absolute top-3 left-3 px-2.5 py-1 text-[12px] font-bold  text-white rounded-md shadow-sm z-10"
+                  style={{ backgroundColor: theme.primaryColor }}
                 >
-                  {index === 0 ? <Trophy className="h-6 w-6" /> : <Medal className="h-6 w-6" />}
+                  Rank {student.rank}
                 </div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <p className="text-sm font-semibold text-white/90">{student.standard}</p>
-                  <h3 className="mt-1 text-xl font-semibold text-white">{student.name}</h3>
+
+                {/* Minimalist Trophy Badge */}
+                <div
+                  className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-full bg-white shadow-sm z-10"
+                >
+                  {index === 0 ? <Trophy className="h-3.5 w-3.5" style={{ color: theme.primaryColor }} /> : <Medal className="h-3.5 w-3.5" style={{ color: theme.primaryColor }} />}
                 </div>
               </div>
 
-              <div className="p-5">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
-                    style={{
-                      backgroundColor: shadeColor(theme.backgroundColor, 2),
-                      color: theme.primaryColor,
-                    }}
-                  >
-                    <Award className="h-3.5 w-3.5" />
-                    {student.rank}
-                  </span>
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
-                    style={{
-                      backgroundColor: shadeColor(theme.backgroundColor, 4),
-                      color: theme.textColor,
-                    }}
-                  >
-                    <Star className="h-3.5 w-3.5" />
-                    {student.score}
-                  </span>
+              {/* Card Body */}
+              <div className="p-4 sm:p-5 flex flex-col flex-1">
+                {/* Identity */}
+                <div className="mb-3">
+                  <h3 className="text-[17px] font-bold mb-1 leading-snug line-clamp-1" style={{ color: theme.primaryColor }}>
+                    {student.name}
+                  </h3>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primaryColor }}>
+                    {student.standard}
+                  </p>
                 </div>
 
-                <div
-                  className="flex items-center gap-3 rounded-md border px-4 py-3"
-                  style={{
-                    borderColor: theme.borderColor,
-                    backgroundColor: shadeColor(theme.backgroundColor, 3),
-                  }}
-                >
-                  <GraduationCap className="h-5 w-5 flex-shrink-0" style={{ color: theme.primaryColor }} />
-                  <div>
-                    <p className="text-sm font-semibold  tracking-wide" style={{ color: shadeColor(theme.textColor, 25) }}>
-                      Achievement
-                    </p>
-                    <p className="text-sm font-semibold" style={{ color: theme.textColor }}>
-                      {student.achievement}
-                    </p>
-                  </div>
+                {/* Achievement (Clean, Minimal text) */}
+                <div className="flex items-start gap-2 mb-5 flex-1">
+                  <GraduationCap className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 opacity-80" style={{ color: theme.primaryColor }} />
+                  <p className="text-xs font-medium leading-relaxed text-[#475569] line-clamp-3">
+                    {student.achievement}
+                  </p>
+                </div>
+
+                {/* Score */}
+                <div className="flex items-center justify-between pt-3 border-t border-dashed" style={{ borderColor: `${theme.borderColor}40` }}>
+                  <span className="text-[15px] font-bold text-[#64748b]">Score</span>
+                  <span
+                    className="inline-flex items-center justify-center text-[14px] font-bold"
+                    style={{ color: theme.primaryColor }}
+                  >
+                    {student.score}
+                  </span>
                 </div>
               </div>
             </article>

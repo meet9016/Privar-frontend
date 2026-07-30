@@ -28,15 +28,15 @@ export default function Home() {
       <WebHeader />
       <main className="w-full">
         {/* Hero Carousel Section */}
-        <section id="home" className="w-full px-1 sm:px-2 lg:px-4 py-1 sm:py-2 lg:py-4 bg-gradient-to-b from-white via-white to-gray-50">
-          <div className="max-w-7xl mx-auto">
+        <section id="home" className="w-full  bg-gradient-to-b from-white via-white to-gray-50">
+          <div className="mx-auto">
             <Carousel
               autoplay={true}
               autoplayInterval={5000}
               showArrows={true}
               showDots={true}
               showCounter={false}
-              
+
             />
           </div>
         </section>

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { Users } from 'lucide-react'
 import { memberApi } from '../../lib/api'
 
 
@@ -28,7 +29,7 @@ const getStoredWebTheme = () => {
     'primaryColor',
     'secondaryColor',
     'textColor',
-    
+
   ]
 
   return colorKeys.reduce((theme, key) => {
@@ -82,46 +83,76 @@ export default function Members() {
   }, [])
 
   const visibleMembers = members.length > 0 ? members : []
- 
-const doubled = [...visibleMembers, ...visibleMembers]  
+
+  // Duplicate items heavily to ensure they fill wide screens and prevent white space.
+  // Using an even number of duplications ensures translateX(-50%) works perfectly.
+  const doubled = Array(12).fill(visibleMembers).flat()
   return (
     <section
       id="members"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20"
+      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
       style={{
-        backgroundColor: theme.backgroundColor,
+        backgroundColor: '#FFFFFF', // User requested strictly white background
       }}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10 sm:mb-12">
-          <p
-            className="text-sm sm:text-base font-semibold tracking-wide mb-2"
-            style={{ color: theme.primaryColor }}
-          >
-            - Members -
-          </p>
-          <h2
-            className="text-3xl sm:text-4xl font-semibold tracking-tight"
-            style={{ color: theme.textColor }}
-          >
-            Meet Our{' '}
+      {/* Decorative Blur Orbs */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-[0.03] blur-3xl pointer-events-none" style={{ backgroundColor: theme.primaryColor }} />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-[0.03] blur-3xl pointer-events-none" style={{ backgroundColor: theme.secondaryColor }} />
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="text-center mb-8 sm:mb-12 relative">
+          {/* Faint Background Text */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-full text-[5rem] sm:text-[8rem] md:text-[10rem] font-black opacity-[0.02] pointer-events-none tracking-tighter uppercase whitespace-nowrap select-none" style={{ color: theme.primaryColor }}>
+            Committee
+          </div>
+
+          {/* <div className="relative z-10 flex flex-col items-center">
             <span
+              className="inline-flex items-center justify-center px-5 py-1.5 mb-6 text-sm sm:text-base font-bold tracking-[0.2em] uppercase rounded-full bg-white/50 backdrop-blur-sm shadow-sm border"
+              style={{ color: theme.primaryColor, borderColor: `${theme.primaryColor}30` }}
+            >
+              <span className="w-2 h-2 rounded-full mr-3 animate-pulse" style={{ backgroundColor: theme.primaryColor }}></span>
+              Leadership
+            </span>
+            <h2
+              className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-2"
+              style={{ color: theme.textColor }}
+            >
+              Meet Our{' '}
+              <span
+                style={{
+                  backgroundImage: `linear-gradient(to right, ${theme.primaryColor}, ${theme.secondaryColor || theme.primaryColor})`,
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  color: 'transparent',
+                }}
+              >
+                Committee Members
+              </span>
+            </h2>
+          </div> */}
+          <div className="relative z-10 flex flex-col items-center text-center">
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"
               style={{
-                backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.secondaryColor})`,
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
+                color: theme.primaryColor,
+                borderColor: `${theme.primaryColor}30`,
               }}
             >
-              Committee Members
-            </span>
-          </h2>
-          <div
-            className="w-12 h-1 rounded-full mx-auto mt-4"
-            style={{
-              backgroundImage: `linear-gradient(to right, ${theme.gradientStart}, ${theme.gradientEnd})`,
-            }}
-          />
+              <Users className="w-4 h-4" style={{ color: theme.primaryColor }} />
+              <span>Leadership</span>
+            </div>
+
+            {/* Heading */}
+            <h2
+              className="text-3xl sm:text-4xl lg:text-4xl font-bold tracking-tight mb-3"
+              style={{ color: theme.textColor }}
+            >
+              Meet Our Committee Members
+            </h2>
+          </div>
+
         </div>
 
         {loading && (
@@ -136,64 +167,70 @@ const doubled = [...visibleMembers, ...visibleMembers]
             Loading committee members...
           </div>
         )}
-<div style={{ overflow: 'hidden', position: 'relative',
-  maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-  WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-}}>
-  <div
-    style={{
-      display: 'flex',
-      gap: '24px',
-      width: 'max-content',
-      animation: 'scroll-left 28s linear infinite',
-    }}
-    onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
-    onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
-  >
-    {doubled.map((member, i) => (
-      <article
-        key={`${member.id}-${i}`}
-        style={{
-          width: '220px',
-          flexShrink: 0,
-          borderRadius: '12px',
-          border: `1px solid ${theme.borderColor}`,
-          overflow: 'hidden',
-          backgroundColor: theme.backgroundColor,
-          transition: 'transform 0.3s',
-        }}
-        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-        onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-      >
-        <div style={{ aspectRatio: '1/1', overflow: 'hidden' }}>
-          <img
-            src={member.image}
-            alt={member.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            loading="lazy"
-          />
+        <div style={{
+          overflow: 'hidden', position: 'relative',
+          maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '24px',
+              width: 'max-content',
+              padding: '10px 12px', // 12px + 12px = 24px (equals gap) to make the -50% scroll mathematically seamless
+              animation: 'scroll-left 90s linear infinite', // Slowed down slightly for smoother readability
+            }}
+            onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
+            onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
+          >
+            {doubled.map((member, i) => (
+              <article
+                key={`${member.id}-${i}`}
+                className="group relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden transition-all duration-500 bg-white border"
+                style={{
+                  borderColor: `${theme.borderColor}50`,
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-5px)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0px)'
+                }}
+              >
+                {/* Flat Square Image (Edge-to-Edge) */}
+                <div className="relative w-full aspect-square bg-gray-50 overflow-hidden">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    draggable={false}
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                </div>
+
+                {/* Text Content */}
+                <div className="px-4 pt-3 pb-4 text-center relative z-20 bg-white flex flex-col items-center">
+                  <h3
+                    className="text-base sm:text-[17px] font-bold mb-1.5 w-full truncate transition-colors duration-300"
+                    style={{ color: theme.primaryColor }}
+                  >
+                    {member.name}
+                  </h3>
+                  <div
+                    className="inline-flex items-center justify-center text-[11px] sm:text-[12px] font-medium tracking-wide px-3 py-0.5 rounded-full border bg-white"
+                    style={{
+                      color: theme.primaryColor,
+                      borderColor: theme.primaryColor,
+                    }}
+                  >
+                    {member.role}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
-        <div style={{ padding: '14px 16px', textAlign: 'center' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 600, color: theme.textColor, margin: '0 0 6px' }}>
-            {member.name}
-          </h3>
-          <span style={{
-            display: 'inline-block',
-            fontSize: '12px',
-            fontWeight: 600,
-            padding: '3px 14px',
-            borderRadius: '999px',
-            border: `1px solid ${theme.primaryColor}`,
-            color: theme.primaryColor,
-            backgroundColor: shadeColor(theme.backgroundColor, 3),
-          }}>
-            {member.role}
-          </span>
-        </div>
-      </article>
-    ))}
-  </div>
-</div>
 
       </div>
     </section>
