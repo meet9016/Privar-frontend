@@ -13,15 +13,13 @@ import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-const limit = 10
-
 export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn }) {
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ ...acc, [field.name]: field.defaultValue ?? '' }), {})
   }, [fields])
 
   const [rows, setRows] = useState([])
-  const { page, totalPages, total, setPage, setPaginationData, getParams, resetPage } = usePagination(limit)
+  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
   const [loading, setLoading] = useState(false)
   const [search, setSearchValue] = useState('')
   const [saving, setSaving] = useState(false)
@@ -277,7 +275,9 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             total,
             pageNumbers,
             loading,
-            onPageChange: setPage
+            onPageChange: setPage,
+            limit,
+            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
           }}
         />
       )}

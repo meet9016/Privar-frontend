@@ -12,7 +12,6 @@ import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-const limit = 10
 
 const defaultForm = {
   title: '',
@@ -35,7 +34,8 @@ const defaultForm = {
 
 export default function Events() {
   const [rows, setRows] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit })
+  const [limit, setLimit] = useState(10)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
@@ -83,7 +83,7 @@ export default function Events() {
     } finally {
       setLoading(false)
     }
-  }, [page, search])
+  }, [page, search, limit])
 
   const fetchCountryList = useCallback(async () => {
     try {
@@ -353,7 +353,9 @@ export default function Events() {
             total: pagination.total,
             pageNumbers,
             loading,
-            onPageChange: setPage
+            onPageChange: setPage,
+            limit,
+            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
           }}
         />
       )}

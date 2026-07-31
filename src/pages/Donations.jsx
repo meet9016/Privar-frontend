@@ -23,11 +23,9 @@ import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
 
 import { Download } from 'lucide-react'
-const limit = 10
-
 export default function Donations() {
   const [donations, setDonations] = useState([])
-  const { page, totalPages, total, setPage, setPaginationData, getParams, resetPage } = usePagination(limit)
+  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
   const [loading, setLoading] = useState(false)
   const [bankDetails, setBankDetails] = useState([])
 
@@ -185,22 +183,20 @@ export default function Donations() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Donations</h2>
-
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="grid grid-cols-1 gap-4 mb-4">
-          <div>
-            <label className="text-sm text-text-secondary mb-1.5 block">Search</label>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
-              placeholder="Search by donator name or purpose"
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
-            />
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="w-64 sm:w-72">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); applyFilters(); }}
+                placeholder="Search donator or purpose..."
+                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
+              />
+            </div>
           </div>
-        </div>
           <button
             onClick={fetchDonations}
             className="flex items-center justify-center p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all"
@@ -221,9 +217,6 @@ export default function Donations() {
           >
             <Download className="w-4 h-4" /> Export
           </button>
-
-
-
         </div>
       </div>
 
@@ -231,69 +224,94 @@ export default function Donations() {
       {donations.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div className="bg-success-bg border border-success-border rounded-2xl p-4">
-            <p className="text-success-text text-sm font-semibold  tracking-wider mb-1">Total Collected</p>
+            <p className="text-success-text text-sm font-semibold tracking-wider mb-1">Total Collected</p>
             <p className="text-text text-lg font-semibold">{formatAmount(totalAmount)}</p>
           </div>
           <div className="bg-card border border-border rounded-2xl p-4">
-            <p className="text-text-secondary text-sm font-semibold  tracking-wider mb-1">Total Donors</p>
+            <p className="text-text-secondary text-sm font-semibold tracking-wider mb-1">Total Donors</p>
             <p className="text-text text-lg font-semibold">{donations.length}</p>
           </div>
           <div className="bg-card border border-border rounded-2xl p-4 col-span-2 sm:col-span-1">
-            <p className="text-text-secondary text-sm font-semibold  tracking-wider mb-1">Avg Donation</p>
+            <p className="text-text-secondary text-sm font-semibold tracking-wider mb-1">Avg Donation</p>
             <p className="text-text text-lg font-semibold">{formatAmount(totalAmount / donations.length)}</p>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Bank Details Display */}
-        {bankDetails.length > 0 && (
-          <div className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden group">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-info opacity-40"></div>
-            <h3 className="font-semibold text-text mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-6 bg-primary rounded-full inline-block"></span>
-              Donation Bank Details
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              {bankDetails.map((bank) => (
-                <div key={bank.id} className="p-4 rounded-xl bg-surface-secondary border border-border flex gap-4 items-start">
-                  <div className="flex-1 text-sm text-text-secondary space-y-1">
-                    <p className="font-semibold text-primary mb-1">{bank.bank_name}</p>
-                    {bank.account_name && <p><span className="font-medium text-text">Name:</span> {bank.account_name}</p>}
-                    <p><span className="font-medium text-text">A/c No:</span> {bank.account_number}</p>
-                    <p><span className="font-medium text-text">IFSC:</span> {bank.ifsc_code}</p>
-                    <p><span className="font-medium text-text">Branch:</span> {bank.branch}</p>
+      {/* Bank Details Display */}
+      {bankDetails.length > 0 && (
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-border">
+            <Landmark className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-text text-base">Donation Bank Details</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {bankDetails.map((bank) => (
+              <div key={bank.id} className="p-4 rounded-xl bg-surface border border-border hover:border-primary/40 transition-all flex flex-col justify-between gap-3 relative shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                      <h4 className="font-bold text-primary text-sm truncate">{bank.bank_name}</h4>
+                    </div>
+                    {bank.account_name && (
+                      <p className="text-xs text-text-secondary">
+                        <span className="font-semibold text-text">Name:</span> {bank.account_name}
+                      </p>
+                    )}
+                    <p className="text-xs text-text-secondary flex items-center gap-1.5">
+                      <span className="font-semibold text-text">A/c No:</span> {bank.account_number}
+                      {bank.account_number && (
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(bank.account_number)
+                            setSuccess('A/c Number copied!')
+                            setTimeout(() => setSuccess(''), 3000)
+                          }}
+                          className="p-1 hover:bg-surface-secondary rounded text-text-secondary hover:text-primary transition-colors"
+                          title="Copy A/c Number"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      )}
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      <span className="font-semibold text-text">IFSC:</span> {bank.ifsc_code}
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      <span className="font-semibold text-text">Branch:</span> {bank.branch}
+                    </p>
                     {bank.upi_link && (
-                      <div className="flex items-center gap-2 mt-2 pt-1">
-                        <span className="font-medium text-text">UPI:</span>
-                        <span className="truncate max-w-[120px] font-medium">{bank.upi_link}</span>
+                      <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border/60 text-xs">
+                        <span className="font-semibold text-text">UPI:</span>
+                        <span className="truncate font-mono text-primary font-medium">{bank.upi_link}</span>
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(bank.upi_link)
-                            setSuccess('UPI link copied!')
+                            setSuccess('UPI ID copied!')
                             setTimeout(() => setSuccess(''), 3000)
                           }}
-                          className="p-1 hover:bg-surface rounded bg-surface border border-border text-primary transition-colors ml-1"
-                          title="Copy UPI Link"
+                          className="p-1 hover:bg-surface-secondary rounded text-primary transition-colors ml-auto"
+                          title="Copy UPI ID"
                         >
-                          <Copy className="w-3.5 h-3.5" />
+                          <Copy className="w-3 h-3" />
                         </button>
                       </div>
                     )}
                   </div>
+
                   {bank.qr_code && (
-                    <div className="w-24 h-24 shrink-0 bg-white rounded-lg p-1 border border-border shadow-sm flex items-center justify-center">
-                      <img src={bank.qr_code.startsWith('http') ? bank.qr_code : `http://localhost:5000${bank.qr_code}`} alt="QR" className="w-full h-full object-contain" />
+                    <div className="w-20 h-20 shrink-0 bg-white rounded-lg p-1 border border-border shadow-sm flex items-center justify-center">
+                      <img src={bank.qr_code.startsWith('http') ? bank.qr_code : `http://localhost:5000${bank.qr_code}`} alt="QR Code" className="w-full h-full object-contain rounded" />
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
-
-      
-      </div>
+        </div>
+      )}
 
       {/* Alerts */}
       {error && (
@@ -393,7 +411,9 @@ export default function Donations() {
             total,
             pageNumbers,
             loading,
-            onPageChange: setPage
+            onPageChange: setPage,
+            limit,
+            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
           }}
         />
       )}

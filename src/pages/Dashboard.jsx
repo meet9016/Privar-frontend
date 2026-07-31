@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Users, Briefcase, FileText, ArrowUpRight, Clock, Calendar, Eye, Activity, Shield, TrendingUp, Zap } from 'lucide-react'
+import { Users, Briefcase, FileText, ArrowUpRight, Clock, Calendar, Eye, Activity, Shield, TrendingUp, Zap, Phone, Mail, Crown } from 'lucide-react'
 import api from '../lib/api'
 import Table from '../components/common/Table'
 import { useNavigate } from 'react-router-dom'
+import Modal from '../components/Modal'
 
 /* ─── Premium Table Card ─────────────────────────────────── */
 function TableCard({ title, routePath, data = [], columns, accent = 'from-primary to-primary/60' }) {
@@ -94,17 +95,35 @@ export default function Dashboard() {
     news: [], jobs: [], familyHeads: []
   })
 
+  const [selectedFamilyHead, setSelectedFamilyHead] = useState(null)
+  const [familyMembers, setFamilyMembers] = useState([])
+  const [membersLoading, setMembersLoading] = useState(false)
+
+  const handleViewFamilyHead = async (head) => {
+    setSelectedFamilyHead(head)
+    setMembersLoading(true)
+    try {
+      const headId = head.family_head?.id || head.id
+      const res = await api.get(`/users/family/${headId}`)
+      setFamilyMembers(res.data?.data || res.data || [])
+    } catch (err) {
+      console.error('Failed to fetch family members', err)
+    } finally {
+      setMembersLoading(false)
+    }
+  }
+
   useEffect(() => {
     let mounted = true
 
     const fetchDashboard = async () => {
       try {
         const [statsRes, usersRes, businessesRes, postsRes, allUsersRes] = await Promise.all([
-          api.get('/stats'),
-          api.get('/users?limit=5'),
-          api.get('/businesses?limit=5'),
-          api.get('/posts?limit=5'),
-          api.get('/users?limit=200')
+          api.get('/stats').catch(() => ({ data: { data: { users: 0, businesses: 0, posts: 0, events: 0 } } })),
+          api.get('/users?limit=5').catch(() => ({ data: { data: [] } })),
+          api.get('/businesses?limit=5').catch(() => ({ data: { data: [] } })),
+          api.get('/posts?limit=5').catch(() => ({ data: { data: [] } })),
+          api.get('/users?limit=200').catch(() => ({ data: { data: [] } }))
         ])
 
         if (!mounted) return
@@ -253,6 +272,11 @@ export default function Dashboard() {
                 {Number(v) === 1 ? 'Active' : 'Inactive'}
               </span>
             )},
+            { key: 'actions', label: 'Action', render: (v, row) => (
+              <button onClick={() => handleViewFamilyHead(row)} className="p-1.5 text-primary hover:text-white bg-primary/10 hover:bg-primary border border-primary/20 rounded-lg transition-all" title="View Family">
+                <Eye className="w-4 h-4" />
+              </button>
+            )}
           ]} />
         </div>
       </div>
@@ -293,6 +317,72 @@ export default function Dashboard() {
           })}
         </div>
       </div>
+
+      <Modal
+        isOpen={!!selectedFamilyHead}
+        title="Family Details"
+        onClose={() => {
+          setSelectedFamilyHead(null)
+          setFamilyMembers([])
+        }}
+        maxWidth="max-w-4xl"
+      >
+        {selectedFamilyHead && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-4 bg-surface-secondary rounded-xl border border-border">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl border-2 border-primary/20">
+                {selectedFamilyHead.name ? selectedFamilyHead.name.charAt(0).toUpperCase() : 'H'}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-text">{selectedFamilyHead.name}</h3>
+                <p className="text-text-secondary font-medium flex items-center gap-1"><Crown className="w-4 h-4 text-amber-500" /> Head of Family</p>
+                <div className="flex gap-4 mt-2 text-sm text-text-secondary">
+                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {selectedFamilyHead.phone || selectedFamilyHead.number}</span>
+                  {selectedFamilyHead.email && <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {selectedFamilyHead.email}</span>}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-bold text-text mb-3">Family Members ({familyMembers.filter(m => m.id !== selectedFamilyHead.id).length})</h4>
+              {membersLoading ? (
+                <div className="py-8 text-center text-text-secondary animate-pulse">Loading members...</div>
+              ) : familyMembers.filter(m => m.id !== selectedFamilyHead.id).length > 0 ? (
+                <div className="overflow-x-auto bg-card border border-border rounded-xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-secondary text-text-secondary text-sm font-semibold border-b border-border">
+                        <th className="p-3">Name</th>
+                        <th className="p-3">Relation</th>
+                        <th className="p-3">Gender</th>
+                        <th className="p-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {familyMembers.filter(m => m.id !== selectedFamilyHead.id).map(member => (
+                        <tr key={member.id} className="hover:bg-surface-secondary/50 text-sm">
+                          <td className="p-3 font-medium text-text">{member.name}</td>
+                          <td className="p-3 text-text-secondary capitalize">{member.relation}</td>
+                          <td className="p-3 text-text-secondary">{member.gender || '-'}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${Number(member.status) === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary'}`}>
+                              {Number(member.status) === 1 ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-text-secondary bg-surface-secondary rounded-xl border border-border">
+                  No members found for this family.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
 
     </div>
   )

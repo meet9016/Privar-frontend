@@ -94,11 +94,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         country_id: user.country_id || '',
         state_id: user.state_id || '',
         city_id: user.city_id || '',
-        family_head_id: user.family_head_id || '',
+        family_head_id: user.family_head?.id || '',
         address: user.address || '',
         status: user.status || 0
       })
-      setIsHead(user.familyHead ?? (!user.family_head_id || user.relation === 'Self'))
+      setIsHead(user.familyHead ?? (!user.family_head?.id || user.relation === 'Self'))
     } else {
       setIsHead(true)
       setFormData({

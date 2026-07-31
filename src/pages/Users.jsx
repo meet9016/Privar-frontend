@@ -1,30 +1,32 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon } from 'lucide-react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
+import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter } from 'lucide-react'
 import api, { getUsersList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
+import { hasPermission } from '../lib/permissions'
+import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import UserForm from '../components/UserForm'
 import Select from '../components/common/Select'
 import Input from '../components/common/Input'
-
-const limit = 10
+import Table from '../components/common/Table'
 
 export default function Users() {
+  const { user: currentUser } = useContext(AuthContext)
   const [users, setUsers] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit })
+  const [limit, setLimit] = useState(10)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchValue] = useState('')
   const [filters, setFiltersValue] = useState({
     gender: '',
-    blood_group: '',
-    is_committee: ''
+    status: ''
   })
+  const [showFilters, setShowFilters] = useState(false)
 
   const filterGender = filters.gender || ''
-  const filterBloodGroup = filters.blood_group || ''
-  const filterCommittee = filters.is_committee || ''
+  const filterStatus = filters.status || ''
 
   const [roles, setRoles] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -32,6 +34,12 @@ export default function Users() {
   const [formLoading, setFormLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const [selectedUsers, setSelectedUsers] = useState([])
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [viewingUser, setViewingUser] = useState(null)
+  const [familyMembers, setFamilyMembers] = useState([])
+  const [membersLoading, setMembersLoading] = useState(false)
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
   const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
@@ -73,7 +81,7 @@ export default function Users() {
     } finally {
       setLoading(false)
     }
-  }, [filters, page, searchQuery])
+  }, [filters, page, searchQuery, limit])
 
   useEffect(() => {
     fetchUsers()
@@ -165,39 +173,127 @@ export default function Users() {
     setSelectedUser(null)
   }
 
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const newSelected = new Set([...selectedUsers, ...users.map(u => u.id)]);
+      setSelectedUsers(Array.from(newSelected));
+    } else {
+      const currentPageIds = users.map(u => u.id);
+      setSelectedUsers(selectedUsers.filter(id => !currentPageIds.includes(id)));
+    }
+  }
+
+  const handleSelectUser = (id) => {
+    setSelectedUsers(prev => 
+      prev.includes(id) ? prev.filter(uid => uid !== id) : [...prev, id]
+    )
+  }
+
+  const handleBulkUpdateStatus = async (status) => {
+    if (!selectedUsers.length) return
+    const actionName = status === 1 ? 'activate' : 'deactivate'
+    if (!await confirm(`Are you sure you want to ${actionName} ${selectedUsers.length} members?`, { confirmText: status === 1 ? 'Activate' : 'Deactivate', type: status === 1 ? 'primary' : 'danger' })) return
+    
+    setFormLoading(true)
+    try {
+      await api.put('/users/bulk-update', { userIds: selectedUsers, status }, { headers: { 'Content-Type': 'application/json' } })
+      setSuccess(`Members ${actionName}d successfully`)
+      setSelectedUsers([])
+      fetchUsers()
+      setTimeout(() => setSuccess(''), 4000)
+    } catch (err) {
+      setError(`Failed to bulk ${actionName} members`)
+    } finally {
+      setFormLoading(false)
+    }
+  }
+
+  const handleView = async (user) => {
+    setViewingUser(user)
+    setIsViewModalOpen(true)
+    
+    setMembersLoading(true)
+    try {
+      const headId = user.family_head?.id || user.id
+      const res = await api.get(`/users/family/${headId}`)
+      setFamilyMembers(res.data?.data || res.data || [])
+    } catch (err) {
+      console.error('Failed to fetch family members', err)
+    } finally {
+      setMembersLoading(false)
+    }
+  }
+
+  const closeViewModal = () => {
+    setIsViewModalOpen(false)
+    setViewingUser(null)
+    setFamilyMembers([])
+  }
+
   const clearFilters = () => {
     setSearchQuery('')
     setFilters({
       gender: '',
-      blood_group: '',
-      is_committee: ''
+      status: ''
     })
   }
 
   
 
   return (
-    <div className="space-y-6 animate-slide-up">
+    <div className="space-y-4 animate-slide-up">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Family Registry</h2>
    
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-64 sm:w-80">
+            <Input
+              icon={<Search className="w-4 h-4" />}
+              type="text"
+              placeholder="Search by name, phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
           <button
-            onClick={clearFilters}
-            className="flex items-center justify-center p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all"
-            title="Reset Grid"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center justify-center p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+            title="Toggle Filters"
           >
-            <RefreshCw className="w-4 h-4" />
+            <Filter className="w-4 h-4" />
           </button>
-          <button
-            onClick={handleCreate}
-            className="flex text-white items-center gap-2 bg-primary hover:bg-primary-hover hover:shadow-glow-primary text-text px-4 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300"
-          >
-            <Plus className="w-4 h-4 text-white font-semibold text-text tracking-tight" /> Add Member
-          </button>
+          
+          {selectedUsers.length > 0 && (
+            <div className="flex items-center gap-2 bg-surface-secondary border border-border p-1.5 rounded-xl animate-fade-in shadow-sm">
+              <span className="text-xs font-semibold text-text-secondary px-2">{selectedUsers.length} selected:</span>
+              <button
+                onClick={() => handleBulkUpdateStatus(1)}
+                disabled={formLoading}
+                className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+              >
+                <CheckCircle className="w-3.5 h-3.5" /> Active
+              </button>
+              <button
+                onClick={() => handleBulkUpdateStatus(0)}
+                disabled={formLoading}
+                className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+              >
+                <XCircle className="w-3.5 h-3.5" /> Inactive
+              </button>
+            </div>
+          )}
+          {hasPermission(currentUser, ['members.add', 'members.create', 'users.manage']) && (
+            <button
+              onClick={handleCreate}
+              className="flex text-white items-center gap-2 bg-primary hover:bg-primary-hover hover:shadow-glow-primary text-text px-4 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300"
+            >
+              <Plus className="w-4 h-4 text-white font-semibold text-text tracking-tight" /> Add Member
+            </button>
+          )}
         </div>
       </div>
 
@@ -216,16 +312,9 @@ export default function Users() {
       )}
 
       {/* Advanced Filter panel */}
-      <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Input
-            icon={<Search className="w-4 h-4" />}
-            type="text"
-            placeholder="Search by name, phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-
+      <div className={`transition-all duration-300 ease-in-out ${showFilters ? 'max-h-[500px] opacity-100 mt-4 overflow-visible z-20 relative' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
+        <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             value={filterGender}
             onChange={(val) => setFilters(current => ({ ...current, gender: val }))}
@@ -240,149 +329,159 @@ export default function Users() {
           />
 
           <Select
-            value={filterBloodGroup}
-            onChange={(val) => setFilters(current => ({ ...current, blood_group: val }))}
-            placeholder="All Blood Groups"
+            value={filterStatus}
+            onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+            placeholder="All Status"
             searchable={false}
             options={[
-              { label: 'All Blood Groups', value: '' },
-              ...['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => ({ label: bg, value: bg }))
+              { label: 'All Status', value: '' },
+              { label: 'Active', value: '1' },
+              { label: 'Inactive', value: '0' }
             ]}
           />
-
-          <Select
-            value={filterCommittee}
-            onChange={(val) => setFilters(current => ({ ...current, is_committee: val }))}
-            placeholder="All Roles"
-            searchable={false}
-            options={[
-              { label: 'All Roles', value: '' },
-              { label: 'Committee Only', value: 'true' },
-              { label: 'General Members', value: 'false' }
-            ]}
-          />
-        </form>
+        </div>
+        <div className="flex justify-end">
+          <button type="button" onClick={clearFilters} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
+          </button>
+        </div>
+      </div>
       </div>
 
       {/* Main Table view */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
-          <span className="text-text-secondary text-sm">Querying members data...</span>
-        </div>
-      ) : (
-        <div className="bg-surface border border-border rounded-2xl overflow-hidden shadow-glass-sm">
-          {users.length === 0 ? (
-            <div className="p-16 text-center flex flex-col items-center justify-center gap-4">
-              <UsersIcon className="w-12 h-12 text-text-secondary" />
-              <div>
-                <h4 className="font-semibold text-text">No Memers found</h4>
-                <p className="text-text-secondary text-sm mt-1">Try expanding your search criteria or register a new member</p>
+      <Table
+        columns={[
+          {
+            key: 'select',
+            header: '',
+            align: 'center',
+            className: 'w-12',
+            headerRender: () => (
+              <input 
+                type="checkbox" 
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                checked={users.length > 0 && users.every(u => selectedUsers.includes(u.id))}
+                onChange={handleSelectAll}
+              />
+            ),
+            render: (user) => (
+              <input 
+                type="checkbox" 
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                checked={selectedUsers.includes(user.id)}
+                onChange={() => handleSelectUser(user.id)}
+              />
+            )
+          },
+          {
+            key: 'name',
+            header: 'Name',
+            render: (user) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-semibold text-primary border border-primary/20">
+                  {user.first_name ? user.first_name.substring(0, 1) : '-'}
+                  {user.last_name ? user.last_name.substring(0, 1) : ''}
+                </div>
+                <div>
+                  <div className="font-semibold text-text">{user.name}</div>
+                  <div className="text-sm text-text-secondary mt-0.5 capitalize">{user.relation == 'Self' && "Family Head"}</div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-border bg-surface-secondary text-text-secondary text-sm font-semibold  tracking-wider">
-                    <th className="p-4">Name</th>
-                    <th className="p-4">Contact Info</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4">Role</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {users.map(user => {
-                    const roleLabel = getUserRoleLabel(user)
-
-                    return (
-                    <tr key={user.id} className="hover:bg-surface-secondary text-sm text-text-secondary transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-semibold text-primary border border-primary/20 ">
-                            {user.first_name ? user.first_name.substring(0, 1) : '-'}
-                            {user.last_name ? user.last_name.substring(0, 1) : ''}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-text">{user.name}</div>
-                            <div className="text-sm text-text-secondary mt-0.5 capitalize">{user.relation == 'Self' && "Family Head"}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div>{user.email || <span className="text-text-secondary">No Email</span>}</div>
-                        <div className="text-sm text-text-secondary mt-0.5 font-mono">{user.phone || user.number}</div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-
-                    <span className={`inline-flex px-2.5 py-1 rounded-lg border text-sm font-semibold ${Number(user.status ?? 1) === 1 ? 'bg-success-bg border-success-border text-success-text' : 'bg-surface-secondary border-border text-text-secondary'}`}>
-                      {Number(user.status ?? 1) === 1 ? 'Active' : 'Inactive'}
-                    </span>
-                  
-                      
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        {user.is_committee ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary font-medium">
-                            <Sparkles className="w-3.5 h-3.5 text-primary" />
-                            <span>{roleLabel}</span>
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-surface-secondary text-text-secondary font-medium text-sm">
-                            {roleLabel}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => handleEdit(user)} className="p-2 text-primary hover:text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit Profile">
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => handleDelete(user.id)} className="p-2 text-error-text hover:text-error bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete Member">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-border bg-surface-secondary/40 text-sm">
-            <span className="text-text-secondary">
-              Page {currentPage} of {totalPages} {pagination.total ? `(${pagination.total} total)` : ''}
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" disabled={loading || currentPage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-                Previous
-              </button>
-              {pageNumbers.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  disabled={loading || item === currentPage}
-                  onClick={() => setPage(item)}
-                  className={`min-w-10 px-3 py-2 rounded-lg border ${
-                    item === currentPage
-                      ? 'border-primary bg-primary/10 text-primary font-semibold'
-                      : 'border-border bg-card text-text hover:bg-surface-secondary'
-                  } disabled:cursor-not-allowed`}
-                >
-                  {item}
+            )
+          },
+          {
+            key: 'phone',
+            header: 'Mobile Number',
+            render: (user) => (
+              <div className="text-sm font-mono text-text">{user.phone || user.number || '-'}</div>
+            )
+          },
+          {
+            key: 'email',
+            header: 'Email',
+            render: (user) => (
+              <div className="text-sm text-text-secondary">{user.email || <span className="opacity-50">No Email</span>}</div>
+            )
+          },
+          {
+            key: 'gender',
+            header: 'Gender',
+            render: (user) => (
+              <div className="text-sm text-text-secondary">{user.gender || '-'}</div>
+            )
+          },
+          {
+            key: 'status',
+            header: 'Status',
+            render: (user) => (
+              <div className="flex items-center gap-2">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={Number(user.status ?? 1) === 1}
+                    onChange={async (e) => {
+                      const newStatus = e.target.checked ? 1 : 0;
+                      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
+                      try {
+                        await api.put(`/users/${user.id}`, { status: newStatus }, { headers: { 'Content-Type': 'application/json' } });
+                      } catch (err) {
+                        console.error("Failed to update status", err);
+                        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: user.status } : u));
+                      }
+                    }}
+                  />
+                  <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <span className="ml-2 text-sm font-medium text-text-secondary">
+                    {Number(user.status ?? 1) === 1 ? 'Active' : 'Inactive'}
+                  </span>
+                </label>
+              </div>
+            )
+          },
+          {
+            key: 'actions',
+            header: 'Actions',
+            align: 'right',
+            render: (user) => (
+              <div className="flex items-center justify-end gap-2">
+                <button onClick={() => handleView(user)} className="p-2 text-indigo-500 hover:text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all" title="View Profile">
+                  <Eye className="w-3.5 h-3.5" />
                 </button>
-              ))}
-              <button type="button" disabled={loading || currentPage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-                Next
-              </button>
-            </div>
-          </div>
-      </div>
-      )}
+                {hasPermission(currentUser, ['members.edit', 'users.edit', 'users.manage']) && (
+                  <button onClick={() => handleEdit(user)} className="p-2 text-primary hover:text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit Profile">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {hasPermission(currentUser, ['members.delete', 'users.delete', 'users.manage']) && (
+                  <button onClick={() => handleDelete(user.id)} className="p-2 text-error-text hover:text-error bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete Member">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )
+          }
+        ]}
+        data={users}
+        keyField="id"
+        loading={loading}
+        rowClassName={(user) => selectedUsers.includes(user.id) ? 'bg-primary/5' : ''}
+        emptyState={{
+          icon: UsersIcon,
+          title: 'No Members found',
+          description: 'Try expanding your search criteria or register a new member'
+        }}
+        pagination={{
+          currentPage,
+          totalPages,
+          total: pagination.total,
+          pageNumbers,
+          loading,
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+      />
 
       {/* Editor Modal overlay */}
       <Modal
@@ -392,6 +491,111 @@ export default function Users() {
         maxWidth="max-w-6xl"
       >
         <UserForm user={selectedUser} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} onCancel={handleCloseModal} />
+      </Modal>
+
+      {/* View Details Modal */}
+      <Modal
+        isOpen={isViewModalOpen}
+        title="Member Details"
+        onClose={closeViewModal}
+        maxWidth="max-w-4xl"
+      >
+        {viewingUser && (
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-6 p-6 bg-surface-secondary rounded-2xl border border-border items-center md:items-start">
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-4xl border-4 border-primary/20 shrink-0 overflow-hidden">
+                {viewingUser.image ? (
+                  <img src={viewingUser.image} alt={viewingUser.name} className="w-full h-full object-cover" />
+                ) : (
+                  viewingUser.name ? viewingUser.name.charAt(0).toUpperCase() : 'U'
+                )}
+              </div>
+              <div className="flex-1 text-center md:text-left space-y-2">
+                <h3 className="text-2xl font-black text-text">{viewingUser.name}</h3>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${Number(viewingUser.status ?? 1) === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary border border-border'}`}>
+                    {Number(viewingUser.status ?? 1) === 1 ? 'Active' : 'Inactive'}
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 capitalize">
+                    Relation: {viewingUser.relation || 'Self'}
+                  </span>
+                  {viewingUser.is_committee && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> Committee Member
+                    </span>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-border/50 text-sm">
+                  <div>
+                    <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Contact</p>
+                    <p className="text-text font-medium flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-text-secondary" /> {viewingUser.phone || viewingUser.number}</p>
+                    {viewingUser.email && <p className="text-text font-medium mt-1 flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-text-secondary" /> {viewingUser.email}</p>}
+                  </div>
+                  <div>
+                    <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Personal</p>
+                    <p className="text-text font-medium flex items-center gap-2">Gender: {viewingUser.gender || '-'}</p>
+                    <p className="text-text font-medium mt-1 flex items-center gap-2">Blood Group: {viewingUser.blood_group || '-'}</p>
+                    <p className="text-text font-medium mt-1 flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-text-secondary" /> DOB: {viewingUser.dob ? new Date(viewingUser.dob).toLocaleDateString() : '-'}</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Location</p>
+                    <p className="text-text font-medium flex items-center gap-2 mt-1"><MapPin className="w-3.5 h-3.5 text-text-secondary flex-shrink-0" /> {viewingUser.address || '-'} {viewingUser.city_id ? `, City: ${viewingUser.city_id}` : ''}</p>
+                  </div>
+                  {viewingUser.family_head && viewingUser.family_head.name && viewingUser.relation !== 'Self' && (
+                    <div className="sm:col-span-2">
+                      <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Family Head</p>
+                      <p className="text-text font-medium bg-surface rounded-lg p-2 border border-border inline-flex items-center gap-2">
+                        <Crown className="w-4 h-4 text-amber-500" /> {viewingUser.family_head.name}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-bold text-text mb-3">Family Members ({familyMembers.filter(m => m.id !== viewingUser.id).length})</h4>
+              {membersLoading ? (
+                <div className="py-8 text-center text-text-secondary animate-pulse">Loading members...</div>
+              ) : familyMembers.filter(m => m.id !== viewingUser.id).length > 0 ? (
+                <div className="overflow-x-auto bg-card border border-border rounded-xl shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-secondary/50 text-text-secondary text-xs uppercase tracking-wider font-semibold border-b border-border">
+                        <th className="p-3">Name</th>
+                        <th className="p-3">Relation</th>
+                        <th className="p-3">Gender</th>
+                        <th className="p-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {familyMembers.filter(m => m.id !== viewingUser.id).map(member => (
+                        <tr key={member.id} className="hover:bg-surface-secondary/30 transition-colors text-sm">
+                          <td className="p-3 font-medium text-text flex items-center gap-2">
+                            {member.relation === 'Self' && <Crown className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" title="Family Head" />}
+                            {member.name}
+                          </td>
+                          <td className="p-3 text-text-secondary capitalize">{member.relation}</td>
+                          <td className="p-3 text-text-secondary">{member.gender || '-'}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${Number(member.status) === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary'}`}>
+                              {Number(member.status) === 1 ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-text-secondary bg-surface-secondary rounded-xl border border-border">
+                  No members found under this head.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )

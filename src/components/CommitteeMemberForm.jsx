@@ -7,14 +7,16 @@ import ImageUpload from './common/ImageUpload'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all'
 
-export default function CommitteeMemberForm({ member, onSubmit, isLoading, onCancel }) {
+export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
   const [formData, setFormData] = useState({
     first_name: '',
     middle_name: '',
     last_name: '',
     number: '',
+    email: '',
     password: '',
+    role_id: '',
     designation: '',
     remove_image: false,
     status: 1,
@@ -28,7 +30,9 @@ export default function CommitteeMemberForm({ member, onSubmit, isLoading, onCan
       middle_name: member?.middle_name || '',
       last_name: member?.last_name || '',
       number: member?.number || '',
+      email: member?.email || '',
       password: '',
+      role_id: member?.role_id || '',
       designation: member?.designation || '',
       status: Number(member?.status ?? 1),
       image: member?.image
@@ -67,7 +71,7 @@ export default function CommitteeMemberForm({ member, onSubmit, isLoading, onCan
   const validate = async () => {
     const nextErrors = {}
     if (!formData.first_name) nextErrors.first_name = 'First name is required'
-    if (!formData.number) nextErrors.number = 'number is required'
+    if (!formData.number) nextErrors.number = 'Contact number is required'
     if (formData.status === '') nextErrors.status = 'Status is required'
 
     const imageError = await validateImage(formData.image)
@@ -88,6 +92,11 @@ export default function CommitteeMemberForm({ member, onSubmit, isLoading, onCan
     payload.append('middle_name', formData.middle_name)
     payload.append('last_name', formData.last_name)
     payload.append('number', formData.number)
+    payload.append('email', formData.email)
+    if (formData.password) {
+      payload.append('password', formData.password)
+    }
+    payload.append('role_id', formData.role_id)
     payload.append('designation', formData.designation)
     payload.append('status', formData.status)
     payload.append('remove_image', formData.remove_image ? 'true' : 'false')
@@ -97,6 +106,11 @@ export default function CommitteeMemberForm({ member, onSubmit, isLoading, onCan
     }
     onSubmit(payload)
   }
+
+  const roleOptions = [
+    { label: 'Select Assigned Role', value: '' },
+    ...roles.map(r => ({ label: r.name, value: r.id || String(r._id) }))
+  ]
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-text">
@@ -130,34 +144,47 @@ export default function CommitteeMemberForm({ member, onSubmit, isLoading, onCan
           error={errors.last_name}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="Designation"
-            required
-            placeholder="Enter Designation"
-            value={formData.designation}
-            onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-            disabled={isLoading || isEditingSelf}
-            title={isEditingSelf ? 'You cannot change your own role' : undefined}
-            error={errors.designation}
-          />
-          <Select
-            label="Status"
-            required
-            value={formData.status}
-            onChange={(val) => setFormData({ ...formData, status: val })}
-            disabled={isLoading}
-            error={errors.status}
-            options={[
-              { label: 'Active', value: 1 },
-              { label: 'Inactive', value: 0 }
-            ]}
-          />
-        </div>
+        <Input
+          label="Designation"
+          required
+          placeholder="Enter Designation"
+          value={formData.designation}
+          onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+          disabled={isLoading || isEditingSelf}
+          title={isEditingSelf ? 'You cannot change your own role' : undefined}
+          error={errors.designation}
+        />
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input
+          label="Email Address"
+          type="email"
+          placeholder="email@example.com"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          disabled={isLoading}
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label={member ? "Password (Leave blank to keep)" : "Password"}
+          type="password"
+          placeholder={member ? "••••••••" : "Enter login password"}
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          disabled={isLoading}
+        />
+
+        <Select
+          label="Assign Role"
+          value={formData.role_id}
+          onChange={(val) => setFormData({ ...formData, role_id: val })}
+          disabled={isLoading}
+          options={roleOptions}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="Contact Number"
           required
@@ -167,8 +194,20 @@ export default function CommitteeMemberForm({ member, onSubmit, isLoading, onCan
           disabled={isLoading}
           error={errors.number}
         />
+        <Select
+          label="Status"
+          required
+          value={formData.status}
+          onChange={(val) => setFormData({ ...formData, status: val })}
+          disabled={isLoading}
+          error={errors.status}
+          options={[
+            { label: 'Active', value: 1 },
+            { label: 'Inactive', value: 0 }
+          ]}
+        />
         <ImageUpload
-          label="Image (300*300 px, Max size 1 mb)"
+          label="Image (300*300 px, Max 1MB)"
           value={formData.image}
           onChange={(file, remove = false) => 
             setFormData({ ...formData, image: file, remove_image: remove })
