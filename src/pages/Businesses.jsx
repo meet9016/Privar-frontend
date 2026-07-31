@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Briefcase, MapPin, Phone, Globe, Trash2, Search, Edit2, RefreshCw, Plus, Eye } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import api, { assetUrl, getBusinessesList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
+import Loader from '../components/common/Loader'
 import BusinessForm from '../components/BusinessForm'
 import usePagination from '../hooks/usePagination'
+import Table from '../components/common/Table'
 
 const limit = 10
 
@@ -20,6 +22,15 @@ export default function Businesses() {
   const [success, setSuccess] = useState('')
   const [selectedBusiness, setSelectedBusiness] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.state?.editItem) {
+      setSelectedBusiness(location.state.editItem)
+      setIsModalOpen(true)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, navigate, location.pathname])
 
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
@@ -197,136 +208,106 @@ export default function Businesses() {
     )}
 
     {/* Main List */}
-    {loading ? (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
-        <span className="text-text-secondary text-sm">Querying businesses directory...</span>
-      </div>
-    ) : filtered.length === 0 ? (
-      <div className="bg-card border border-border rounded-2xl p-16 text-center shadow-glass-sm flex flex-col items-center justify-center gap-4">
-        <Briefcase className="w-12 h-12 text-text-secondary/40 animate-pulse-slow" />
-        <div>
-          <h4 className="font-semibold text-text">No businesses found</h4>
-          <p className="text-text-secondary text-sm mt-1">There are no business directories registered under this search criteria</p>
-        </div>
-      </div>
+    {loading && filtered.length === 0 ? (
+      <div className="py-20"><Loader text="Loading businesses..." /></div>
     ) : (
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-glass-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-surface-secondary text-text-secondary text-sm font-semibold tracking-wider">
-                <th className="p-4">Business</th>
-                <th className="p-4">Category</th>
-                <th className="p-4">Phone</th>
-                <th className="p-4">Address</th>
-                <th className="p-4">Website</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.map((biz) => (
-                <tr key={biz.id} className="hover:bg-surface-secondary/40 text-sm text-text">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      {biz.image ? (
-                        <img src={biz.image} alt={biz.business_name}
-                          className="w-9 h-9 rounded-full object-cover border border-border shrink-0" />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-surface-secondary border border-border flex items-center justify-center shrink-0">
-                          <Briefcase className="w-4 h-4 text-text-secondary" />
-                        </div>
-                      )}
-                      <span className="font-semibold">{biz.business_name}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
-                      {biz.business_category_name || '—'}
-                    </span>
-                  </td>
-                  <td className="p-4 font-mono text-text-secondary text-xs">{biz.number}</td>
-                  <td className="p-4 text-text-secondary max-w-[160px] truncate">{biz.address}</td>
-                  <td className="p-4">
-                    {biz.website ? (
-                      <a href={biz.website} target="_blank" rel="noopener noreferrer"
-                        className="text-primary hover:underline font-mono text-xs truncate max-w-[120px] inline-block">
-                        {biz.website.replace(/^https?:\/\//i, '')}
-                      </a>
-                    ) : <span className="text-text-secondary text-xs">—</span>}
-                  </td>
-                  <td className="p-4">
-                    <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${
-                      Number(biz.status) === 1
-                        ? 'bg-success-bg border-success-border text-success-text'
-                        : 'bg-surface-secondary text-text-secondary border-border'
-                    }`}>
-                      {Number(biz.status) === 1 ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleView(biz)}
-                        className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all"
-                        title="View">
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => handleEdit(biz)}
-                        className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl"
-                        title="Edit">
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => handleDelete(biz.id)}
-                        className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl"
-                        title="Delete">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <Table
+        columns={[
+          {
+            header: 'Business',
+            key: 'business',
+            render: (biz) => (
+              <div className="flex items-center gap-3">
+                {biz.image ? (
+                  <img src={biz.image} alt={biz.business_name} className="w-9 h-9 rounded-full object-cover border border-border shrink-0" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-surface-secondary border border-border flex items-center justify-center shrink-0">
+                    <Briefcase className="w-4 h-4 text-text-secondary" />
+                  </div>
+                )}
+                <span className="font-semibold">{biz.business_name}</span>
+              </div>
+            )
+          },
+          {
+            header: 'Category',
+            key: 'category',
+            render: (biz) => (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
+                {biz.business_category_name || '—'}
+              </span>
+            )
+          },
+          {
+            header: 'Phone',
+            key: 'phone',
+            render: (biz) => <span className="font-mono text-text-secondary text-xs">{biz.number}</span>
+          },
+          {
+            header: 'Address',
+            key: 'address',
+            render: (biz) => <span className="text-text-secondary max-w-[160px] truncate block" title={biz.address}>{biz.address}</span>
+          },
+          {
+            header: 'Website',
+            key: 'website',
+            render: (biz) => (
+              biz.website ? (
+                <a href={biz.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono text-xs truncate max-w-[120px] inline-block">
+                  {biz.website.replace(/^https?:\/\//i, '')}
+                </a>
+              ) : <span className="text-text-secondary text-xs">—</span>
+            )
+          },
+          {
+            header: 'Status',
+            key: 'status',
+            render: (biz) => (
+              <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${Number(biz.status) === 1 ? 'bg-success-bg border-success-border text-success-text' : 'bg-surface-secondary text-text-secondary border-border'}`}>
+                {Number(biz.status) === 1 ? 'Active' : 'Inactive'}
+              </span>
+            )
+          },
+          {
+            header: 'Actions',
+            key: 'actions',
+            align: 'right',
+            render: (biz) => (
+              <div className="flex items-center justify-end gap-2">
+                <button onClick={() => handleView(biz)} className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all" title="View">
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => handleEdit(biz)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => handleDelete(biz.id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          }
+        ]}
+        data={filtered}
+        keyField="id"
+        loading={loading}
+        emptyState={{
+          icon: Briefcase,
+          title: 'No businesses found',
+          description: 'There are no business directories registered under this search criteria'
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages,
+          total,
+          pageNumbers,
+          loading,
+          onPageChange: setPage
+        }}
+      />
     )}
 
-    {/* Pagination — identical to Students */}
-    {totalPages > 1 && (
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border border-border bg-surface-secondary/40 rounded-xl text-sm">
-        <span className="text-text-secondary">
-          Page {page} of {totalPages} {total ? `(${total} total)` : ''}
-        </span>
-        <div className="flex items-center gap-2">
-          <button type="button" disabled={loading || page <= 1} onClick={() => setPage((c) => Math.max(1, c - 1))}
-            className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-            Previous
-          </button>
-          {pageNumbers.map((item) => (
-            <button key={item} type="button" disabled={loading || item === currentPage} onClick={() => setPage(item)}
-              className={`min-w-10 px-3 py-2 rounded-lg border transition-all ${
-                item === currentPage
-                  ? 'border-primary bg-primary/10 text-primary font-semibold disabled:opacity-100 disabled:cursor-default'
-                  : 'border-border bg-card text-text hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed'
-              }`}>
-              {item}
-            </button>
-          ))}
-          <button type="button" disabled={loading || page >= totalPages} onClick={() => setPage((c) => Math.min(totalPages, c + 1))}
-            className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed">
-            Next
-          </button>
-        </div>
-      </div>
-    )}
-
-    <Modal
-      isOpen={isModalOpen}
-      title={selectedBusiness ? 'Edit Business Listing' : 'Add Business Listing'}
-      onClose={handleCloseModal}
-    >
-      <BusinessForm business={selectedBusiness} onSubmit={handleSubmit} isLoading={formLoading} />
+    <Modal isOpen={isModalOpen} title={selectedBusiness ? 'Edit Business Directory' : 'Add New Business Directory'} onClose={() => setIsModalOpen(false)}>
+      <BusinessForm business={selectedBusiness} onSubmit={handleSubmit} isLoading={formLoading} onCancel={() => setIsModalOpen(false)} />
     </Modal>
   </div>
 )

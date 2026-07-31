@@ -5,6 +5,8 @@ import { confirm } from '../lib/confirm'
 import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
 import Modal from '../components/Modal'
 import UserForm from '../components/UserForm'
+import Select from '../components/common/Select'
+import Input from '../components/common/Input'
 
 const limit = 10
 
@@ -216,60 +218,49 @@ export default function Users() {
       {/* Advanced Filter panel */}
       <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Search Box */}
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-text-secondary">
-              <Search className="w-4 h-4" />
-            </span>
-            <input
-              type="text"
-              placeholder="Search by name, phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-input-bg text-input-text placeholder-text-secondary border border-input-border hover:border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-            />
-          </div>
+          <Input
+            icon={<Search className="w-4 h-4" />}
+            type="text"
+            placeholder="Search by name, phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
 
-          {/* Gender filter */}
-          <div>
-            <select
-              value={filterGender}
-              onChange={(e) => setFilters(current => ({ ...current, gender: e.target.value }))}
-              className="w-full bg-input-bg text-text border border-input-border rounded-xl py-2.5 px-3.5 text-sm outline-none focus:border-primary/50 transition-all cursor-pointer"
-            >
-              <option value="" className="bg-surface text-text">All Genders</option>
-              <option value="Male" className="bg-surface text-text">Male</option>
-              <option value="Female" className="bg-surface text-text">Female</option>
-              <option value="Other" className="bg-surface text-text">Other</option>
-            </select>
-          </div>
+          <Select
+            value={filterGender}
+            onChange={(val) => setFilters(current => ({ ...current, gender: val }))}
+            placeholder="All Genders"
+            searchable={false}
+            options={[
+              { label: 'All Genders', value: '' },
+              { label: 'Male', value: 'Male' },
+              { label: 'Female', value: 'Female' },
+              { label: 'Other', value: 'Other' }
+            ]}
+          />
 
-          {/* Blood group filter */}
-          <div>
-            <select
-              value={filterBloodGroup}
-              onChange={(e) => setFilters(current => ({ ...current, blood_group: e.target.value }))}
-              className="w-full bg-input-bg text-text border border-input-border rounded-xl py-2.5 px-3.5 text-sm outline-none focus:border-primary/50 transition-all cursor-pointer"
-            >
-              <option value="" className="bg-surface text-text">All Blood Groups</option>
-              {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => (
-                <option key={bg} value={bg} className="bg-surface text-text">{bg}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            value={filterBloodGroup}
+            onChange={(val) => setFilters(current => ({ ...current, blood_group: val }))}
+            placeholder="All Blood Groups"
+            searchable={false}
+            options={[
+              { label: 'All Blood Groups', value: '' },
+              ...['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => ({ label: bg, value: bg }))
+            ]}
+          />
 
-          {/* Committee filter */}
-          <div>
-            <select
-              value={filterCommittee}
-              onChange={(e) => setFilters(current => ({ ...current, is_committee: e.target.value }))}
-              className="w-full bg-input-bg text-text border border-input-border rounded-xl py-2.5 px-3.5 text-sm outline-none focus:border-primary/50 transition-all cursor-pointer"
-            >
-              <option value="" className="bg-surface text-text">All Roles</option>
-              <option value="true" className="bg-surface text-text">Committee Only</option>
-              <option value="false" className="bg-surface text-text">General Members</option>
-            </select>
-          </div>
+          <Select
+            value={filterCommittee}
+            onChange={(val) => setFilters(current => ({ ...current, is_committee: val }))}
+            placeholder="All Roles"
+            searchable={false}
+            options={[
+              { label: 'All Roles', value: '' },
+              { label: 'Committee Only', value: 'true' },
+              { label: 'General Members', value: 'false' }
+            ]}
+          />
         </form>
       </div>
 
@@ -396,10 +387,11 @@ export default function Users() {
       {/* Editor Modal overlay */}
       <Modal
         isOpen={isModalOpen}
-        title={selectedUser ? 'Modify Member Profile' : 'Register New Member'}
+        title={selectedUser ? 'Edit Member' : 'Add New Member'}
         onClose={handleCloseModal}
+        maxWidth="max-w-6xl"
       >
-        <UserForm user={selectedUser} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} />
+        <UserForm user={selectedUser} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} onCancel={handleCloseModal} />
       </Modal>
     </div>
   )

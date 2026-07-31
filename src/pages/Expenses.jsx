@@ -10,13 +10,20 @@ import {
   CalendarDays,
   User2,
   Paperclip,
-  Eye
+  Eye,
+  Receipt
 } from 'lucide-react'
 import api, { getExpensesList, exportExpensesExcel, getCommitteeMembersList, assetUrl } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import Modal from '../components/Modal'
+import FileDropzone from '../components/common/FileDropzone'
+import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
+import Input from '../components/common/Input'
+import Select from '../components/common/Select'
+import Button from '../components/common/Button'
+import Table from '../components/common/Table'
 
 const limit = 10
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-shadow'
@@ -233,13 +240,13 @@ export default function Expenses() {
           <h2 className="text-xl font-semibold text-text">Expenses</h2>
         </div>
         <div className="flex flex-wrap items-center sm:justify-end gap-3 flex-1">
-          <button
+          <Button
             onClick={fetchExpenses}
-            className="p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all shadow-sm"
+            variant="secondary"
             title="Refresh list"
           >
             <RefreshCw className="w-4 h-4" />
-          </button>
+          </Button>
           
           <div className="w-full sm:w-auto flex-none">
             <DatePicker
@@ -251,18 +258,20 @@ export default function Expenses() {
             />
           </div>
 
-          <button
+          <Button
             onClick={handleExport}
-            className="w-full sm:w-auto flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-surface border border-border text-text-secondary hover:text-text transition-all shadow-sm"
+            variant="secondary"
+            icon={<Download className="w-4 h-4" />}
           >
-            <Download className="w-4 h-4" /> Export CSV
-          </button>
-          <button
+            Export CSV
+          </Button>
+          <Button
             onClick={handleCreate}
-            className="w-full sm:w-auto flex justify-center items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
+            variant="primary"
+            icon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" /> Add Expense
-          </button>
+            Add Expense
+          </Button>
         </div>
       </div>
 
@@ -278,138 +287,122 @@ export default function Expenses() {
               className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50 transition-shadow"
             />
           </div>
-          <button
+          <Button
             type="submit"
-            className="px-6 py-2.5 bg-surface-secondary hover:bg-surface border border-border text-text font-medium rounded-xl text-sm transition-all shadow-sm"
+            variant="secondary"
           >
             Search
-          </button>
+          </Button>
         </form>
       </div>
 
       {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm font-medium animate-fade-in">{error}</div>}
       {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm font-medium animate-fade-in">{success}</div>}
 
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-glass-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-surface-secondary/50 text-text-secondary text-sm font-semibold tracking-wider">
-                <th className="p-4 py-3">Date</th>
-                <th className="p-4 py-3">Category</th>
-                <th className="p-4 py-3">Committee Member</th>
-                <th className="p-4 py-3">Description</th>
-                <th className="p-4 py-3">Proof</th>
-                <th className="p-4 py-3 text-right">Amount</th>
-                <th className="p-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr>
-                  <td colSpan="6" className="p-12 text-center text-sm text-text-secondary">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-8 h-8 rounded-full border-2 border-primary/25 border-t-primary animate-spin"></div>
-                      <span>Loading expenses...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : expenses.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="p-12 text-center text-sm text-text-secondary">No expenses found</td>
-                </tr>
+      {loading && expenses.length === 0 ? (
+        <div className="py-20"><Loader text="Loading expenses..." /></div>
+      ) : (
+        <Table
+          columns={[
+            {
+              header: 'Date',
+              key: 'date',
+              render: (expense) => (
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <CalendarDays className="w-4 h-4 text-text-secondary/60" />
+                  {new Date(expense.date).toLocaleDateString()}
+                </div>
+              )
+            },
+            {
+              header: 'Category',
+              key: 'category',
+              render: (expense) => (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-surface-secondary border border-border">
+                  {expense.expense_category_name || '-'}
+                </span>
+              )
+            },
+            {
+              header: 'Committee Member',
+              key: 'member',
+              render: (expense) => expense.committee_member_name ? (
+                <div className="flex items-center gap-2">
+                  <User2 className="w-4 h-4 text-text-secondary/60" />
+                  {expense.committee_member_name}
+                </div>
+              ) : '-'
+            },
+            {
+              header: 'Description',
+              key: 'description',
+              render: (expense) => (
+                <div className="max-w-xs truncate" title={expense.description}>
+                  {expense.description || '-'}
+                </div>
+              )
+            },
+            {
+              header: 'Proof',
+              key: 'proof',
+              render: (expense) => expense.image ? (
+                <a href={assetUrl(expense.image)} target="_blank" rel="noopener noreferrer" className="relative inline-block hover:opacity-80 transition-opacity max-w-[100px]" title="View Proof">
+                  {expense.image.toLowerCase().endsWith('.pdf') ? (
+                     <div className="h-12 w-16 flex justify-center items-center rounded-lg border border-border bg-primary/10 text-primary">
+                       <Paperclip className="w-5 h-5" />
+                     </div>
+                  ) : (
+                     <img src={assetUrl(expense.image)} alt="Proof" className="h-12 w-16 rounded-lg object-cover border border-border" />
+                  )}
+                </a>
               ) : (
-                expenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-surface-secondary/40 transition-colors text-sm text-text group">
-                    <td className="p-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="w-4 h-4 text-text-secondary/60" />
-                        {new Date(expense.date).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-surface-secondary border border-border">
-                        {expense.expense_category_name || '-'}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      {expense.committee_member_name ? (
-                        <div className="flex items-center gap-2">
-                          <User2 className="w-4 h-4 text-text-secondary/60" />
-                          {expense.committee_member_name}
-                        </div>
-                      ) : '-'}
-                    </td>
-                    <td className="p-4 max-w-xs truncate" title={expense.description}>
-                      {expense.description || '-'}
-                    </td>
-                    <td className="p-4 max-w-[100px]">
-                      {expense.image ? (
-                        <a href={assetUrl(expense.image)} target="_blank" rel="noopener noreferrer" className="relative inline-block hover:opacity-80 transition-opacity" title="View Proof">
-                          {expense.image.toLowerCase().endsWith('.pdf') ? (
-                             <div className="h-12 w-16 flex justify-center items-center rounded-lg border border-border bg-primary/10 text-primary">
-                               <Paperclip className="w-5 h-5" />
-                             </div>
-                          ) : (
-                             <img src={assetUrl(expense.image)} alt="Proof" className="h-12 w-16 rounded-lg object-cover border border-border" />
-                          )}
-                        </a>
-                      ) : (
-                        <span className="text-text-secondary/50 text-xs">-</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-right">
-                      <span className="font-semibold text-text tabular-nums">
-                        ₹{expense.amount.toLocaleString('en-IN')}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => handleEdit(expense)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete(expense.id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-border bg-surface-secondary/40 text-sm">
-            <span className="text-text-secondary">
-              Page {page} of {totalPages} {total ? `(${total} total)` : ''}
-            </span>
-            <div className="flex items-center gap-2">
-              <button type="button" disabled={loading || page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 hover:bg-surface transition-colors">
-                Previous
-              </button>
-              {pageNumbers.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  disabled={loading || item === currentPage}
-                  onClick={() => setPage(item)}
-                  className={`min-w-[40px] px-3 py-2 rounded-lg border transition-all ${
-                    item === currentPage
-                      ? 'border-primary bg-primary/10 text-primary font-semibold disabled:opacity-100 disabled:cursor-default shadow-sm'
-                      : 'border-border bg-card text-text hover:bg-surface-secondary disabled:opacity-50'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-              <button type="button" disabled={loading || page >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 hover:bg-surface transition-colors">
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+                <span className="text-text-secondary/50 text-xs">-</span>
+              )
+            },
+            {
+              header: 'Amount',
+              key: 'amount',
+              align: 'right',
+              render: (expense) => (
+                <span className="font-semibold text-text tabular-nums">
+                  ₹{expense.amount.toLocaleString('en-IN')}
+                </span>
+              )
+            },
+            {
+              header: 'Actions',
+              key: 'actions',
+              align: 'right',
+              render: (expense) => (
+                <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => handleEdit(expense)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleDelete(expense.id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )
+            }
+          ]}
+          data={expenses}
+          keyField="id"
+          loading={loading}
+          emptyState={{
+            icon: Receipt,
+            title: 'No expenses found',
+            description: 'There are no expense records matching your search criteria'
+          }}
+          pagination={{
+            currentPage: page,
+            totalPages,
+            total,
+            pageNumbers,
+            loading,
+            onPageChange: setPage
+          }}
+        />
+      )}
 
       <Modal isOpen={isModalOpen} title={selectedExpense ? 'Edit Expense' : 'Add Expense'} onClose={handleCloseModal}>
         <form onSubmit={handleSubmit} className="space-y-4 text-text">
@@ -425,64 +418,43 @@ export default function Expenses() {
                 disabled={formLoading}
               />
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Amount (₹) <span className="text-red-500">*</span></label>
-              <input
-                type="number"
-                name="amount"
-                min="0"
-                step="0.01"
-                value={formData.amount}
-                onChange={handleChange}
-                required
-                placeholder="0.00"
-                className={fieldClass}
-                disabled={formLoading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Expense Category</label>
-              <select
-                name="expense_category_id"
-                value={formData.expense_category_id}
-                onChange={handleChange}
-                className={fieldClass}
-                disabled={formLoading}
-              >
-                <option value="" className="bg-surface text-text">Select Category</option>
-                {expenseCategories.map(cat => (
-                  <option key={cat.id || cat._id} value={cat.id || String(cat._id)} className="bg-surface text-text">
-                    {cat.name || cat.title || cat.category || 'Unnamed'}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Committee Member</label>
-              <select
-                name="committee_member_id"
-                value={formData.committee_member_id}
-                onChange={handleChange}
-                className={fieldClass}
-                disabled={formLoading}
-              >
-                <option value="" className="bg-surface text-text">Select Member</option>
-                {committeeMembers.map(member => (
-                  <option key={member.id || member._id} value={member.id || String(member._id)} className="bg-surface text-text">
-                    {member.first_name} {member.middle_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Input
+              type="number"
+              label="Amount (₹)"
+              name="amount"
+              min="0"
+              step="0.01"
+              value={formData.amount}
+              onChange={handleChange}
+              required
+              placeholder="0.00"
+              disabled={formLoading}
+            />
+            <Select
+              label="Expense Category"
+              name="expense_category_id"
+              value={formData.expense_category_id}
+              onChange={(val) => handleChange({ target: { name: 'expense_category_id', value: val } })}
+              options={[{ label: 'Select Category', value: '' }, ...expenseCategories.map(cat => ({ label: cat.name || cat.title || cat.category || 'Unnamed', value: cat.id || String(cat._id) }))]}
+              disabled={formLoading}
+            />
+            <Select
+              label="Committee Member"
+              name="committee_member_id"
+              value={formData.committee_member_id}
+              onChange={(val) => handleChange({ target: { name: 'committee_member_id', value: val } })}
+              options={[{ label: 'Select Member', value: '' }, ...committeeMembers.map(member => ({ label: `${member.first_name} ${member.middle_name}`, value: member.id || String(member._id) }))]}
+              disabled={formLoading}
+            />
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Description</label>
-              <textarea
+              <Input
+                type="textarea"
+                label="Description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Expense description or purpose..."
                 rows="3"
-                className={`${fieldClass} resize-none`}
                 disabled={formLoading}
               />
             </div>
@@ -490,38 +462,41 @@ export default function Expenses() {
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Proof / Receipt (Optional)</label>
               <div className="flex flex-col gap-2">
-                <input
-                  type="file"
+                <FileDropzone
                   name="image"
                   accept="image/*,application/pdf"
-                  className="w-full text-sm text-text file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20 transition-all cursor-pointer bg-input-bg border border-border rounded-xl px-3 py-2 outline-none focus:border-primary/50"
+                  onFilesSelected={() => {}}
                   disabled={formLoading}
+                  label="Click or Drag Receipt/Proof"
+                  subLabel="Supported: PDF, Images"
+                  previews={[
+                    ...(selectedExpense?.image ? [{
+                      url: assetUrl(selectedExpense.image),
+                      onRemove: () => {}
+                    }] : [])
+                  ]}
                 />
-                {selectedExpense?.image && (
-                  <p className="text-xs text-text-secondary">
-                    Current file: <a href={assetUrl(selectedExpense.image)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1"><Paperclip className="w-3 h-3" /> View attached proof</a>
-                  </p>
-                )}
               </div>
             </div>
           </div>
 
           <div className="pt-4 flex justify-end gap-3">
-            <button
+            <Button
               type="button"
               onClick={handleCloseModal}
               disabled={formLoading}
-              className="px-5 py-2.5 rounded-xl border border-border bg-surface-secondary text-text font-medium hover:bg-surface transition-colors disabled:opacity-50"
+              variant="secondary"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={formLoading}
-              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold transition-all shadow-glow-primary disabled:opacity-50"
+              isLoading={formLoading}
+              variant="primary"
             >
-              {formLoading ? 'Saving...' : 'Save Expense'}
-            </button>
+              {formLoading ? 'Saving...' : 'Save'}
+            </Button>
           </div>
         </form>
       </Modal>

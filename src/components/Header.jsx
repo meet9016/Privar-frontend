@@ -4,8 +4,10 @@ import { LogOut, Search, Sparkles } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { masterLabels, routeTitles } from '../config/navigation'
 import GoogleTranslate from './GoogleTranslate'
+import GlobalSearch from './GlobalSearch'
 import { getUserRoleLabel } from '../lib/roles'
 import NotificationDropdown from './NotificationDropdown'
+import { confirm } from '../lib/confirm'
 
 export default function Header() {
   const { logout, user } = useContext(AuthContext)
@@ -13,9 +15,16 @@ export default function Header() {
   const location = useLocation()
   const roleLabel = user ? getUserRoleLabel(user) : ''
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
+  const handleLogout = async () => {
+    const isConfirmed = await confirm('Are you sure you want to logout?', {
+      confirmText: 'Yes',
+      cancelText: 'Cancel'
+    })
+    
+    if (isConfirmed) {
+      logout()
+      navigate('/login')
+    }
   }
 
   const getPageTitle = () => {
@@ -32,16 +41,7 @@ export default function Header() {
       {/* Title block */}
       <div className="flex items-center gap-3">
         {/* Dynamic Global Search box */}
-        <div className="relative group hidden md:block">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-text-secondary/60 group-focus-within:text-primary transition-colors">
-            <Search className="w-4 h-4" />
-          </span>
-          <input
-            type="search"
-            placeholder="Search Members Records..."
-            className="w-128 bg-surface-secondary text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:shadow-glow-primary transition-all duration-300"
-          />
-        </div>
+        <GlobalSearch />
       </div>
 
       {/* Control bar */}
