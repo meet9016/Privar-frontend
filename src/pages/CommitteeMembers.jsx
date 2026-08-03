@@ -1,23 +1,27 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Edit2, Plus, RefreshCw, Search, Trash2, Users } from 'lucide-react'
+import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter } from 'lucide-react'
 import api, { getCommitteeMembersList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import { normalizeRoles, unwrapApiData } from '../lib/roles'
+import { hasPermission } from '../lib/permissions'
+import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import CommitteeMemberForm from '../components/CommitteeMemberForm'
 import Loader from '../components/common/Loader'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 
-const limit = 10
 
 export default function CommitteeMembers() {
+  const { user: currentUser } = useContext(AuthContext)
   const [members, setMembers] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit })
+  const [limit, setLimit] = useState(10)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
   const [roles, setRoles] = useState([])
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
@@ -60,7 +64,7 @@ export default function CommitteeMembers() {
     } finally {
       setLoading(false)
     }
-  }, [page, search])
+  }, [page, search, limit])
 
   useEffect(() => {
     fetchCommitteeMembers()
@@ -72,7 +76,7 @@ export default function CommitteeMembers() {
         const res = await api.get('/roles')
         setRoles(normalizeRoles(unwrapApiData(res)))
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load roles')
+        console.warn('Could not load roles list:', err.message)
       }
     }
     fetchRoles()
@@ -136,22 +140,46 @@ export default function CommitteeMembers() {
 
 
   return (
-    <div className="space-y-6 animate-slide-up text-text">
+    <div className="space-y-4 animate-slide-up text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Committee Members</h2>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button onClick={fetchCommitteeMembers} variant="secondary" title="Refresh">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search committee..." className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50" />
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="w-64 sm:w-72">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search committee..." className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:border-primary/50" />
+            </div>
           </div>
-          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
-            Add Member
-          </Button>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center justify-center p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+            title="Toggle Filters"
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+          {hasPermission(currentUser, ['committee.add', 'members.add', 'members.create', 'users.manage']) && (
+            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+              Add Member
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className={`transition-all duration-300 ease-in-out ${showFilters ? 'max-h-[500px] opacity-100 mt-4 overflow-visible z-20 relative' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
+        <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search committee..." className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-4">
+            <button type="button" onClick={fetchCommitteeMembers} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh Data
+            </button>
+          </div>
         </div>
       </div>
 
@@ -192,6 +220,15 @@ export default function CommitteeMembers() {
             )
           },
           {
+            header: 'Assigned Role',
+            key: 'role',
+            render: (member) => (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-secondary border border-border text-text font-semibold text-xs">
+                {member.role_name || (roles.find(r => String(r.id || r._id) === String(member.role_id))?.name) || '-'}
+              </span>
+            )
+          },
+          {
             header: 'Status',
             key: 'status',
             render: (member) => (
@@ -206,15 +243,19 @@ export default function CommitteeMembers() {
             align: 'right',
             render: (member) => (
               <div className="flex items-center justify-end gap-2">
-                <button onClick={() => openEdit(member)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(member.id)}
-                  className="p-2 text-error bg-error/10 hover:bg-error/20 border border-error/20 rounded-xl transition-all" title="Delete"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {hasPermission(currentUser, ['committee.edit', 'members.edit', 'users.manage']) && (
+                  <button onClick={() => openEdit(member)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {hasPermission(currentUser, ['committee.delete', 'members.delete', 'users.manage']) && (
+                  <button
+                    onClick={() => handleDelete(member.id)}
+                    className="p-2 text-error bg-error/10 hover:bg-error/20 border border-error/20 rounded-xl transition-all" title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )
           }
@@ -233,12 +274,14 @@ export default function CommitteeMembers() {
           total: pagination.total,
           pageNumbers,
           loading,
-          onPageChange: setPage
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
         }}
       />
 
       <Modal isOpen={isModalOpen} title={selected ? 'Edit Committee Member' : 'Add Committee Member'} onClose={() => setIsModalOpen(false)}>
-        <CommitteeMemberForm member={selected} onSubmit={handleSubmit} isLoading={saving} onCancel={() => setIsModalOpen(false)} />
+        <CommitteeMemberForm member={selected} roles={roles} onSubmit={handleSubmit} isLoading={saving} onCancel={() => setIsModalOpen(false)} />
       </Modal>
     </div>
   )

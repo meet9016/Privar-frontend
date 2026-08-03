@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { Edit2, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from 'lucide-react'
 import api from '../lib/api'
 import { confirm } from '../lib/confirm'
 import { buildPermissionGroups, normalizeRoles, unwrapApiData } from '../lib/roles'
+import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
 import Input from '../components/common/Input'
@@ -13,11 +14,12 @@ import Checkbox from '../components/common/Checkbox'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 const emptyRoleForm = { name: '', description: '', status: 1, permissions: [] }
-const limit = 10
-
 export default function Roles() {
+  const { user: currentUser } = useContext(AuthContext)
+  const isSuperAdmin = currentUser?.committee_role === 'President' || currentUser?.role === 'superadmin'
   const [roles, setRoles] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit })
+  const [limit, setLimit] = useState(10)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [permissionConfig, setPermissionConfig] = useState({ actions: [], modules: [] })
@@ -40,7 +42,7 @@ export default function Roles() {
 
   useEffect(() => {
     fetchAll()
-  }, [])
+  }, [page, search, limit])
 
   const fetchAll = async () => {
     setLoading(true)
@@ -69,9 +71,7 @@ export default function Roles() {
     }
   }
 
-  useEffect(() => {
-    fetchAll()
-  }, [page, search])
+
 
   const openCreate = () => {
     setSelected(null)
@@ -91,12 +91,30 @@ export default function Roles() {
   }
 
   const togglePermission = (key) => {
-    setFormData((current) => ({
-      ...current,
-      permissions: current.permissions.includes(key)
+    setFormData((current) => {
+      const exists = current.permissions.includes(key)
+      let nextPermissions = exists
         ? current.permissions.filter((item) => item !== key)
         : [...current.permissions, key]
-    }))
+
+      // Auto-select List/View when Add, Edit, or Delete is selected
+      if (!exists) {
+        const parts = key.split('.')
+        const moduleKey = parts[0]
+        const action = parts[1]
+        if (['add', 'edit', 'delete', 'create'].includes(action)) {
+          const listKey = `${moduleKey}.list`
+          const viewKey = `${moduleKey}.view`
+          if (!nextPermissions.includes(listKey)) nextPermissions.push(listKey)
+          if (!nextPermissions.includes(viewKey)) nextPermissions.push(viewKey)
+        }
+      }
+
+      return {
+        ...current,
+        permissions: [...new Set(nextPermissions)]
+      }
+    })
   }
 
   const toggleModule = (module) => {
@@ -242,7 +260,9 @@ export default function Roles() {
           total: pagination.total,
           pageNumbers,
           loading,
-          onPageChange: setPage
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
         }}
       />
 
@@ -285,21 +305,26 @@ export default function Roles() {
               {permissionConfig.modules.map((module) => {
                 const allChecked = module.permissions.every((p) => formData.permissions.includes(p.key))
                 const someChecked = module.permissions.some((p) => formData.permissions.includes(p.key))
+                const isRestrictedModule = ['committee', 'roles'].includes(module.key)
+                const isModuleDisabled = saving || isRestrictedModule
+
                 return (
-                  <div key={module.key} className="grid gap-2 py-3 items-center" style={permissionGridStyle}>
+                  <div key={module.key} className={`grid gap-2 py-3 items-center ${isModuleDisabled ? 'opacity-60' : ''}`} style={permissionGridStyle}>
                     <Checkbox
-                      checked={allChecked}
-                      indeterminate={!allChecked && someChecked}
-                      onChange={() => toggleModule(module)}
-                      label={<span className="font-semibold text-text">{module.label}</span>}
+                      checked={!isRestrictedModule && allChecked}
+                      disabled={isModuleDisabled}
+                      indeterminate={!isRestrictedModule && !allChecked && someChecked}
+                      onChange={() => !isModuleDisabled && toggleModule(module)}
+                      label={<span className="font-semibold text-text">{module.label} {isRestrictedModule && <span className="text-xs text-text-secondary font-normal">(Admin Only)</span>}</span>}
                     />
                     {permissionConfig.actions.map((action) => {
                       const permission = module.permissions.find((item) => item.action === action.key)
                       return permission ? (
                         <div key={permission.key} className="flex justify-center">
                           <Checkbox
-                            checked={formData.permissions.includes(permission.key)}
-                            onChange={() => togglePermission(permission.key)}
+                            checked={!isRestrictedModule && formData.permissions.includes(permission.key)}
+                            disabled={isModuleDisabled}
+                            onChange={() => !isModuleDisabled && togglePermission(permission.key)}
                           />
                         </div>
                       ) : (

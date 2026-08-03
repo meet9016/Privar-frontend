@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
+import { Edit2, Filter, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import api, { assetUrl, getGalleryList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -12,16 +12,17 @@ import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-const limit = 12
 
 const createPreviewUrl = (file) => URL.createObjectURL(file)
 
 export default function GalleryPage() {
   const [rows, setRows] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit })
+  const [limit, setLimit] = useState(10)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
   const [filterCategories, setFilterCategories] = useState([])
   const [saving, setSaving] = useState(false)
@@ -74,7 +75,7 @@ export default function GalleryPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, filterYear, filterCategoryId])
+  }, [page, search, filterYear, filterCategoryId, limit])
 
   useEffect(() => {
     fetchGallery()
@@ -263,36 +264,47 @@ export default function GalleryPage() {
 
         </div>
         <div className="flex flex-wrap items-center sm:justify-end gap-3 flex-1">
-          <Button onClick={() => { fetchGallery(); fetchCategories() }} variant="secondary" title="Refresh">
-            <RefreshCw className="w-4 h-4" />
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center justify-center p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+            title="Toggle Filters"
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+            Add Images
           </Button>
-          <div className="relative w-full sm:w-64 sm:flex-none">
-            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
-            <input
-              type="search"
+        </div>
+      </div>
+
+      <div className={`transition-all duration-300 ease-in-out ${showFilters ? 'max-h-[500px] opacity-100 mt-4 overflow-visible z-20 relative' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
+        <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Input
+              icon={<Search className="w-4 h-4" />}
+              type="text"
               placeholder="Search gallery..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50 shadow-sm"
             />
-          </div>
-          <div className="w-full sm:w-auto flex-none">
             <DatePicker
               mode="month"
               value={filterYear}
               onChange={(val) => handleFilterYear(val)}
               placeholder="Month & Year"
-              className="w-full sm:w-40 bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
+              className="w-full bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
+            />
+            <Select
+              value={filterCategoryId}
+              onChange={(val) => handleFilterCategory({ target: { value: val } })}
+              options={[{ label: 'All Categories', value: '' }, ...filterCategories.map((item) => ({ label: item.category, value: item.id }))]}
             />
           </div>
-          <Select
-            value={filterCategoryId}
-            onChange={(val) => handleFilterCategory({ target: { value: val } })}
-            options={[{ label: 'All Categories', value: '' }, ...filterCategories.map((item) => ({ label: item.category, value: item.id }))]}
-          />
-          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
-            Add Images
-          </Button>
+          <div className="flex justify-end gap-3 mt-4">
+            <button type="button" onClick={() => { fetchGallery(); fetchCategories() }} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh Data
+            </button>
+          </div>
         </div>
       </div>
 
@@ -368,7 +380,9 @@ export default function GalleryPage() {
             total: pagination.total,
             pageNumbers,
             loading,
-            onPageChange: setPage
+            onPageChange: setPage,
+            limit,
+            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
           }}
         />
       )}

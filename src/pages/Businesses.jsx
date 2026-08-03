@@ -9,12 +9,10 @@ import BusinessForm from '../components/BusinessForm'
 import usePagination from '../hooks/usePagination'
 import Table from '../components/common/Table'
 
-const limit = 10
-
 export default function Businesses() {
   const navigate = useNavigate()
   const [businesses, setBusinesses] = useState([])
-  const { page, totalPages, total, setPage, setPaginationData, getParams, resetPage } = usePagination(limit)
+  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
   const [loading, setLoading] = useState(false)
   const [search, setSearchValue] = useState('')
   const [formLoading, setFormLoading] = useState(false)
@@ -301,7 +299,9 @@ export default function Businesses() {
           total,
           pageNumbers,
           loading,
-          onPageChange: setPage
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
         }}
       />
     )}

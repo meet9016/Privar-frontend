@@ -63,7 +63,7 @@ export default function Select({
       </div>
 
       {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-surface-secondary border border-border rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden">
           {searchable && (
             <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2">
               <Search size={16} className="text-text-secondary" />

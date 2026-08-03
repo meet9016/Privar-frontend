@@ -25,12 +25,11 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 
-const limit = 10
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-shadow'
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState([])
-  const { page, totalPages, total, setPage, setPaginationData, getParams, resetPage } = usePagination(limit)
+  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
   const [loading, setLoading] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -240,6 +239,19 @@ export default function Expenses() {
           <h2 className="text-xl font-semibold text-text">Expenses</h2>
         </div>
         <div className="flex flex-wrap items-center sm:justify-end gap-3 flex-1">
+          <div className="w-64 sm:w-72">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
+              <input
+                type="text"
+                value={search}
+                onChange={handleSearchChange}
+                placeholder="Search expenses..."
+                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
+              />
+            </div>
+          </div>
+
           <Button
             onClick={fetchExpenses}
             variant="secondary"
@@ -275,27 +287,6 @@ export default function Expenses() {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl shadow-glass-sm p-4 sm:p-5">
-        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-text-secondary/60" />
-            <input
-              type="text"
-              value={search}
-              onChange={handleSearchChange}
-              placeholder="Search expenses by description or category..."
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50 transition-shadow"
-            />
-          </div>
-          <Button
-            type="submit"
-            variant="secondary"
-          >
-            Search
-          </Button>
-        </form>
-      </div>
-
       {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm font-medium animate-fade-in">{error}</div>}
       {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm font-medium animate-fade-in">{success}</div>}
 
@@ -310,7 +301,7 @@ export default function Expenses() {
               render: (expense) => (
                 <div className="flex items-center gap-2 whitespace-nowrap">
                   <CalendarDays className="w-4 h-4 text-text-secondary/60" />
-                  {new Date(expense.date).toLocaleDateString()}
+                  {expense.date ? new Date(expense.date).toLocaleDateString() : '-'}
                 </div>
               )
             },
@@ -347,7 +338,7 @@ export default function Expenses() {
               key: 'proof',
               render: (expense) => expense.image ? (
                 <a href={assetUrl(expense.image)} target="_blank" rel="noopener noreferrer" className="relative inline-block hover:opacity-80 transition-opacity max-w-[100px]" title="View Proof">
-                  {expense.image.toLowerCase().endsWith('.pdf') ? (
+                  {typeof expense.image === 'string' && expense.image.toLowerCase().endsWith('.pdf') ? (
                      <div className="h-12 w-16 flex justify-center items-center rounded-lg border border-border bg-primary/10 text-primary">
                        <Paperclip className="w-5 h-5" />
                      </div>
@@ -365,7 +356,7 @@ export default function Expenses() {
               align: 'right',
               render: (expense) => (
                 <span className="font-semibold text-text tabular-nums">
-                  ₹{expense.amount.toLocaleString('en-IN')}
+                  ₹{Number(expense.amount || 0).toLocaleString('en-IN')}
                 </span>
               )
             },
@@ -397,9 +388,10 @@ export default function Expenses() {
             currentPage: page,
             totalPages,
             total,
-            pageNumbers,
             loading,
-            onPageChange: setPage
+            onPageChange: setPage,
+            limit,
+            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
           }}
         />
       )}

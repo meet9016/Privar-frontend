@@ -1,4 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react'
+import { API_BASE } from '../lib/api'
 
 export const AuthContext = createContext()
 
@@ -98,7 +99,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(async (email, password) => {
-    const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+    const apiBase = API_BASE
     const res = await fetch(`${apiBase}/api/admin_login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -35,7 +35,7 @@ const legacyPermissionFor = (permission) => {
 
 export const hasPermission = (user, permission) => {
   if (!permission) return true
-  if (user?.is_super_admin) return true
+  if (user?.committee_role === 'President' || user?.role === 'superadmin') return true
 
   const required = Array.isArray(permission) ? permission : [permission]
   const permissions = Array.isArray(user?.permissions) ? user.permissions : []

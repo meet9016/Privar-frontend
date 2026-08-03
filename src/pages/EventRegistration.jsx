@@ -5,12 +5,10 @@ import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
 import Table from '../components/common/Table'
 
-const limit = 10
-
-
 export default function EventRegistrations() {
     const [rows, setRows] = useState([])
-    const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit })
+    const [limit, setLimit] = useState(10)
+    const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
     const [loading, setLoading] = useState(false)
     const [page, setPage] = useState(1)
     const [search, setSearchValue] = useState('')
@@ -64,7 +62,7 @@ export default function EventRegistrations() {
         } finally {
             setLoading(false)
         }
-    }, [page, search, filterEventId])
+    }, [page, search, filterEventId, limit])
 
     useEffect(() => { fetchEvents() }, [fetchEvents])
     useEffect(() => { fetchRows() }, [fetchRows])
@@ -204,7 +202,9 @@ const handleDownload = async () => {
                         total: pagination.total,
                         pageNumbers,
                         loading,
-                        onPageChange: setPage
+                        onPageChange: setPage,
+                        limit,
+                        onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
                     }}
                 />
             )}

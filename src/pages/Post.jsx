@@ -10,11 +10,10 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 
-const limit = 10
-
 export default function Post() {
   const [posts, setPosts] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit })
+  const [limit, setLimit] = useState(10)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
@@ -56,7 +55,7 @@ export default function Post() {
     } finally {
       setLoading(false)
     }
-  }, [page, search])
+  }, [page, search, limit])
 
   useEffect(() => {
     fetchPosts()
@@ -249,7 +248,9 @@ export default function Post() {
             total,
             pageNumbers,
             loading,
-            onPageChange: setPage
+            onPageChange: setPage,
+            limit,
+            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
           }}
         />
       )}

@@ -1,4 +1,59 @@
-import React from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+
+/* Custom Theme-Aware Rows Selector Dropdown */
+function RowsSelector({ limit, onLimitChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const options = [10, 25, 50, 100];
+
+  return (
+    <div className="relative inline-block" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 bg-card border border-border text-text font-semibold text-xs rounded-lg px-2.5 py-1.5 hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all shadow-sm cursor-pointer"
+      >
+        <span>{limit || 10}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute bottom-full left-0 mb-1 w-20 bg-card border border-border rounded-lg shadow-glass py-1 z-30 animate-fade-in">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLimitChange(opt);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-3 py-1.5 text-xs font-semibold transition-colors ${
+                (limit || 10) === opt
+                  ? 'bg-primary/10 text-primary font-bold'
+                  : 'text-text hover:bg-surface-secondary'
+              }`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* Unique skeleton shimmer row */
 function SkeletonRow({ columns }) {
@@ -22,6 +77,37 @@ function SkeletonRow({ columns }) {
   );
 }
 
+/* Generate smart page numbers with ellipsis */
+function getPageNumbers(currentPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages = [];
+  pages.push(1);
+
+  if (currentPage > 3) {
+    pages.push('...');
+  }
+
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (currentPage < totalPages - 2) {
+    pages.push('...');
+  }
+
+  if (totalPages > 1) {
+    pages.push(totalPages);
+  }
+
+  return pages;
+}
+
 export default function Table({
   columns,
   data,
@@ -30,10 +116,20 @@ export default function Table({
   pagination,
   loading = false,
   className = '',
-  maxHeightClass = '',
-  stickyHeader = false
+  maxHeightClass = 'max-h-[600px] overflow-y-auto',
+  stickyHeader = true,
+  rowClassName
 }) {
   const skeletonRows = [1, 2, 3, 4, 5];
+
+  const smartPageNumbers = useMemo(() => {
+    if (!pagination) return [];
+    return getPageNumbers(pagination.currentPage || 1, pagination.totalPages || 1);
+  }, [pagination?.currentPage, pagination?.totalPages]);
+
+  // Calculate "Showing X to Y of Z"
+  const showingFrom = pagination ? ((pagination.currentPage - 1) * (pagination.limit || 10)) + 1 : 1;
+  const showingTo = pagination ? Math.min(showingFrom + (pagination.limit || 10) - 1, pagination.total || 0) : data.length;
 
   return (
     <div className={`bg-surface border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col ${className}`}>
@@ -53,8 +149,8 @@ export default function Table({
             <thead className={stickyHeader ? "sticky top-0 z-10 bg-surface shadow-sm" : ""}>
               <tr className="border-b border-border bg-surface-secondary text-text-secondary text-sm font-semibold tracking-wider">
                 {columns.map((col, idx) => (
-                  <th key={col.key || idx} className={`p-4 ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}>
-                    {col.header}
+                  <th key={col.key || idx} className={`p-4 ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''} ${col.className || ''}`}>
+                    {col.headerRender ? col.headerRender() : col.header}
                   </th>
                 ))}
               </tr>
@@ -64,9 +160,9 @@ export default function Table({
                 skeletonRows.map((n) => <SkeletonRow key={n} columns={columns} />)
               ) : (
                 data.map((row, i) => (
-                  <tr key={row[keyField] || i} className="hover:bg-surface-secondary text-sm text-text-secondary transition-colors">
+                  <tr key={row[keyField] || i} className={`hover:bg-surface-secondary text-sm text-text-secondary transition-colors ${rowClassName ? rowClassName(row, i) : ''}`}>
                     {columns.map((col, idx) => (
-                      <td key={col.key || idx} className={`p-4 ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}>
+                      <td key={col.key || idx} className={`p-4 ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''} ${col.className || ''}`}>
                         {col.render ? col.render(row, i) : row[col.key]}
                       </td>
                     ))}
@@ -78,42 +174,62 @@ export default function Table({
         </div>
       )}
 
+      {/* Pagination Footer */}
       {pagination && (pagination.totalPages > 1 || pagination.total > 0) && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-border bg-surface-secondary/40 text-sm">
-          <span className="text-text-secondary">
-            Page {pagination.currentPage} of {pagination.totalPages} {pagination.total ? `(${pagination.total} total)` : ''}
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 border-t border-border bg-surface-secondary/40 text-sm">
+          {/* Left: Rows selector + Showing info */}
+          <div className="flex items-center gap-4">
+            {pagination.onLimitChange && (
+              <div className="flex items-center gap-2">
+                <span className="text-text-secondary font-medium text-xs uppercase tracking-wide">Rows</span>
+                <RowsSelector limit={pagination.limit} onLimitChange={pagination.onLimitChange} />
+              </div>
+            )}
+            <span className="text-text-secondary">
+              Showing <span className="font-semibold text-text">{showingFrom}</span> to <span className="font-semibold text-text">{showingTo}</span> of <span className="font-semibold text-text">{pagination.total || 0}</span>
+            </span>
+          </div>
+
+          {/* Right: Pagination buttons */}
+          <div className="flex items-center gap-1">
             <button
               type="button"
               disabled={pagination.loading || pagination.currentPage <= 1}
               onClick={() => pagination.onPageChange((current) => Math.max(1, current - 1))}
-              className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:bg-surface-secondary"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-border bg-card text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:bg-surface-secondary hover:text-text"
+              aria-label="Previous page"
             >
-              Previous
+              <ChevronLeft className="w-4 h-4" />
             </button>
-            {pagination.pageNumbers?.map((item) => (
-              <button
-                key={item}
-                type="button"
-                disabled={pagination.loading || item === pagination.currentPage}
-                onClick={() => pagination.onPageChange(item)}
-                className={`min-w-10 px-3 py-2 rounded-lg border transition-colors ${
-                  item === pagination.currentPage
-                    ? 'border-primary bg-primary/10 text-primary font-semibold'
-                    : 'border-border bg-card text-text hover:bg-surface-secondary'
-                } disabled:cursor-not-allowed`}
-              >
-                {item}
-              </button>
+
+            {smartPageNumbers.map((item, idx) => (
+              item === '...' ? (
+                <span key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-text-secondary text-xs">...</span>
+              ) : (
+                <button
+                  key={item}
+                  type="button"
+                  disabled={pagination.loading || item === pagination.currentPage}
+                  onClick={() => pagination.onPageChange(item)}
+                  className={`min-w-8 h-8 px-2 rounded-lg border text-sm font-medium transition-all ${
+                    item === pagination.currentPage
+                      ? 'border-primary bg-primary text-white shadow-glow-primary disabled:opacity-100 disabled:cursor-default'
+                      : 'border-border bg-card text-text hover:bg-surface-secondary disabled:cursor-not-allowed'
+                  }`}
+                >
+                  {item}
+                </button>
+              )
             ))}
+
             <button
               type="button"
               disabled={pagination.loading || pagination.currentPage >= pagination.totalPages}
               onClick={() => pagination.onPageChange((current) => Math.min(pagination.totalPages, current + 1))}
-              className="px-3 py-2 rounded-lg border border-border bg-card text-text disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:bg-surface-secondary"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-border bg-card text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:bg-surface-secondary hover:text-text"
+              aria-label="Next page"
             >
-              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
