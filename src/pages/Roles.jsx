@@ -234,16 +234,19 @@ export default function Roles() {
             header: 'Actions',
             key: 'actions',
             align: 'right',
-            render: (role) => (
+            render: (role) => {
+              const isSystemRole = role.name === 'admin' || role.name === 'UserRole';
+              return (
               <div className="flex items-center justify-end gap-2">
-                <button onClick={() => openEdit(role)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => handleDelete(role)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                <button onClick={() => handleDelete(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-error-text bg-error-bg hover:bg-error/20 border-error-border'}`} title="Delete">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
-            )
+              );
+            }
           }
         ]}
         data={filteredRoles}

@@ -54,7 +54,7 @@ const storeWebTheme = (themeData) => {
 const fetchWebTheme = async () => {
   try {
     const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
-      const response = await fetch(`${apiBase}/api/get_app_theme`)
+    const response = await fetch(`${apiBase}/api/get_app_theme`)
     if (!response.ok) {
       throw new Error(`Theme fetch failed with status ${response.status}`)
     }
@@ -65,7 +65,7 @@ const fetchWebTheme = async () => {
     if (themeData) {
       storeWebTheme(themeData)
       window.dispatchEvent(new Event('web-theme-updated'))
-            window.dispatchEvent(new Event('storage'))
+      window.dispatchEvent(new Event('storage'))
     }
   } catch (err) {
     console.error('Failed to fetch web theme:', err.message)
@@ -105,7 +105,7 @@ export function AuthProvider({ children }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     })
-    
+
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
       throw new Error(errorData.message || 'Login failed')
@@ -113,9 +113,9 @@ export function AuthProvider({ children }) {
 
     const json = await res.json()
     const payload = json.data || json // Support nested {data: {token, user}} and flat responses
-    
+
     const { token: receivedToken, user: receivedUser } = payload
-    
+
     if (!receivedToken || !receivedUser) {
       throw new Error('Invalid login response from server')
     }
