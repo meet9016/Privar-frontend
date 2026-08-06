@@ -13,7 +13,7 @@ import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd }) {
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ ...acc, [field.name]: field.defaultValue ?? '' }), {})
   }, [fields])
@@ -220,9 +220,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
             />
           </div>
-          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
-            Add
-          </Button>
+          {!hideAdd && (
+            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+              Add
+            </Button>
+          )}
         </div>
       </div>
 
@@ -290,7 +292,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 {field.type === 'textarea' ? (
                   <>
                     <label className="block text-sm font-semibold text-text-secondary mb-1.5">{field.label}</label>
-                    <textarea rows="4" value={formData[field.name] || ''} onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} className={fieldClass} disabled={saving} />
+                    <textarea rows="4" value={formData[field.name] || ''} onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} className={fieldClass} disabled={saving || field.disabled} />
                   </>
                 ) : field.type === 'select' ? (
                   <Select 
@@ -366,7 +368,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     label={field.label}
                     value={formData[field.name] || ''} 
                     onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} 
-                    disabled={saving} 
+                    disabled={saving || field.disabled} 
                   />
                 )}
               </div>

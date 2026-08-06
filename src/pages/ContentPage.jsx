@@ -154,7 +154,8 @@ const definitions = {
     title: 'Birthdays',
     subtitle: 'View and manage member birthdays',
     endpoint: '/users?birthday',
-    fields: [{ name: 'name', label: 'Name' }, { name: 'dob', label: 'Date of Birth', type: 'date' }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
+    hideAdd: true,
+    fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date' }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
     columns: [
       { key: 'name', label: 'Name' },
       { key: 'dob', label: 'Date of Birth', render: (row) => row.dob ? new Date(row.dob).toLocaleDateString('en-IN') : '-' },
