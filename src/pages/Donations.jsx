@@ -21,6 +21,7 @@ import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
+import Input from '../components/common/Input'
 
 import { Download } from 'lucide-react'
 export default function Donations() {
@@ -44,6 +45,7 @@ export default function Donations() {
   const [success, setSuccess] = useState('')
   const [selectedDonation, setSelectedDonation] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const fetchDonations = useCallback(async () => {
     setLoading(true)
@@ -100,28 +102,36 @@ export default function Donations() {
   const handleCreate = () => {
     setSelectedDonation(null)
     setDateValue(new Date().toISOString().slice(0, 10))
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setSelectedDonation(null)
+    setFieldErrors({})
   }
 
   const handleSubmit = async (e) => {
-
     e.preventDefault()
     setFormLoading(true)
     setError('')
-    if (!selectedDonation) {
-      if (!e.target.donator_name.value || !e.target.donate_amount.value || !e.target.donation_purpose.value || !e.target.date.value) {
-        setError('All fields are required')
-        setFormLoading(false)
-        return
-      }
-    }
-    if (!e.target.donator_name.value || !e.target.donation_purpose.value || !e.target.date.value) {
-      setError('All fields are required')
+    setFieldErrors({})
+
+    const donator_name = e.target.donator_name.value
+    const donate_amount = e.target.donate_amount.value
+    const donation_purpose = e.target.donation_purpose.value
+    const date = dateValue
+
+    const errors = {}
+    if (!donator_name.trim()) errors.donator_name = 'Donator Name is required'
+    if (!donate_amount.trim()) errors.donate_amount = 'Donation Amount is required'
+    if (!donation_purpose.trim()) errors.donation_purpose = 'Donation Purpose is required'
+    if (!date) errors.date = 'Date is required'
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setError('Please fill in all required fields')
       setFormLoading(false)
       return
     }
@@ -426,56 +436,56 @@ export default function Donations() {
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-text">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Donator Name *</label>
-              <input
-                type="text"
-                name="donator_name"
-                defaultValue={selectedDonation?.donator_name || ''}
-                required
-                placeholder="Enter donator's full name"
-                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Donation Amount (₹) *</label>
-              <input
-                type="number"
-                name="donate_amount"
-                defaultValue={selectedDonation?.donate_amount || ''}
-                required
-                min="0"
-                step="1"
-                placeholder="Enter amount"
-                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
+            <Input
+              type="text"
+              label="Donator Name"
+              name="donator_name"
+              defaultValue={selectedDonation?.donator_name || ''}
+              required
+              placeholder="Enter donator's full name"
+              error={fieldErrors.donator_name}
+              onChange={() => { if (fieldErrors.donator_name) setFieldErrors(prev => ({ ...prev, donator_name: null })) }}
+            />
+            <Input
+              type="number"
+              label="Donation Amount (₹)"
+              name="donate_amount"
+              defaultValue={selectedDonation?.donate_amount || ''}
+              required
+              min="0"
+              step="1"
+              placeholder="Enter amount"
+              error={fieldErrors.donate_amount}
+              onChange={() => { if (fieldErrors.donate_amount) setFieldErrors(prev => ({ ...prev, donate_amount: null })) }}
+            />
           </div>
 
-
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Donation Purpose *</label>
-              <input
-                type="text"
-                name="donation_purpose"
-                defaultValue={selectedDonation?.donation_purpose || ''}
-                required
-                placeholder="e.g. Temple renovation, Food drive..."
-                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
+            <Input
+              type="text"
+              label="Donation Purpose"
+              name="donation_purpose"
+              defaultValue={selectedDonation?.donation_purpose || ''}
+              required
+              placeholder="e.g. Temple renovation, Food drive..."
+              error={fieldErrors.donation_purpose}
+              onChange={() => { if (fieldErrors.donation_purpose) setFieldErrors(prev => ({ ...prev, donation_purpose: null })) }}
+            />
 
             <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Date *</label>
+              <label className="text-sm text-text-secondary mb-1.5 block font-semibold">Date <span className="text-red-500">*</span></label>
               <DatePicker
                 name="date"
                 mode="date"
                 value={dateValue}
-                onChange={setDateValue}
+                onChange={(val) => {
+                  setDateValue(val)
+                  if (fieldErrors.date) setFieldErrors(prev => ({ ...prev, date: null }))
+                }}
                 className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
+                error={fieldErrors.date}
               />
+              {fieldErrors.date && <p className="text-red-500 text-xs mt-1 font-semibold">Date is required</p>}
             </div>
 
           </div>

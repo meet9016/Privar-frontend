@@ -25,14 +25,17 @@ export default function News() {
   const [existingImage, setExistingImage] = useState('')
   const [selectedId, setSelectedId] = useState('')
 
-  const [formData, setFormData] = useState({
+  const emptyNewsForm = {
     title: '',
     description: '',
     status: 1,
     image: null,
     remove_image: false,
     send_notification: false,
-  })
+  }
+
+  const [formData, setFormData] = useState(emptyNewsForm)
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
   const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
@@ -81,13 +84,14 @@ export default function News() {
     }
   }
 
-const openCreate = () => {
-  setSelected(null)
-  setSelectedId('')  
-  setExistingImage('')
-  setFormData({ title: '', description: '', status: 1, image: null, remove_image: false, send_notification: false })
-  setIsModalOpen(true)
-}
+  const openCreate = () => {
+    setSelected(null)
+    setSelectedId('')  
+    setExistingImage('')
+    setFormData(emptyNewsForm)
+    setFieldErrors({})
+    setIsModalOpen(true)
+  }
 
   const openEdit = (newsItem) => {
     setSelected(newsItem)
@@ -101,6 +105,7 @@ const openCreate = () => {
       remove_image: false,
       send_notification: false,
     })
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
@@ -108,18 +113,28 @@ const openCreate = () => {
     event.preventDefault()
     setSaving(true)
     setError('')
+    setFieldErrors({})
+    const errors = {}
+    if (!formData.title.trim()) {
+      errors.title = 'Title is required'
+    }
+    if (!formData.description.trim()) {
+      errors.description = 'Description is required'
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setError('Please fill in all required fields')
+      setSaving(false)
+      return
+    }
     try {
-      const hasFile = formData.image instanceof FileList
-        ? formData.image.length > 0
-        : formData.image instanceof File
-
       const payload = new FormData()
       payload.append('title', formData.title)
       payload.append('description', formData.description)
       payload.append('status', formData.status)
       if (formData.send_notification) payload.append('send_notification', 'true')
-      if (hasFile) {
-        payload.append('image', formData.image instanceof FileList ? formData.image[0] : formData.image)
+      if (formData.image instanceof File) {
+        payload.append('image', formData.image)
       }
       if (formData.remove_image) {
         payload.append('remove_image', 'true')
@@ -282,8 +297,12 @@ const openCreate = () => {
               label="Title"
               required
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value })
+                if (fieldErrors.title) setFieldErrors({ ...fieldErrors, title: null })
+              }}
               disabled={saving}
+              error={fieldErrors.title}
             />
             <Select
               label="Status"
@@ -304,8 +323,12 @@ const openCreate = () => {
               label="Description"
               required
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value })
+                if (fieldErrors.description) setFieldErrors({ ...fieldErrors, description: null })
+              }}
               disabled={saving}
+              error={fieldErrors.description}
             />
 
             <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
@@ -313,7 +336,7 @@ const openCreate = () => {
 
               <FileDropzone
                 accept="image/*"
-                onFilesSelected={(files) => setFormData({ ...formData, image: files, remove_image: false })}
+                onFilesSelected={(files) => setFormData({ ...formData, image: files[0] || null, remove_image: false })}
                 disabled={saving}
                 label="Click or Drag News Image"
                 previews={[
@@ -321,8 +344,8 @@ const openCreate = () => {
                     url: assetUrl(existingImage),
                     onRemove: () => setFormData({ ...formData, remove_image: true })
                   }] : []),
-                  ...((formData.image instanceof File || (formData.image instanceof FileList && formData.image.length > 0)) ? [{
-                    url: URL.createObjectURL(formData.image instanceof FileList ? formData.image[0] : formData.image),
+                  ...(formData.image instanceof File ? [{
+                    url: URL.createObjectURL(formData.image),
                     onRemove: () => setFormData({ ...formData, image: '', remove_image: false })
                   }] : [])
                 ]}

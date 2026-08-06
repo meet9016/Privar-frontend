@@ -13,7 +13,7 @@ import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, deleteAction }) {
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ ...acc, [field.name]: field.defaultValue ?? '' }), {})
   }, [fields])
@@ -30,9 +30,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [remoteOptions, setRemoteOptions] = useState({})
   const [isOwn, setIsOwn] = useState(false)
+  const [formError, setFormError] = useState('')
 
   const [imagePreview, setImagePreview] = useState(null)
   const [removedImages, setRemovedImages] = useState({})
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
@@ -73,6 +75,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     setSelected(null)
     setFormData(emptyForm)
     loadRemoteOptions(fields)
+    setFormError('')
+    setFieldErrors({})
     setIsModalOpen(true)
 
     setImagePreview(null)
@@ -85,26 +89,37 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     setImagePreview(null)
     setRemovedImages({})
 
-    // Set initial values from the row list data immediately
-    setFormData(fields.reduce((acc, field) => ({
-      ...acc,
-      [field.name]: field.type === 'file' ? '' : row[field.name] ?? row[field.fallback] ?? field.defaultValue ?? ''
-    }), {}))
+    const buildFormData = (data) => fields.reduce((acc, field) => {
+      let val = field.type === 'file' ? '' : data[field.name] ?? data[field.fallback] ?? field.defaultValue ?? ''
+      // For 'name' field on birthday/user records: compose from first_name + last_name if name is empty
+      if (field.name === 'name' && !val && (data.first_name || data.last_name)) {
+        val = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ')
+      }
+      // Format ISO dates to YYYY-MM-DD for date fields
+      if (field.type === 'date' && val && typeof val === 'string' && val.includes('T')) {
+        const d = new Date(val)
+        if (!isNaN(d.getTime())) val = d.toISOString().slice(0, 10)
+      }
+      return { ...acc, [field.name]: val }
+    }, {})
 
+    // Set initial values from the row list data immediately
+    setFormData(buildFormData(row))
+
+    const cleanEndpoint = endpoint.split('?')[0]
     try {
       // Fetch fresh, absolute latest data from the backend by ID
-      const res = await api.get(`${endpoint}/${row._id || row.id}`)
+      const res = await api.get(`${cleanEndpoint}/${row._id || row.id}`)
       const freshData = res.data?.data || res.data
       if (freshData) {
-        setFormData(fields.reduce((acc, field) => ({
-          ...acc,
-          [field.name]: field.type === 'file' ? '' : freshData[field.name] ?? freshData[field.fallback] ?? field.defaultValue ?? ''
-        }), {}))
+        setFormData(buildFormData(freshData))
       }
     } catch (err) {
       console.error("Failed to fetch fresh row data:", err)
       // Fallback: keep the initial local row data in the form
     }
+    setFormError('')
+    setFieldErrors({})
     loadRemoteOptions(fields)
   }
 
@@ -127,6 +142,26 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     event.preventDefault()
     setSaving(true)
     setError('')
+    setFormError('')
+    setFieldErrors({})
+
+    // Validate required fields
+    const missing = {}
+    const missingRequired = fields.filter(f => {
+      const val = formData[f.name]
+      const isEmpty = val === undefined || val === null || String(val).trim() === ''
+      if (f.required && f.type !== 'file' && isEmpty) {
+        missing[f.name] = true
+        return true
+      }
+      return false
+    })
+    if (missingRequired.length > 0) {
+      setFieldErrors(missing)
+      setFormError(`${missingRequired[0].label} is required`)
+      setSaving(false)
+      return
+    }
     try {
       const hasFiles = fields.some((field) => field.type === 'file' && (
         formData[field.name] instanceof File ||
@@ -157,10 +192,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       }
 
 
+      const cleanEndpoint = endpoint.split('?')[0];
       if (selected) {
-        await api.put(`${endpoint}/${selected._id || selected.id}`, payload)
+        await api.put(`${cleanEndpoint}/${selected._id || selected.id}`, payload)
       } else {
-        await api.post(endpoint, payload)
+        await api.post(cleanEndpoint, payload)
       }
       await fetchRows()
       setSuccess(`${title} saved successfully`)
@@ -168,7 +204,9 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       setSelected(null)
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.response?.data?.message || `Failed to save ${title.toLowerCase()}`)
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || `Failed to save ${title.toLowerCase()}`
+      setFormError(errorMsg)
+      setError(errorMsg)
     } finally {
       setSaving(false)
     }
@@ -177,7 +215,13 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const handleDelete = async (row) => {
     if (!await confirm(`Delete ${getRowTitle?.(row) || row.title || row.name || 'this record'}?`)) return
     try {
-      await api.delete(`${endpoint}/${row._id || row.id}`)
+      const cleanEndpoint = endpoint.split('?')[0];
+      if (deleteAction === 'clear-dob') {
+        // Birthday: clear DOB only, not delete user
+        await api.put(`${cleanEndpoint}/${row._id || row.id}`, { dob: null, anniversary: null })
+      } else {
+        await api.delete(`${cleanEndpoint}/${row._id || row.id}`)
+      }
       await fetchRows()
       setSuccess(`${title} deleted successfully`)
       setTimeout(() => setSuccess(''), 3000)
@@ -256,9 +300,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {!hideDelete && (
+                    <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               )
             }
@@ -285,41 +331,67 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       )}
 
       <Modal isOpen={isModalOpen} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-4 text-text">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {fields.map((field) => (
-              <div key={field.name}>
+        <form onSubmit={handleSave} className="space-y-4 text-text" noValidate>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ overflow: 'visible' }}>
+            {fields.map((field, fieldIdx) => (
+              <div key={field.name} style={{ zIndex: fields.length - fieldIdx, position: 'relative' }}>
                 {field.type === 'textarea' ? (
                   <>
-                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">{field.label}</label>
-                    <textarea rows="4" value={formData[field.name] || ''} onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} className={fieldClass} disabled={saving || field.disabled} />
+                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                    </label>
+                    <textarea 
+                      required={field.required} 
+                      rows="4" 
+                      value={formData[field.name] || ''} 
+                      onChange={(e) => {
+                        setFormData({ ...formData, [field.name]: e.target.value })
+                        if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                      }} 
+                      className={`${fieldClass} ${fieldErrors[field.name] ? 'border-red-500 ring-1 ring-red-500' : ''}`} 
+                      disabled={saving || field.disabled} 
+                    />
+                    {fieldErrors[field.name] && <p className="text-red-500 text-xs mt-1 font-semibold">{field.label} is required</p>}
                   </>
                 ) : field.type === 'select' ? (
                   <Select 
                     label={field.label}
+                    required={field.required}
                     value={formData[field.name] ?? ''} 
-                    onChange={(val) => setFormData({ ...formData, [field.name]: val })} 
+                    onChange={(val) => {
+                      setFormData({ ...formData, [field.name]: val })
+                      if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                    }} 
                     disabled={saving}
                     options={field.options}
+                    error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 ) : field.type === 'select-remote' ? (
                   <Select 
                     label={field.label}
+                    required={field.required}
                     value={formData[field.name] ?? ''} 
-                    onChange={(val) => setFormData({ ...formData, [field.name]: val })} 
+                    onChange={(val) => {
+                      setFormData({ ...formData, [field.name]: val })
+                      if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                    }} 
                     disabled={saving}
                     options={(remoteOptions[field.name] || []).map((option) => ({
-                      label: option.name || option.country || option.state || option.city || option.business,
-                      value: option.id
+                      label: option.name || option.country || option.state || option.city || option.business || 'Unnamed',
+                      value: option.id || option._id
                     }))}
+                    error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 ) : field.type === 'file' ? (
                   <>
-                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">{field.label}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                    </label>
                     <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
                       <FileDropzone
                         accept={field.accept || 'image/*'}
                         multiple={field.multiple}
+                        error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                         onFilesSelected={(files) => {
                           const file = field.multiple ? files : files?.[0] || ''
                           setFormData({ ...formData, [field.name]: file })
@@ -354,26 +426,46 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   </>
                 ) : field.type === 'date' ? (
                   <>
-                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">{field.label}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                    </label>
                     <DatePicker 
                       value={formData[field.name] || ''} 
-                      onChange={(val) => setFormData({ ...formData, [field.name]: val })} 
+                      onChange={(val) => {
+                        setFormData({ ...formData, [field.name]: val })
+                        if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                      }} 
                       disabled={saving}
+                      required={field.required}
                       placeholder="Select Date"
+                      error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                     />
                   </>
                 ) : (
                   <Input 
                     type={field.type || 'text'} 
                     label={field.label}
+                    required={field.required}
                     value={formData[field.name] || ''} 
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })} 
+                    onChange={(e) => {
+                      let val = e.target.value
+                      const nameLower = field.name.toLowerCase()
+                      if (nameLower === 'ifsc_code') {
+                        val = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 11)
+                      } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower.includes('number')) {
+                        val = val.replace(/\D/g, '').slice(0, 10)
+                      }
+                      setFormData({ ...formData, [field.name]: val })
+                      if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                    }} 
                     disabled={saving || field.disabled} 
+                    error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 )}
               </div>
             ))}
           </div>
+          <div className="pb-32" />
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel

@@ -28,6 +28,7 @@ export default function Students() {
   const [existingStudentImage, setExistingStudentImage] = useState('')
   const [existingResultImage, setExistingResultImage] = useState('')
   const [imageData, setImageData] = useState({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
@@ -76,6 +77,7 @@ export default function Students() {
     setExistingStudentImage('')
     setExistingResultImage('')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
@@ -84,6 +86,7 @@ export default function Students() {
     setExistingStudentImage(student.student_image || '')
     setExistingResultImage(student.result_image || '')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
@@ -93,21 +96,47 @@ export default function Students() {
     setExistingStudentImage('')
     setExistingResultImage('')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+    setFieldErrors({})
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setFormLoading(true)
     setError('')
+    setFieldErrors({})
     const fields = new FormData(e.target)
-    const payload = new FormData()
-      ;['surname', 'student_name', 'father_name', 'school_name', 'standard', 'percentage', 'mobile_number', 'year', 'status'].forEach(k => payload.append(k, fields.get(k) ?? ''))
 
-    const hasStudentImg = imageData.student_image instanceof FileList ? imageData.student_image.length > 0 : imageData.student_image instanceof File
-    const hasResultImg = imageData.result_image instanceof FileList ? imageData.result_image.length > 0 : imageData.result_image instanceof File
-    if (hasStudentImg) payload.append('student_image', imageData.student_image instanceof FileList ? imageData.student_image[0] : imageData.student_image)
+    const requiredKeys = ['surname', 'student_name', 'father_name', 'school_name', 'standard', 'percentage', 'mobile_number', 'year']
+    const errors = {}
+    requiredKeys.forEach(k => {
+      const val = fields.get(k)
+      if (!val || !val.trim()) {
+        errors[k] = true
+      }
+    })
+
+    // Check if result image is provided (either has an existing one not removed, or a new file selected)
+    const hasExistingResult = existingResultImage && !imageData.remove_result_image
+    const hasNewResult = imageData.result_image instanceof File
+    if (!hasExistingResult && !hasNewResult) {
+      errors.result_image = 'Result Image is required'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setError('Please fill in all required fields')
+      setFormLoading(false)
+      return
+    }
+
+    const payload = new FormData()
+    requiredKeys.concat(['status']).forEach(k => payload.append(k, fields.get(k) ?? ''))
+
+    const hasStudentImg = imageData.student_image instanceof File
+    const hasResultImg = imageData.result_image instanceof File
+    if (hasStudentImg) payload.append('student_image', imageData.student_image)
     if (imageData.remove_student_image) payload.append('remove_student_image', 'true')
-    if (hasResultImg) payload.append('result_image', imageData.result_image instanceof FileList ? imageData.result_image[0] : imageData.result_image)
+    if (hasResultImg) payload.append('result_image', imageData.result_image)
     if (imageData.remove_result_image) payload.append('remove_result_image', 'true')
 
     try {
@@ -293,96 +322,92 @@ export default function Students() {
         title={selectedStudent ? 'Edit Student' : 'Add Student'}
         onClose={handleCloseModal}
       >
-        <form onSubmit={handleSubmit} className="space-y-4 text-text">
+        <form onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Surname *</label>
-              <input
-                type="text"
-                name="surname"
-                defaultValue={selectedStudent?.surname || ''}
-                required
-                className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!!(selectedStudent && selectedStudent.surname)}
-              />
-            </div>
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Student Name *</label>
-              <input
-                type="text"
-                name="student_name"
-                defaultValue={selectedStudent?.student_name || ''}
-                required
-                className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
+            <Input
+              label="Surname"
+              name="surname"
+              defaultValue={selectedStudent?.surname || ''}
+              required
+              disabled={!!(selectedStudent && selectedStudent.surname)}
+              error={fieldErrors.surname ? 'Surname is required' : undefined}
+              onChange={() => { if (fieldErrors.surname) setFieldErrors(prev => ({ ...prev, surname: null })) }}
+            />
+            <Input
+              label="Student Name"
+              name="student_name"
+              defaultValue={selectedStudent?.student_name || ''}
+              required
+              error={fieldErrors.student_name ? 'Student Name is required' : undefined}
+              onChange={() => { if (fieldErrors.student_name) setFieldErrors(prev => ({ ...prev, student_name: null })) }}
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Father Name *</label>
-              <input
-                type="text"
-                name="father_name"
-                defaultValue={selectedStudent?.father_name || ''}
-
-                className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">School Name *</label>
-              <input
-                type="text"
-                name="school_name"
-                defaultValue={selectedStudent?.school_name || ''}
-                required
-                className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
+            <Input
+              label="Father Name"
+              name="father_name"
+              defaultValue={selectedStudent?.father_name || ''}
+              required
+              error={fieldErrors.father_name ? 'Father Name is required' : undefined}
+              onChange={() => { if (fieldErrors.father_name) setFieldErrors(prev => ({ ...prev, father_name: null })) }}
+            />
+            <Input
+              label="School Name"
+              name="school_name"
+              defaultValue={selectedStudent?.school_name || ''}
+              required
+              error={fieldErrors.school_name ? 'School Name is required' : undefined}
+              onChange={() => { if (fieldErrors.school_name) setFieldErrors(prev => ({ ...prev, school_name: null })) }}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Standard *</label>
-              <input
-                type="text"
-                name="standard"
-                defaultValue={selectedStudent?.standard || ''}
-                required
-                className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Percentage *</label>
-              <input
-                type="text"
-                name="percentage"
-                defaultValue={selectedStudent?.percentage || ''}
-                required
-                className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
+            <Input
+              label="Standard"
+              name="standard"
+              type="number"
+              defaultValue={selectedStudent?.standard || ''}
+              required
+              error={fieldErrors.standard ? 'Standard is required' : undefined}
+              onChange={() => { if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null })) }}
+            />
+            <Input
+              label="Percentage"
+              name="percentage"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              defaultValue={selectedStudent?.percentage || ''}
+              required
+              error={fieldErrors.percentage ? 'Percentage is required' : undefined}
+              onChange={() => { if (fieldErrors.percentage) setFieldErrors(prev => ({ ...prev, percentage: null })) }}
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Mobile Number"
+              name="mobile_number"
+              type="text"
+              required
+              maxLength={10}
+              defaultValue={selectedStudent?.mobile_number || ''}
+              error={fieldErrors.mobile_number ? 'Mobile Number is required' : undefined}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                if (fieldErrors.mobile_number) setFieldErrors(prev => ({ ...prev, mobile_number: null }))
+              }}
+            />
             <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Mobile Number *</label>
-              <input
-                type="text"
-                name="mobile_number"
-                defaultValue={selectedStudent?.mobile_number || ''}
-                required
-                maxLength={10}
-                className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">Year *</label>
+              <label className="text-sm text-text-secondary mb-1.5 block font-semibold">Year <span className="text-red-500">*</span></label>
               <YearSelect
                 name="year"
                 required
                 defaultValue={selectedStudent?.year || ''}
-                className="w-full bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 px-4 text-sm outline-none"
+                className={`w-full bg-input-bg text-text border ${fieldErrors.year ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl py-2.5 px-4 text-sm outline-none`}
+                onChange={() => { if (fieldErrors.year) setFieldErrors(prev => ({ ...prev, year: null })) }}
               />
+              {fieldErrors.year && <p className="text-red-500 text-xs mt-1 font-semibold">Year is required</p>}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -391,7 +416,7 @@ export default function Students() {
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Student Image</label>
               <FileDropzone
                 accept="image/*"
-                onFilesSelected={(files) => setImageData({ ...imageData, student_image: files, remove_student_image: false })}
+                onFilesSelected={(files) => setImageData({ ...imageData, student_image: files[0] || null, remove_student_image: false })}
                 disabled={formLoading}
                 label="Click or Drag Student Image"
                 previews={[
@@ -399,20 +424,23 @@ export default function Students() {
                     url: assetUrl(existingStudentImage),
                     onRemove: () => setImageData({ ...imageData, remove_student_image: true })
                   }] : []),
-                  ...((imageData.student_image instanceof File || (imageData.student_image instanceof FileList && imageData.student_image.length > 0)) ? [{
-                    url: URL.createObjectURL(imageData.student_image instanceof FileList ? imageData.student_image[0] : imageData.student_image),
+                  ...(imageData.student_image instanceof File ? [{
+                    url: URL.createObjectURL(imageData.student_image),
                     onRemove: () => setImageData({ ...imageData, student_image: null, remove_student_image: false })
                   }] : [])
                 ]}
               />
             </div>
 
-            {/* Result Image */}
-            <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Result Image</label>
+             {/* Result Image */}
+            <div className={`flex flex-col bg-input-bg border ${fieldErrors.result_image ? 'border-red-500 ring-1 ring-red-500' : 'border-border'} rounded-xl p-3`}>
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Result Image <span className="text-red-500">*</span></label>
               <FileDropzone
                 accept="image/*"
-                onFilesSelected={(files) => setImageData({ ...imageData, result_image: files, remove_result_image: false })}
+                onFilesSelected={(files) => {
+                  setImageData({ ...imageData, result_image: files[0] || null, remove_result_image: false })
+                  if (fieldErrors.result_image) setFieldErrors(prev => ({ ...prev, result_image: null }))
+                }}
                 disabled={formLoading}
                 label="Click or Drag Result Image"
                 previews={[
@@ -420,12 +448,13 @@ export default function Students() {
                     url: assetUrl(existingResultImage),
                     onRemove: () => setImageData({ ...imageData, remove_result_image: true })
                   }] : []),
-                  ...((imageData.result_image instanceof File || (imageData.result_image instanceof FileList && imageData.result_image.length > 0)) ? [{
-                    url: URL.createObjectURL(imageData.result_image instanceof FileList ? imageData.result_image[0] : imageData.result_image),
+                  ...(imageData.result_image instanceof File ? [{
+                    url: URL.createObjectURL(imageData.result_image),
                     onRemove: () => setImageData({ ...imageData, result_image: null, remove_result_image: false })
                   }] : [])
                 ]}
               />
+              {fieldErrors.result_image && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.result_image}</p>}
             </div>
           </div>
           <Select

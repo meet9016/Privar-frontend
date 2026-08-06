@@ -4,7 +4,7 @@ import FileDropzone from './FileDropzone';
 
 export default function ImageUpload({ value, onChange, disabled, error, label = "Image (300x300 px, Max 1MB)" }) {
   const handleRemove = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     onChange(null, true); // Pass true as second argument to indicate removal
   };
 

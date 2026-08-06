@@ -153,9 +153,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     if (!formData.email.trim()) newErrors.email = 'Email is required'
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email format is invalid'
     
+    if (!formData.country_id) newErrors.country_id = 'Country is required'
     if (!formData.state_id) newErrors.state_id = 'State is required'
     if (!formData.city_id) newErrors.city_id = 'City is required'
     if (!formData.address.trim()) newErrors.address = 'Address is required'
+    if (!formData.dob) newErrors.dob = 'Date of Birth is required'
     if (!isHead && !formData.family_head_id) newErrors.family_head_id = 'Family head is required'
     if (!isHead && formData.relation === 'Self') newErrors.relation = 'Under Head cannot be "Self"'
 
@@ -279,13 +281,14 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
             searchable={false}
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-text-secondary">Date of Birth</label>
+            <label className="text-sm font-semibold text-text-secondary">Date of Birth <span className="text-red-500">*</span></label>
             <DatePicker
               value={formData.dob}
               onChange={(val) => handleChange('dob', val)}
               disabled={isLoading}
               placeholder="Select DOB"
             />
+            {errors.dob && <p className="text-red-500 text-xs font-semibold">{errors.dob}</p>}
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-text-secondary">Anniversary</label>
@@ -359,6 +362,8 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
             value={formData.country_id}
             onChange={(val) => handleChange('country_id', val)}
             options={countryOptions}
+            required={true}
+            error={errors.country_id}
             placeholder="Select Country"
           />
           <Select

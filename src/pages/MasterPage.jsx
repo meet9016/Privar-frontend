@@ -17,11 +17,12 @@ export default function MasterPage({ type }) {
   
   const fields = useMemo(() => [
     ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*' }] : []),
-    { name: 'name', label: `${label} Name` },
+    { name: 'name', label: `${label} Name`, required: true },
     ...(parentConfig ? [{ 
       name: 'parent_id', 
       label: parentConfig.label,
       type: 'select-remote',
+      required: true,
       source: parentConfig.source
     }] : []),
     { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }

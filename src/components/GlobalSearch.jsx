@@ -79,7 +79,7 @@ export default function GlobalSearch() {
         onFocus={() => {
           if (query.trim() && totalResults > 0) setIsOpen(true);
         }}
-        className="w-128 bg-surface-secondary text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:shadow-glow-primary transition-all duration-300"
+        className="w-80 md:w-[480px] lg:w-[600px] bg-surface-secondary text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:shadow-glow-primary transition-all duration-300"
       />
 
       {isOpen && (query.trim().length > 0) && (

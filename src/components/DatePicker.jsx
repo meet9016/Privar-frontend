@@ -12,6 +12,7 @@ export default function DatePicker({
   className = '',
   placeholder = 'Select date',
   disabled = false,
+  error,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -245,7 +246,9 @@ export default function DatePicker({
           readOnly
           value={getDisplayValue()}
           placeholder={placeholder}
-          className={`w-full px-3 py-2 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer pr-10 ${className}`}
+          className={`w-full px-3 py-2 bg-input-bg text-text border ${
+            error ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'
+          } rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer pr-10 ${className}`}
           disabled={disabled}
         />
         <CalendarIcon className="w-4 h-4 text-text-secondary absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />

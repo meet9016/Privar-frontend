@@ -12,12 +12,20 @@ export default function ConfirmDialog() {
     })
   }, [])
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     resolveConfirm(true)
     setDialog(null)
   }, [])
 
-  const handleCancel = useCallback(() => {
+  const handleCancel = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     resolveConfirm(false)
     setDialog(null)
   }, [])

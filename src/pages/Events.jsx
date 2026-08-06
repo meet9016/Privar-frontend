@@ -46,6 +46,7 @@ export default function Events() {
   const [selectedId, setSelectedId] = useState('')
   const [existingImage, setExistingImage] = useState('')
   const [formData, setFormData] = useState(defaultForm)
+  const [fieldErrors, setFieldErrors] = useState({})
   const [categories, setCategories] = useState([])
   const [countryList, setCountryList] = useState([])
   const [stateList, setStateList] = useState([])
@@ -186,6 +187,7 @@ export default function Events() {
       image: '',
       remove_image: false
     })
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
@@ -193,8 +195,35 @@ export default function Events() {
     event.preventDefault()
     setSaving(true)
     setError('')
+    setFieldErrors({})
+
+    const requiredFields = {
+      title: 'Title',
+      event_category_id: 'Category',
+      description: 'Description',
+      start_time: 'Start Time',
+      end_time: 'End Time',
+      event_location: 'Venue / Location',
+      country_id: 'Country',
+      state_id: 'State',
+      city_id: 'City'
+    }
+
+    const nextErrors = {}
+    Object.entries(requiredFields).forEach(([fieldName, label]) => {
+      if (!formData[fieldName]) {
+        nextErrors[fieldName] = `${label} is required`
+      }
+    })
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors)
+      setError('Please fill in all required fields')
+      setSaving(false)
+      return
+    }
+
     try {
-      const hasFile = formData.image instanceof FileList ? formData.image.length > 0 : formData.image instanceof File
       const payload = new FormData()
 
       const bodyFields = {
@@ -213,8 +242,8 @@ export default function Events() {
       }
 
       Object.entries(bodyFields).forEach(([key, value]) => payload.append(key, value ?? ''))
-      if (hasFile) {
-        payload.append('image', formData.image instanceof FileList ? formData.image[0] : formData.image)
+      if (formData.image instanceof File) {
+        payload.append('image', formData.image)
       }
       if (formData.remove_image) {
         payload.append('remove_image', 'true')
@@ -361,18 +390,24 @@ export default function Events() {
       )}
 
       <Modal isOpen={isModalOpen} title={selectedId ? 'Edit Event' : 'Add Event'} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-4 text-text">
+        <form onSubmit={handleSave} className="space-y-4 text-text" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
 
             <Input
               label="Title"
+              required
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value })
+                if (fieldErrors.title) setFieldErrors({ ...fieldErrors, title: null })
+              }}
               disabled={saving}
+              error={fieldErrors.title}
             />
 
             <Select
               label="Category"
+              required
               value={formData.event_category_id}
               onChange={(val) => {
                 const selectedOption = categories.find((item) => String(item.id) === String(val)) || {}
@@ -381,9 +416,11 @@ export default function Events() {
                   event_category_id: val,
                   event_category_name: selectedOption.name || ''
                 })
+                if (fieldErrors.event_category_id) setFieldErrors({ ...fieldErrors, event_category_id: null })
               }}
               disabled={saving}
               options={categories.map((c) => ({ label: c.name, value: c.id }))}
+              error={fieldErrors.event_category_id}
             />
           </div>
 
@@ -393,16 +430,21 @@ export default function Events() {
               type="textarea"
               rows={4}
               label="Description"
+              required
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value })
+                if (fieldErrors.description) setFieldErrors({ ...fieldErrors, description: null })
+              }}
               disabled={saving}
+              error={fieldErrors.description}
             />
-            <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
+             <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Image</label>
 
               <FileDropzone
                 accept="image/*"
-                onFilesSelected={(files) => setFormData({ ...formData, image: files, remove_image: false })}
+                onFilesSelected={(files) => setFormData({ ...formData, image: files[0] || '', remove_image: false })}
                 disabled={saving}
                 label="Click or Drag Event Image"
                 previews={[
@@ -410,8 +452,8 @@ export default function Events() {
                     url: assetUrl(existingImage),
                     onRemove: () => setFormData({ ...formData, remove_image: true })
                   }] : []),
-                  ...((formData.image instanceof File || (formData.image instanceof FileList && formData.image.length > 0)) ? [{
-                    url: URL.createObjectURL(formData.image instanceof FileList ? formData.image[0] : formData.image),
+                  ...(formData.image instanceof File ? [{
+                    url: URL.createObjectURL(formData.image),
                     onRemove: () => setFormData({ ...formData, image: '', remove_image: false })
                   }] : [])
                 ]}
@@ -424,16 +466,26 @@ export default function Events() {
             <Input
               type="datetime-local"
               label="Start Time"
+              required
               value={formData.start_time}
-              onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, start_time: e.target.value })
+                if (fieldErrors.start_time) setFieldErrors({ ...fieldErrors, start_time: null })
+              }}
               disabled={saving}
+              error={fieldErrors.start_time}
             />
             <Input
               type="datetime-local"
               label="End Time"
+              required
               value={formData.end_time}
-              onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, end_time: e.target.value })
+                if (fieldErrors.end_time) setFieldErrors({ ...fieldErrors, end_time: null })
+              }}
               disabled={saving}
+              error={fieldErrors.end_time}
             />
             <Select
               label="Entry Type"
@@ -449,32 +501,52 @@ export default function Events() {
           
           <Input
             label="Venue / Location"
+            required
             value={formData.event_location}
-            onChange={(e) => setFormData({ ...formData, event_location: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, event_location: e.target.value })
+              if (fieldErrors.event_location) setFieldErrors({ ...fieldErrors, event_location: null })
+            }}
             disabled={saving}
+            error={fieldErrors.event_location}
           />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <Select
               label="Country"
+              required
               value={formData.country_id}
-              onChange={(val) => setFormData({ ...formData, country_id: val })}
+              onChange={(val) => {
+                setFormData({ ...formData, country_id: val })
+                if (fieldErrors.country_id) setFieldErrors({ ...fieldErrors, country_id: null })
+              }}
               disabled={saving}
               options={countryList.map((c) => ({ label: c.name, value: c.id || c._id }))}
+              error={fieldErrors.country_id}
             />
             <Select
               label="State"
+              required
               value={formData.state_id}
-              onChange={(val) => setFormData({ ...formData, state_id: val })}
+              onChange={(val) => {
+                setFormData({ ...formData, state_id: val })
+                if (fieldErrors.state_id) setFieldErrors({ ...fieldErrors, state_id: null })
+              }}
               disabled={saving}
               options={stateList.map((s) => ({ label: s.name, value: s.id || s._id }))}
+              error={fieldErrors.state_id}
             />
             <Select
               label="City"
+              required
               value={formData.city_id}
-              onChange={(val) => setFormData({ ...formData, city_id: val })}
+              onChange={(val) => {
+                setFormData({ ...formData, city_id: val })
+                if (fieldErrors.city_id) setFieldErrors({ ...fieldErrors, city_id: null })
+              }}
               disabled={saving}
               options={cityList.map((c) => ({ label: c.name, value: c.id || c._id }))}
+              error={fieldErrors.city_id}
             />
           </div>
 

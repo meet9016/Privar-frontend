@@ -22,12 +22,15 @@ export default function Post() {
   const [success, setSuccess] = useState('')
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [formData, setFormData] = useState({
+  const emptyPostForm = {
     title: '',
     description: '',
     status: 1,
-    image: null
-  })
+    image: null,
+    remove_image: false
+  }
+  const [formData, setFormData] = useState(emptyPostForm)
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const [existingImage, setExistingImage] = useState('')
   const [selectedId, setSelectedId] = useState('')
@@ -77,7 +80,8 @@ export default function Post() {
     setSelected(null)
     setSelectedId('')
     setExistingImage('')
-    setFormData({ title: '', description: '', status: 1, image: null, remove_image: false })
+    setFormData(emptyPostForm)
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
@@ -92,21 +96,32 @@ export default function Post() {
       image: null,
       remove_image: false
     })
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
   const handleSave = async (event) => {
     event.preventDefault()
-    setSaving(true)
-    setError('')
-
+    setFieldErrors({})
     try {
       const payload = new FormData()
+      const errors = {}
+      if (!formData.title.trim()) {
+        errors.title = 'Title is required'
+      }
+      if (!formData.description.trim()) {
+        errors.description = 'Description is required'
+      }
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors)
+        setError('Please fill in all required fields')
+        setSaving(false)
+        return
+      }
       payload.append('title', formData.title)
       payload.append('description', formData.description)
       payload.append('status', formData.status)
-      const hasFile = formData.image instanceof FileList ? formData.image.length > 0 : formData.image instanceof File
-      if (hasFile) payload.append('image', formData.image instanceof FileList ? formData.image[0] : formData.image)
+      if (formData.image instanceof File) payload.append('image', formData.image)
       if (formData.remove_image) payload.append('remove_image', 'true')
       if (selectedId) {
         await api.put(`/posts/${selectedId}`, payload)
@@ -262,8 +277,12 @@ export default function Post() {
               label="Title"
               required
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value })
+                if (fieldErrors.title) setFieldErrors({ ...fieldErrors, title: null })
+              }}
               disabled={saving}
+              error={fieldErrors.title}
             />
             <Select
               label="Status"
@@ -284,15 +303,19 @@ export default function Post() {
               label="Description"
               required
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value })
+                if (fieldErrors.description) setFieldErrors({ ...fieldErrors, description: null })
+              }}
               disabled={saving}
+              error={fieldErrors.description}
             />
 
             <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Image</label>
               <FileDropzone
                 accept="image/*"
-                onFilesSelected={(files) => setFormData({ ...formData, image: files, remove_image: false })}
+                onFilesSelected={(files) => setFormData({ ...formData, image: files[0] || null, remove_image: false })}
                 disabled={saving}
                 label="Click or Drag Post Image"
                 previews={[
@@ -300,8 +323,8 @@ export default function Post() {
                     url: assetUrl(existingImage),
                     onRemove: () => setFormData({ ...formData, remove_image: true })
                   }] : []),
-                  ...((formData.image instanceof File || (formData.image instanceof FileList && formData.image.length > 0)) ? [{
-                    url: URL.createObjectURL(formData.image instanceof FileList ? formData.image[0] : formData.image),
+                  ...(formData.image instanceof File ? [{
+                    url: URL.createObjectURL(formData.image),
                     onRemove: () => setFormData({ ...formData, image: null, remove_image: false })
                   }] : [])
                 ]}

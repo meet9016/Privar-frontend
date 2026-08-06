@@ -44,6 +44,7 @@ export default function Expenses() {
 
   const [selectedExpense, setSelectedExpense] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [proofImage, setProofImage] = useState(null)
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().slice(0, 10),
@@ -54,6 +55,7 @@ export default function Expenses() {
     amount: '',
     description: ''
   })
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true)
@@ -118,6 +120,7 @@ export default function Expenses() {
       amount: expense.amount || '',
       description: expense.description || ''
     })
+    setProofImage(null)
     setIsModalOpen(true)
   }
 
@@ -132,12 +135,16 @@ export default function Expenses() {
       amount: '',
       description: ''
     })
+    setProofImage(null)
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setSelectedExpense(null)
+    setProofImage(null)
+    setFieldErrors({})
   }
 
   const handleChange = (e) => {
@@ -161,9 +168,21 @@ export default function Expenses() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.date || !formData.amount) {
-      setError('Date and Amount are required.')
-      setTimeout(() => setError(''), 3000)
+    setFieldErrors({})
+    setError('')
+
+    const errors = {}
+    if (!formData.date) errors.date = 'Date is required'
+    if (!formData.amount || Number(formData.amount) <= 0) errors.amount = 'Amount is required'
+    if (!formData.expense_category_id) errors.expense_category_id = 'Expense Category is required'
+    if (!formData.committee_member_id) errors.committee_member_id = 'Committee Member is required'
+    if (!proofImage && (!selectedExpense || !selectedExpense.image)) {
+      errors.proof = 'Proof / Receipt is required'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setError('Please fill in all required fields')
       return
     }
 
@@ -173,6 +192,10 @@ export default function Expenses() {
       const payload = new FormData(e.target)
       payload.append('expense_category_name', formData.expense_category_name)
       payload.append('committee_member_name', formData.committee_member_name)
+      
+      if (proofImage) {
+        payload.append('image', proofImage)
+      }
       
       if (selectedExpense) {
         await api.put(`/expenses/${selectedExpense.id}`, payload)
@@ -397,7 +420,7 @@ export default function Expenses() {
       )}
 
       <Modal isOpen={isModalOpen} title={selectedExpense ? 'Edit Expense' : 'Add Expense'} onClose={handleCloseModal}>
-        <form onSubmit={handleSubmit} className="space-y-4 text-text">
+        <form onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Date <span className="text-red-500">*</span></label>
@@ -405,10 +428,15 @@ export default function Expenses() {
                 name="date"
                 mode="date"
                 value={formData.date}
-                onChange={(val) => setFormData(prev => ({ ...prev, date: val }))}
+                onChange={(val) => {
+                  setFormData(prev => ({ ...prev, date: val }))
+                  if (fieldErrors.date) setFieldErrors(prev => ({ ...prev, date: null }))
+                }}
                 className={fieldClass}
                 disabled={formLoading}
+                error={fieldErrors.date}
               />
+              {fieldErrors.date && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.date}</p>}
             </div>
             <Input
               type="number"
@@ -417,26 +445,40 @@ export default function Expenses() {
               min="0"
               step="0.01"
               value={formData.amount}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e)
+                if (fieldErrors.amount) setFieldErrors(prev => ({ ...prev, amount: null }))
+              }}
               required
               placeholder="0.00"
               disabled={formLoading}
+              error={fieldErrors.amount}
             />
             <Select
               label="Expense Category"
               name="expense_category_id"
+              required
               value={formData.expense_category_id}
-              onChange={(val) => handleChange({ target: { name: 'expense_category_id', value: val } })}
+              onChange={(val) => {
+                handleChange({ target: { name: 'expense_category_id', value: val } })
+                if (fieldErrors.expense_category_id) setFieldErrors(prev => ({ ...prev, expense_category_id: null }))
+              }}
               options={[{ label: 'Select Category', value: '' }, ...expenseCategories.map(cat => ({ label: cat.name || cat.title || cat.category || 'Unnamed', value: cat.id || String(cat._id) }))]}
               disabled={formLoading}
+              error={fieldErrors.expense_category_id}
             />
             <Select
               label="Committee Member"
               name="committee_member_id"
+              required
               value={formData.committee_member_id}
-              onChange={(val) => handleChange({ target: { name: 'committee_member_id', value: val } })}
+              onChange={(val) => {
+                handleChange({ target: { name: 'committee_member_id', value: val } })
+                if (fieldErrors.committee_member_id) setFieldErrors(prev => ({ ...prev, committee_member_id: null }))
+              }}
               options={[{ label: 'Select Member', value: '' }, ...committeeMembers.map(member => ({ label: `${member.first_name} ${member.middle_name}`, value: member.id || String(member._id) }))]}
               disabled={formLoading}
+              error={fieldErrors.committee_member_id}
             />
             <div className="md:col-span-2">
               <Input
@@ -452,17 +494,26 @@ export default function Expenses() {
             </div>
             
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Proof / Receipt (Optional)</label>
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                Proof / Receipt <span className="text-red-500">*</span>
+              </label>
               <div className="flex flex-col gap-2">
                 <FileDropzone
                   name="image"
                   accept="image/*,application/pdf"
-                  onFilesSelected={() => {}}
+                  error={fieldErrors.proof}
+                  onFilesSelected={(files) => {
+                    setProofImage(files[0])
+                    if (fieldErrors.proof) setFieldErrors(prev => ({ ...prev, proof: null }))
+                  }}
                   disabled={formLoading}
                   label="Click or Drag Receipt/Proof"
                   subLabel="Supported: PDF, Images"
                   previews={[
-                    ...(selectedExpense?.image ? [{
+                    ...(proofImage ? [{
+                      url: URL.createObjectURL(proofImage),
+                      onRemove: () => setProofImage(null)
+                    }] : selectedExpense?.image ? [{
                       url: assetUrl(selectedExpense.image),
                       onRemove: () => {}
                     }] : [])

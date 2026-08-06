@@ -30,6 +30,7 @@ export default function Roles() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [formData, setFormData] = useState(emptyRoleForm)
+  const [formError, setFormError] = useState('')
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
   const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
@@ -76,6 +77,7 @@ export default function Roles() {
   const openCreate = () => {
     setSelected(null)
     setFormData(emptyRoleForm)
+    setFormError('')
     setIsModalOpen(true)
   }
 
@@ -87,6 +89,7 @@ export default function Roles() {
       status: Number(role.status ?? 1),
       permissions: Array.isArray(role.permissions) ? role.permissions : []
     })
+    setFormError('')
     setIsModalOpen(true)
   }
 
@@ -131,10 +134,10 @@ export default function Roles() {
   const handleSave = async (event) => {
     event.preventDefault()
     if (!formData.name.trim()) {
-      setError('Role name is required')
+      setFormError('Role name is required')
       return
     }
-
+    setFormError('')
     setSaving(true)
     setError('')
     try {
@@ -271,6 +274,9 @@ export default function Roles() {
 
       <Modal isOpen={isModalOpen} title={selected ? 'Edit Role' : 'Add Role'} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-5 text-text">
+          {formError && (
+            <div className="bg-error-bg border border-error-border text-error-text p-3 rounded-xl text-sm">{formError}</div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               label="Role Name"

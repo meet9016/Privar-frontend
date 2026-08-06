@@ -71,6 +71,8 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
   const validate = async () => {
     const nextErrors = {}
     if (!formData.first_name) nextErrors.first_name = 'First name is required'
+    if (!formData.last_name) nextErrors.last_name = 'Last name is required'
+    if (!formData.designation) nextErrors.designation = 'Designation is required'
     if (!formData.number) nextErrors.number = 'Contact number is required'
     if (formData.status === '') nextErrors.status = 'Status is required'
 

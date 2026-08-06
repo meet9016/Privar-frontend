@@ -11,7 +11,8 @@ export default function Select({
   placeholder = 'Select an option',
   searchable = true,
   disabled = false,
-  className = ''
+  className = '',
+  name
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,6 +42,7 @@ export default function Select({
 
   return (
     <div className={`relative ${className}`} ref={wrapperRef}>
+      {name && <input type="hidden" name={name} value={value ?? ''} />}
       {label && (
         <label className="block text-sm font-semibold text-text-secondary mb-1.5">
           {label} {required && <span className="text-red-500">*</span>}
@@ -63,7 +65,7 @@ export default function Select({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden">
+        <div className="absolute z-[9999] w-full mt-1 bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden">
           {searchable && (
             <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2">
               <Search size={16} className="text-text-secondary" />

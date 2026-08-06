@@ -30,6 +30,7 @@ export default function GalleryPage() {
   const [success, setSuccess] = useState('')
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [formError, setFormError] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [categoryName, setCategoryName] = useState('')
   const [year, setYear] = useState('')
@@ -38,6 +39,7 @@ export default function GalleryPage() {
   const [existingImages, setExistingImages] = useState([])
   const [newFiles, setNewFiles] = useState([])
   const [filePreviews, setFilePreviews] = useState([])
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
   const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
@@ -171,6 +173,7 @@ export default function GalleryPage() {
     setExistingImages(Array.isArray(row.images) ? row.images : [])
     setNewFiles([])
     setFilePreviews([])
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
@@ -179,6 +182,7 @@ export default function GalleryPage() {
     const previews = files.map((file) => ({ file, url: createPreviewUrl(file) }))
     setNewFiles((current) => [...current, ...files])
     setFilePreviews((current) => [...current, ...previews])
+    if (fieldErrors.images) setFieldErrors(prev => ({ ...prev, images: null }))
   }
 
   const removeExistingImage = (index) => {
@@ -197,19 +201,35 @@ export default function GalleryPage() {
     setCategoryId(selectedId)
     const category = categories.find((item) => item.id === selectedId)
     setCategoryName(category?.category || '')
+    if (fieldErrors.category) setFieldErrors(prev => ({ ...prev, category: null }))
   }
 
   const handleSave = async (event) => {
     event.preventDefault()
     setSaving(true)
+    setFormError('')
     setError('')
+    setFieldErrors({})
     try {
       let categoryIdToSave = categoryId
       let titleCategory = categoryName
 
+      const errors = {}
       if (!titleCategory) {
-        titleCategory = 'General'
+        errors.category = 'Category is required'
       }
+      if (newFiles.length === 0 && existingImages.length === 0) {
+        errors.images = 'At least one gallery image is required'
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors)
+        setFormError('Please fill in all required fields')
+        setSaving(false)
+        return
+      }
+
+    
 
 
       const payload = new FormData()
@@ -219,11 +239,6 @@ export default function GalleryPage() {
 
       existingImages.forEach((image) => payload.append('existing_images', image))
       newFiles.forEach((file) => payload.append('images', file))
-      if (newFiles.length === 0 && existingImages.length === 0) {
-        return setSaving(false)
-
-
-      }
 
       if (selected) {
         await api.put(`/gallery/${selected.id}`, payload)
@@ -388,7 +403,7 @@ export default function GalleryPage() {
       )}
 
       <Modal isOpen={isModalOpen} title={selected ? 'Edit Images' : 'Add Images'} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-4 text-text">
+        <form onSubmit={handleSave} className="space-y-4 text-text" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <Select
               label="Category"
@@ -397,10 +412,11 @@ export default function GalleryPage() {
               onChange={(val) => handleCategorySelect({ target: { value: val } })}
               disabled={saving}
               options={categories.map((item) => ({ label: item.category, value: item.id }))}
+              error={fieldErrors.category}
             />
 
             <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Month & Year</label>
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Month &amp; Year <span className="text-text-secondary font-normal text-xs">(Optional)</span></label>
               <DatePicker
                 name="year"
                 mode="month"
@@ -411,10 +427,10 @@ export default function GalleryPage() {
               />
             </div>
           </div>
-        <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
+        <div className={`flex flex-col bg-input-bg border ${fieldErrors.images ? 'border-red-500 ring-1 ring-red-500' : 'border-border'} rounded-xl p-3`}>
 
             <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Gallery Images</label>
+              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Gallery Images <span className="text-red-500">*</span></label>
               <FileDropzone
                 multiple
                 accept="image/*"
@@ -436,9 +452,10 @@ export default function GalleryPage() {
                   }))
                 ]}
               />
+              {fieldErrors.images && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.images}</p>}
             </div>
           </div>
-
+          <div className="pb-20" />
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel

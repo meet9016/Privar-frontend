@@ -8,8 +8,8 @@ const definitions = {
     subtitle: 'Create and maintain festival announcements',
     endpoint: '/content/festivals',
     fields: [
-      { name: 'title', label: 'Title' },
-      { name: 'festival_date', label: 'Festival Date', type: 'date' },
+      { name: 'title', label: 'Title', required: true },
+      { name: 'festival_date', label: 'Festival Date', type: 'date', required: true },
       { name: 'description', label: 'Description', type: 'textarea' },
       { name: 'image', label: 'Image', type: 'file' }
     ],
@@ -45,21 +45,21 @@ const definitions = {
     endpoint: '/matrimonies',
     supportIsOwn: true,
     fields: [
-      { name: 'full_name', label: 'Full Name' },
-      { name: 'gender', label: 'Gender' },
-      { name: 'birthdate', label: 'Birthdate', type: 'date' },
-      { name: 'marital_status', label: 'Marital Status' },
-      { name: 'height', label: 'Height' },
-      { name: 'weight', label: 'Weight' },
-      { name: 'complexion', label: 'Complexion' },
-      { name: 'education', label: 'Education' },
-      { name: 'occupation', label: 'Occupation' },
-      { name: 'father_name', label: 'Father Name' },
-      { name: 'mother_name', label: 'Mother Name' },
-      { name: 'gotra', label: 'Gotra' },
-      { name: 'family_type', label: 'Family Type' },
-      { name: 'mobile_number', label: 'Mobile Number' },
-      { name: 'city', label: 'City' },
+      { name: 'full_name', label: 'Full Name', required: true },
+      { name: 'gender', label: 'Gender', required: true },
+      { name: 'birthdate', label: 'Birthdate', type: 'date', required: true },
+      { name: 'marital_status', label: 'Marital Status', required: true },
+      { name: 'height', label: 'Height', required: true },
+      { name: 'weight', label: 'Weight', required: true },
+      { name: 'complexion', label: 'Complexion', required: true },
+      { name: 'education', label: 'Education', required: true },
+      { name: 'occupation', label: 'Occupation', required: true },
+      { name: 'father_name', label: 'Father Name', required: true },
+      { name: 'mother_name', label: 'Mother Name', required: true },
+      { name: 'gotra', label: 'Gotra', required: true },
+      { name: 'family_type', label: 'Family Type', required: true },
+      { name: 'mobile_number', label: 'Mobile Number', required: true },
+      { name: 'city', label: 'City', required: true },
       {
         name: 'status',
         label: 'Status',
@@ -140,9 +140,9 @@ const definitions = {
     subtitle: 'Manage user feedback and suggestions',
     endpoint: '/feedback',
     fields: [
-      { name: 'name', label: 'Name' },
-      { name: 'email', label: 'Email', type: 'email' },
-      { name: 'message', label: 'Message', type: 'textarea' }
+      { name: 'name', label: 'Name', required: true },
+      { name: 'email', label: 'Email', type: 'email', required: true },
+      { name: 'message', label: 'Message', type: 'textarea', required: true }
     ],
     columns: [
       { key: 'name', label: 'Name' },
@@ -155,7 +155,7 @@ const definitions = {
     subtitle: 'View and manage member birthdays',
     endpoint: '/users?birthday',
     hideAdd: true,
-    fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date' }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
+    fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date', required: true }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
     columns: [
       { key: 'name', label: 'Name' },
       { key: 'dob', label: 'Date of Birth', render: (row) => row.dob ? new Date(row.dob).toLocaleDateString('en-IN') : '-' },
@@ -168,17 +168,17 @@ const definitions = {
     subtitle: 'Post and manage job vacancy listings',
     endpoint: '/job-vacancy',
     fields: [
-      { name: 'title', label: 'Title' },
-      { name: 'company_name', label: 'Company Name' },
-      { name: 'description', label: 'Description', type: 'textarea' },
-      { name: 'qualifications', label: 'Qualifications', type: 'textarea' },
-      { name: 'location', label: 'Location' }, 
-      {name: 'job_type', label: 'Job Type', type: 'select',
+      { name: 'title', label: 'Title', required: true },
+      { name: 'company_name', label: 'Company Name', required: true },
+      { name: 'description', label: 'Description', type: 'textarea', required: true },
+      { name: 'qualifications', label: 'Qualifications', type: 'textarea', required: true },
+      { name: 'location', label: 'Location', required: true }, 
+      {name: 'job_type', label: 'Job Type', type: 'select', required: true,
         options: [{ value: "full-time", label: 'Full Time' }, { value: "part-time", label: 'Part Time' }, { value: "contract", label: 'Contract' }, { value: "internship", label: 'Internship' }]},
-      { name: 'salary', label: 'Salary' },
-      { name: 'contact_email', label: 'Contact Email', type: 'email' },
-      { name: 'contact_number', label: 'Contact Number' },
-      { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Approved' }, { value: 0, label: 'Inactive' }] },
+      { name: 'salary', label: 'Salary', required: true },
+      { name: 'contact_email', label: 'Contact Email', type: 'email', required: true },
+      { name: 'contact_number', label: 'Contact Number', required: true },
+      { name: 'status', label: 'Status', type: 'select', required: true, defaultValue: 1, options: [{ value: 1, label: 'Approved' }, { value: 0, label: 'Inactive' }] },
       { name: 'image', label: 'Image', type: 'file' }
     ],
     columns: [
@@ -197,11 +197,11 @@ const definitions = {
     subtitle: 'Manage bank accounts for donations',
     endpoint: '/bank-details',
     fields: [
-      { name: 'bank_name', label: 'Bank Name' },
-      { name: 'account_name', label: 'Account Name' },
-      { name: 'account_number', label: 'Account Number' },
-      { name: 'ifsc_code', label: 'IFSC Code' },
-      { name: 'branch', label: 'Branch' },
+      { name: 'bank_name', label: 'Bank Name', required: true },
+      { name: 'account_name', label: 'Account Name', required: true },
+      { name: 'account_number', label: 'Account Number', required: true },
+      { name: 'ifsc_code', label: 'IFSC Code', required: true },
+      { name: 'branch', label: 'Branch', required: true },
       { name: 'upi_link', label: 'UPI Link' },
       { name: 'qr_code', label: 'QR Code', type: 'file' },
       { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
@@ -228,5 +228,5 @@ export default function ContentPage({ type }) {
     )
   }
 
-  return <AdminCrudPage {...definitions[type]} getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} />
+  return <AdminCrudPage {...definitions[type]} hideDelete={type === 'birthday'} deleteAction={type === 'birthday' ? 'clear-dob' : undefined} getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} />
 }

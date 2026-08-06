@@ -26,7 +26,7 @@ export default function Modal({ isOpen, title, children, onClose, maxWidth = 'ma
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-5 sm:p-6 rounded-b-2xl custom-scrollbar">
+          <div className="flex-1 p-5 sm:p-6 rounded-b-2xl overflow-y-auto overflow-x-visible custom-scrollbar max-h-[calc(90vh-130px)]" style={{ overflowY: 'auto', overflowX: 'visible' }}>
             {children}
           </div>
         </div>

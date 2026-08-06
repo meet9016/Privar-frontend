@@ -36,14 +36,8 @@ export const memberApi = axios.create({
 const setupInterceptors = (axiosInstance) => {
   axiosInstance.interceptors.request.use(
     (config) => {
-      const url = config.url || ''
-      const isPublicDropdown = url.includes('/masters/country') || 
-                               url.includes('/masters/state') || 
-                               url.includes('/masters/city') || 
-                               url.includes('familyHead=true')
-
       const token = localStorage.getItem('auth_token')
-      if (token && !isPublicDropdown) {
+      if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
       if (config.data instanceof FormData) {

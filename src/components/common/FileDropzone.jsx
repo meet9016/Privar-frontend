@@ -10,6 +10,7 @@ export default function FileDropzone({
   label = "Drag & Drop or Click to Browse",
   subLabel = "",
   name = "",
+  error = "",
   previews = [] // Array of { url: string, onRemove: function }
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -59,7 +60,7 @@ export default function FileDropzone({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`relative w-full h-44 rounded-2xl border-2 border-dashed flex flex-col overflow-hidden cursor-pointer transition-all duration-300
-          ${isDragOver ? 'border-primary bg-primary/5' : 'border-border bg-input-bg hover:bg-surface-secondary/40'}
+          ${error ? 'border-red-500 bg-red-500/5 ring-1 ring-red-500' : isDragOver ? 'border-primary bg-primary/5' : 'border-border bg-input-bg hover:bg-surface-secondary/40'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
@@ -86,7 +87,7 @@ export default function FileDropzone({
                         e.stopPropagation();
                         preview.onRemove();
                       }}
-                      className="preview-item absolute -top-1.5 -right-1.5 bg-error text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow z-10"
+                      className="preview-item absolute -top-1.5 -right-1.5 bg-error text-white rounded-full p-0.5 transition-opacity flex items-center justify-center shadow z-10"
                       title="Remove"
                       disabled={disabled}
                     >
@@ -127,6 +128,7 @@ export default function FileDropzone({
           name={name}
         />
       </div>
+      {error && <p className="text-red-500 text-xs mt-1 font-semibold">{error}</p>}
 
       {/* Fullscreen image preview modal */}
       <Modal

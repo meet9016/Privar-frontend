@@ -161,6 +161,9 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     if (!formData.business_category_id.trim()) nextErrors.business_category_id = 'Business category is required'
     if (!formData.number.trim()) nextErrors.number = 'Primary phone is required'
     if (!formData.email.trim()) nextErrors.email = 'Email is required'
+    if (!formData.country_id.trim()) nextErrors.country_id = 'Country is required'
+    if (!formData.state_id.trim()) nextErrors.state_id = 'State is required'
+    if (!formData.city_id.trim()) nextErrors.city_id = 'City is required'
     if (!formData.address.trim()) nextErrors.address = 'Address is required'
     if (!formData.location_link.trim()) nextErrors.location_link = 'Location link is required'
 
@@ -179,7 +182,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 text-text">
+    <form onSubmit={handleSubmit} className="space-y-5 text-text" noValidate>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
@@ -211,13 +214,21 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
         <Input
           label="WhatsApp Number"
           value={formData.whatsapp_number}
-          onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, '').slice(0, 10)
+            setFormData({ ...formData, whatsapp_number: val })
+          }}
           disabled={isLoading}
         />
         <Input
           label="Number"
+          required
           value={formData.number}
-          onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, '').slice(0, 10)
+            setFormData({ ...formData, number: val })
+            if (errors.number) setErrors(prev => ({ ...prev, number: null }))
+          }}
           disabled={isLoading}
           error={errors.number}
         />
