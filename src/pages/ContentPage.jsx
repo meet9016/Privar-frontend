@@ -10,7 +10,7 @@ const definitions = {
     fields: [
       { name: 'title', label: 'Title', required: true },
       { name: 'festival_date', label: 'Festival Date', type: 'date', required: true },
-      { name: 'description', label: 'Description', type: 'textarea' },
+      { name: 'description', label: 'Description', type: 'textarea', required: true },
       { name: 'image', label: 'Image', type: 'file' }
     ],
     columns: [
@@ -46,9 +46,31 @@ const definitions = {
     supportIsOwn: true,
     fields: [
       { name: 'full_name', label: 'Full Name', required: true },
-      { name: 'gender', label: 'Gender', required: true },
+      {
+        name: 'gender',
+        label: 'Gender',
+        type: 'select',
+        required: true,
+        options: [
+          { value: 'Male', label: 'Male' },
+          { value: 'Female', label: 'Female' },
+          { value: 'Other', label: 'Other' }
+        ]
+      },
       { name: 'birthdate', label: 'Birthdate', type: 'date', required: true },
-      { name: 'marital_status', label: 'Marital Status', required: true },
+      {
+        name: 'marital_status',
+        label: 'Marital Status',
+        type: 'select',
+        required: true,
+        options: [
+          { value: 'Single', label: 'Single' },
+          { value: 'Never Married', label: 'Never Married' },
+          { value: 'Divorced', label: 'Divorced' },
+          { value: 'Widowed', label: 'Widowed' },
+          { value: 'Awaiting Divorce', label: 'Awaiting Divorce' }
+        ]
+      },
       { name: 'height', label: 'Height', required: true },
       { name: 'weight', label: 'Weight', required: true },
       { name: 'complexion', label: 'Complexion', required: true },
@@ -64,7 +86,7 @@ const definitions = {
         name: 'status',
         label: 'Status',
         type: 'select',
-        defaultValue: 0,
+        required: true,
         options: [
           { value: 1, label: 'Active' },
           { value: 0, label: 'Inactive' }
@@ -78,6 +100,14 @@ const definitions = {
       { key: 'person_image', label: 'Photo', type: 'image' },
       { key: 'full_name', label: 'Name' },
       { key: 'gender', label: 'Gender' },
+      { key: 'birthdate', label: 'Birthdate', render: (row) => {
+        if (!row.birthdate) return '-'
+        const d = new Date(row.birthdate)
+        if (isNaN(d.getTime())) return row.birthdate
+        const day = String(d.getDate()).padStart(2, '0')
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        return `${day}/${month}/${d.getFullYear()}`
+      }},
       { key: 'marital_status', label: 'Status' },
       { key: 'city', label: 'City' },
       { key: 'mobile_number', label: 'Mobile' }
@@ -178,7 +208,7 @@ const definitions = {
       { name: 'salary', label: 'Salary', required: true },
       { name: 'contact_email', label: 'Contact Email', type: 'email', required: true },
       { name: 'contact_number', label: 'Contact Number', required: true },
-      { name: 'status', label: 'Status', type: 'select', required: true, defaultValue: 1, options: [{ value: 1, label: 'Approved' }, { value: 0, label: 'Inactive' }] },
+      { name: 'status', label: 'Status', type: 'select', required: true, options: [{ value: 1, label: 'Approved' }, { value: 0, label: 'Inactive' }] },
       { name: 'image', label: 'Image', type: 'file' }
     ],
     columns: [

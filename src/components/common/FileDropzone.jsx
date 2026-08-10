@@ -59,8 +59,8 @@ export default function FileDropzone({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative w-full h-44 rounded-2xl border-2 border-dashed flex flex-col overflow-hidden cursor-pointer transition-all duration-300
-          ${error ? 'border-red-500 bg-red-500/5 ring-1 ring-red-500' : isDragOver ? 'border-primary bg-primary/5' : 'border-border bg-input-bg hover:bg-surface-secondary/40'}
+        className={`relative w-full h-44 rounded-2xl border border-dashed flex flex-col overflow-hidden cursor-pointer transition-all duration-300
+          ${error ? 'border-red-500 bg-red-500/5' : isDragOver ? 'border-primary bg-primary/5' : 'border-border bg-input-bg hover:bg-surface-secondary/40'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >

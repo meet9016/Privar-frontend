@@ -10,6 +10,7 @@ import UserForm from '../components/UserForm'
 import Select from '../components/common/Select'
 import Input from '../components/common/Input'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 
 export default function Users() {
   const { user: currentUser } = useContext(AuthContext)
@@ -121,23 +122,21 @@ export default function Users() {
     setError('')
     try {
       if (selectedUser) {
-        // Update
-        const res = await api.put(`/users/${selectedUser.id}`, formData)
-        const updated = res.data?.data || res.data || {}
-        setSuccess('Member updated successfully')
+        // Edit
+        await api.put(`/users/${selectedUser.id}`, formData)
+        toast.success('Member updated successfully')
         fetchUsers() // Refresh list
       } else {
         // Create
         const res = await api.post('/users', formData)
         const created = res.data?.data || res.data || {}
-        setSuccess('Member created successfully')
+        toast.success('Member created successfully')
         fetchUsers() // Refresh list
       }
       setIsModalOpen(false)
       setSelectedUser(null)
-      setTimeout(() => setSuccess(''), 4000)
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to save member')
+      toast.error(err.response?.data?.message || err.message || 'Failed to save member')
     } finally {
       setFormLoading(false)
     }
@@ -149,10 +148,9 @@ export default function Users() {
     try {
       await api.delete(`/users/${userId}`)
       await fetchUsers()
-      setSuccess('Member deleted successfully')
-      setTimeout(() => setSuccess(''), 4000)
+      toast.success('Member deleted successfully')
     } catch (err) {
-      setError('Failed to delete member')
+      toast.error('Failed to delete member')
     }
   }
 
@@ -197,12 +195,11 @@ export default function Users() {
     setFormLoading(true)
     try {
       await api.put('/users/bulk-update', { userIds: selectedUsers, status }, { headers: { 'Content-Type': 'application/json' } })
-      setSuccess(`Members ${actionName}d successfully`)
+      toast.success(`Members ${actionName}d successfully`)
       setSelectedUsers([])
       fetchUsers()
-      setTimeout(() => setSuccess(''), 4000)
     } catch (err) {
-      setError(`Failed to bulk ${actionName} members`)
+      toast.error(`Failed to bulk ${actionName} members`)
     } finally {
       setFormLoading(false)
     }
@@ -298,18 +295,7 @@ export default function Users() {
       </div>
 
       {/* Operation Status alerts */}
-      {error && (
-        <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-success animate-ping"></span>
-          {success}
-        </div>
-      )}
+
 
       {/* Advanced Filter panel */}
       <div className={`transition-all duration-300 ease-in-out ${showFilters ? 'max-h-[500px] opacity-100 mt-4 overflow-visible z-20 relative' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>

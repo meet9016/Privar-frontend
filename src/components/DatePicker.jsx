@@ -13,8 +13,11 @@ export default function DatePicker({
   placeholder = 'Select date',
   disabled = false,
   error,
+  label,
+  required,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState(mode);
   
   // The date that drives the currently viewed month/year in the calendar popover
   const [viewDate, setViewDate] = useState(() => {
@@ -23,36 +26,41 @@ export default function DatePicker({
     const y = parseInt(parts[0], 10);
     const m = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
     const d = parts[2] ? parseInt(parts[2], 10) : 1;
-    return new Date(y, m, d);
+    const initialDate = new Date(y, isNaN(m) ? 0 : m, isNaN(d) ? 1 : d);
+    return isNaN(initialDate.getTime()) ? new Date() : initialDate;
   });
 
-  // What level are we selecting? (day grid, month grid, year grid)
-  const [viewMode, setViewMode] = useState(mode);
   const containerRef = useRef(null);
 
-  // Click outside to close
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+    setViewMode(mode);
+  }, [mode]);
 
-  // When opened, reset view to match the current value (or today if empty)
   useEffect(() => {
-    if (isOpen) {
-      setViewMode(mode);
-      if (value) {
-        const parts = value.split('-');
-        setViewDate(new Date(parseInt(parts[0], 10), parts[1] ? parseInt(parts[1], 10) - 1 : 0, 1));
-      } else {
-        setViewDate(new Date());
+    if (value) {
+      const parts = value.split('-');
+      const y = parseInt(parts[0], 10);
+      const m = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
+      const d = parts[2] ? parseInt(parts[2], 10) : 1;
+      if (!isNaN(y)) {
+        const nextDate = new Date(y, isNaN(m) ? 0 : m, isNaN(d) ? 1 : d);
+        if (!isNaN(nextDate.getTime())) {
+          setViewDate(nextDate);
+        }
       }
     }
-  }, [isOpen, value, mode]);
+  }, [value]);
+
+  // Handle click outside to close popover
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Formatting helpers
   const formatOutput = (d) => {
@@ -72,7 +80,9 @@ export default function DatePicker({
 
     if (mode === 'year') return d.getFullYear();
     if (mode === 'month') return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${d.getFullYear()}`;
   };
 
   // View navigation
@@ -236,6 +246,11 @@ export default function DatePicker({
   return (
     <div className="relative w-full" ref={containerRef}>
       {name && <input type="hidden" name={name} value={value} />}
+      {label && (
+        <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+      )}
       {/* Trigger Input */}
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
@@ -247,8 +262,8 @@ export default function DatePicker({
           value={getDisplayValue()}
           placeholder={placeholder}
           className={`w-full px-3 py-2 bg-input-bg text-text border ${
-            error ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'
-          } rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer pr-10 ${className}`}
+            error ? 'border-red-500' : 'border-border focus:border-primary/50'
+          } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all cursor-pointer pr-10 ${className}`}
           disabled={disabled}
         />
         <CalendarIcon className="w-4 h-4 text-text-secondary absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -302,6 +317,7 @@ export default function DatePicker({
           )}
         </div>
       )}
+      {error && <p className="text-red-500 text-xs mt-1 font-semibold">{error}</p>}
     </div>
   );
 }

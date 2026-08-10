@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import api, { assetUrl } from '../lib/api'
 import Loader from '../components/common/Loader'
+import { toast } from '../lib/toast'
 import { AuthContext } from '../context/AuthContext'
 import { confirm } from '../lib/confirm'
 
@@ -325,11 +326,10 @@ export default function SettingsPage() {
       await api.put('/update_app_theme', payload)
       persistWebThemeToLocalStorage(config)
       window.dispatchEvent(new Event('storage'))
-      setSuccess('Platform configuration updated successfully!')
-      setTimeout(() => setSuccess(''), 4000)
+      toast.success('Platform configuration updated successfully!')
       fetchConfig()
     } catch (err) {
-      setError('Failed to save configuration settings')
+      toast.error('Failed to save configuration settings')
     } finally {
       setSaveLoading(false)
     }
@@ -349,20 +349,6 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 animate-slide-up text-text">
-
-      {/* Alerts */}
-      {error && (
-        <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-success animate-ping"></span>
-          {success}
-        </div>
-      )}
 
       {/* Tab Bar */}
       <div className="flex gap-2 border-b border-border">

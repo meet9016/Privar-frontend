@@ -8,6 +8,7 @@ import Loader from '../components/common/Loader'
 import BusinessForm from '../components/BusinessForm'
 import usePagination from '../hooks/usePagination'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 
 export default function Businesses() {
   const navigate = useNavigate()
@@ -64,10 +65,9 @@ export default function Businesses() {
     try {
       await api.delete(`/businesses/${id}`)
       await fetchBusinesses()
-      setSuccess('Business listing deleted successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('Business listing deleted successfully')
     } catch (err) {
-      setError('Failed to delete business listing')
+      toast.error('Failed to delete business listing')
     }
   }
 
@@ -142,12 +142,11 @@ export default function Businesses() {
       const savedData = res.data?.data || res.data;
       await fetchBusinesses()
 
-      setSuccess(`Business listing ${selectedBusiness ? 'updated' : 'created'} successfully`)
+      toast.success(`Business listing ${selectedBusiness ? 'updated' : 'created'} successfully`)
       setIsModalOpen(false)
       setSelectedBusiness(null)
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update business listing')
+      toast.error(err.response?.data?.message || 'Failed to update business listing')
       console.error(err)
     } finally {
       setFormLoading(false)
@@ -190,20 +189,6 @@ export default function Businesses() {
         </div>
       </div>
     </div>
-
-    {/* Alerts */}
-    {error && (
-      <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-        <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-        {error}
-      </div>
-    )}
-    {success && (
-      <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-        <span className="w-2 h-2 rounded-full bg-success animate-ping"></span>
-        {success}
-      </div>
-    )}
 
     {/* Main List */}
     {loading && filtered.length === 0 ? (

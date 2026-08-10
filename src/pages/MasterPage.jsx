@@ -25,13 +25,13 @@ export default function MasterPage({ type }) {
       required: true,
       source: parentConfig.source
     }] : []),
-    { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
+    { name: 'status', label: 'Status', type: 'select', required: true, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
   ], [label, type, parentConfig])
 
   const columns = useMemo(() => [
     ...(type === 'business' ? [{ key: 'image', label: 'Image', type: 'image' }] : []),
     { key: 'name', label: 'Name' },
-    ...(parentConfig ? [{ key: 'parent_id', label: parentConfig.label }] : []),
+    ...(parentConfig ? [{ key: 'parent_name', label: parentConfig.label, render: (row) => (row.parent_name && !/^[0-9a-fA-F]{24}$/.test(row.parent_name) ? row.parent_name : '-') }] : []),
     { key: 'status', label: 'Status', render: (row) => Number(row.status) === 1 ? 'Active' : 'Inactive' }
   ], [type, parentConfig])
 

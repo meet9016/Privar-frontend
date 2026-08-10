@@ -10,6 +10,8 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 
+import { toast } from '../lib/toast'
+
 export default function Post() {
   const [posts, setPosts] = useState([])
   const [limit, setLimit] = useState(10)
@@ -69,10 +71,9 @@ export default function Post() {
     try {
       await api.delete(`/posts/${id}`)
       await fetchPosts()
-      setSuccess('Post deleted and moderated successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('Post deleted and moderated successfully')
     } catch (err) {
-      setError('Failed to delete post')
+      toast.error('Failed to delete post')
     }
   }
 
@@ -82,6 +83,7 @@ export default function Post() {
     setExistingImage('')
     setFormData(emptyPostForm)
     setFieldErrors({})
+    setError('')
     setIsModalOpen(true)
   }
 
@@ -97,6 +99,7 @@ export default function Post() {
       remove_image: false
     })
     setFieldErrors({})
+    setError('')
     setIsModalOpen(true)
   }
 
@@ -114,7 +117,6 @@ export default function Post() {
       }
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors)
-        setError('Please fill in all required fields')
         setSaving(false)
         return
       }
@@ -129,16 +131,15 @@ export default function Post() {
         await api.post('/posts', payload)
       }
       await fetchPosts()
-      setSuccess('Post saved successfully')
+      toast.success('Post saved successfully')
       setIsModalOpen(false)
       setSelected(null)
-      setTimeout(() => setSuccess(''), 3000)
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save post')
-    } finally {
-      setSaving(false)
       setExistingImage('')
       setSelectedId('')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save post')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -178,20 +179,6 @@ export default function Post() {
           </div>
         </div>
       </div>
-
-      {/* Alerts */}
-      {error && (
-        <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-success animate-ping"></span>
-          {success}
-        </div>
-      )}
 
       {/* Main Grid */}
       {loading && posts.length === 0 ? (

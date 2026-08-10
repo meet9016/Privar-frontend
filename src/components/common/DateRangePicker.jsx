@@ -29,8 +29,8 @@ export default function DateRangePicker({
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
             className={`w-full pl-10 pr-3 py-2 bg-input-bg text-text border ${
-              error ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'
-            } rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
+              error ? 'border-red-500' : 'border-border focus:border-primary/50'
+            } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}
           />
         </div>
         
@@ -46,8 +46,8 @@ export default function DateRangePicker({
             onChange={(e) => onEndDateChange(e.target.value)}
             min={startDate} // Prevent selecting end date before start date
             className={`w-full pl-10 pr-3 py-2 bg-input-bg text-text border ${
-              error ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'
-            } rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
+              error ? 'border-red-500' : 'border-border focus:border-primary/50'
+            } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}
           />
         </div>
       </div>

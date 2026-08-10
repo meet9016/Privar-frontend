@@ -11,6 +11,7 @@ import CommitteeMemberForm from '../components/CommitteeMemberForm'
 import Loader from '../components/common/Loader'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 
 
 export default function CommitteeMembers() {
@@ -98,10 +99,9 @@ export default function CommitteeMembers() {
       await fetchCommitteeMembers()
       setSelected(null)
       setIsModalOpen(false)
-      setSuccess(selected ? 'Committee member updated successfully' : 'Committee member added successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success(selected ? 'Committee member updated successfully' : 'Committee member added successfully')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update committee member')
+      toast.error(err.response?.data?.message || 'Failed to update committee member')
     } finally {
       setSaving(false)
     }
@@ -116,10 +116,9 @@ export default function CommitteeMembers() {
     try {
       await api.delete(`/committee-members/${id}`)
       await fetchCommitteeMembers()
-      setSuccess('Committee member deleted successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('Committee member deleted successfully')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete committee member')
+      toast.error(err.response?.data?.message || 'Failed to delete committee member')
     } finally {
       setSaving(false)
     }
@@ -183,8 +182,7 @@ export default function CommitteeMembers() {
         </div>
       </div>
 
-      {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
-      {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm">{success}</div>}
+
 
       <Table
         columns={[

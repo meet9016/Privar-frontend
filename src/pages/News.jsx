@@ -9,6 +9,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 
 export default function News() {
   const [rows, setRows] = useState([])
@@ -77,10 +78,9 @@ export default function News() {
     try {
       await api.delete(`/news/${id}`)
       await fetchNews()
-      setSuccess('News announcement deleted and moderated successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('News announcement deleted and moderated successfully')
     } catch (err) {
-      setError('Failed to delete news announcement')
+      toast.error('Failed to delete news announcement')
     }
   }
 
@@ -123,7 +123,6 @@ export default function News() {
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
-      setError('Please fill in all required fields')
       setSaving(false)
       return
     }
@@ -145,13 +144,12 @@ export default function News() {
         await api.post('/news', payload)
       }
       await fetchNews()
-      setSuccess('Feed News saved successfully')
+      toast.success('Feed News saved successfully')
       setIsModalOpen(false)
       setSelected(null)
       setExistingImage('')  
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save feed News')
+      toast.error(err.response?.data?.message || 'Failed to save feed News')
     } finally {
       setSaving(false)
     }
@@ -195,19 +193,7 @@ export default function News() {
         </div>
       </div>
 
-      {/* Alerts */}
-      {error && (
-        <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-success animate-ping"></span>
-          {success}
-        </div>
-      )}
+
 
       {/* Main Grid */}
       {loading && rows.length === 0 ? (

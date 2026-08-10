@@ -4,6 +4,7 @@ import Input from './common/Input'
 import Select from './common/Select'
 import Button from './common/Button'
 import ImageUpload from './common/ImageUpload'
+import { isValidEmail } from '../lib/validation'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all'
 
@@ -24,7 +25,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
   })
   const [errors, setErrors] = useState({})
 
-  useEffect(() => {
+      useEffect(() => {
     setFormData({
       first_name: member?.first_name || '',
       middle_name: member?.middle_name || '',
@@ -34,7 +35,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
       password: '',
       role_id: member?.role_id || '',
       designation: member?.designation || '',
-      status: Number(member?.status ?? 1),
+      status: member ? Number(member.status) : '',
       image: member?.image
     })
     setErrors({})
@@ -70,16 +71,40 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
 
   const validate = async () => {
     const nextErrors = {}
-    if (!formData.first_name) nextErrors.first_name = 'First name is required'
-    if (!formData.last_name) nextErrors.last_name = 'Last name is required'
-    if (!formData.designation) nextErrors.designation = 'Designation is required'
-    if (!formData.number) nextErrors.number = 'Contact number is required'
-    if (formData.status === '') nextErrors.status = 'Status is required'
+    if (!formData.first_name?.trim()) nextErrors.first_name = 'First name is required'
+    if (!formData.last_name?.trim()) nextErrors.last_name = 'Last name is required'
+    if (!formData.designation?.trim()) nextErrors.designation = 'Designation is required'
+    if (!formData.number?.trim()) {
+      nextErrors.number = 'Contact number is required'
+    } else if (formData.number.length < 10) {
+      nextErrors.number = 'Contact number must be 10 digits'
+    }
+    if (formData.email && !isValidEmail(formData.email)) {
+      nextErrors.email = 'Please enter a valid email address (e.g. user@gmail.com)'
+    }
+    if (formData.status === '' || formData.status === undefined) nextErrors.status = 'Status is required'
 
     const imageError = await validateImage(formData.image)
     if (imageError) nextErrors.image = imageError
 
     return nextErrors
+  }
+
+  const handleFieldChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    setErrors(prev => {
+      const updated = { ...prev }
+      if (field === 'first_name' && value.trim()) delete updated.first_name
+      if (field === 'last_name' && value.trim()) delete updated.last_name
+      if (field === 'designation' && value.trim()) delete updated.designation
+      if (field === 'number' && value.trim().length === 10) delete updated.number
+      if (field === 'email') {
+        if (!value || isValidEmail(value)) delete updated.email
+        else updated.email = 'Please enter a valid email address (e.g. user@gmail.com)'
+      }
+      if (field === 'status' && value !== '') delete updated.status
+      return updated
+    })
   }
 
   const handleSubmit = async (event) => {
@@ -122,7 +147,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           required
           placeholder="Enter First Name"
           value={formData.first_name}
-          onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+          onChange={(e) => handleFieldChange('first_name', e.target.value.replace(/[0-9]/g, ''))}
           disabled={isLoading}
           error={errors.first_name}
         />
@@ -130,7 +155,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           label="Middle Name"
           placeholder="Enter Middle Name"
           value={formData.middle_name}
-          onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
+          onChange={(e) => handleFieldChange('middle_name', e.target.value.replace(/[0-9]/g, ''))}
           disabled={isLoading}
         />
       </div>
@@ -141,7 +166,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           required
           placeholder="Enter Last Name"
           value={formData.last_name}
-          onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+          onChange={(e) => handleFieldChange('last_name', e.target.value.replace(/[0-9]/g, ''))}
           disabled={isLoading || !!(member && member.last_name)}
           error={errors.last_name}
         />
@@ -151,7 +176,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           required
           placeholder="Enter Designation"
           value={formData.designation}
-          onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+          onChange={(e) => handleFieldChange('designation', e.target.value)}
           disabled={isLoading || isEditingSelf}
           title={isEditingSelf ? 'You cannot change your own role' : undefined}
           error={errors.designation}
@@ -164,23 +189,25 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           type="email"
           placeholder="email@example.com"
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          onChange={(e) => handleFieldChange('email', e.target.value)}
           disabled={isLoading}
+          error={errors.email}
         />
 
         <Input
           label={member ? "Password (Leave blank to keep)" : "Password"}
           type="password"
-          placeholder={member ? "••••••••" : "Enter login password"}
+          placeholder={member ? "Enter password to update" : "Enter login password"}
           value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          onChange={(e) => handleFieldChange('password', e.target.value)}
           disabled={isLoading}
+          error={errors.password}
         />
 
         <Select
           label="Assign Role"
           value={formData.role_id}
-          onChange={(val) => setFormData({ ...formData, role_id: val })}
+          onChange={(val) => handleFieldChange('role_id', val)}
           disabled={isLoading}
           options={roleOptions}
         />
@@ -192,7 +219,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           required
           placeholder="Enter Contact Number"
           value={formData.number}
-          onChange={(e) => setFormData({ ...formData, number: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+          onChange={(e) => handleFieldChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
           disabled={isLoading}
           error={errors.number}
         />
@@ -200,10 +227,12 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           label="Status"
           required
           value={formData.status}
-          onChange={(val) => setFormData({ ...formData, status: val })}
+          onChange={(val) => handleFieldChange('status', val)}
           disabled={isLoading}
           error={errors.status}
+          placeholder="Select Status"
           options={[
+            { label: 'Select Status', value: '' },
             { label: 'Active', value: 1 },
             { label: 'Inactive', value: 0 }
           ]}
@@ -211,9 +240,10 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         <ImageUpload
           label="Image (300*300 px, Max 1MB)"
           value={formData.image}
-          onChange={(file, remove = false) => 
-            setFormData({ ...formData, image: file, remove_image: remove })
-          }
+          onChange={(file, remove = false) => {
+            setFormData(prev => ({ ...prev, image: file, remove_image: remove }))
+            if (errors.image) setErrors(prev => ({ ...prev, image: null }))
+          }}
           disabled={isLoading}
           error={errors.image}
         />

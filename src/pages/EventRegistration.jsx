@@ -4,6 +4,7 @@ import api, { getEventsList } from '../lib/api'
 import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 
 export default function EventRegistrations() {
     const [rows, setRows] = useState([])
@@ -128,7 +129,7 @@ const handleDownload = async () => {
                 </div>
             </div>
 
-            {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
+
 
             {loading && rows.length === 0 ? (
                 <div className="py-20"><Loader text="Loading registrations..." /></div>

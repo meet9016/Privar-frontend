@@ -10,6 +10,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 import Checkbox from '../components/common/Checkbox'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
@@ -31,6 +32,7 @@ export default function Roles() {
   const [success, setSuccess] = useState('')
   const [formData, setFormData] = useState(emptyRoleForm)
   const [formError, setFormError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
   const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
@@ -78,6 +80,7 @@ export default function Roles() {
     setSelected(null)
     setFormData(emptyRoleForm)
     setFormError('')
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
@@ -90,6 +93,7 @@ export default function Roles() {
       permissions: Array.isArray(role.permissions) ? role.permissions : []
     })
     setFormError('')
+    setFieldErrors({})
     setIsModalOpen(true)
   }
 
@@ -134,10 +138,11 @@ export default function Roles() {
   const handleSave = async (event) => {
     event.preventDefault()
     if (!formData.name.trim()) {
-      setFormError('Role name is required')
+      setFieldErrors({ name: 'Role name is required' })
       return
     }
     setFormError('')
+    setFieldErrors({})
     setSaving(true)
     setError('')
     try {
@@ -147,12 +152,11 @@ export default function Roles() {
         await api.post('/roles', formData)
       }
       await fetchAll()
-      setSuccess('Role saved successfully')
+      toast.success('Role saved successfully')
       setIsModalOpen(false)
       setSelected(null)
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save role')
+      setFormError(err.response?.data?.message || 'Failed to save role')
     } finally {
       setSaving(false)
     }
@@ -163,10 +167,9 @@ export default function Roles() {
     try {
       await api.delete(`/roles/${role.id}`)
       setRoles(roles.filter((item) => item.id !== role.id))
-      setSuccess('Role deleted successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('Role deleted successfully')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete role')
+      toast.error(err.response?.data?.message || 'Failed to delete role')
     }
   }
 
@@ -202,9 +205,6 @@ export default function Roles() {
           </Button>
         </div>
       </div>
-
-      {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
-      {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm">{success}</div>}
 
       <Table
         columns={[
@@ -283,8 +283,13 @@ export default function Roles() {
               required
               placeholder="Enter Role Name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                setFormData(prev => ({ ...prev, name: val }))
+                if (val.trim()) setFieldErrors(prev => ({ ...prev, name: null }))
+              }}
               disabled={saving}
+              error={fieldErrors.name}
             />
             <Input
               label="Description"

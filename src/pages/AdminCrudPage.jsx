@@ -11,6 +11,8 @@ import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
+import { toast } from '../lib/toast'
+import { isValidEmail } from '../lib/validation'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, deleteAction }) {
@@ -76,6 +78,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     setFormData(emptyForm)
     loadRemoteOptions(fields)
     setFormError('')
+    setError('')
     setFieldErrors({})
     setIsModalOpen(true)
 
@@ -85,6 +88,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
 
   const openEdit = async (row) => {
     setSelected(row)
+    setError('')
     setIsModalOpen(true)
     setImagePreview(null)
     setRemovedImages({})
@@ -112,6 +116,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       const res = await api.get(`${cleanEndpoint}/${row._id || row.id}`)
       const freshData = res.data?.data || res.data
       if (freshData) {
+        setSelected(freshData)
         setFormData(buildFormData(freshData))
       }
     } catch (err) {
@@ -156,9 +161,26 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       }
       return false
     })
+
+    let invalidEmailField = null
+    fields.forEach(f => {
+      const isEmail = f.type === 'email' || f.name.toLowerCase().includes('email')
+      const val = formData[f.name]
+      if (isEmail && val && String(val).trim() && !isValidEmail(String(val))) {
+        missing[f.name] = true
+        if (!invalidEmailField) invalidEmailField = f.label
+      }
+    })
+
     if (missingRequired.length > 0) {
       setFieldErrors(missing)
       setFormError(`${missingRequired[0].label} is required`)
+      setSaving(false)
+      return
+    }
+    if (invalidEmailField) {
+      setFieldErrors(missing)
+      setFormError(`Please enter a valid email address for ${invalidEmailField} (e.g. user@gmail.com)`)
       setSaving(false)
       return
     }
@@ -199,14 +221,12 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         await api.post(cleanEndpoint, payload)
       }
       await fetchRows()
-      setSuccess(`${title} saved successfully`)
+      toast.success(`${title} saved successfully`)
       setIsModalOpen(false)
       setSelected(null)
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       const errorMsg = err.response?.data?.message || err.response?.data?.error || `Failed to save ${title.toLowerCase()}`
       setFormError(errorMsg)
-      setError(errorMsg)
     } finally {
       setSaving(false)
     }
@@ -223,10 +243,9 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         await api.delete(`${cleanEndpoint}/${row._id || row.id}`)
       }
       await fetchRows()
-      setSuccess(`${title} deleted successfully`)
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success(`${title} deleted successfully`)
     } catch (err) {
-      setError(err.response?.data?.message || `Failed to delete ${title.toLowerCase()}`)
+      toast.error(err.response?.data?.message || `Failed to delete ${title.toLowerCase()}`)
     }
   }
 
@@ -272,9 +291,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         </div>
       </div>
 
-      {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
-      {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm">{success}</div>}
-
       {loading && rows.length === 0 ? (
         <div className="py-20"><Loader text="Loading records..." /></div>
       ) : (
@@ -287,7 +303,17 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 c.type === 'image' && row[c.key] ? (
                   <img src={assetUrl(row[c.key])} alt={row.title || title} className="h-12 w-16 rounded-lg object-cover border border-border" />
                 ) : (
-                  <span className="line-clamp-2">{c.render ? c.render(row) : row[c.key] || '-'}</span>
+                  <span className="line-clamp-2">
+                    {c.render ? c.render(row) : (
+                      row[c.key + '_name'] ||
+                      row[c.key?.replace(/_id$/, '_name')] ||
+                      (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.name ||
+                      (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.country ||
+                      (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.state ||
+                      (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.city ||
+                      row[c.key] || '-'
+                    )}
+                  </span>
                 )
               )
             })),
@@ -348,7 +374,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                         setFormData({ ...formData, [field.name]: e.target.value })
                         if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
                       }} 
-                      className={`${fieldClass} ${fieldErrors[field.name] ? 'border-red-500 ring-1 ring-red-500' : ''}`} 
+                      className={`${fieldClass} ${fieldErrors[field.name] ? 'border-red-500' : ''}`} 
                       disabled={saving || field.disabled} 
                     />
                     {fieldErrors[field.name] && <p className="text-red-500 text-xs mt-1 font-semibold">{field.label} is required</p>}
@@ -364,6 +390,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     }} 
                     disabled={saving}
                     options={field.options}
+                    placeholder={field.name === 'status' ? 'Select Status' : 'Select an option'}
                     error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 ) : field.type === 'select-remote' ? (
@@ -403,18 +430,16 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                         disabled={saving}
                         label={`Click or Drag ${field.label}`}
                         previews={[
-                          ...(!imagePreview?.[field.name] && selected?.[field.name] && !removedImages[field.name] && !field.multiple ? [{
-                            url: assetUrl(selected[field.name]),
-                            onRemove: () => {
-                              setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
-                              setFormData({ ...formData, [field.name]: '' })
-                            }
-                          }] : []),
                           ...(imagePreview?.[field.name] ? [{
                             url: imagePreview[field.name],
                             onRemove: () => {
                               setImagePreview((prev) => ({ ...prev, [field.name]: null }))
-                              setFormData({ ...formData, [field.name]: '' })
+                              setFormData((prev) => ({ ...prev, [field.name]: '' }))
+                            }
+                          }] : (selected?.[field.name] || formData[field.name]) && !removedImages[field.name] && !field.multiple ? [{
+                            url: assetUrl(selected?.[field.name] || formData[field.name]),
+                            onRemove: () => {
+                              setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
                             }
                           }] : [])
                         ]}
@@ -449,12 +474,29 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     value={formData[field.name] || ''} 
                     onChange={(e) => {
                       let val = e.target.value
+                      const fieldType = (field.type || 'text').toLowerCase()
                       const nameLower = field.name.toLowerCase()
-                      if (nameLower === 'ifsc_code') {
-                        val = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 11)
-                      } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower.includes('number')) {
+
+                      if (fieldType === 'email') {
+                        // Keep email characters
+                      } else if (nameLower === 'ifsc_code' || nameLower.includes('gst')) {
+                        val = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15)
+                      } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower === 'number') {
                         val = val.replace(/\D/g, '').slice(0, 10)
+                      } else if (nameLower.includes('account_number') || nameLower.includes('pincode') || nameLower.includes('zip')) {
+                        val = val.replace(/\D/g, '').slice(0, 20)
+                      } else if (nameLower.includes('salary') || nameLower.includes('amount') || nameLower.includes('percentage') || nameLower.includes('height') || nameLower.includes('weight')) {
+                        val = val.replace(/[^0-9.]/g, '')
+                      } else {
+                        // For name, country, state, city, village, taluka, district, title, full_name, etc. -> Alphabets & spaces ONLY!
+                        if (nameLower.includes('name') || nameLower.includes('title') || nameLower.includes('country') || nameLower.includes('state') || nameLower.includes('city') || nameLower.includes('district') || nameLower.includes('taluka') || nameLower.includes('village') || nameLower.includes('gotra') || nameLower.includes('occupation') || nameLower.includes('complexion') || nameLower.includes('education')) {
+                          val = val.replace(/[^a-zA-Z\s]/g, '')
+                          if (nameLower.includes('full_name') || nameLower === 'name') {
+                            val = val.slice(0, 30)
+                          }
+                        }
                       }
+
                       setFormData({ ...formData, [field.name]: val })
                       if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
                     }} 

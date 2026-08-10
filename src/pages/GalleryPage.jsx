@@ -10,6 +10,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -246,13 +247,12 @@ export default function GalleryPage() {
         await api.post('/gallery', payload)
       }
 
-      setSuccess('Gallery saved successfully')
+      toast.success('Gallery saved successfully')
       setIsModalOpen(false)
       setSelected(null)
       await fetchGallery()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save gallery')
+      toast.error(err.response?.data?.message || 'Failed to save gallery')
     } finally {
       setSaving(false)
     }
@@ -263,10 +263,9 @@ export default function GalleryPage() {
     try {
       await api.delete(`/gallery/${row.id}`)
       await fetchGallery()
-      setSuccess('Gallery deleted successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('Gallery deleted successfully')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete gallery item')
+      toast.error(err.response?.data?.message || 'Failed to delete gallery item')
     }
   }
 
@@ -323,8 +322,7 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
-      {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm">{success}</div>}
+
 
       {loading && rows.length === 0 ? (
         <div className="py-20"><Loader text="Loading gallery..." /></div>
@@ -427,7 +425,7 @@ export default function GalleryPage() {
               />
             </div>
           </div>
-        <div className={`flex flex-col bg-input-bg border ${fieldErrors.images ? 'border-red-500 ring-1 ring-red-500' : 'border-border'} rounded-xl p-3`}>
+        <div className={`flex flex-col bg-input-bg border ${fieldErrors.images ? 'border-red-500' : 'border-border'} rounded-xl p-3`}>
 
             <div>
               <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Gallery Images <span className="text-red-500">*</span></label>

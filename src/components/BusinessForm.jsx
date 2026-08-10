@@ -5,6 +5,7 @@ import Select from './common/Select'
 import Button from './common/Button'
 import ImageUpload from './common/ImageUpload'
 import FileDropzone from './common/FileDropzone'
+import { isValidEmail } from '../lib/validation'
 const initialState = {
   id: '',
   member_id: '',
@@ -155,12 +156,35 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     setProfilePreview(null)
   }, [business])
 
+  const handleFieldChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    setErrors(prev => {
+      const updated = { ...prev }
+      if (field === 'business_name' && value.trim()) delete updated.business_name
+      if (field === 'business_category_id' && value) delete updated.business_category_id
+      if (field === 'number' && value.trim().length === 10) delete updated.number
+      if (field === 'email') {
+        if (!value.trim()) updated.email = 'Email is required'
+        else if (!isValidEmail(value)) updated.email = 'Please enter a valid email (e.g. user@gmail.com)'
+        else delete updated.email
+      }
+      if (field === 'country_id' && value) delete updated.country_id
+      if (field === 'state_id' && value) delete updated.state_id
+      if (field === 'city_id' && value) delete updated.city_id
+      if (field === 'address' && value.trim()) delete updated.address
+      if (field === 'location_link' && value.trim()) delete updated.location_link
+      return updated
+    })
+  }
+
   const validate = () => {
     const nextErrors = {}
     if (!formData.business_name.trim()) nextErrors.business_name = 'Business name is required'
     if (!formData.business_category_id.trim()) nextErrors.business_category_id = 'Business category is required'
     if (!formData.number.trim()) nextErrors.number = 'Primary phone is required'
+    else if (formData.number.trim().length < 10) nextErrors.number = 'Phone number must be 10 digits'
     if (!formData.email.trim()) nextErrors.email = 'Email is required'
+    else if (!isValidEmail(formData.email)) nextErrors.email = 'Please enter a valid email (e.g. user@gmail.com)'
     if (!formData.country_id.trim()) nextErrors.country_id = 'Country is required'
     if (!formData.state_id.trim()) nextErrors.state_id = 'State is required'
     if (!formData.city_id.trim()) nextErrors.city_id = 'City is required'
@@ -189,7 +213,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           label="Business Name"
           required
           value={formData.business_name}
-          onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+          onChange={(e) => handleFieldChange('business_name', e.target.value)}
           disabled={isLoading}
           error={errors.business_name}
         />
@@ -197,7 +221,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           label="Business Category"
           required
           value={formData.business_category_id}
-          onChange={(val) => setFormData({ ...formData, business_category_id: val })}
+          onChange={(val) => handleFieldChange('business_category_id', val)}
           disabled={isLoading}
           options={businessCategories.map(c => ({ label: c.business, value: c.id }))}
           error={errors.business_category_id}
@@ -207,7 +231,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           label="Email"
           required
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          onChange={(e) => handleFieldChange('email', e.target.value)}
           disabled={isLoading}
           error={errors.email}
         />
@@ -224,11 +248,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           label="Number"
           required
           value={formData.number}
-          onChange={(e) => {
-            const val = e.target.value.replace(/\D/g, '').slice(0, 10)
-            setFormData({ ...formData, number: val })
-            if (errors.number) setErrors(prev => ({ ...prev, number: null }))
-          }}
+          onChange={(e) => handleFieldChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
           disabled={isLoading}
           error={errors.number}
         />

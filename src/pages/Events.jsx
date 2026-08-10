@@ -9,6 +9,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 import FileDropzone from '../components/common/FileDropzone'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
@@ -159,6 +160,8 @@ export default function Events() {
     setSelectedId('')
     setExistingImage('')
     setFormData(defaultForm)
+    setFieldErrors({})
+    setError('')
   }
 
   const openCreate = () => {
@@ -216,9 +219,16 @@ export default function Events() {
       }
     })
 
+    if (formData.start_time && formData.end_time) {
+      const start = new Date(formData.start_time).getTime()
+      const end = new Date(formData.end_time).getTime()
+      if (end <= start) {
+        nextErrors.end_time = 'End time must be after start time'
+      }
+    }
+
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors)
-      setError('Please fill in all required fields')
       setSaving(false)
       return
     }
@@ -256,12 +266,11 @@ export default function Events() {
       }
 
       await fetchRows()
-      setSuccess('Event saved successfully')
+      toast.success('Event saved successfully')
       setIsModalOpen(false)
       resetForm()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save event')
+      toast.error(err.response?.data?.message || 'Failed to save event')
     } finally {
       setSaving(false)
     }
@@ -274,10 +283,9 @@ export default function Events() {
     try {
       await api.delete(`${endpoint}/${id}`)
       await fetchRows()
-      setSuccess('Event deleted successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('Event deleted successfully')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete event')
+      toast.error(err.response?.data?.message || 'Failed to delete event')
     }
   }
 
@@ -307,9 +315,6 @@ export default function Events() {
           </Button>
         </div>
       </div>
-
-      {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm">{error}</div>}
-      {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm">{success}</div>}
 
       {loading && rows.length === 0 ? (
         <div className="py-20"><Loader text="Loading events..." /></div>
@@ -469,8 +474,21 @@ export default function Events() {
               required
               value={formData.start_time}
               onChange={(e) => {
-                setFormData({ ...formData, start_time: e.target.value })
-                if (fieldErrors.start_time) setFieldErrors({ ...fieldErrors, start_time: null })
+                const newStart = e.target.value
+                setFormData(prev => {
+                  const updated = { ...prev, start_time: newStart }
+                  if (prev.end_time && new Date(prev.end_time).getTime() <= new Date(newStart).getTime()) {
+                    updated.end_time = ''
+                  }
+                  return updated
+                })
+                setFieldErrors(prev => {
+                  const updated = { ...prev, start_time: null }
+                  if (!formData.end_time || new Date(formData.end_time).getTime() > new Date(newStart).getTime()) {
+                    delete updated.end_time
+                  }
+                  return updated
+                })
               }}
               disabled={saving}
               error={fieldErrors.start_time}
@@ -479,10 +497,22 @@ export default function Events() {
               type="datetime-local"
               label="End Time"
               required
+              min={formData.start_time || undefined}
               value={formData.end_time}
               onChange={(e) => {
-                setFormData({ ...formData, end_time: e.target.value })
-                if (fieldErrors.end_time) setFieldErrors({ ...fieldErrors, end_time: null })
+                const newEnd = e.target.value
+                setFormData(prev => ({ ...prev, end_time: newEnd }))
+                setFieldErrors(prev => {
+                  const updated = { ...prev }
+                  if (!newEnd) {
+                    updated.end_time = 'End Time is required'
+                  } else if (formData.start_time && new Date(newEnd).getTime() <= new Date(formData.start_time).getTime()) {
+                    updated.end_time = 'End time must be after start time'
+                  } else {
+                    delete updated.end_time
+                  }
+                  return updated
+                })
               }}
               disabled={saving}
               error={fieldErrors.end_time}

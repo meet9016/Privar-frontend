@@ -7,6 +7,7 @@ import Select from './common/Select'
 import Button from './common/Button'
 import RadioGroup from './common/RadioGroup'
 import DatePicker from './DatePicker'
+import { isValidEmail } from '../lib/validation'
 
 export default function UserForm({ user, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
@@ -139,9 +140,26 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: null }))
-    }
+    setErrors(prev => {
+      const updated = { ...prev }
+      if (field === 'first_name' && value.trim()) delete updated.first_name
+      if (field === 'middle_name' && value.trim()) delete updated.middle_name
+      if (field === 'last_name' && value.trim()) delete updated.last_name
+      if (field === 'number' && value.trim().length === 10) delete updated.number
+      if (field === 'email') {
+        if (!value.trim()) updated.email = 'Email is required'
+        else if (!isValidEmail(value)) updated.email = 'Please enter a valid email (e.g. user@gmail.com)'
+        else delete updated.email
+      }
+      if (field === 'country_id' && value) delete updated.country_id
+      if (field === 'state_id' && value) delete updated.state_id
+      if (field === 'city_id' && value) delete updated.city_id
+      if (field === 'address' && value.trim()) delete updated.address
+      if (field === 'dob' && value) delete updated.dob
+      if (field === 'family_head_id' && value) delete updated.family_head_id
+      if (field === 'relation' && value) delete updated.relation
+      return updated
+    })
   }
 
   const validate = () => {
@@ -150,8 +168,9 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     if (!formData.middle_name.trim()) newErrors.middle_name = 'Middle name is required'
     if (!formData.last_name.trim()) newErrors.last_name = 'Last name is required'
     if (!formData.number.trim()) newErrors.number = 'Mobile number is required'
+    else if (formData.number.trim().length < 10) newErrors.number = 'Mobile number must be 10 digits'
     if (!formData.email.trim()) newErrors.email = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email format is invalid'
+    else if (!isValidEmail(formData.email)) newErrors.email = 'Please enter a valid email (e.g. user@gmail.com)'
     
     if (!formData.country_id) newErrors.country_id = 'Country is required'
     if (!formData.state_id) newErrors.state_id = 'State is required'
@@ -209,7 +228,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           <Input
             label="First Name"
             value={formData.first_name}
-            onChange={(e) => handleChange('first_name', e.target.value)}
+            onChange={(e) => handleChange('first_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
             disabled={isLoading}
             required={true}
             error={errors.first_name}
@@ -217,7 +236,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           <Input
             label="Middle Name"
             value={formData.middle_name}
-            onChange={(e) => handleChange('middle_name', e.target.value)}
+            onChange={(e) => handleChange('middle_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
             disabled={isLoading}
             required={true}
             error={errors.middle_name}
@@ -225,7 +244,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           <Input
             label="Last Name"
             value={formData.last_name}
-            onChange={(e) => handleChange('last_name', e.target.value)}
+            onChange={(e) => handleChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
             disabled={isLoading || !!(user && user.last_name)}
             required={true}
             error={errors.last_name}
@@ -251,7 +270,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
             type="tel"
             maxLength={10}
             value={formData.number}
-            onChange={(e) => handleChange('number', e.target.value)}
+            onChange={(e) => handleChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
             disabled={isLoading}
             required={true}
             error={errors.number}
@@ -280,29 +299,27 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
             disabled={isLoading}
             searchable={false}
           />
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-text-secondary">Date of Birth <span className="text-red-500">*</span></label>
-            <DatePicker
-              value={formData.dob}
-              onChange={(val) => handleChange('dob', val)}
-              disabled={isLoading}
-              placeholder="Select DOB"
-            />
-            {errors.dob && <p className="text-red-500 text-xs font-semibold">{errors.dob}</p>}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-text-secondary">Anniversary</label>
-            <DatePicker
-              value={formData.anniversary}
-              onChange={(val) => handleChange('anniversary', val)}
-              disabled={isLoading}
-              placeholder="Select Anniversary"
-            />
-          </div>
+          <DatePicker
+            label="Date of Birth"
+            required
+            value={formData.dob}
+            onChange={(val) => handleChange('dob', val)}
+            disabled={isLoading}
+            placeholder="Select DOB"
+            error={errors.dob}
+          />
+          <DatePicker
+            label="Anniversary"
+            value={formData.anniversary}
+            onChange={(val) => handleChange('anniversary', val)}
+            disabled={isLoading}
+            placeholder="Select Anniversary"
+          />
+        </div>
 
-          <div className="">
+          <div className="mt-4">
             <label className="block text-sm font-semibold text-text-secondary mb-1.5">Status</label>
-            <div className="flex align-center item-center gap-2">
+            <div className="flex items-center gap-2">
               <input
                 className="h-5 w-5 px-3 py-2 self-end accent-primary"
                 type="checkbox"
@@ -311,13 +328,13 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                 checked={formData.status == 1 || formData.status == '1'}
                 onChange={(e) => handleChange('status', e.target.checked ? 1 : 0)}
                 disabled={isLoading}
-              /> <span className="">
+              />
+              <span>
                 {formData.status == 1 ? 'Approved' : 'Pending'}
               </span>
             </div>
           </div>
         </div>
-      </div>
 
       {/* SECTION 4: Family Hierarchy */}
       <div>

@@ -24,6 +24,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-shadow'
 
@@ -102,17 +103,16 @@ export default function Expenses() {
     try {
       await api.delete(`/expenses/${id}`)
       await fetchExpenses()
-      setSuccess('Expense deleted successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('Expense deleted successfully')
     } catch (err) {
-      setError('Failed to delete expense')
+      toast.error('Failed to delete expense')
     }
   }
 
   const handleEdit = (expense) => {
     setSelectedExpense(expense)
     setFormData({
-      date: expense.date || '',
+      date: expense.date ? new Date(expense.date).toISOString().slice(0, 10) : '',
       expense_category_id: expense.expense_category_id || '',
       expense_category_name: expense.expense_category_name || '',
       committee_member_id: expense.committee_member_id || '',
@@ -121,6 +121,8 @@ export default function Expenses() {
       description: expense.description || ''
     })
     setProofImage(null)
+    setFieldErrors({})
+    setFormLoading(false)
     setIsModalOpen(true)
   }
 
@@ -169,7 +171,6 @@ export default function Expenses() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setFieldErrors({})
-    setError('')
 
     const errors = {}
     if (!formData.date) errors.date = 'Date is required'
@@ -182,12 +183,10 @@ export default function Expenses() {
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
-      setError('Please fill in all required fields')
       return
     }
 
     setFormLoading(true)
-    setError('')
     try {
       const payload = new FormData(e.target)
       payload.append('expense_category_name', formData.expense_category_name)
@@ -199,16 +198,15 @@ export default function Expenses() {
       
       if (selectedExpense) {
         await api.put(`/expenses/${selectedExpense.id}`, payload)
-        setSuccess('Expense updated successfully')
+        toast.success('Expense updated successfully')
       } else {
         await api.post('/expenses', payload)
-        setSuccess('Expense added successfully')
+        toast.success('Expense added successfully')
       }
       handleCloseModal()
       await fetchExpenses()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save expense')
+      toast.error(err.response?.data?.message || 'Failed to save expense')
     } finally {
       setFormLoading(false)
     }
@@ -310,8 +308,7 @@ export default function Expenses() {
         </div>
       </div>
 
-      {error && <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm font-medium animate-fade-in">{error}</div>}
-      {success && <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm font-medium animate-fade-in">{success}</div>}
+
 
       {loading && expenses.length === 0 ? (
         <div className="py-20"><Loader text="Loading expenses..." /></div>
@@ -422,22 +419,19 @@ export default function Expenses() {
       <Modal isOpen={isModalOpen} title={selectedExpense ? 'Edit Expense' : 'Add Expense'} onClose={handleCloseModal}>
         <form onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Date <span className="text-red-500">*</span></label>
-              <DatePicker
-                name="date"
-                mode="date"
-                value={formData.date}
-                onChange={(val) => {
-                  setFormData(prev => ({ ...prev, date: val }))
-                  if (fieldErrors.date) setFieldErrors(prev => ({ ...prev, date: null }))
-                }}
-                className={fieldClass}
-                disabled={formLoading}
-                error={fieldErrors.date}
-              />
-              {fieldErrors.date && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.date}</p>}
-            </div>
+            <DatePicker
+              label="Date"
+              required
+              name="date"
+              mode="date"
+              value={formData.date}
+              onChange={(val) => {
+                setFormData(prev => ({ ...prev, date: val }))
+                if (fieldErrors.date) setFieldErrors(prev => ({ ...prev, date: null }))
+              }}
+              disabled={formLoading}
+              error={fieldErrors.date}
+            />
             <Input
               type="number"
               label="Amount (₹)"

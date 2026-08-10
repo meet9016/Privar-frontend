@@ -9,6 +9,7 @@ import FileDropzone from '../components/common/FileDropzone'
 import Select from '../components/common/Select'
 import Input from '../components/common/Input'
 import Table from '../components/common/Table'
+import { toast } from '../lib/toast'
 
 export default function Students() {
   const [students, setStudents] = useState([])
@@ -28,6 +29,7 @@ export default function Students() {
   const [existingStudentImage, setExistingStudentImage] = useState('')
   const [existingResultImage, setExistingResultImage] = useState('')
   const [imageData, setImageData] = useState({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+  const [statusVal, setStatusVal] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
 
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
@@ -65,10 +67,9 @@ export default function Students() {
     try {
       await api.delete(`/students/${id}`)
       await fetchStudents()
-      setSuccess('Student deleted successfully')
-      setTimeout(() => setSuccess(''), 3000)
+      toast.success('Student deleted successfully')
     } catch (err) {
-      setError('Failed to delete student')
+      toast.error('Failed to delete student')
     }
   }
 
@@ -77,7 +78,9 @@ export default function Students() {
     setExistingStudentImage('')
     setExistingResultImage('')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+    setStatusVal('')
     setFieldErrors({})
+    setError('')
     setIsModalOpen(true)
   }
 
@@ -86,7 +89,9 @@ export default function Students() {
     setExistingStudentImage(student.student_image || '')
     setExistingResultImage(student.result_image || '')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+    setStatusVal(student.status !== undefined && student.status !== null ? Number(student.status) : '')
     setFieldErrors({})
+    setError('')
     setIsModalOpen(true)
   }
 
@@ -96,7 +101,9 @@ export default function Students() {
     setExistingStudentImage('')
     setExistingResultImage('')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+    setStatusVal('')
     setFieldErrors({})
+    setError('')
   }
 
   const handleSubmit = async (e) => {
@@ -115,6 +122,17 @@ export default function Students() {
       }
     })
 
+    if (statusVal === '' || statusVal === undefined || statusVal === null) {
+      errors.status = true
+    }
+
+    // Check if student image is provided
+    const hasExistingStudent = existingStudentImage && !imageData.remove_student_image
+    const hasNewStudent = imageData.student_image instanceof File
+    if (!hasExistingStudent && !hasNewStudent) {
+      errors.student_image = 'Student Image is required'
+    }
+
     // Check if result image is provided (either has an existing one not removed, or a new file selected)
     const hasExistingResult = existingResultImage && !imageData.remove_result_image
     const hasNewResult = imageData.result_image instanceof File
@@ -124,13 +142,13 @@ export default function Students() {
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
-      setError('Please fill in all required fields')
       setFormLoading(false)
       return
     }
 
     const payload = new FormData()
-    requiredKeys.concat(['status']).forEach(k => payload.append(k, fields.get(k) ?? ''))
+    requiredKeys.forEach(k => payload.append(k, fields.get(k) ?? ''))
+    payload.append('status', statusVal)
 
     const hasStudentImg = imageData.student_image instanceof File
     const hasResultImg = imageData.result_image instanceof File
@@ -146,12 +164,11 @@ export default function Students() {
         await api.post('/students', payload)
       }
       await fetchStudents()
-      setSuccess(`Student ${selectedStudent ? 'updated' : 'created'} successfully`)
+      toast.success(`Student ${selectedStudent ? 'updated' : 'created'} successfully`)
       setIsModalOpen(false)
       setSelectedStudent(null)
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update student')
+      toast.error(err.response?.data?.message || 'Failed to update student')
     } finally {
       setFormLoading(false)
     }
@@ -218,19 +235,7 @@ export default function Students() {
 
 
 
-      {/* Alerts */}
-      {error && (
-        <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-success animate-ping"></span>
-          {success}
-        </div>
-      )}
+
 
       {/* Main Table */}
       <Table
@@ -331,7 +336,10 @@ export default function Students() {
               required
               disabled={!!(selectedStudent && selectedStudent.surname)}
               error={fieldErrors.surname ? 'Surname is required' : undefined}
-              onChange={() => { if (fieldErrors.surname) setFieldErrors(prev => ({ ...prev, surname: null })) }}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                if (fieldErrors.surname) setFieldErrors(prev => ({ ...prev, surname: null }))
+              }}
             />
             <Input
               label="Student Name"
@@ -339,7 +347,10 @@ export default function Students() {
               defaultValue={selectedStudent?.student_name || ''}
               required
               error={fieldErrors.student_name ? 'Student Name is required' : undefined}
-              onChange={() => { if (fieldErrors.student_name) setFieldErrors(prev => ({ ...prev, student_name: null })) }}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                if (fieldErrors.student_name) setFieldErrors(prev => ({ ...prev, student_name: null }))
+              }}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -349,7 +360,10 @@ export default function Students() {
               defaultValue={selectedStudent?.father_name || ''}
               required
               error={fieldErrors.father_name ? 'Father Name is required' : undefined}
-              onChange={() => { if (fieldErrors.father_name) setFieldErrors(prev => ({ ...prev, father_name: null })) }}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                if (fieldErrors.father_name) setFieldErrors(prev => ({ ...prev, father_name: null }))
+              }}
             />
             <Input
               label="School Name"
@@ -365,23 +379,25 @@ export default function Students() {
             <Input
               label="Standard"
               name="standard"
-              type="number"
               defaultValue={selectedStudent?.standard || ''}
               required
               error={fieldErrors.standard ? 'Standard is required' : undefined}
-              onChange={() => { if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null })) }}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/\D/g, '')
+                if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null }))
+              }}
             />
             <Input
               label="Percentage"
               name="percentage"
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
+              type="text"
               defaultValue={selectedStudent?.percentage || ''}
               required
               error={fieldErrors.percentage ? 'Percentage is required' : undefined}
-              onChange={() => { if (fieldErrors.percentage) setFieldErrors(prev => ({ ...prev, percentage: null })) }}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/[^0-9.]/g, '')
+                if (fieldErrors.percentage) setFieldErrors(prev => ({ ...prev, percentage: null }))
+              }}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -404,7 +420,7 @@ export default function Students() {
                 name="year"
                 required
                 defaultValue={selectedStudent?.year || ''}
-                className={`w-full bg-input-bg text-text border ${fieldErrors.year ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl py-2.5 px-4 text-sm outline-none`}
+                className={`w-full bg-input-bg text-text border ${fieldErrors.year ? 'border-red-500' : 'border-border focus:border-primary/50'} rounded-xl py-2.5 px-4 text-sm outline-none`}
                 onChange={() => { if (fieldErrors.year) setFieldErrors(prev => ({ ...prev, year: null })) }}
               />
               {fieldErrors.year && <p className="text-red-500 text-xs mt-1 font-semibold">Year is required</p>}
@@ -412,11 +428,14 @@ export default function Students() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Student Image */}
-            <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Student Image</label>
+            <div className={`flex flex-col bg-input-bg border ${fieldErrors.student_image ? 'border-red-500' : 'border-border'} rounded-xl p-3`}>
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Student Image <span className="text-red-500">*</span></label>
               <FileDropzone
                 accept="image/*"
-                onFilesSelected={(files) => setImageData({ ...imageData, student_image: files[0] || null, remove_student_image: false })}
+                onFilesSelected={(files) => {
+                  setImageData({ ...imageData, student_image: files[0] || null, remove_student_image: false })
+                  if (fieldErrors.student_image) setFieldErrors(prev => ({ ...prev, student_image: null }))
+                }}
                 disabled={formLoading}
                 label="Click or Drag Student Image"
                 previews={[
@@ -430,10 +449,11 @@ export default function Students() {
                   }] : [])
                 ]}
               />
+              {fieldErrors.student_image && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.student_image}</p>}
             </div>
 
              {/* Result Image */}
-            <div className={`flex flex-col bg-input-bg border ${fieldErrors.result_image ? 'border-red-500 ring-1 ring-red-500' : 'border-border'} rounded-xl p-3`}>
+            <div className={`flex flex-col bg-input-bg border ${fieldErrors.result_image ? 'border-red-500' : 'border-border'} rounded-xl p-3`}>
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Result Image <span className="text-red-500">*</span></label>
               <FileDropzone
                 accept="image/*"
@@ -459,13 +479,20 @@ export default function Students() {
           </div>
           <Select
             label="Status"
-            value={selectedStudent?.status ?? 0}
-            onChange={() => {}}
+            name="status"
+            required
+            value={statusVal}
+            onChange={(val) => {
+              setStatusVal(val)
+              if (fieldErrors.status) setFieldErrors(prev => ({ ...prev, status: null }))
+            }}
             searchable={false}
+            placeholder="Select Status"
             options={[
               { label: 'Active', value: 1 },
               { label: 'Pending', value: 0 }
             ]}
+            error={fieldErrors.status ? 'Status is required' : undefined}
           />
 
           <button
