@@ -12,7 +12,8 @@ export default function Select({
   searchable = true,
   disabled = false,
   className = '',
-  name
+  name,
+  placement = 'auto'
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [dropUp, setDropUp] = useState(false);
@@ -32,24 +33,34 @@ export default function Select({
   const toggleOpen = () => {
     if (disabled) return;
     if (!isOpen && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      setDropUp(spaceBelow < 220);
+      if (placement === 'down') {
+        setDropUp(false);
+      } else if (placement === 'up') {
+        setDropUp(true);
+      } else {
+        const rect = wrapperRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        // For small lists (e.g. Status with 2-3 options), only dropUp if spaceBelow is under 80px
+        const threshold = options.length <= 4 ? 80 : 120;
+        setDropUp(spaceBelow < threshold);
+      }
     }
     setIsOpen(!isOpen);
   };
 
   const filteredOptions = options.filter(option => 
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find(opt => String(opt.value) === String(value));
 
   const handleSelect = (val) => {
     onChange(val);
     setIsOpen(false);
     setSearchTerm('');
   };
+
+  const showSearch = searchable && options.length > 5;
 
   return (
     <div className={`relative ${className}`} ref={wrapperRef}>
@@ -69,7 +80,7 @@ export default function Select({
         onClick={toggleOpen}
         tabIndex={disabled ? -1 : 0}
       >
-        <span className={selectedOption ? 'text-text' : 'text-text-secondary'}>
+        <span className={selectedOption ? 'text-text font-medium' : 'text-text-secondary'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown size={16} className={`text-text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -77,7 +88,7 @@ export default function Select({
 
       {isOpen && (
         <div className={`absolute z-[9999] w-full ${dropUp ? 'bottom-full mb-1' : 'top-full mt-1'} bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden`}>
-          {searchable && (
+          {showSearch && (
             <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2">
               <Search size={16} className="text-text-secondary" />
               <input 
@@ -98,7 +109,7 @@ export default function Select({
                 <div 
                   key={option.value}
                   className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors ${
-                    value === option.value ? 'bg-primary/5 text-primary font-medium' : 'text-text'
+                    String(value) === String(option.value) ? 'bg-primary/5 text-primary font-semibold' : 'text-text'
                   }`}
                   onClick={() => handleSelect(option.value)}
                 >

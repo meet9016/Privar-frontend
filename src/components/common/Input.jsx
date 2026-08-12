@@ -10,11 +10,46 @@ export default function Input({
   type = 'text',
   onChange,
   value,
+  onlyNumbers,
+  maxLength,
   ...props 
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
-  const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+  const isTel = type === 'tel' || onlyNumbers || (label && /contact|phone|mobile|number/i.test(label) && !/account_number|gst|serial|code/i.test(label));
+  const inputType = isPassword ? (showPassword ? 'text' : 'password') : (isTel ? 'tel' : type);
+  const maxLen = maxLength || (isTel ? 10 : undefined);
+
+  const handleKeyDown = (e) => {
+    if (props.onKeyDown) props.onKeyDown(e);
+    if (isTel) {
+      if (
+        e.key === 'Backspace' ||
+        e.key === 'Delete' ||
+        e.key === 'Tab' ||
+        e.key === 'Escape' ||
+        e.key === 'Enter' ||
+        e.key.startsWith('Arrow') ||
+        e.key === 'Home' ||
+        e.key === 'End' ||
+        e.ctrlKey ||
+        e.metaKey
+      ) {
+        return;
+      }
+      if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    }
+  };
+
+  const handleChange = (e) => {
+    if (isTel) {
+      const sanitized = e.target.value.replace(/\D/g, '').slice(0, maxLen);
+      e.target.value = sanitized;
+    }
+    if (onChange) onChange(e);
+  };
 
   return (
     <div className={className}>
@@ -43,7 +78,9 @@ export default function Input({
             {...props}
             type={inputType}
             value={value}
-            onChange={onChange}
+            maxLength={maxLen}
+            onKeyDown={handleKeyDown}
+            onChange={handleChange}
             className={`w-full ${icon ? 'pl-10' : 'px-3'} ${isPassword ? 'pr-10' : 'pr-3'} py-2 bg-input-bg text-text border ${
               error ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary/50'
             } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}

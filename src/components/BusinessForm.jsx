@@ -373,6 +373,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
 
       <Select
         label="Status"
+        placement="down"
         value={formData.status}
         onChange={(val) => setFormData({ ...formData, status: Number(val) })}
         disabled={isLoading}

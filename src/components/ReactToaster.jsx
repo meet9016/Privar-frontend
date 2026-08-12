@@ -20,7 +20,12 @@ export default function ReactToaster() {
     return subscribeToToasts((toast) => {
       if (!toast?.message) return
 
-      setToasts((current) => [toast, ...current].slice(0, 4))
+      setToasts((current) => {
+        if (current.some(item => item.message === toast.message && item.type === toast.type)) {
+          return current
+        }
+        return [toast, ...current].slice(0, 4)
+      })
 
       window.setTimeout(() => {
         setToasts((current) => current.filter((item) => item.id !== toast.id))

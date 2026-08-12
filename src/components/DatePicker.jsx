@@ -15,10 +15,33 @@ export default function DatePicker({
   error,
   label,
   required,
+  maxDate,
+  disableFuture = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState(mode);
   
+  // Calculate maximum allowed date (e.g. today for DOB & Anniversary)
+  const getMaxAllowedDate = () => {
+    if (maxDate) {
+      if (maxDate instanceof Date) return maxDate;
+      const p = String(maxDate).split('-');
+      if (p.length === 3) return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10), 23, 59, 59, 999);
+    }
+    const isBirthOrAnniversary = disableFuture || 
+      (label && /birth|dob|anniversary/i.test(label)) || 
+      (name && /birth|dob|anniversary/i.test(name));
+    
+    if (isBirthOrAnniversary) {
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      return today;
+    }
+    return null;
+  };
+
+  const maxAllowed = getMaxAllowedDate();
+
   // The date that drives the currently viewed month/year in the calendar popover
   const [viewDate, setViewDate] = useState(() => {
     if (!value) return new Date();
@@ -27,7 +50,9 @@ export default function DatePicker({
     const m = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
     const d = parts[2] ? parseInt(parts[2], 10) : 1;
     const initialDate = new Date(y, isNaN(m) ? 0 : m, isNaN(d) ? 1 : d);
-    return isNaN(initialDate.getTime()) ? new Date() : initialDate;
+    if (isNaN(initialDate.getTime())) return new Date();
+    if (maxAllowed && initialDate.getTime() > maxAllowed.getTime()) return new Date(maxAllowed);
+    return initialDate;
   });
 
   const containerRef = useRef(null);
@@ -94,7 +119,23 @@ export default function DatePicker({
     setViewDate(d);
   };
 
+  const isNextDisabled = () => {
+    if (!maxAllowed) return false;
+    const d = new Date(viewDate);
+    if (viewMode === 'year') {
+      const startNextYearGroup = Math.floor(d.getFullYear() / 12) * 12 + 12;
+      return new Date(startNextYearGroup, 0, 1, 0, 0, 0, 0).getTime() > maxAllowed.getTime();
+    } else if (viewMode === 'month') {
+      const nextYear = d.getFullYear() + 1;
+      return new Date(nextYear, 0, 1, 0, 0, 0, 0).getTime() > maxAllowed.getTime();
+    } else {
+      const nextMonthStart = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0, 0);
+      return nextMonthStart.getTime() > maxAllowed.getTime();
+    }
+  };
+
   const next = () => {
+    if (isNextDisabled()) return;
     const d = new Date(viewDate);
     if (viewMode === 'year') d.setFullYear(d.getFullYear() + 12);
     else if (viewMode === 'month') d.setFullYear(d.getFullYear() + 1);
@@ -145,13 +186,21 @@ export default function DatePicker({
       <div className="grid grid-cols-3 gap-2 p-2">
         {years.map(y => {
           const isSelected = y === selectedYear;
+          const startOfYear = new Date(y, 0, 1, 0, 0, 0, 0);
+          const isDisabled = maxAllowed && startOfYear.getTime() > maxAllowed.getTime();
+
           return (
             <button
               key={y}
               type="button"
-              onClick={() => handleSelectYear(y)}
+              disabled={isDisabled}
+              onClick={() => !isDisabled && handleSelectYear(y)}
               className={`py-2 px-1 text-sm rounded-lg transition-colors ${
-                isSelected ? 'bg-primary text-white font-semibold' : 'hover:bg-primary/10 text-text'
+                isDisabled
+                  ? 'opacity-30 cursor-not-allowed text-text-secondary line-through pointer-events-none'
+                  : isSelected 
+                    ? 'bg-primary text-white font-semibold' 
+                    : 'hover:bg-primary/10 text-text'
               }`}
             >
               {y}
@@ -174,13 +223,21 @@ export default function DatePicker({
       <div className="grid grid-cols-3 gap-2 p-2">
         {MONTHS.map((m, i) => {
           const isSelected = i === selectedMonth && viewDate.getFullYear() === selectedYear;
+          const startOfMonth = new Date(viewDate.getFullYear(), i, 1, 0, 0, 0, 0);
+          const isDisabled = maxAllowed && startOfMonth.getTime() > maxAllowed.getTime();
+
           return (
             <button
               key={m}
               type="button"
-              onClick={() => handleSelectMonth(i)}
+              disabled={isDisabled}
+              onClick={() => !isDisabled && handleSelectMonth(i)}
               className={`py-2 px-1 text-sm rounded-lg transition-colors ${
-                isSelected ? 'bg-primary text-white font-semibold' : 'hover:bg-primary/10 text-text'
+                isDisabled
+                  ? 'opacity-30 cursor-not-allowed text-text-secondary line-through pointer-events-none'
+                  : isSelected 
+                    ? 'bg-primary text-white font-semibold' 
+                    : 'hover:bg-primary/10 text-text'
               }`}
             >
               {m}
@@ -221,17 +278,26 @@ export default function DatePicker({
             if (!d) return <div key={`empty-${i}`} className="w-8 h-8" />;
             const isSelected = selectedTime === d.getTime();
             const isToday = new Date().toDateString() === d.toDateString();
+            const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+            const isDisabled = maxAllowed && dStart.getTime() > maxAllowed.getTime();
             
             let btnClass = 'w-8 h-8 flex items-center justify-center text-sm rounded-full transition-colors ';
-            if (isSelected) btnClass += 'bg-primary text-white font-semibold shadow-md ';
-            else if (isToday) btnClass += 'bg-primary/10 text-primary font-semibold hover:bg-primary/20 ';
-            else btnClass += 'text-text hover:bg-surface-secondary ';
+            if (isDisabled) {
+              btnClass += 'opacity-30 cursor-not-allowed text-text-secondary line-through pointer-events-none ';
+            } else if (isSelected) {
+              btnClass += 'bg-primary text-white font-semibold shadow-md ';
+            } else if (isToday) {
+              btnClass += 'bg-primary/10 text-primary font-semibold hover:bg-primary/20 ';
+            } else {
+              btnClass += 'text-text hover:bg-surface-secondary ';
+            }
 
             return (
               <button
                 key={i}
                 type="button"
-                onClick={() => handleSelectDate(d)}
+                disabled={isDisabled}
+                onClick={() => !isDisabled && handleSelectDate(d)}
                 className={btnClass}
               >
                 {d.getDate()}
@@ -293,7 +359,16 @@ export default function DatePicker({
               {viewMode === 'date' && `${MONTHS[viewDate.getMonth()]} ${viewDate.getFullYear()}`}
             </button>
             
-            <button type="button" onClick={next} className="p-1.5 hover:bg-surface rounded-lg text-text-secondary hover:text-text transition-colors">
+            <button 
+              type="button" 
+              onClick={next} 
+              disabled={isNextDisabled()} 
+              className={`p-1.5 rounded-lg transition-colors ${
+                isNextDisabled() 
+                  ? 'opacity-30 cursor-not-allowed text-text-secondary pointer-events-none' 
+                  : 'hover:bg-surface text-text-secondary hover:text-text'
+              }`}
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

@@ -22,7 +22,7 @@ import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
 import Input from '../components/common/Input'
-
+import Button from '../components/common/Button'
 import { Download } from 'lucide-react'
 export default function Donations() {
   const [donations, setDonations] = useState([])
@@ -490,21 +490,23 @@ export default function Donations() {
 
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+            <Button
               type="button"
+              variant="outline"
               onClick={handleCloseModal}
-              className="flex-1 bg-surface-secondary hover:bg-surface text-text px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border border-border"
+              disabled={formLoading}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              isLoading={formLoading}
               disabled={formLoading}
-              className="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 shadow-glow-primary"
             >
               {formLoading ? 'Saving...' : 'Save'}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

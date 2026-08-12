@@ -383,6 +383,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   <Select 
                     label={field.label}
                     required={field.required}
+                    placement={field.name === 'status' ? 'down' : 'auto'}
                     value={formData[field.name] ?? ''} 
                     onChange={(val) => {
                       setFormData({ ...formData, [field.name]: val })
@@ -481,7 +482,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                         // Keep email characters
                       } else if (nameLower === 'ifsc_code' || nameLower.includes('gst')) {
                         val = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15)
-                      } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower === 'number') {
+                      } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower.includes('contact') || nameLower.includes('number')) {
                         val = val.replace(/\D/g, '').slice(0, 10)
                       } else if (nameLower.includes('account_number') || nameLower.includes('pincode') || nameLower.includes('zip')) {
                         val = val.replace(/\D/g, '').slice(0, 20)

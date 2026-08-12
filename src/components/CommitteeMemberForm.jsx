@@ -217,6 +217,9 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         <Input
           label="Contact Number"
           required
+          type="tel"
+          onlyNumbers
+          maxLength={10}
           placeholder="Enter Contact Number"
           value={formData.number}
           onChange={(e) => handleFieldChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
@@ -226,13 +229,13 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         <Select
           label="Status"
           required
+          placement="down"
           value={formData.status}
           onChange={(val) => handleFieldChange('status', val)}
           disabled={isLoading}
           error={errors.status}
           placeholder="Select Status"
           options={[
-            { label: 'Select Status', value: '' },
             { label: 'Active', value: 1 },
             { label: 'Inactive', value: 0 }
           ]}
