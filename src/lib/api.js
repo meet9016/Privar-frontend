@@ -52,13 +52,7 @@ const setupInterceptors = (axiosInstance) => {
   axiosInstance.interceptors.response.use(
     (response) => {
       const method = response.config?.method?.toLowerCase()
-      const shouldToastSuccess = ['post', 'put', 'patch', 'delete'].includes(method)
-      const message = response.data?.message
-
-      if (shouldToastSuccess && message) {
-        toast.success(message)
-      }
-
+      // Success toasts are handled by individual components to avoid duplicates
       return response
     },
     (error) => {
@@ -68,9 +62,7 @@ const setupInterceptors = (axiosInstance) => {
         window.location.href = '/login'
       }
 
-      const message = error.response?.data?.message || error.message || 'Something went wrong'
-      toast.error(message)
-
+      // Error toasts are handled by individual components to avoid duplicates
       return Promise.reject(error)
     }
   )

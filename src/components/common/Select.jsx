@@ -54,7 +54,7 @@ export default function Select({
 
   const selectedOption = options.find(opt => String(opt.value) === String(value));
 
-  const handleSelect = (val) => {
+  const handleSelect = (val) => { 
     onChange(val);
     setIsOpen(false);
     setSearchTerm('');
