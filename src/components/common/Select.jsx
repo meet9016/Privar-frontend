@@ -71,59 +71,61 @@ export default function Select({
         </label>
       )}
       
-      <div 
-        className={`w-full px-3 py-2 bg-input-bg text-text border ${
-          error ? 'border-red-500' : 'border-border focus:border-primary/50'
-        } rounded-xl text-sm outline-none transition-all flex items-center justify-between cursor-pointer ${
-          disabled ? 'opacity-50 cursor-not-allowed' : 'focus:ring-2 focus:ring-primary/10'
-        }`}
-        onClick={toggleOpen}
-        tabIndex={disabled ? -1 : 0}
-      >
-        <span className={selectedOption ? 'text-text font-medium' : 'text-text-secondary'}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
-        <ChevronDown size={16} className={`text-text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </div>
+      <div className="relative w-full">
+        <div 
+          className={`w-full px-3 py-2 bg-input-bg text-text border ${
+            error ? 'border-red-500' : 'border-border focus:border-primary/50'
+          } rounded-xl text-sm outline-none transition-all flex items-center justify-between cursor-pointer ${
+            disabled ? 'opacity-50 cursor-not-allowed' : 'focus:ring-2 focus:ring-primary/10'
+          }`}
+          onClick={toggleOpen}
+          tabIndex={disabled ? -1 : 0}
+        >
+          <span className={selectedOption ? 'text-text font-medium' : 'text-text-secondary'}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+          <ChevronDown size={16} className={`text-text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
 
-      {isOpen && (
-        <div className={`absolute z-[9999] w-full ${dropUp ? 'bottom-full mb-1' : 'top-full mt-1'} bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden`}>
-          {showSearch && (
-            <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2">
-              <Search size={16} className="text-text-secondary" />
-              <input 
-                type="text"
-                className="w-full bg-transparent text-sm outline-none text-text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                autoFocus
-              />
-            </div>
-          )}
-          
-          <div className="max-h-60 overflow-y-auto">
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
-                <div 
-                  key={option.value}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors ${
-                    String(value) === String(option.value) ? 'bg-primary/5 text-primary font-semibold' : 'text-text'
-                  }`}
-                  onClick={() => handleSelect(option.value)}
-                >
-                  {option.label}
-                </div>
-              ))
-            ) : (
-              <div className="px-3 py-2 text-sm text-text-secondary text-center">
-                No options found
+        {isOpen && (
+          <div className={`absolute z-[9999] w-full ${dropUp ? 'bottom-full mb-1' : 'top-full mt-1'} bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden`}>
+            {showSearch && (
+              <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2">
+                <Search size={16} className="text-text-secondary" />
+                <input 
+                  type="text"
+                  className="w-full bg-transparent text-sm outline-none text-text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  autoFocus
+                />
               </div>
             )}
+            
+            <div className="max-h-60 overflow-y-auto">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
+                  <div 
+                    key={option.value}
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors ${
+                      String(value) === String(option.value) ? 'bg-primary/5 text-primary font-semibold' : 'text-text'
+                    }`}
+                    onClick={() => handleSelect(option.value)}
+                  >
+                    {option.label}
+                  </div>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-text-secondary text-center">
+                  No options found
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {error && <p className="text-red-500 text-xs mt-1 font-semibold">{error}</p>}
     </div>
