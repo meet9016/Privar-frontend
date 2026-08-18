@@ -6,17 +6,19 @@ const definitions = {
   festivals: {
     title: 'Festivals',
     subtitle: 'Create and maintain festival announcements',
-    endpoint: '/content/festivals',
+    endpoint: '/festivals',
     fields: [
       { name: 'title', label: 'Title', required: true },
       { name: 'festival_date', label: 'Festival Date', type: 'date', required: true },
       { name: 'description', label: 'Description', type: 'textarea', required: true },
-      { name: 'image', label: 'Image', type: 'file' }
+      { name: 'image', label: 'Image', type: 'file' },
+      { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
     ],
     columns: [
       { key: 'image', label: 'Image', type: 'image' },
       { key: 'title', label: 'Title' },
-      { key: 'festival_date', label: 'Date' },
+      { key: 'festival_date', label: 'Date', render: (row) => row.festival_date ? new Date(row.festival_date).toLocaleDateString('en-IN') : '-' },
+      { key: 'status', label: 'Status' }
     ]
   },
   events: {
@@ -73,13 +75,6 @@ const definitions = {
       },
       { name: 'height', label: 'Height', required: true },
       { name: 'weight', label: 'Weight', required: true },
-      { name: 'complexion', label: 'Complexion', required: true },
-      { name: 'education', label: 'Education', required: true },
-      { name: 'occupation', label: 'Occupation', required: true },
-      { name: 'father_name', label: 'Father Name', required: true },
-      { name: 'mother_name', label: 'Mother Name', required: true },
-      { name: 'gotra', label: 'Gotra', required: true },
-      { name: 'family_type', label: 'Family Type', required: true },
       { name: 'mobile_number', label: 'Mobile Number', required: true },
       { name: 'city', label: 'City', required: true },
       {
@@ -92,6 +87,10 @@ const definitions = {
           { value: 0, label: 'Inactive' }
         ]
       },
+      { name: 'education', label: 'Education', required: true },
+      { name: 'occupation', label: 'Occupation', required: true },
+      { name: 'father_name', label: 'Father Name', required: true },
+      { name: 'mother_name', label: 'Mother Name', required: true },
       { name: 'about', label: 'About', type: 'textarea' },
       { name: 'biodata', label: 'Biodata (PDF/Image)', type: 'file', accept: 'image/*,application/pdf' },
       { name: 'person_image', label: 'Person Image', type: 'file' }
@@ -172,12 +171,14 @@ const definitions = {
     fields: [
       { name: 'name', label: 'Name', required: true },
       { name: 'email', label: 'Email', type: 'email', required: true },
-      { name: 'message', label: 'Message', type: 'textarea', required: true }
+      { name: 'message', label: 'Message', type: 'textarea', required: true },
+      { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
     ],
     columns: [
       { key: 'name', label: 'Name' },
       { key: 'email', label: 'Email' },
-      { key: 'message', label: 'Message' }
+      { key: 'message', label: 'Message' },
+      { key: 'status', label: 'Status' }
     ]
   },
   birthday: {
@@ -214,12 +215,11 @@ const definitions = {
     columns: [
       { key: 'title', label: 'Title' },
       { key: 'company_name', label: 'Company' },
-      { key: 'qualifications', label: 'qualifications' },
-      {key:'image',lable:'Image',type:'image'},
-
+      { key: 'qualifications', label: 'Qualifications' },
+      { key: 'image', label: 'Image', type: 'image' },
       { key: 'contact_number', label: 'Number' },
       { key: 'job_type', label: 'Job Type' },
-      { key: 'status', label: 'Status', render: (row) => Number(row.status) === 1 ? 'Approved' : 'Inactive' }
+      { key: 'status', label: 'Status' }
     ]
   },
   'bank-details': {
@@ -236,11 +236,11 @@ const definitions = {
       { name: 'qr_code', label: 'QR Code', type: 'file' },
       { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
     ],
-    columns: [
+    columns: [  
       { key: 'bank_name', label: 'Bank Name' },
       { key: 'account_name', label: 'Account Name' },
       { key: 'account_number', label: 'Account Number' },
-      { key: 'status', label: 'Status', render: (row) => Number(row.status) === 1 ? 'Active' : 'Inactive' }
+      { key: 'status', label: 'Status' }
     ]
   }
 }

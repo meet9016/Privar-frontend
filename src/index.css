@@ -1,14 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
-  height: 100%;
-  
+:root {
+  /* Parivar.me Logo Brand Colors: Deep Navy (#080b2a) + Electric Indigo (#4f46e5) + Soft Ice (#f4f6fc) */
+  --color-background: #f4f6fc;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #ebf0fa;
+  --color-card: #ffffff;
+  --color-primary: #4338ca;
+  --color-primary-hover: #3730a3;
+  --color-primary-active: #312e81;
+  --color-primary-light: #6366f1;
+  --color-primary-lighter: #818cf8;
+  --color-primary-dark: #232066;
+  --color-primary-bg: rgba(67, 56, 202, 0.1);
+  --color-primary-border: rgba(67, 56, 202, 0.3);
+  --color-secondary: #475569;
+  --color-text: #080b2a;
+  --color-text-secondary: #4a5568;
+  --color-border: #e2e8f4;
+  --color-success: #10b981;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-success-text: #047857;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #b45309;
+  --color-error: #ef4444;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fca5a5;
+  --color-error-text: #b91c1c;
+  --color-info: #3b82f6;
+  --color-info-bg: #eff6ff;
+  --color-info-border: #bfdbfe;
+  --color-info-text: #1d4ed8;
+  --color-input-bg: #ffffff;
+  --color-input-border: #cbd5e1;
+  --color-input-text: #080b2a;
+  --color-glass-bg: rgba(255, 255, 255, 0.85);
+  --color-glass-border: rgba(226, 232, 244, 0.9);
+  --color-shadow: rgba(8, 11, 42, 0.06);
+  --color-primary-glow: rgba(67, 56, 202, 0.2);
+  --color-success-glow: rgba(16, 185, 129, 0.15);
+  --color-error-glow: rgba(239, 68, 68, 0.15);
+}
+
+.dark {
+  --color-background: #040714;
+  --color-surface: #090e24;
+  --color-surface-secondary: #101738;
+  --color-card: #090e24;
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-secondary: #94a3b8;
+  --color-text: #f8faff;
+  --color-text-secondary: #94a3b8;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.12);
+  --color-success-border: rgba(16, 185, 129, 0.25);
+  --color-success-text: #34d399;
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.12);
+  --color-warning-border: rgba(245, 158, 11, 0.25);
+  --color-warning-text: #fbbf24;
+  --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.12);
+  --color-error-border: rgba(239, 68, 68, 0.25);
+  --color-error-text: #f87171;
+  --color-info: #3b82f6;
+  --color-info-bg: rgba(59, 130, 246, 0.12);
+  --color-info-border: rgba(59, 130, 246, 0.25);
+  --color-info-text: #60a5fa;
+  --color-input-bg: rgba(16, 23, 56, 0.6);
+  --color-input-border: rgba(255, 255, 255, 0.1);
+  --color-input-text: #f8faff;
+  --color-glass-bg: rgba(9, 14, 36, 0.75);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --color-primary-glow: rgba(99, 102, 241, 0.35);
+  --color-success-glow: rgba(16, 185, 129, 0.35);
+  --color-error-glow: rgba(239, 68, 68, 0.35);
+}
+
+html, body, #root, * {
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   @apply bg-background text-text;
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* Hide scrollbar completely but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @keyframes scroll-left {
@@ -20,4 +135,9 @@ body {
 [data-testid="middleware-icon"],
 .settings-icon {
   display: none !important;
+}
+
+/* Ensure any element with a tooltip gets a pointer cursor */
+[title] {
+  cursor: pointer;
 }

@@ -47,6 +47,8 @@ export default function Expenses() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [proofImage, setProofImage] = useState(null)
 
+  const [removeImage, setRemoveImage] = useState(false)
+
   const [formData, setFormData] = useState({
     date: new Date().toISOString().slice(0, 10),
     expense_category_id: '',
@@ -60,46 +62,49 @@ export default function Expenses() {
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
-      const params = getParams({ search: activeSearch })
-      if (monthFilter) params.month = monthFilter
-      
+      const params = {
+        ...getParams(),
+        search: activeSearch,
+        month: monthFilter
+      }
       const res = await getExpensesList(params)
-      const rows = res.data?.data || res.data || []
-      const pg = res.data?.pagination || {}
-      setExpenses(Array.isArray(rows) ? rows : [])
-      setPaginationData(pg)
+      const data = res.data?.data || []
+      const pagination = res.data?.pagination || {}
+      setExpenses(data)
+      setPaginationData(pagination)
     } catch (err) {
-      setExpenses([])
-      setPaginationData({ page: 1, totalPages: 1, total: 0 })
       setError(err.response?.data?.message || 'Failed to load expenses')
     } finally {
       setLoading(false)
     }
-  }, [activeSearch, page, monthFilter])
+  }, [getParams, activeSearch, monthFilter, setPaginationData])
+
+  const fetchDropdownData = async () => {
+    try {
+      const [membersRes, categoriesRes] = await Promise.all([
+        getCommitteeMembersList({ limit: 1000 }),
+        api.get('/masters/expense-category', { params: { limit: 1000 } })
+      ])
+      
+      setCommitteeMembers(membersRes.data?.data || membersRes.data || [])
+      setExpenseCategories(categoriesRes.data?.data || categoriesRes.data || [])
+    } catch (err) {
+      console.error('Failed to load dropdown options', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchDropdownData()
+  }, [])
 
   useEffect(() => {
     fetchExpenses()
   }, [fetchExpenses])
 
-  useEffect(() => {
-    const fetchDropdowns = async () => {
-      try {
-        const [membersRes, categoriesRes] = await Promise.all([
-          getCommitteeMembersList({ limit: 100 }),
-          api.get('/masters/expense-category')
-        ])
-        setCommitteeMembers(membersRes.data?.data || [])
-        setExpenseCategories(categoriesRes.data?.data || [])
-      } catch (err) {
-        console.error('Failed to load dropdown data', err)
-      }
-    }
-    fetchDropdowns()
-  }, [])
-
   const handleDelete = async (id) => {
-    if (!await confirm('Are you sure you want to delete this expense?')) return
+    if (!await confirm('Are you sure you want to delete this expense record?')) return
     try {
       await api.delete(`/expenses/${id}`)
       await fetchExpenses()
@@ -121,6 +126,7 @@ export default function Expenses() {
       description: expense.description || ''
     })
     setProofImage(null)
+    setRemoveImage(false)
     setFieldErrors({})
     setFormLoading(false)
     setIsModalOpen(true)
@@ -138,6 +144,7 @@ export default function Expenses() {
       description: ''
     })
     setProofImage(null)
+    setRemoveImage(false)
     setFieldErrors({})
     setIsModalOpen(true)
   }
@@ -146,6 +153,7 @@ export default function Expenses() {
     setIsModalOpen(false)
     setSelectedExpense(null)
     setProofImage(null)
+    setRemoveImage(false)
     setFieldErrors({})
   }
 
@@ -177,7 +185,7 @@ export default function Expenses() {
     if (!formData.amount || Number(formData.amount) <= 0) errors.amount = 'Amount is required'
     if (!formData.expense_category_id) errors.expense_category_id = 'Expense Category is required'
     if (!formData.committee_member_id) errors.committee_member_id = 'Committee Member is required'
-    if (!proofImage && (!selectedExpense || !selectedExpense.image)) {
+    if (!proofImage && (!selectedExpense || !selectedExpense.image || removeImage)) {
       errors.proof = 'Proof / Receipt is required'
     }
 
@@ -188,12 +196,20 @@ export default function Expenses() {
 
     setFormLoading(true)
     try {
-      const payload = new FormData(e.target)
+      const payload = new FormData()
+      payload.append('date', formData.date)
+      payload.append('amount', formData.amount)
+      payload.append('expense_category_id', formData.expense_category_id)
       payload.append('expense_category_name', formData.expense_category_name)
+      payload.append('committee_member_id', formData.committee_member_id)
       payload.append('committee_member_name', formData.committee_member_name)
+      payload.append('description', formData.description || '')
       
       if (proofImage) {
         payload.append('image', proofImage)
+      }
+      if (removeImage) {
+        payload.append('remove_image', 'true')
       }
       
       if (selectedExpense) {
@@ -272,14 +288,6 @@ export default function Expenses() {
               />
             </div>
           </div>
-
-          <Button
-            onClick={fetchExpenses}
-            variant="secondary"
-            title="Refresh list"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
           
           <div className="w-full sm:w-auto flex-none">
             <DatePicker
@@ -310,111 +318,108 @@ export default function Expenses() {
 
 
 
-      {loading && expenses.length === 0 ? (
-        <div className="py-20"><Loader text="Loading expenses..." /></div>
-      ) : (
-        <Table
-          columns={[
-            {
-              header: 'Date',
-              key: 'date',
-              render: (expense) => (
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <CalendarDays className="w-4 h-4 text-text-secondary/60" />
-                  {expense.date ? new Date(expense.date).toLocaleDateString() : '-'}
-                </div>
-              )
-            },
-            {
-              header: 'Category',
-              key: 'category',
-              render: (expense) => (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-surface-secondary border border-border">
-                  {expense.expense_category_name || '-'}
-                </span>
-              )
-            },
-            {
-              header: 'Committee Member',
-              key: 'member',
-              render: (expense) => expense.committee_member_name ? (
-                <div className="flex items-center gap-2">
-                  <User2 className="w-4 h-4 text-text-secondary/60" />
-                  {expense.committee_member_name}
-                </div>
-              ) : '-'
-            },
-            {
-              header: 'Description',
-              key: 'description',
-              render: (expense) => (
-                <div className="max-w-xs truncate" title={expense.description}>
-                  {expense.description || '-'}
-                </div>
-              )
-            },
-            {
-              header: 'Proof',
-              key: 'proof',
-              render: (expense) => expense.image ? (
-                <a href={assetUrl(expense.image)} target="_blank" rel="noopener noreferrer" className="relative inline-block hover:opacity-80 transition-opacity max-w-[100px]" title="View Proof">
-                  {typeof expense.image === 'string' && expense.image.toLowerCase().endsWith('.pdf') ? (
-                     <div className="h-12 w-16 flex justify-center items-center rounded-lg border border-border bg-primary/10 text-primary">
-                       <Paperclip className="w-5 h-5" />
-                     </div>
-                  ) : (
-                     <img src={assetUrl(expense.image)} alt="Proof" className="h-12 w-16 rounded-lg object-cover border border-border" />
-                  )}
-                </a>
-              ) : (
-                <span className="text-text-secondary/50 text-xs">-</span>
-              )
-            },
-            {
-              header: 'Amount',
-              key: 'amount',
-              align: 'right',
-              render: (expense) => (
-                <span className="font-semibold text-text tabular-nums">
-                  ₹{Number(expense.amount || 0).toLocaleString('en-IN')}
-                </span>
-              )
-            },
-            {
-              header: 'Actions',
-              key: 'actions',
-              align: 'right',
-              render: (expense) => (
-                <div className="flex items-center justify-end gap-2">
-                  <button onClick={() => handleEdit(expense)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(expense.id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )
-            }
-          ]}
-          data={expenses}
-          keyField="id"
-          loading={loading}
-          emptyState={{
-            icon: Receipt,
-            title: 'No expenses found',
-            description: 'There are no expense records matching your search criteria'
-          }}
-          pagination={{
-            currentPage: page,
-            totalPages,
-            total,
-            loading,
-            onPageChange: setPage,
-            limit,
-            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
-          }}
-        />
-      )}
+      <Table
+        columns={[
+          {
+            header: 'Date',
+            key: 'date',
+            render: (expense) => (
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <CalendarDays className="w-4 h-4 text-text-secondary/60" />
+                {expense.date ? new Date(expense.date).toLocaleDateString() : '-'}
+              </div>
+            )
+          },
+          {
+            header: 'Category',
+            key: 'category',
+            render: (expense) => (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-surface-secondary border border-border">
+                {expense.expense_category_name || '-'}
+              </span>
+            )
+          },
+          {
+            header: 'Committee Member',
+            key: 'member',
+            render: (expense) => expense.committee_member_name ? (
+              <div className="flex items-center gap-2">
+                <User2 className="w-4 h-4 text-text-secondary/60" />
+                {expense.committee_member_name}
+              </div>
+            ) : '-'
+          },
+          {
+            header: 'Description',
+            key: 'description',
+            render: (expense) => (
+              <div className="max-w-xs truncate" title={expense.description}>
+                {expense.description || '-'}
+              </div>
+            )
+          },
+          {
+            header: 'Proof',
+            key: 'proof',
+            render: (expense) => expense.image ? (
+              <a href={assetUrl(expense.image)} target="_blank" rel="noopener noreferrer" className="relative inline-block hover:opacity-80 transition-opacity max-w-[80px]" title="View Proof">
+                {typeof expense.image === 'string' && expense.image.toLowerCase().endsWith('.pdf') ? (
+                   <div className="h-8 w-11 flex justify-center items-center rounded-lg border border-border bg-primary/10 text-primary">
+                     <Paperclip className="w-4 h-4" />
+                   </div>
+                ) : (
+                   <img src={assetUrl(expense.image)} alt="Proof" className="h-8 w-11 rounded-lg object-cover border border-border" />
+                )}
+              </a>
+            ) : (
+              <span className="text-text-secondary/50 text-xs">-</span>
+            )
+          },
+          {
+            header: 'Amount',
+            key: 'amount',
+            align: 'left',
+            render: (expense) => (
+              <span className="font-semibold text-text tabular-nums">
+                ₹{Number(expense.amount || 0).toLocaleString('en-IN')}
+              </span>
+            )
+          },
+          {
+            header: 'Actions',
+            key: 'actions',
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-1.5">
+                <button onClick={() => handleEdit(expense)} className="p-1.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => handleDelete(expense.id)} className="p-1.5 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-lg transition-all" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          }
+        ]}
+        data={expenses}
+        keyField="id"
+        loading={loading}
+        emptyState={{
+          icon: Receipt,
+          title: 'No expenses found',
+          description: 'There are no expense records matching your search criteria',
+          actionLabel: 'Add Expense',
+          onAction: handleCreate
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages,
+          total,
+          loading,
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+      />
 
       <Modal isOpen={isModalOpen} title={selectedExpense ? 'Edit Expense' : 'Add Expense'} onClose={handleCloseModal}>
         <form onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
@@ -507,22 +512,25 @@ export default function Expenses() {
                     ...(proofImage ? [{
                       url: URL.createObjectURL(proofImage),
                       onRemove: () => setProofImage(null)
-                    }] : selectedExpense?.image ? [{
+                    }] : selectedExpense?.image && !removeImage ? [{
                       url: assetUrl(selectedExpense.image),
-                      onRemove: () => {}
+                      onRemove: () => setRemoveImage(true)
                     }] : [])
                   ]}
                 />
+                {removeImage && (
+                  <span className="text-xs text-error-text font-medium">Receipt image will be removed on save.</span>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-3">
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button
               type="button"
               onClick={handleCloseModal}
               disabled={formLoading}
-              variant="secondary"
+              variant="outline"
             >
               Cancel
             </Button>
@@ -540,3 +548,8 @@ export default function Expenses() {
     </div>
   )
 }
+
+
+
+
+

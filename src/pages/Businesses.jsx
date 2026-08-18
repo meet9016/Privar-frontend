@@ -163,30 +163,24 @@ export default function Businesses() {
         <h2 className="text-xl font-semibold text-text">Business Directory</h2>
       </div>
       <div className="flex items-center gap-3 w-full sm:w-auto">
-        <button
-          onClick={fetchBusinesses}
-          className="flex items-center justify-center p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all"
-          title="Refresh listings"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="relative flex-1 sm:w-64">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
+            <Search className="w-4 h-4" />
+          </div>
+          <input
+            type="search"
+            placeholder="Search listings..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+          />
+        </div>
         <button
           onClick={handleCreate}
           className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
         >
           <Plus className="w-4 h-4" /> Add
         </button>
-       
-        <div className="relative flex-1 sm:w-64">
-          <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
-          <input
-            type="search"
-            placeholder="Search listings..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
-          />
-        </div>
       </div>
     </div>
 
@@ -254,9 +248,8 @@ export default function Businesses() {
           {
             header: 'Actions',
             key: 'actions',
-            align: 'right',
-            render: (biz) => (
-              <div className="flex items-center justify-end gap-2">
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
                 <button onClick={() => handleView(biz)} className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all" title="View">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
@@ -297,3 +290,6 @@ export default function Businesses() {
   </div>
 )
 }
+
+
+

@@ -219,12 +219,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
   ]
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 px-1 text-text">
+    <form onSubmit={handleSubmit} className="space-y-3.5 px-1 text-text">
 
       {/* SECTION 1: Personal Name details */}
       <div>
-        <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Primary Identity</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Input
             label="First Name"
             value={formData.first_name}
@@ -254,8 +253,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
 
       {/* SECTION 2: Contact & Authentication */}
       <div>
-        <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Contact & Login Credentials</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Input
             label="Email Address"
             type="email"
@@ -280,8 +278,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
 
       {/* SECTION 3: Bio Metrics & Relation */}
       <div>
-        <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Family</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 items-start">
           <Select
             label="Relationship"
             value={formData.relation}
@@ -315,13 +312,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
             disabled={isLoading}
             placeholder="Select Anniversary"
           />
-        </div>
-
-          <div className="mt-4">
+          <div className="flex flex-col justify-start">
             <label className="block text-sm font-semibold text-text-secondary mb-1.5">Status</label>
-            <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 h-9 px-3 bg-input-bg border border-border rounded-xl cursor-pointer">
               <input
-                className="h-5 w-5 px-3 py-2 self-end accent-primary"
+                className="h-4 w-4 accent-primary rounded cursor-pointer"
                 type="checkbox"
                 id="status"
                 name="Approved"
@@ -329,51 +324,52 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                 onChange={(e) => handleChange('status', e.target.checked ? 1 : 0)}
                 disabled={isLoading}
               />
-              <span>
+              <span className="text-xs font-medium text-text">
                 {formData.status == 1 ? 'Approved' : 'Pending'}
               </span>
-            </div>
+            </label>
           </div>
         </div>
+      </div>
 
       {/* SECTION 4: Family Hierarchy */}
       <div>
-        <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Family Hierarchy</h4>
-        <RadioGroup
-          name="hierarchy"
-          options={[
-            { label: 'Head', value: 'head' },
-            { label: 'Under Head', value: 'under_head' }
-          ]}
-          value={isHead ? 'head' : 'under_head'}
-          onChange={(val) => {
-            const headStatus = val === 'head';
-            setIsHead(headStatus);
-            if (headStatus && errors.relation) setErrors(prev => ({...prev, relation: null}));
-            if (!headStatus && errors.family_head_id) setErrors(prev => ({...prev, family_head_id: null}));
-          }}
-          className="mb-4"
-        />
-        
-        {!isHead && (
-          <div className="mb-4">
-            <Select
-              label="Select Family Head"
-              value={formData.family_head_id}
-              onChange={(val) => handleChange('family_head_id', val)}
-              options={headOptions}
-              required={true}
-              error={errors.family_head_id}
-              placeholder="Search and select head..."
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+          <div>
+            <RadioGroup
+              name="hierarchy"
+              options={[
+                { label: 'Head', value: 'head' },
+                { label: 'Under Head', value: 'under_head' }
+              ]}
+              value={isHead ? 'head' : 'under_head'}
+              onChange={(val) => {
+                const headStatus = val === 'head';
+                setIsHead(headStatus);
+                if (headStatus && errors.relation) setErrors(prev => ({...prev, relation: null}));
+                if (!headStatus && errors.family_head_id) setErrors(prev => ({...prev, family_head_id: null}));
+              }}
             />
           </div>
-        )}
+          {!isHead && (
+            <div className="md:col-span-2">
+              <Select
+                label="Select Family Head"
+                value={formData.family_head_id}
+                onChange={(val) => handleChange('family_head_id', val)}
+                options={headOptions}
+                required={true}
+                error={errors.family_head_id}
+                placeholder="Search and select head..."
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* SECTION 5: Location Details */}
       <div>
-        <h4 className="text-sm font-semibold tracking-widest text-primary mb-4 pb-2 border-b border-border/50 uppercase">Location Details</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
           <Select
             label="Country"
             value={formData.country_id}
@@ -403,20 +399,20 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Address <span className="text-red-500">*</span></label>
-          <textarea
-            rows="3"
+          <Input
+            label="Address"
+            required={true}
             value={formData.address}
             onChange={(e) => handleChange('address', e.target.value)}
-            className={`w-full px-3 py-2 bg-input-bg text-text border ${errors.address ? 'border-red-500 ring-1 ring-red-500' : 'border-border focus:border-primary/50'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all`}
             disabled={isLoading}
+            placeholder="Enter full address"
+            error={errors.address}
           />
-          {errors.address && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.address}</p>}
         </div>
       </div>
 
       {/* SUBMIT BUTTON */}
-      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+      <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             Cancel

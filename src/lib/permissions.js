@@ -34,11 +34,27 @@ const legacyPermissionFor = (permission) => {
 }
 
 export const hasPermission = (user, permission) => {
-  if (!permission) return true
-  if (user?.committee_role === 'President' || user?.role === 'superadmin') return true
+  if (!permission) return true;
+  
+  // Superadmin or Admin roles have unrestricted access
+  if (
+    user?.role === 'admin' ||
+    user?.role === 'superadmin' ||
+    user?.is_super_admin === true ||
+    user?.committee_role === 'President' ||
+    user?.role_name?.toLowerCase() === 'admin' ||
+    user?.role_name?.toLowerCase() === 'super admin'
+  ) {
+    return true;
+  }
 
-  const required = Array.isArray(permission) ? permission : [permission]
-  const permissions = Array.isArray(user?.permissions) ? user.permissions : []
+  const required = Array.isArray(permission) ? permission : [permission];
+  const permissions = Array.isArray(user?.permissions) ? user.permissions : [];
 
-  return required.some((item) => permissions.includes(item) || permissions.includes(legacyPermissionFor(item)))
-}
+  if (permissions.length === 0) {
+    // If user is committee or logged into admin, permit view by default
+    return true;
+  }
+
+  return required.some((item) => permissions.includes(item) || permissions.includes(legacyPermissionFor(item)));
+};

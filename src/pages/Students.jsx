@@ -8,6 +8,7 @@ import YearSelect from '../components/YearSelect'
 import FileDropzone from '../components/common/FileDropzone'
 import Select from '../components/common/Select'
 import Input from '../components/common/Input'
+import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
 
@@ -159,24 +160,20 @@ export default function Students() {
 
     try {
       if (selectedStudent) {
-        await api.put(`/students/${selectedStudent.id}`, payload)
+        await api.put(`/students/${selectedStudent.id || selectedStudent._id}`, payload)
+        toast.success('Student updated successfully')
       } else {
         await api.post('/students', payload)
+        toast.success('Student added successfully')
       }
-      await fetchStudents()
-      toast.success(`Student ${selectedStudent ? 'updated' : 'created'} successfully`)
-      setIsModalOpen(false)
-      setSelectedStudent(null)
+      handleCloseModal()
+      fetchStudents()
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update student')
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to save student')
     } finally {
       setFormLoading(false)
     }
   }
-
-
-
-
 
   const groupedStudents = React.useMemo(() => {
     return students.reduce((acc, student) => {
@@ -187,54 +184,31 @@ export default function Students() {
     }, {});
   }, [students]);
 
-  const sortedYears = Object.keys(groupedStudents).sort((a, b) => b === 'Unknown' ? 1 : a === 'Unknown' ? -1 : b - a);
-
   return (
     <div className="space-y-6 animate-slide-up text-text">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Students</h2>
-
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center justify-center p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-            title="Toggle Filters"
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
-          >
-            <Plus className="w-4 h-4" /> Add
-          </button>
-        </div>
-      </div>
-
-      <div className={`transition-all duration-300 ease-in-out ${showFilters ? 'max-h-[500px] opacity-100 mt-4 overflow-visible z-20 relative' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
-        <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Input
-              icon={<Search className="w-4 h-4" />}
+          <div className="relative flex-1 sm:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
+              <Search className="w-4 h-4" />
+            </div>
+            <input
               type="search"
               placeholder="Search students..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
             />
           </div>
-          <div className="flex justify-end gap-3 mt-4">
-            <button type="button" onClick={fetchStudents} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh Data
-            </button>
-          </div>
+          <Button onClick={handleCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+            Add
+          </Button>
         </div>
       </div>
-
-
-
 
 
       {/* Main Table */}
@@ -288,9 +262,8 @@ export default function Students() {
           {
             key: 'actions',
             header: 'Actions',
-            align: 'right',
-            render: (student) => (
-              <div className="flex items-center justify-end gap-2">
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
                 <button onClick={() => handleEdit(student)}
                   className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
                   <Edit2 className="w-3.5 h-3.5" />
@@ -309,7 +282,9 @@ export default function Students() {
         emptyState={{
           icon: GraduationCap,
           title: 'No students found',
-          description: 'There are no student records matching your criteria'
+          description: 'There are no student records matching your criteria',
+          actionLabel: 'Add Student',
+          onAction: handleCreate
         }}
         pagination={{
           currentPage: page,
@@ -327,14 +302,13 @@ export default function Students() {
         title={selectedStudent ? 'Edit Student' : 'Add Student'}
         onClose={handleCloseModal}
       >
-        <form onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
+        <form key={selectedStudent?._id || selectedStudent?.id || 'new'} onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Surname"
               name="surname"
               defaultValue={selectedStudent?.surname || ''}
               required
-              disabled={!!(selectedStudent && selectedStudent.surname)}
               error={fieldErrors.surname ? 'Surname is required' : undefined}
               onChange={(e) => {
                 e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
@@ -381,9 +355,12 @@ export default function Students() {
               name="standard"
               defaultValue={selectedStudent?.standard || ''}
               required
+              maxLength={2}
+              placeholder="e.g. 10 or 12"
               error={fieldErrors.standard ? 'Standard is required' : undefined}
               onChange={(e) => {
-                e.target.value = e.target.value.replace(/\D/g, '')
+                let val = e.target.value.replace(/\D/g, '').slice(0, 2)
+                e.target.value = val
                 if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null }))
               }}
             />
@@ -393,9 +370,37 @@ export default function Students() {
               type="text"
               defaultValue={selectedStudent?.percentage || ''}
               required
+              placeholder="e.g. 11.22"
+              maxLength={5}
               error={fieldErrors.percentage ? 'Percentage is required' : undefined}
               onChange={(e) => {
-                e.target.value = e.target.value.replace(/[^0-9.]/g, '')
+                let val = e.target.value.replace(/[^0-9.]/g, '')
+                // Allow only one decimal point
+                const parts = val.split('.')
+                if (parts.length > 2) {
+                  val = parts[0] + '.' + parts.slice(1).join('')
+                }
+                // Max 4 digits entered total (excluding the decimal dot, e.g. 11.22 is 4 digits)
+                const digitCount = val.replace(/\./g, '').length
+                if (digitCount > 4) {
+                  // Keep only first 4 digits while preserving dot
+                  let counted = 0
+                  let newVal = ''
+                  for (let char of val) {
+                    if (char === '.') {
+                      newVal += char
+                    } else if (counted < 4) {
+                      newVal += char
+                      counted++
+                    }
+                  }
+                  val = newVal
+                }
+                // Cap value at 100 max
+                if (parseFloat(val) > 100) {
+                  val = '100'
+                }
+                e.target.value = val
                 if (fieldErrors.percentage) setFieldErrors(prev => ({ ...prev, percentage: null }))
               }}
             />
@@ -415,23 +420,23 @@ export default function Students() {
               }}
             />
             <div>
-              <label className="text-sm text-text-secondary mb-1.5 block font-semibold">Year <span className="text-red-500">*</span></label>
               <YearSelect
                 name="year"
+                label="Year"
                 required
                 defaultValue={selectedStudent?.year || ''}
-                className={`w-full bg-input-bg text-text border ${fieldErrors.year ? 'border-red-500' : 'border-border focus:border-primary/50'} rounded-xl py-2.5 px-4 text-sm outline-none`}
                 onChange={() => { if (fieldErrors.year) setFieldErrors(prev => ({ ...prev, year: null })) }}
+                error={fieldErrors.year ? 'Year is required' : undefined}
               />
-              {fieldErrors.year && <p className="text-red-500 text-xs mt-1 font-semibold">Year is required</p>}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Student Image */}
-            <div className={`flex flex-col bg-input-bg border ${fieldErrors.student_image ? 'border-red-500' : 'border-border'} rounded-xl p-3`}>
+            <div>
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Student Image <span className="text-red-500">*</span></label>
               <FileDropzone
                 accept="image/*"
+                error={fieldErrors.student_image}
                 onFilesSelected={(files) => {
                   setImageData({ ...imageData, student_image: files[0] || null, remove_student_image: false })
                   if (fieldErrors.student_image) setFieldErrors(prev => ({ ...prev, student_image: null }))
@@ -449,14 +454,14 @@ export default function Students() {
                   }] : [])
                 ]}
               />
-              {fieldErrors.student_image && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.student_image}</p>}
             </div>
 
              {/* Result Image */}
-            <div className={`flex flex-col bg-input-bg border ${fieldErrors.result_image ? 'border-red-500' : 'border-border'} rounded-xl p-3`}>
+            <div>
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Result Image <span className="text-red-500">*</span></label>
               <FileDropzone
                 accept="image/*"
+                error={fieldErrors.result_image}
                 onFilesSelected={(files) => {
                   setImageData({ ...imageData, result_image: files[0] || null, remove_result_image: false })
                   if (fieldErrors.result_image) setFieldErrors(prev => ({ ...prev, result_image: null }))
@@ -474,7 +479,6 @@ export default function Students() {
                   }] : [])
                 ]}
               />
-              {fieldErrors.result_image && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.result_image}</p>}
             </div>
           </div>
           <Select
@@ -495,16 +499,30 @@ export default function Students() {
             error={fieldErrors.status ? 'Status is required' : undefined}
           />
 
-          <button
-            type="submit"
-            disabled={formLoading}
-            className="flex justify-self-end bg-primary hover:bg-primary-hover text-white p-3 rounded-xl font-semibold text-sm tracking-wider  disabled:opacity-50 shadow-glow-primary"
-          >
-            {formLoading ? 'Saving...' : selectedStudent ? 'Update Student' : 'Add Student'}
-          </button>
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseModal}
+              disabled={formLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={formLoading}
+              disabled={formLoading}
+            >
+              {formLoading ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
 
         </form>
       </Modal>
     </div>
   )
 }
+
+
+

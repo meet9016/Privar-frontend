@@ -11,20 +11,20 @@ const LinkItem = ({ to, icon: Icon, label, end }) => (
     to={to}
     end={end}
     className={({ isActive }) =>
-      `group flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
+      `group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${
         isActive
-          ? 'border-primary/20 bg-primary/10 text-primary'
-          : 'border-transparent text-text-secondary hover:bg-surface-secondary hover:text-text'
+          ? 'text-white font-bold shadow-md border-transparent bg-primary'
+          : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
       }`
     }
     title={label}
   >
     {({ isActive }) => (
       <>
-        <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-primary' : 'text-text-secondary group-hover:text-text'}`} />
-        <span className="truncate">{label}</span>
+        <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />
+        <span className="truncate tracking-tight">{label}</span>
         {isActive && (
-          <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-primary animate-pulse"></span>
+          <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-white animate-pulse shadow-sm"></span>
         )}
       </>
     )}
@@ -32,7 +32,7 @@ const LinkItem = ({ to, icon: Icon, label, end }) => (
 )
 
 const SectionLabel = ({ children }) => (
-  <div className="px-3 pb-2 pt-5 text-sm font-semibold  tracking-widest text-text-secondary/60 first:pt-0">
+  <div className="px-3 pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-text-secondary/60 first:pt-0">
     {children}
   </div>
 )
@@ -50,18 +50,18 @@ const CollapsibleMenu = ({ label, icon: Icon, children, defaultOpen = false, bas
   }, [isActive])
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`group flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
+        className={`group flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 cursor-pointer ${
           isActive && !isOpen
-            ? 'border-primary/20 bg-primary/5 text-primary'
-            : 'border-transparent text-text-secondary hover:bg-surface-secondary hover:text-text'
+            ? 'text-white font-bold shadow-md border-transparent bg-primary'
+            : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
         }`}
       >
-        {Icon && <Icon className={`h-5 w-5 shrink-0 ${isActive && !isOpen ? 'text-primary' : 'text-text-secondary group-hover:text-text'}`} />}
-        <span className="truncate flex-1 text-left">{label}</span>
-        <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        {Icon && <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive && !isOpen ? 'text-white font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />}
+        <span className="truncate flex-1 text-left tracking-tight">{label}</span>
+        <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : (isActive && !isOpen ? 'text-white' : 'text-text-secondary')}`} />
       </button>
       
       <div 
@@ -70,7 +70,7 @@ const CollapsibleMenu = ({ label, icon: Icon, children, defaultOpen = false, bas
         }`}
       >
         <div className="overflow-hidden">
-          <div className="ml-4 mt-1 space-y-1 border-l border-border pl-3 pb-1">
+          <div className="ml-4 mt-1.5 space-y-1.5 border-l border-border/80 pl-3 pb-1">
             {children}
           </div>
         </div>
@@ -110,22 +110,22 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col border-r border-border bg-surface p-5 shadow-glass-md backdrop-blur-xl">
-      <div className="mb-6 flex shrink-0 items-center gap-3 px-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white shadow-glow-primary overflow-hidden">
-          {webTheme.webLogo ? (
-            <img src={webTheme.webLogo} alt={`${webTheme.name || 'Brand'} logo`} className="h-full w-full object-contain" />
-          ) : (
-            <Shield className="h-5 w-5" />
-          )}
-        </div>
-        <div className="min-w-0">
-          <h2 className="font-semibold text-base tracking-wide bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
-            {webTheme.name ? `${webTheme.name} Admin` : 'Parivar Admin'}
-          </h2>
+      <div className="mb-6 w-full flex shrink-0 items-center justify-center pb-6 border-b border-border/60">
+        <img 
+          src="/parivar.png" 
+          alt={webTheme.name || 'Parivar'} 
+          className="h-12 w-auto max-w-full object-contain" 
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextSibling.style.display = 'flex';
+          }}
+        />
+        <div className="hidden items-center justify-center">
+          <Shield className="h-10 w-10 text-primary" />
         </div>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-4">
+      <nav className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-4 hide-scrollbar">
         <div className="space-y-1">
           {visibleCoreNavigation.map((item) => (
             <LinkItem key={item.to} {...item} />
@@ -172,8 +172,8 @@ export default function Sidebar() {
                 to={item.to || `/admin/masters/${item.type}`}
                 end
                 className={({ isActive }) =>
-                  `block min-h-8 w-full rounded-md px-3 py-2 text-sm transition-colors ${
-                    isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-text-secondary hover:text-text hover:bg-surface-secondary'
+                  `block min-h-8 w-full rounded-lg px-3 py-2 text-[13px] transition-all duration-200 ${
+                    isActive ? 'text-white font-bold shadow-sm bg-primary' : 'text-text-secondary/90 font-medium hover:text-text hover:bg-surface-secondary'
                   }`
                 }
                 title={`${item.label} Master`}
@@ -193,17 +193,14 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {user && (
-        <div className="mt-5 flex shrink-0 items-center gap-3 rounded-xl border border-border bg-surface-secondary p-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-sm font-semibold  text-primary shadow-sm">
-            {user.name ? user.name.substring(0, 2) : user.email?.substring(0, 2) || 'AD'}
-          </div>
-          <div className="min-w-0">
-            <h4 className="truncate text-sm font-semibold text-text">{user.name || user.email || 'Administrator'}</h4>
-            <p className="text-sm text-text-secondary truncate capitalize">{roleLabel || 'Administrator'}</p>
-          </div>
+      <div className="mt-5 flex shrink-0 items-center justify-center p-3 border-t border-border/50">
+        <div className="text-center">
+          <h2 className="font-bold text-sm tracking-tight text-text truncate">
+            {webTheme.name ? `${webTheme.name} Admin` : 'Parivar Admin'}
+          </h2>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary/70 block mt-0.5">Management Panel</span>
         </div>
-      )}
+      </div>
     </aside>
   )
 }

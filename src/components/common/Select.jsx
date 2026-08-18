@@ -40,9 +40,9 @@ export default function Select({
       } else {
         const rect = wrapperRef.current.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
-        // For small lists (e.g. Status with 2-3 options), only dropUp if spaceBelow is under 80px
-        const threshold = options.length <= 4 ? 80 : 120;
-        setDropUp(spaceBelow < threshold);
+        const spaceAbove = rect.top;
+        // If less than 220px below and more space above, open upwards
+        setDropUp(spaceBelow < 220 && spaceAbove > spaceBelow);
       }
     }
     setIsOpen(!isOpen);

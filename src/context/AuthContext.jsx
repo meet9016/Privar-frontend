@@ -76,6 +76,17 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [webTheme, setWebTheme] = useState({
+    webLogo: localStorage.getItem('web_webLogo') || '',
+    name: localStorage.getItem('web_name') || ''
+  })
+
+  const refreshTheme = useCallback(() => {
+    setWebTheme({
+      webLogo: localStorage.getItem('web_webLogo') || '',
+      name: localStorage.getItem('web_name') || ''
+    })
+  }, [])
 
   // Initialize from localStorage and fetch theme
   useEffect(() => {
@@ -91,12 +102,19 @@ export function AuthProvider({ children }) {
       // Fetch website theme colors (separate from admin dashboard theme)
       // Stored as web_* localStorage keys to prevent conflicts
       await fetchWebTheme()
+      refreshTheme()
 
       setLoading(false)
     }
 
     init()
-  }, [])
+    window.addEventListener('storage', refreshTheme)
+    window.addEventListener('web-theme-updated', refreshTheme)
+    return () => {
+      window.removeEventListener('storage', refreshTheme)
+      window.removeEventListener('web-theme-updated', refreshTheme)
+    }
+  }, [refreshTheme])
 
   const login = useCallback(async (email, password) => {
     const apiBase = API_BASE
@@ -135,7 +153,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, webTheme, refreshTheme }}>
       {children}
     </AuthContext.Provider>
   )

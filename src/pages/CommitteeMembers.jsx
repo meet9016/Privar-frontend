@@ -49,14 +49,15 @@ export default function CommitteeMembers() {
     setLoading(true)
     try {
       const res = await getCommitteeMembersList({ page, limit, search })
-      const rows = res.data?.data || res.data || []
-      const pg = res.data?.pagination || {}
-      setMembers(Array.isArray(rows) ? rows : [])
+      const rawData = res.data?.data || res.data?.members || res.data || []
+      const rows = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : [])
+      const pg = res.data?.pagination || res.data?.data?.pagination || {}
+      setMembers(rows)
       setPagination({
-        page: Number(pg.page || page),
+        page: Number(pg.page || page || 1),
         totalPages: Number(pg.totalPages || pg.total_pages || pg.last_page || 1),
-        total: Number(pg.total || 0),
-        limit: Number(pg.limit || limit)
+        total: Number(pg.total || rows.length || 0),
+        limit: Number(pg.limit || limit || 10)
       })
     } catch (err) {
       setMembers([])
@@ -136,49 +137,55 @@ export default function CommitteeMembers() {
     setIsModalOpen(true)
   }
 
+  const handleBulkStatus = async (selectedIds, newStatus) => {
+    if (!selectedIds.length) return;
+    try {
+      await Promise.all(selectedIds.map(id => api.put(`/committee-members/${id}`, { status: newStatus })));
+      toast.success(`Selected members marked as ${newStatus === 1 ? 'Active' : 'Inactive'}`);
+      await fetchCommitteeMembers();
+    } catch (err) {
+      toast.error('Failed to update status for selected members');
+      await fetchCommitteeMembers();
+    }
+  };
 
+  const handleBulkDelete = async (selectedIds) => {
+    if (!selectedIds.length) return;
+    if (!await confirm(`Are you sure you want to delete ${selectedIds.length} selected members?`)) return;
+    try {
+      await Promise.all(selectedIds.map(id => api.delete(`/committee-members/${id}`)));
+      toast.success(`${selectedIds.length} members deleted successfully`);
+      await fetchCommitteeMembers();
+    } catch (err) {
+      toast.error('Failed to delete selected members');
+      await fetchCommitteeMembers();
+    }
+  };
 
   return (
-    <div className="space-y-4 animate-slide-up text-text">
+    <div className="space-y-6 animate-slide-up text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Committee Members</h2>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="w-64 sm:w-72">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search committee..." className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:border-primary/50" />
-            </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative group flex-1 sm:w-64">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-text-secondary/60">
+              <Search className="w-4 h-4" />
+            </span>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search committee..."
+              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+            />
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center justify-center p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-            title="Toggle Filters"
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-          {hasPermission(currentUser, ['committee.add', 'members.add', 'members.create', 'users.manage']) && (
+          {hasPermission(currentUser, ['committee.add', 'members.add', 'users.manage']) && (
             <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
               Add Member
             </Button>
           )}
-        </div>
-      </div>
-
-      <div className={`transition-all duration-300 ease-in-out ${showFilters ? 'max-h-[500px] opacity-100 mt-4 overflow-visible z-20 relative' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
-        <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search committee..." className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50" />
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-4">
-            <button type="button" onClick={fetchCommitteeMembers} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh Data
-            </button>
-          </div>
         </div>
       </div>
 
@@ -189,7 +196,7 @@ export default function CommitteeMembers() {
           {
             header: 'Name',
             key: 'name',
-            render: (member) => (
+            render: (row) => (
               <div className="flex items-center gap-3">
                 {member.image ? (
                   <img src={member.image} alt="" className="h-9 w-9 rounded-lg object-cover border border-border" />
@@ -206,12 +213,12 @@ export default function CommitteeMembers() {
           {
             header: 'Contact',
             key: 'contact',
-            render: (member) => <span>{member.number || '-'}</span>
+            render: (row) => <span>{member.number || '-'}</span>
           },
           {
             header: 'Designation',
             key: 'designation',
-            render: (member) => (
+            render: (row) => (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary font-medium">
                 {member.designation || 'Committee'}
               </span>
@@ -220,7 +227,7 @@ export default function CommitteeMembers() {
           {
             header: 'Assigned Role',
             key: 'role',
-            render: (member) => (
+            render: (row) => (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-secondary border border-border text-text font-semibold text-xs">
                 {member.role_name || (roles.find(r => String(r.id || r._id) === String(member.role_id))?.name) || '-'}
               </span>
@@ -229,7 +236,7 @@ export default function CommitteeMembers() {
           {
             header: 'Status',
             key: 'status',
-            render: (member) => (
+            render: (row) => (
               <span className={`inline-flex px-2.5 py-1 rounded-lg border text-sm font-semibold ${Number(member.status ?? 1) === 1 ? 'bg-success-bg border-success-border text-success-text' : 'bg-surface-secondary border-border text-text-secondary'}`}>
                 {Number(member.status ?? 1) === 1 ? 'Active' : 'Inactive'}
               </span>
@@ -238,9 +245,8 @@ export default function CommitteeMembers() {
           {
             header: 'Actions',
             key: 'actions',
-            align: 'right',
-            render: (member) => (
-              <div className="flex items-center justify-end gap-2">
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
                 {hasPermission(currentUser, ['committee.edit', 'members.edit', 'users.manage']) && (
                   <button onClick={() => openEdit(member)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
                     <Edit2 className="w-3.5 h-3.5" />
@@ -261,10 +267,14 @@ export default function CommitteeMembers() {
         data={filtered}
         keyField="id"
         loading={loading}
+        onBulkStatus={hasPermission(currentUser, ['committee.edit', 'members.edit', 'users.manage']) ? handleBulkStatus : undefined}
+        onBulkDelete={hasPermission(currentUser, ['committee.delete', 'members.delete', 'users.manage']) ? handleBulkDelete : undefined}
         emptyState={{
           icon: Users,
           title: 'No committee members found',
-          description: 'Try expanding your search criteria or add a new member'
+          description: 'Try adjusting your search criteria or add a new member',
+          actionLabel: 'Add Member',
+          onAction: hasPermission(currentUser, ['committee.add', 'members.add', 'users.manage']) ? openCreate : undefined
         }}
         pagination={{
           currentPage: page,
@@ -278,9 +288,11 @@ export default function CommitteeMembers() {
         }}
       />
 
-      <Modal isOpen={isModalOpen} title={selected ? 'Edit Committee Member' : 'Add Committee Member'} onClose={() => setIsModalOpen(false)}>
+      <Modal isOpen={isModalOpen} maxWidth="max-w-5xl" title={selected ? 'Edit Committee Member' : 'Add Committee Member'} onClose={() => setIsModalOpen(false)}>
         <CommitteeMemberForm member={selected} roles={roles} onSubmit={handleSubmit} isLoading={saving} onCancel={() => setIsModalOpen(false)} />
       </Modal>
     </div>
   )
 }
+
+

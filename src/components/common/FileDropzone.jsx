@@ -50,70 +50,106 @@ export default function FileDropzone({
 
   return (
     <div className="w-full">
-      {/* Fixed-height container — never changes size */}
       <div
         onClick={(e) => {
-          if (e.target.closest('.preview-item')) return;
+          if (e.target.closest('.preview-action-btn')) return;
           if (!disabled) fileInputRef.current?.click();
         }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative w-full h-44 rounded-2xl border border-dashed flex flex-col overflow-hidden cursor-pointer transition-all duration-300
+        className={`relative w-full ${multiple ? 'min-h-36' : 'h-40'} rounded-2xl border border-dashed flex flex-col overflow-hidden cursor-pointer transition-all duration-300
           ${error ? 'border-red-500 bg-red-500/5' : isDragOver ? 'border-primary bg-primary/5' : 'border-border bg-input-bg hover:bg-surface-secondary/40'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
         {hasPreviews ? (
-          /* When images exist: scrollable grid occupies top, compact upload strip at bottom */
-          <div className="flex flex-col h-full">
-            {/* Image grid — scrollable, fixed area */}
-            <div className="flex-1 overflow-y-auto p-3">
-              <div className="flex flex-wrap gap-2">
-                {previews.map((preview, idx) => (
-                  <div key={idx} className="preview-item relative w-16 h-16 flex-shrink-0 group">
-                    <img
-                      src={preview.url}
-                      alt="preview"
-                      className="w-16 h-16 rounded-lg object-cover border border-border shadow-sm cursor-zoom-in"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFullscreenImage(preview.url);
-                      }}
-                    />
+          multiple ? (
+            <div className="flex flex-col h-full p-2.5">
+              <div className="flex flex-wrap gap-2 flex-1 overflow-y-auto custom-scrollbar">
+                {previews.map((preview, index) => (
+                  <div key={index} className="relative group/preview w-16 h-16 rounded-xl overflow-hidden border border-border bg-surface shrink-0">
+                    {preview.url.endsWith('.pdf') ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-1 bg-surface-secondary text-text">
+                        <FileText className="w-5 h-5 text-primary mb-0.5" />
+                        <span className="text-[9px] font-medium truncate max-w-full">PDF</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={preview.url}
+                        alt="Preview"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        onClick={() => setFullscreenImage(preview.url)}
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         preview.onRemove();
                       }}
-                      className="preview-item absolute -top-1.5 -right-1.5 bg-error text-white rounded-full p-0.5 transition-opacity flex items-center justify-center shadow z-10"
+                      className="preview-action-btn absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-md hover:bg-red-600 transition-colors z-10 cursor-pointer"
                       title="Remove"
-                      disabled={disabled}
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
+              <div className="text-center pt-2 border-t border-dashed border-border/60 mt-1">
+                <p className="text-xs text-text-secondary flex items-center justify-center gap-1.5">
+                  <UploadCloud className="w-3.5 h-3.5 text-primary" /> Click or drag to add more
+                </p>
+              </div>
             </div>
+          ) : (
+            /* Single Image Preview: Fill the whole box beautifully! */
+            <div className="relative w-full h-full group/single overflow-hidden bg-surface-secondary/30">
+              {previews[0].url.endsWith('.pdf') ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-text">
+                  <FileText className="w-10 h-10 text-primary mb-1" />
+                  <span className="text-xs font-semibold truncate max-w-[80%]">PDF Document</span>
+                </div>
+              ) : (
+                <img
+                  src={previews[0].url}
+                  alt="Preview"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover/single:scale-105"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFullscreenImage(previews[0].url);
+                  }}
+                />
+              )}
+              
+              {/* Top-right delete button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  previews[0].onRemove();
+                }}
+                className="preview-action-btn absolute top-2 right-2 bg-red-500/90 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-transform hover:scale-110 z-20 cursor-pointer"
+                title="Remove image"
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-            {/* Compact upload strip at bottom */}
-            <div className={`flex items-center justify-center gap-2 px-4 py-2.5 border-t border-dashed ${isDragOver ? 'border-primary bg-primary/10' : 'border-border/60 bg-surface-secondary/30'} flex-shrink-0`}>
-              <UploadCloud className={`w-4 h-4 flex-shrink-0 ${isDragOver ? 'text-primary' : 'text-text-secondary'}`} />
-              <span className="text-xs font-semibold text-text-secondary truncate">
-                {isDragOver ? 'Drop to add more' : multiple ? 'Click or drag to add more' : 'Click or drag to replace'}
-              </span>
+              {/* Bottom replace overlay on hover */}
+              <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-xs py-1.5 px-3 flex items-center justify-center gap-1.5 text-white text-xs font-medium opacity-90 transition-opacity">
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Click or drag to replace</span>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           /* Empty state — centered upload prompt */
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className={`p-3 rounded-xl mb-2.5 ${isDragOver ? 'bg-primary/20' : 'bg-surface shadow-sm border border-border'}`}>
-              <UploadCloud className={`w-6 h-6 ${isDragOver ? 'text-primary' : 'text-text-secondary'}`} />
+            <div className={`p-2.5 rounded-2xl mb-1.5 ${isDragOver ? 'bg-primary/20' : 'bg-surface shadow-sm border border-border'}`}>
+              <UploadCloud className={`w-5 h-5 ${isDragOver ? 'text-primary' : 'text-text-secondary'}`} />
             </div>
-            <p className="text-sm font-semibold text-text mb-0.5">{label}</p>
-            {subLabel && <p className="text-xs text-text-secondary">{subLabel}</p>}
+            <p className="text-xs font-semibold text-text mb-0.5">{label}</p>
+            {subLabel && <p className="text-[10px] text-text-secondary">{subLabel}</p>}
           </div>
         )}
 
@@ -130,19 +166,33 @@ export default function FileDropzone({
       </div>
       {error && <p className="text-red-500 text-xs mt-1 font-semibold">{error}</p>}
 
-      {/* Fullscreen image preview modal */}
-      <Modal
-        isOpen={!!fullscreenImage}
-        onClose={() => setFullscreenImage(null)}
-        title="Image Preview"
-        size="lg"
-      >
-        {fullscreenImage && (
-          <div className="flex items-center justify-center bg-black/5 rounded-xl p-2 overflow-hidden h-[70vh]">
-            <img src={fullscreenImage} alt="Preview" className="max-w-full max-h-full object-contain" />
+      {/* Fullscreen image preview lightbox */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[85vh] bg-surface rounded-2xl border border-border shadow-glass-xl p-3 flex flex-col items-center animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between pb-2 mb-2 border-b border-border">
+              <span className="text-sm font-semibold text-text">Image Preview</span>
+              <button
+                type="button"
+                onClick={() => setFullscreenImage(null)}
+                className="p-1 rounded-lg text-text-secondary hover:text-text hover:bg-surface-secondary transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex items-center justify-center overflow-hidden rounded-xl max-h-[70vh]">
+              <img src={fullscreenImage} alt="Preview" className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-sm" />
+            </div>
           </div>
-        )}
-      </Modal>
+        </div>
+      )}
     </div>
   );
 }

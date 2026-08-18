@@ -1,78 +1,78 @@
 export const lightTheme = {
   colors: {
-    background: '#f8fafc',
+    background: '#f8faff',
     surface: '#ffffff',
-    surfaceSecondary: '#f1f5f9',
+    surfaceSecondary: '#f1f5fb',
     card: '#ffffff',
-    primary: '#4f46e5', // Indigo 600
-    primaryHover: '#4338ca', // Indigo 700
-    secondary: '#64748b', // Slate 500
-    text: '#0f172a', // Slate 900
-    textSecondary: '#475569', // Slate 600
-    border: '#e2e8f0', // Slate 200
-    success: '#10b981', // Emerald 500
+    primary: '#4338ca', // Rich Indigo from Logo (#4338ca)
+    primaryHover: '#3730a3', // Deep Royal Indigo
+    secondary: '#475569',
+    text: '#0b1120', // Deepest Navy
+    textSecondary: '#475569',
+    border: '#e2e8f0',
+    success: '#10b981',
     successBg: '#ecfdf5',
     successBorder: '#a7f3d0',
     successText: '#047857',
-    warning: '#f59e0b', // Amber 500
+    warning: '#f59e0b',
     warningBg: '#fffbeb',
     warningBorder: '#fde68a',
     warningText: '#b45309',
-    error: '#ef4444', // Red 500
+    error: '#ef4444',
     errorBg: '#fef2f2',
     errorBorder: '#fca5a5',
     errorText: '#b91c1c',
-    info: '#3b82f6', // Blue 500
+    info: '#3b82f6',
     infoBg: '#eff6ff',
     infoBorder: '#bfdbfe',
     infoText: '#1d4ed8',
     inputBg: '#ffffff',
     inputBorder: '#cbd5e1',
-    inputText: '#0f172a',
-    glassBg: 'rgba(255, 255, 255, 0.7)',
-    glassBorder: 'rgba(226, 232, 240, 0.8)',
-    shadow: 'rgba(15, 23, 42, 0.05)',
-    primaryGlow: 'rgba(79, 70, 229, 0.12)',
-    successGlow: 'rgba(16, 185, 129, 0.12)',
-    errorGlow: 'rgba(239, 68, 68, 0.12)',
+    inputText: '#0b1120',
+    glassBg: 'rgba(255, 255, 255, 0.85)',
+    glassBorder: 'rgba(226, 232, 240, 0.9)',
+    shadow: 'rgba(11, 17, 32, 0.06)',
+    primaryGlow: 'rgba(67, 56, 202, 0.2)',
+    successGlow: 'rgba(16, 185, 129, 0.15)',
+    errorGlow: 'rgba(239, 68, 68, 0.15)',
   }
 };
 
 export const darkTheme = {
   colors: {
-    background: '#0c1020',
-    surface: '#0d1325',
-    surfaceSecondary: '#111827',
-    card: '#0d1325',
-    primary: '#3b52f6',
-    primaryHover: '#2535e8',
+    background: '#070b14', // Deep Midnight Blue
+    surface: '#0b1120', // Premium Navy Slate
+    surfaceSecondary: '#11192e',
+    card: '#0b1120',
+    primary: '#6366f1', // Electric Indigo from Logo
+    primaryHover: '#4f46e5',
     secondary: '#94a3b8',
-    text: '#f8fafc',
+    text: '#f8faff',
     textSecondary: '#94a3b8',
-    border: 'rgba(255, 255, 255, 0.06)',
+    border: 'rgba(255, 255, 255, 0.08)',
     success: '#10b981',
-    successBg: 'rgba(16, 185, 129, 0.1)',
-    successBorder: 'rgba(16, 185, 129, 0.2)',
+    successBg: 'rgba(16, 185, 129, 0.12)',
+    successBorder: 'rgba(16, 185, 129, 0.25)',
     successText: '#34d399',
     warning: '#f59e0b',
-    warningBg: 'rgba(245, 158, 11, 0.1)',
-    warningBorder: 'rgba(245, 158, 11, 0.2)',
+    warningBg: 'rgba(245, 158, 11, 0.12)',
+    warningBorder: 'rgba(245, 158, 11, 0.25)',
     warningText: '#fbbf24',
     error: '#ef4444',
-    errorBg: 'rgba(239, 68, 68, 0.1)',
-    errorBorder: 'rgba(239, 68, 68, 0.2)',
+    errorBg: 'rgba(239, 68, 68, 0.12)',
+    errorBorder: 'rgba(239, 68, 68, 0.25)',
     errorText: '#f87171',
     info: '#3b82f6',
-    infoBg: 'rgba(59, 130, 246, 0.1)',
-    infoBorder: 'rgba(59, 130, 246, 0.2)',
+    infoBg: 'rgba(59, 130, 246, 0.12)',
+    infoBorder: 'rgba(59, 130, 246, 0.25)',
     infoText: '#60a5fa',
-    inputBg: 'rgba(11, 15, 25, 0.4)',
-    inputBorder: 'rgba(255, 255, 255, 0.08)',
-    inputText: '#f8fafc',
-    glassBg: 'rgba(15, 23, 42, 0.45)',
-    glassBorder: 'rgba(255, 255, 255, 0.05)',
-    shadow: 'rgba(0, 0, 0, 0.3)',
-    primaryGlow: 'rgba(59, 82, 246, 0.35)',
+    inputBg: 'rgba(17, 25, 46, 0.6)',
+    inputBorder: 'rgba(255, 255, 255, 0.1)',
+    inputText: '#f8faff',
+    glassBg: 'rgba(11, 17, 32, 0.75)',
+    glassBorder: 'rgba(255, 255, 255, 0.08)',
+    shadow: 'rgba(0, 0, 0, 0.4)',
+    primaryGlow: 'rgba(99, 102, 241, 0.35)',
     successGlow: 'rgba(16, 185, 129, 0.35)',
     errorGlow: 'rgba(239, 68, 68, 0.35)',
   }

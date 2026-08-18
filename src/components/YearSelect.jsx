@@ -1,21 +1,9 @@
 import React, { useMemo } from 'react'
+import Select from './common/Select'
 
 /**
- * Reusable year select dropdown component.
- *
- * Props:
- *  - value        : currently selected year (string)
- *  - onChange      : callback receiving the new year string
- *  - name         : optional form field name (defaults to "year")
- *  - placeholder  : placeholder text (defaults to "Select Year")
- *  - className    : CSS class string for the <select>
- *  - disabled     : disable the select
- *  - required     : mark as required
- *  - startYear    : earliest year to show (defaults to 2000)
- *  - endYear      : latest year to show  (defaults to current year + 1)
- *  - defaultValue : uncontrolled default value (if value is not provided)
+ * Reusable year select dropdown component using custom Select design.
  */
-
 export default function YearSelect({
   value,
   onChange,
@@ -27,6 +15,8 @@ export default function YearSelect({
   startYear = 2000,
   endYear,
   defaultValue,
+  error,
+  label
 }) {
   const years = useMemo(() => {
     const end = endYear || new Date().getFullYear() + 1
@@ -37,29 +27,37 @@ export default function YearSelect({
     return list
   }, [startYear, endYear])
 
-  const isControlled = value !== undefined
+  const options = useMemo(() => {
+    return years.map((y) => ({ label: y, value: y }))
+  }, [years])
 
-  const handleChange = (e) => {
-    if (onChange) onChange(e.target.value)
-  }
+  const [internalValue, setInternalValue] = React.useState(defaultValue || '')
+  
+  React.useEffect(() => {
+    if (defaultValue !== undefined) {
+      setInternalValue(defaultValue)
+    }
+  }, [defaultValue])
+
+  const currentValue = value !== undefined ? value : internalValue
 
   return (
-    <select
+    <Select
       name={name}
-      {...(isControlled ? { value } : { defaultValue: defaultValue || '' })}
-      onChange={handleChange}
+      label={label}
+      value={currentValue}
+      onChange={(val) => {
+        setInternalValue(val)
+        if (onChange) onChange(val)
+      }}
+      options={options}
+      placeholder={placeholder}
       className={className}
       disabled={disabled}
       required={required}
-    >
-      <option value="" className="bg-surface text-text">
-        {placeholder}
-      </option>
-      {years.map((y) => (
-        <option key={y} value={y} className="bg-surface text-text">
-          {y}
-        </option>
-      ))}
-    </select>
+      error={error}
+      searchable={true}
+    />
   )
 }
+

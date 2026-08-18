@@ -45,26 +45,24 @@ export default function ConfirmDialog() {
   const isDanger = dialog.type === 'danger'
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
       <div
-        className="relative mx-4 w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-glass-lg animate-slide-up"
+        className="relative mx-4 w-full max-w-sm rounded-[24px] border border-border bg-surface p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] animate-scale-in text-center flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-4">
-          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${isDanger ? 'bg-error-bg border border-error-border' : 'bg-primary/10 border border-primary/20'}`}>
-            <AlertTriangle className={`h-5 w-5 ${isDanger ? 'text-error-text' : 'text-primary'}`} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-text mb-1">Confirm Action</h3>
-            <p className="text-sm text-text-secondary leading-relaxed">{dialog.message}</p>
-          </div>
+        {/* Animated Icon Container */}
+        <div className={`mb-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full ${isDanger ? 'bg-error-bg shadow-[0_0_0_8px_rgba(239,68,68,0.1)]' : 'bg-primary-bg shadow-[0_0_0_8px_var(--color-primary-bg)]'}`}>
+          <AlertTriangle className={`h-8 w-8 ${isDanger ? 'text-error' : 'text-primary'}`} strokeWidth={2.5} />
         </div>
 
-        <div className="mt-6 flex items-center justify-end gap-3">
+        <h3 className="text-xl font-bold text-text mb-2 tracking-tight">Confirm Action</h3>
+        <p className="text-sm text-text-secondary/90 leading-relaxed mb-8 px-2">{dialog.message}</p>
+
+        <div className="flex items-center justify-center gap-3 w-full">
           <button
             type="button"
             onClick={handleCancel}
-            className="px-4 py-2.5 rounded-xl border border-border bg-surface-secondary text-text text-sm font-medium hover:bg-surface transition-colors"
+            className="flex-1 px-4 py-3 rounded-xl border border-border bg-surface-secondary text-text text-sm font-bold hover:bg-surface hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200"
           >
             {dialog.cancelText}
           </button>
@@ -72,9 +70,9 @@ export default function ConfirmDialog() {
             type="button"
             onClick={handleConfirm}
             autoFocus
-            className={`px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors shadow-sm ${
+            className={`flex-1 px-4 py-3 rounded-xl text-white text-sm font-bold transition-all duration-200 shadow-sm hover:-translate-y-0.5 ${
               isDanger
-                ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20'
+                ? 'bg-error hover:bg-error-text shadow-error-glow'
                 : 'bg-primary hover:bg-primary-hover shadow-glow-primary'
             }`}
           >

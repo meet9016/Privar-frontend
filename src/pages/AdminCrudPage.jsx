@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Edit2, Plus, RefreshCw, Search, Trash2, Settings } from 'lucide-react'
+import { Edit2, Plus, RefreshCw, Search, Trash2, Settings, ImageOff } from 'lucide-react'
 import api, { assetUrl } from '../lib/api'
 import Loader from '../components/common/Loader'
 import { confirm } from '../lib/confirm'
@@ -249,6 +249,58 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     }
   }
 
+  const handleToggleStatus = async (row) => {
+    const id = row._id || row.id
+    if (!id) return
+    const newStatus = Number(row.status) === 1 ? 0 : 1
+
+    // Optimistic UI update
+    setRows(prevRows => prevRows.map(r => {
+      if ((r._id || r.id) === id) {
+        return { ...r, status: newStatus }
+      }
+      return r
+    }))
+
+    try {
+      const cleanEndpoint = endpoint.split('?')[0];
+      await api.put(`${cleanEndpoint}/${id}`, { status: newStatus })
+      toast.success('Status updated')
+    } catch (err) {
+      // Revert on error
+      setRows(prevRows => prevRows.map(r => {
+        if ((r._id || r.id) === id) {
+          return { ...r, status: Number(row.status) === 1 ? 1 : 0 }
+        }
+        return r
+      }))
+      toast.error(err.response?.data?.message || 'Failed to update status')
+    }
+  }
+
+  const handleBulkStatus = async (ids, newStatus) => {
+    const cleanEndpoint = endpoint.split('?')[0]
+    try {
+      await Promise.all(ids.map(id => api.put(`${cleanEndpoint}/${id}`, { status: newStatus })))
+      toast.success(`${ids.length} record(s) status updated`)
+      fetchRows()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update status')
+    }
+  }
+
+  const handleBulkDelete = async (ids) => {
+    if (!await confirm(`Delete ${ids.length} selected record(s)?`)) return
+    const cleanEndpoint = endpoint.split('?')[0]
+    try {
+      await Promise.all(ids.map(id => api.delete(`${cleanEndpoint}/${id}`)))
+      toast.success(`${ids.length} record(s) deleted`)
+      fetchRows()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete records')
+    }
+  }
+
   return (
     <div className="space-y-6 animate-slide-up text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -256,9 +308,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
           <h2 className="text-xl font-semibold text-text">{title}</h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button onClick={fetchRows} variant="secondary" className="!p-2.5" title="Refresh">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
           {supportIsOwn && (
             <label className="flex items-center gap-2 cursor-pointer bg-surface border border-border px-4 py-2.5 rounded-xl">
               <input
@@ -274,93 +323,118 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             </label>
           )}
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
+              <Search className="w-4 h-4" />
+            </span>
             <input
-              type="search"
-              placeholder="Search records..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Search ${title.toLowerCase()}...`}
               className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
             />
           </div>
           {!hideAdd && (
             <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
-              Add
+              Add {title}
             </Button>
           )}
         </div>
       </div>
 
-      {loading && rows.length === 0 ? (
-        <div className="py-20"><Loader text="Loading records..." /></div>
-      ) : (
-        <Table
-          columns={[
-            ...columns.map(c => ({
-              header: c.label,
-              key: c.key,
-              render: (row) => (
-                c.type === 'image' && row[c.key] ? (
-                  <img src={assetUrl(row[c.key])} alt={row.title || title} className="h-12 w-16 rounded-lg object-cover border border-border" />
-                ) : (
-                  <span className="line-clamp-2">
-                    {c.render ? c.render(row) : (
-                      row[c.key + '_name'] ||
-                      row[c.key?.replace(/_id$/, '_name')] ||
-                      (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.name ||
-                      (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.country ||
-                      (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.state ||
-                      (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.city ||
-                      row[c.key] || '-'
-                    )}
+      <Table
+        columns={[
+          ...columns.map(c => ({
+            header: c.label,
+            key: c.key,
+            render: (row) => (
+              c.key === 'status' ? (
+                <div className="flex items-center">
+                  <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${
+                    Number(row.status ?? 1) === 1 || String(row.status).toLowerCase() === 'active' || String(row.status).toLowerCase() === 'approved'
+                      ? 'bg-success-bg border-success-border text-success-text'
+                      : 'bg-surface-secondary border-border text-text-secondary'
+                  }`}>
+                    {Number(row.status) === 1 ? 'Active' : (Number(row.status) === 0 ? 'Inactive' : (row.status || 'Active'))}
                   </span>
-                )
-              )
-            })),
-            {
-              header: 'Actions',
-              key: 'actions',
-              align: 'right',
-              render: (row) => (
-                <div className="flex items-center justify-end gap-2">
-                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  {!hideDelete && (
-                    <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
                 </div>
+              ) : c.key === 'marital_status' ? (
+                <span className="inline-flex px-2.5 py-1 rounded-lg bg-surface-secondary border border-border text-text-secondary font-medium text-xs">
+                  {row.marital_status || '-'}
+                </span>
+              ) : c.type === 'image' ? (
+                row[c.key] ? (
+                  <img src={assetUrl(row[c.key])} alt={row.title || title} className="h-8 w-11 rounded-lg object-cover border border-border" />
+                ) : (
+                  <div className="h-8 w-11 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
+                    <ImageOff className="h-4 w-4 text-text-secondary/40" />
+                  </div>
+                )
+              ) : (
+                <span className="line-clamp-2">
+                  {c.render ? c.render(row) : (
+                    row[c.key + '_name'] ||
+                    row[c.key?.replace(/_id$/, '_name')] ||
+                    (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.name ||
+                    (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.country ||
+                    (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.state ||
+                    (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.city ||
+                    row[c.key] || '-'
+                  )}
+                </span>
               )
-            }
-          ]}
-          data={rows}
-          keyField="id"
-          loading={loading}
-          emptyState={{
-            icon: Settings,
-            title: 'No records found',
-            description: 'Try expanding your search criteria or add a new record'
-          }}
-          pagination={{
-            currentPage: page,
-            totalPages,
-            total,
-            pageNumbers,
-            loading,
-            onPageChange: setPage,
-            limit,
-            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
-          }}
-        />
-      )}
+            )
+          })),
+          {
+            header: 'Actions',
+            key: 'actions',
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
+                <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                {!hideDelete && (
+                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )
+          }
+        ]}
+        data={rows}
+        keyField="id"
+        loading={loading}
+        onBulkStatus={columns.some(c => c.key === 'status') ? handleBulkStatus : undefined}
+        onBulkDelete={!hideDelete ? handleBulkDelete : undefined}
+        emptyState={{
+          title: `No ${title} found`,
+          description: `Try expanding your search criteria or add a new ${title.toLowerCase()}`,
+          actionLabel: `Add ${title}`,
+          onAction: hideAdd ? undefined : openCreate
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages,
+          total,
+          pageNumbers,
+          loading,
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+      />
 
-      <Modal isOpen={isModalOpen} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-4 text-text" noValidate>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ overflow: 'visible' }}>
-            {fields.map((field, fieldIdx) => (
-              <div key={field.name} style={{ zIndex: fields.length - fieldIdx, position: 'relative' }}>
+      <Modal isOpen={isModalOpen} maxWidth={fields.length > 5 ? 'max-w-5xl' : 'max-w-3xl'} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
+        <form onSubmit={handleSave} className="space-y-3.5 text-text" noValidate>
+          <div className={`grid grid-cols-1 ${fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2'} gap-3.5`} style={{ overflow: 'visible' }}>
+            {fields.map((field, fieldIdx) => {
+              const isFullRow = field.type === 'textarea' || (field.type === 'file' && field.multiple);
+              const colSpanClass = isFullRow 
+                ? (fields.length > 4 ? 'sm:col-span-2 md:col-span-3' : 'md:col-span-2')
+                : '';
+              
+              return (
+              <div key={field.name} className={colSpanClass} style={{ zIndex: fields.length - fieldIdx, position: 'relative' }}>
                 {field.type === 'textarea' ? (
                   <>
                     <label className="block text-sm font-semibold text-text-secondary mb-1.5">
@@ -368,7 +442,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     </label>
                     <textarea 
                       required={field.required} 
-                      rows="4" 
+                      rows="2" 
                       value={formData[field.name] || ''} 
                       onChange={(e) => {
                         setFormData({ ...formData, [field.name]: e.target.value })
@@ -506,9 +580,9 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   />
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
-          <div className="pb-32" />
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
@@ -522,3 +596,4 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     </div>
   )
 }
+

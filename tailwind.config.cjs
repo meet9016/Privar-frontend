@@ -4,6 +4,9 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Noto Sans"', 'sans-serif'],
+      },
       colors: {
         background: 'var(--color-background)',
         surface: 'var(--color-surface)',
@@ -11,6 +14,12 @@ module.exports = {
         card: 'var(--color-card)',
         primary: 'var(--color-primary)',
         'primary-hover': 'var(--color-primary-hover)',
+        'primary-active': 'var(--color-primary-active)',
+        'primary-light': 'var(--color-primary-light)',
+        'primary-lighter': 'var(--color-primary-lighter)',
+        'primary-dark': 'var(--color-primary-dark)',
+        'primary-bg': 'var(--color-primary-bg)',
+        'primary-border': 'var(--color-primary-border)',
         secondary: 'var(--color-secondary)',
         text: 'var(--color-text)',
         'text-secondary': 'var(--color-text-secondary)',

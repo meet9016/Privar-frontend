@@ -224,7 +224,7 @@ export default function BusinessProfile() {
               href={toExternalHref(business?.location_link) || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary bg-card px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              className="inline-flex items-center justify-start gap-2 rounded-lg border border-primary bg-card px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
               Open Location

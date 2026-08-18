@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit2, Filter, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
+import { Edit2, Filter, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, X, ImageOff } from 'lucide-react'
 import api, { assetUrl, getGalleryList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -258,17 +258,44 @@ export default function GalleryPage() {
     }
   }
 
+  const handleToggleStatus = async (row) => {
+    const id = row.id || row._id
+    if (!id) return
+    const newStatus = Number(row.status) === 1 ? 0 : 1
+
+    // Optimistic UI update
+    setRows(prevRows => prevRows.map(r => {
+      if ((r.id || r._id) === id) {
+        return { ...r, status: newStatus }
+      }
+      return r
+    }))
+
+    try {
+      await api.put(`/gallery/${id}`, { status: newStatus })
+      toast.success('Status updated')
+    } catch (err) {
+      // Revert on failure
+      setRows(prevRows => prevRows.map(r => {
+        if ((r.id || r._id) === id) {
+          return { ...r, status: Number(row.status) === 1 ? 1 : 0 }
+        }
+        return r
+      }))
+      toast.error(err.response?.data?.message || 'Failed to update status')
+    }
+  }
+
   const handleDelete = async (row) => {
     if (!await confirm('Delete gallery item?')) return
     try {
-      await api.delete(`/gallery/${row.id}`)
+      await api.delete(`/gallery/${row.id || row._id}`)
       await fetchGallery()
       toast.success('Gallery deleted successfully')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete gallery item')
     }
   }
-
 
   return (
     <div className="space-y-6 animate-slide-up text-text">
@@ -277,128 +304,113 @@ export default function GalleryPage() {
           <h2 className="text-xl font-semibold text-text">Gallery</h2>
 
         </div>
-        <div className="flex flex-wrap items-center sm:justify-end gap-3 flex-1">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center justify-center p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-            title="Toggle Filters"
-          >
-            <Filter className="w-4 h-4" />
-          </button>
+        <div className="flex flex-wrap items-center sm:justify-end gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
+              <Search className="w-4 h-4" />
+            </div>
+            <input
+              type="search"
+              placeholder="Search gallery..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+            />
+          </div>
           <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
             Add Images
           </Button>
         </div>
       </div>
 
-      <div className={`transition-all duration-300 ease-in-out ${showFilters ? 'max-h-[500px] opacity-100 mt-4 overflow-visible z-20 relative' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
-        <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Input
-              icon={<Search className="w-4 h-4" />}
-              type="text"
-              placeholder="Search gallery..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <DatePicker
-              mode="month"
-              value={filterYear}
-              onChange={(val) => handleFilterYear(val)}
-              placeholder="Month & Year"
-              className="w-full bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
-            />
-            <Select
-              value={filterCategoryId}
-              onChange={(val) => handleFilterCategory({ target: { value: val } })}
-              options={[{ label: 'All Categories', value: '' }, ...filterCategories.map((item) => ({ label: item.category, value: item.id }))]}
-            />
-          </div>
-          <div className="flex justify-end gap-3 mt-4">
-            <button type="button" onClick={() => { fetchGallery(); fetchCategories() }} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh Data
-            </button>
-          </div>
-        </div>
-      </div>
 
-
-
-      {loading && rows.length === 0 ? (
-        <div className="py-20"><Loader text="Loading gallery..." /></div>
-      ) : (
-        <Table
-          columns={[
-            {
-              header: 'Preview',
-              key: 'preview',
-              render: (row) => row.images?.[0] ? (
-                <div className="relative inline-block">
-                  <img src={assetUrl(row.images[0])} alt={row.category || 'Gallery'} className="h-12 w-16 rounded-lg object-cover border border-border" />
-                  <span className="absolute -top-1.5 -right-2.5 bg-primary text-white text-xs font-semibold rounded-full p-1 w-5 h-5 flex items-center justify-center">
-                    {row.images.length}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-text-secondary">No image</span>
-              )
-            },
-            {
-              header: 'Category',
-              key: 'category',
-              render: (row) => <span className="font-medium max-w-xs line-clamp-1">{row.category || 'General'}</span>
-            },
-            {
-              header: 'Month/Year',
-              key: 'month_year',
-              render: (row) => row.year ? new Date(row.year + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '-'
-            },
-            {
-              header: 'Images',
-              key: 'images',
-              align: 'center',
-              render: (row) => (
-                <span className="inline-flex items-center px-2 py-1 rounded-lg bg-surface border border-border text-xs font-semibold">
-                  {row.images?.length || 0}
-                </span>
-              )
-            },
-            {
-              header: 'Actions',
-              key: 'actions',
-              align: 'right',
-              render: (row) => (
-                <div className="flex items-center justify-end gap-2">
-                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )
-            }
-          ]}
-          data={rows}
-          keyField="id"
-          loading={loading}
-          emptyState={{
-            icon: ImageIcon,
-            title: 'No gallery items found',
-            description: 'There are no images registered under this search criteria'
-          }}
-          pagination={{
-            currentPage: page,
-            totalPages: pagination.totalPages,
-            total: pagination.total,
-            pageNumbers,
-            loading,
-            onPageChange: setPage,
-            limit,
-            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
-          }}
-        />
-      )}
+      <Table
+        columns={[
+          {
+            header: 'Preview',
+            key: 'preview',
+            render: (row) => row.images?.[0] ? (
+              <div className="relative inline-block">
+                <img src={assetUrl(row.images[0])} alt={row.category || 'Gallery'} className="h-12 w-16 rounded-lg object-cover border border-border" />
+              </div>
+            ) : (
+              <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
+                <ImageOff className="h-5 w-5 text-text-secondary/40" />
+              </div>
+            )
+          },
+          {
+            header: 'Category',
+            key: 'category',
+            render: (row) => <span className="font-medium max-w-xs line-clamp-1">{row.category || 'General'}</span>
+          },
+          {
+            header: 'Month/Year',
+            key: 'month_year',
+            render: (row) => row.year ? new Date(row.year + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '-'
+          },
+          {
+            header: 'Images',
+            key: 'images',
+            render: (row) => (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                {row.images?.length || 0} Images
+              </span>
+            )
+          },
+          {
+            header: 'Status',
+            key: 'status',
+            render: (row) => (
+              <div className="flex items-center">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={Number(row.status) === 1}
+                    onChange={() => handleToggleStatus(row)}
+                  />
+                  <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+            )
+          },
+          {
+            header: 'Actions',
+            key: 'actions',
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
+                <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          }
+        ]}
+        data={rows}
+        keyField="id"
+        loading={loading}
+        emptyState={{
+          icon: ImageIcon,
+          title: 'No gallery items found',
+          description: 'There are no images registered under this search criteria',
+          actionLabel: 'Add Images',
+          onAction: openCreate
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages: pagination.totalPages,
+          total: pagination.total,
+          pageNumbers,
+          loading,
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+      />
 
       <Modal isOpen={isModalOpen} title={selected ? 'Edit Images' : 'Add Images'} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-4 text-text" noValidate>
@@ -453,7 +465,6 @@ export default function GalleryPage() {
               {fieldErrors.images && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.images}</p>}
             </div>
           </div>
-          <div className="pb-20" />
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
@@ -467,3 +478,6 @@ export default function GalleryPage() {
     </div>
   )
 }
+
+
+

@@ -4,6 +4,7 @@ import api, { getEventsList } from '../lib/api'
 import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
 import Table from '../components/common/Table'
+import Select from '../components/common/Select'
 import { toast } from '../lib/toast'
 
 export default function EventRegistrations() {
@@ -92,36 +93,23 @@ const handleDownload = async () => {
         <div className="space-y-6 animate-slide-up text-text">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h2 className="text-xl font-semibold text-text">Event Registrations</h2>
-                <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
-                    <button onClick={fetchRows} className="p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all" title="Refresh">
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
-                    {/* Event filter */}
-                    <select
-                        value={filterEventId}
-                        onChange={(e) => setFilterEvent(e.target.value)}
-                        className="bg-input-bg text-text border border-border rounded-xl py-2.5 px-3 text-sm outline-none focus:border-primary/50 sm:w-48"
-                    >
-                        {events.map((ev) => (
-                            <option key={ev._id || ev.id} value={ev._id || ev.id}>
-                                {ev.event_name || ev.title}
-                            </option>
-                        ))}
-                    </select>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                     {/* Search */}
-                    <div className="relative flex-1 sm:w-64">
-                        <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
+                    <div className="relative flex-1 sm:w-72">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
+                            <Search className="w-4 h-4" />
+                        </div>
                         <input
                             type="search"
                             placeholder="Search registrations..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
+                            className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
                         />
                     </div>
                     <button
                         onClick={handleDownload}
-                        className="flex items-center gap-2 bg-surface-secondary hover:bg-surface border border-border text-text px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                        className="flex items-center gap-2 bg-surface-secondary hover:bg-surface border border-border text-text px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
                         title="Export to CSV"
                     >
                         <Download className="w-4 h-4" /> Export
@@ -177,7 +165,7 @@ const handleDownload = async () => {
                         {
                             header: 'Actions',
                             key: 'actions',
-                            align: 'right',
+                            align: 'left',
                             render: (row) => (
                                 <button
                                     onClick={() => setSelectedReg(row)}
@@ -236,3 +224,4 @@ const handleDownload = async () => {
         </div>
     )
 }
+

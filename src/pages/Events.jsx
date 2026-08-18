@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye } from 'lucide-react'
+import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -11,6 +11,7 @@ import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
 import FileDropzone from '../components/common/FileDropzone'
+import DateTimePicker from '../components/common/DateTimePicker'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -156,6 +157,39 @@ export default function Events() {
     fetchCategories()
   }, [])
 
+  const formatDate = (val) => {
+    if (!val) return ''
+    const d = new Date(val)
+    if (isNaN(d.getTime())) return String(val)
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+  }
+
+  const formatTime = (val) => {
+    if (!val) return ''
+    // If it's an ISO datetime string
+    if (typeof val === 'string' && val.includes('T')) {
+      const d = new Date(val)
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+      }
+    }
+    // If it's already HH:MM
+    return val
+  }
+
+  const handleToggleStatus = async (row) => {
+    const id = row.id || row._id
+    if (!id) return
+    const newStatus = Number(row.status) === 1 ? 0 : 1
+    try {
+      await api.put(`${endpoint}/${id}`, { status: newStatus })
+      await fetchRows()
+      toast.success('Status updated')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update status')
+    }
+  }
+
   const resetForm = () => {
     setSelectedId('')
     setExistingImage('')
@@ -297,17 +331,16 @@ export default function Events() {
 
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button onClick={fetchRows} variant="secondary" title="Refresh">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
+              <Search className="w-4 h-4" />
+            </div>
             <input
               type="search"
               placeholder="Search events..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
+              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
             />
           </div>
           <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
@@ -316,85 +349,143 @@ export default function Events() {
         </div>
       </div>
 
-      {loading && rows.length === 0 ? (
-        <div className="py-20"><Loader text="Loading events..." /></div>
-      ) : (
-        <Table
-          columns={[
-            {
-              header: 'Image',
-              key: 'image',
-              render: (row) => row.image ? (
-                <img src={assetUrl(row.image)} alt={row.title || 'Event'} className="h-12 w-16 rounded-lg object-cover border border-border" />
-              ) : (
-                <span className="text-text-secondary">No image</span>
-              )
-            },
-            {
-              header: 'Event',
-              key: 'event',
-              render: (row) => (
-                <div className="max-w-md">
-                  <div className="font-semibold">{row.title || '-'}</div>
-                  <div className="text-text-secondary text-sm line-clamp-2">{row.description.slice(0, 50) || '-'}</div>
+      <Table
+        columns={[
+          {
+            header: 'Image',
+            key: 'image',
+            render: (row) => row.image ? (
+              <img src={assetUrl(row.image)} alt={row.title || 'Event'} className="h-12 w-16 rounded-lg object-cover border border-border" />
+            ) : (
+                <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
+                  <ImageOff className="h-5 w-5 text-text-secondary/40" />
                 </div>
-              )
-            },
-            {
-              header: 'Start Date',
-              key: 'start_date',
-              render: (row) => (
-                <div className="text-text-secondary text-sm line-clamp-2 max-w-md">
-                  {row.start_time.slice(0, 10).split('-').reverse().join('-') || '-'}
-                </div>
-              )
-            },
-            {
-              header: 'Location',
-              key: 'location',
-              render: (row) => row.event_location || '-'
-            },
-            {
-              header: 'Actions',
-              key: 'actions',
-              align: 'right',
-              render: (row) => (
-                <div className="flex items-center justify-end gap-2">
-                  <button onClick={() => navigate(`/admin/event-registrations?event_id=${row._id || row.id}`)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="View Registrations">
-                    <Eye className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+            )
+          },
+          {
+            header: 'Title',
+            key: 'title',
+            render: (row) => (
+              <div className="max-w-xs">
+                <div className="font-semibold text-text truncate" title={row.title}>{row.title}</div>
+                <div className="text-xs text-text-secondary line-clamp-1" title={row.description}>{row.description}</div>
+              </div>
+            )
+          },
+          {
+            header: 'Category',
+            key: 'event_category_name',
+            render: (row) => (
+              <span className="text-text-secondary font-medium truncate max-w-[120px] block" title={row.event_category_name || (categories.find(c => String(c.id) === String(row.event_category_id))?.category_name) || '-'}>
+                {row.event_category_name || (categories.find(c => String(c.id) === String(row.event_category_id))?.category_name) || '-'}
+              </span>
+            )
+          },
+          {
+            header: 'Date & Time',
+            key: 'event_date',
+            render: (row) => {
+              const dateStr = formatDate(row.start_time || row.event_date)
+              const startTimeStr = formatTime(row.start_time)
+              const endTimeStr = formatTime(row.end_time)
+              const timeDisplay = (startTimeStr || endTimeStr) 
+                ? `${startTimeStr || ''}${endTimeStr ? ` - ${endTimeStr}` : ''}`
+                : ''
+
+              return (
+                <div className="text-xs space-y-0.5 whitespace-nowrap" title={`${dateStr} ${timeDisplay}`.trim()}>
+                  <div className="flex items-center gap-1 font-medium text-text">
+                    <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span>{dateStr || '-'}</span>
+                  </div>
+                  {timeDisplay && (
+                    <div className="text-text-secondary text-[11px]">
+                      {timeDisplay}
+                    </div>
+                  )}
                 </div>
               )
             }
-          ]}
-          data={rows}
-          keyField={(row) => row.id || row._id}
-          loading={loading}
-          emptyState={{
-            icon: Calendar,
-            title: 'No events found',
-            description: 'There are no events registered under this search criteria'
-          }}
-          pagination={{
-            currentPage: page,
-            totalPages: pagination.totalPages,
-            total: pagination.total,
-            pageNumbers,
-            loading,
-            onPageChange: setPage,
-            limit,
-            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
-          }}
-        />
-      )}
+          },
+          {
+            header: 'Registrations',
+            key: 'registration_count',
+            render: (row) => (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                {row.registration_count || 0}
+              </span>
+            )
+          },
+          {
+            header: 'Status',
+            key: 'status',
+            render: (row) => (
+              <div className="flex items-center">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={Number(row.status) === 1}
+                    onChange={() => handleToggleStatus(row)}
+                  />
+                  <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+            )
+          },
+          {
+            header: 'Actions',
+            key: 'actions',
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
+                <button
+                  onClick={() => navigate(`/admin/event-registrations?event_id=${row.id || row._id}`)}
+                  className="p-2 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all"
+                  title="View Registrations"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => openEdit(row)}
+                  className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
+                  title="Edit Event"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleDelete(row.id)}
+                  className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
+                  title="Delete Event"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          }
+        ]}
+        data={rows}
+        keyField="id"
+        loading={loading}
+        emptyState={{
+          icon: Calendar,
+          title: 'No events found',
+          description: 'Try expanding your search criteria or create a new event',
+          actionLabel: 'Add Event',
+          onAction: openCreate
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages: pagination.totalPages,
+          total: pagination.total,
+          pageNumbers,
+          loading,
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+      />
 
-      <Modal isOpen={isModalOpen} title={selectedId ? 'Edit Event' : 'Add Event'} onClose={() => setIsModalOpen(false)}>
+      <Modal isOpen={isModalOpen} maxWidth="max-w-5xl" title={selectedId ? 'Edit Event' : 'Add Event'} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-4 text-text" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
 
@@ -468,8 +559,7 @@ export default function Events() {
 
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <Input
-              type="datetime-local"
+            <DateTimePicker
               label="Start Time"
               required
               value={formData.start_time}
@@ -493,8 +583,7 @@ export default function Events() {
               disabled={saving}
               error={fieldErrors.start_time}
             />
-            <Input
-              type="datetime-local"
+            <DateTimePicker
               label="End Time"
               required
               min={formData.start_time || undefined}
@@ -602,3 +691,6 @@ export default function Events() {
     </div>
   )
 }
+
+
+

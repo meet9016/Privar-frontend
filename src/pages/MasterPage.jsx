@@ -32,7 +32,7 @@ export default function MasterPage({ type }) {
     ...(type === 'business' ? [{ key: 'image', label: 'Image', type: 'image' }] : []),
     { key: 'name', label: 'Name' },
     ...(parentConfig ? [{ key: 'parent_name', label: parentConfig.label, render: (row) => (row.parent_name && !/^[0-9a-fA-F]{24}$/.test(row.parent_name) ? row.parent_name : '-') }] : []),
-    { key: 'status', label: 'Status', render: (row) => Number(row.status) === 1 ? 'Active' : 'Inactive' }
+    { key: 'status', label: 'Status' }
   ], [type, parentConfig])
 
   if (!label) {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2 } from 'lucide-react'
+import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff } from 'lucide-react'
 import api, { assetUrl, getPostsList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Loader from '../components/common/Loader'
@@ -143,6 +143,60 @@ export default function Post() {
     }
   }
 
+  const handleToggleStatus = async (post) => {
+    const id = post.id || post._id
+    if (!id) return
+    const newStatus = Number(post.status) === 1 ? 0 : 1
+
+    // Optimistic UI update
+    setPosts(prevPosts => prevPosts.map(item => {
+      if ((item.id || item._id) === id) {
+        return { ...item, status: newStatus }
+      }
+      return item
+    }))
+
+    try {
+      await api.put(`/posts/${id}`, { status: newStatus })
+      toast.success('Status updated')
+    } catch (err) {
+      // Revert on error
+      setPosts(prevPosts => prevPosts.map(item => {
+        if ((item.id || item._id) === id) {
+          return { ...item, status: Number(post.status) === 1 ? 1 : 0 }
+        }
+        return item
+      }))
+      toast.error(err.response?.data?.message || 'Failed to update status')
+    }
+  }
+
+  const handleBulkStatus = async (selectedIds, newStatus) => {
+    if (!selectedIds.length) return;
+    try {
+      setPosts(prev => prev.map(r => selectedIds.includes(String(r.id || r._id)) ? { ...r, status: newStatus } : r));
+      await Promise.all(selectedIds.map(id => api.put(`/posts/${id}`, { status: newStatus })));
+      toast.success(`Selected posts marked as ${newStatus === 1 ? 'Approved' : 'Inactive'}`);
+      await fetchPosts();
+    } catch (err) {
+      toast.error('Failed to update status for selected posts');
+      await fetchPosts();
+    }
+  };
+
+  const handleBulkDelete = async (selectedIds) => {
+    if (!selectedIds.length) return;
+    if (!await confirm(`Are you sure you want to delete ${selectedIds.length} selected posts?`)) return;
+    try {
+      await Promise.all(selectedIds.map(id => api.delete(`/posts/${id}`)));
+      toast.success(`${selectedIds.length} posts deleted successfully`);
+      await fetchPosts();
+    } catch (err) {
+      toast.error('Failed to delete selected posts');
+      await fetchPosts();
+    }
+  };
+
   return (
     <div className="space-y-6 animate-slide-up text-text">
       {/* Header bar */}
@@ -151,20 +205,6 @@ export default function Post() {
           <h2 className="text-xl font-semibold text-text">Post Moderator</h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button
-            onClick={fetchPosts}
-            variant="secondary"
-            title="Refresh posts"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-          <Button
-            onClick={openCreate}
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-          >
-            Add Post
-          </Button>
           <div className="relative group flex-1 sm:w-64">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-text-secondary/60">
               <Search className="w-4 h-4" />
@@ -177,89 +217,113 @@ export default function Post() {
               className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all duration-300"
             />
           </div>
+          <Button
+            onClick={openCreate}
+            variant="primary"
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Add Post
+          </Button>
         </div>
       </div>
 
-      {/* Main Grid */}
-      {loading && posts.length === 0 ? (
-        <div className="py-20"><Loader text="Loading posts..." /></div>
-      ) : (
-        <Table
-          columns={[
-            {
-              header: 'Image',
-              key: 'image',
-              render: (post) => (
-                post.image ? (
-                  <img src={assetUrl(post.image)} alt={post.title} className="h-12 w-16 rounded-lg object-cover border border-border" />
-                ) : (
-                  <span className="text-text-secondary">No image</span>
-                )
-              )
-            },
-            {
-              header: 'Title',
-              key: 'title',
-              render: (post) => <div className="font-semibold max-w-[200px] truncate" title={post.title}>{(post.title || '-').slice(0, 30)}</div>
-            },
-            {
-              header: 'Description',
-              key: 'description',
-              render: (post) => <div className="text-text-secondary line-clamp-2 max-w-[250px]" title={post.description}>{(post.description || '-').slice(0, 60)}</div>
-            },
-            {
-              header: 'Date',
-              key: 'cdate',
-              render: (post) => <div className="text-text-secondary whitespace-nowrap">{post.cdate?.slice(0, 10).split('-').reverse().join('-') || '-'}</div>
-            },
-            {
-              header: 'Status',
-              key: 'status',
-              render: (post) => (
-                <span className={`inline-flex px-2.5 py-1 rounded-lg border text-sm font-semibold ${Number(post.status ?? 1) === 1 ? 'bg-success-bg border-success-border text-success-text' : 'bg-surface-secondary border-border text-text-secondary'}`}>
-                  {Number(post.status ?? 1) === 1 ? 'Approved' : 'Inactive'}
-                </span>
-              )
-            },
-            {
-              header: 'Actions',
-              key: 'actions',
-              align: 'right',
-              render: (post) => (
-                <div className="flex items-center justify-end gap-2">
-                  <button onClick={() => handleEdit(post)} className="p-2 text-primary hover:text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit Post">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(post.id || post._id)} className="p-2 text-error-text hover:text-error bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete Post">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+      <Table
+        columns={[
+          {
+            header: 'Image',
+            key: 'image',
+            render: (row) => (
+              post.image ? (
+                <img src={assetUrl(post.image)} alt={post.title} className="h-12 w-16 rounded-lg object-cover border border-border" />
+              ) : (
+                <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
+                  <ImageOff className="h-5 w-5 text-text-secondary/40" />
                 </div>
               )
-            }
-          ]}
-          data={posts}
-          keyField="id"
-          emptyState={{
-            icon: FileText,
-            title: 'No posts found',
-            description: 'There are no Post under this search'
-          }}
-          pagination={{
-            currentPage: page,
-            totalPages,
-            total,
-            pageNumbers,
-            loading,
-            onPageChange: setPage,
-            limit,
-            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
-          }}
-        />
-      )}
+            )
+          },
+          {
+            header: 'Title',
+            key: 'title',
+            render: (row) => <div className="font-semibold">{post.title || '-'}</div>
+          },
+          {
+            header: 'Description',
+            key: 'description',
+            render: (row) => (
+              <div className="text-text-secondary text-sm line-clamp-2 max-w-md">
+                {post.description || '-'}
+              </div>
+            )
+          },
+          {
+            header: 'Post Date',
+            key: 'date',
+            render: (row) => (
+              <div className="text-text-secondary text-sm">
+                {post.cdate ? post.cdate.slice(0, 10).split('-').reverse().join('-') : '-'}
+              </div>
+            )
+          },
+          {
+            header: 'Status',
+            key: 'status',
+            render: (row) => (
+              <div className="flex items-center">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={Number(post.status) === 1}
+                    onChange={() => handleToggleStatus(post)}
+                  />
+                  <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+            )
+          },
+          {
+            header: 'Actions',
+            key: 'actions',
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
+                <button onClick={() => handleEdit(post)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => handleDelete(post.id || post._id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          }
+        ]}
+        data={posts}
+        keyField={(post) => post.id || post._id}
+        loading={loading}
+        onBulkStatus={handleBulkStatus}
+        onBulkDelete={handleBulkDelete}
+        emptyState={{
+          icon: FileText,
+          title: 'No posts found',
+          description: 'There are no Post under this search',
+          actionLabel: 'Add Post',
+          onAction: openCreate
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages,
+          total,
+          pageNumbers,
+          loading,
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+      />
 
-      <Modal isOpen={isModalOpen} title={selected ? 'Edit Post' : 'Add Post'} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-4 text-text">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Modal isOpen={isModalOpen} maxWidth="max-w-3xl" title={selected ? 'Edit Post' : 'Add Post'} onClose={() => setIsModalOpen(false)}>
+        <form onSubmit={handleSave} className="space-y-3 text-text">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Title"
               required
@@ -273,6 +337,7 @@ export default function Post() {
             />
             <Select
               label="Status"
+              placement="down"
               value={formData.status}
               onChange={(val) => setFormData({ ...formData, status: val })}
               disabled={saving}
@@ -283,10 +348,10 @@ export default function Post() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
             <Input
               type="textarea"
-              rows={4}
+              rows={3}
               label="Description"
               required
               value={formData.description}
@@ -298,8 +363,8 @@ export default function Post() {
               error={fieldErrors.description}
             />
 
-            <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Image</label>
+            <div className="flex flex-col bg-input-bg border border-border rounded-xl p-2.5">
+              <label className="block text-xs font-semibold text-text-secondary mb-1">Image</label>
               <FileDropzone
                 accept="image/*"
                 onFilesSelected={(files) => setFormData({ ...formData, image: files[0] || null, remove_image: false })}
@@ -312,22 +377,40 @@ export default function Post() {
                   }] : []),
                   ...(formData.image instanceof File ? [{
                     url: URL.createObjectURL(formData.image),
-                    onRemove: () => setFormData({ ...formData, image: null, remove_image: false })
+                    onRemove: () => setFormData({ ...formData, image: '', remove_image: false })
                   }] : [])
                 ]}
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
+          {/* NOTIFICATIONS */}
+          {!selected && (
+            <label className="flex items-center gap-2.5 cursor-pointer p-2 bg-input-bg border border-border rounded-xl">
+              <input
+                type="checkbox"
+                checked={formData.send_notification}
+                onChange={(e) => setFormData({ ...formData, send_notification: e.target.checked })}
+                className="w-4 h-4 rounded text-primary focus:ring-primary/20 bg-input-bg border-border"
+              />
+              <span className="text-xs font-medium text-text">Send as Push Notification to all users</span>
+            </label>
+          )}
+
+          <div className="flex justify-end gap-3 mt-3 pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+              disabled={saving}
+            >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={saving}
-              isLoading={saving}
               variant="primary"
+              isLoading={saving}
+              disabled={saving}
             >
               {saving ? 'Saving...' : 'Save'}
             </Button>
@@ -337,3 +420,6 @@ export default function Post() {
     </div>
   )
 }
+
+
+

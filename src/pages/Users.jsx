@@ -331,7 +331,7 @@ export default function Users() {
             <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
           </button>
         </div>
-      </div>
+        </div>
       </div>
 
       {/* Main Table view */}
@@ -340,29 +340,37 @@ export default function Users() {
           {
             key: 'select',
             header: '',
-            align: 'center',
+            align: 'left',
             className: 'w-12',
             headerRender: () => (
-              <input 
-                type="checkbox" 
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
-                checked={users.length > 0 && users.every(u => selectedUsers.includes(u.id))}
-                onChange={handleSelectAll}
-              />
+              <div className="flex items-center justify-center">
+                {!loading && users.length > 0 ? (
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+                    checked={users.length > 0 && users.every(u => selectedUsers.includes(u.id))}
+                    onChange={handleSelectAll}
+                  />
+                ) : (
+                  <div className="w-4 h-4 rounded border border-border/40 bg-surface-secondary/40" />
+                )}
+              </div>
             ),
-            render: (user) => (
-              <input 
-                type="checkbox" 
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
-                checked={selectedUsers.includes(user.id)}
-                onChange={() => handleSelectUser(user.id)}
-              />
+            render: (row) => (
+              <div className="flex items-center justify-center">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+                  checked={selectedUsers.includes(user.id)}
+                  onChange={() => handleSelectUser(user.id)}
+                />
+              </div>
             )
           },
           {
             key: 'name',
             header: 'Name',
-            render: (user) => (
+            render: (row) => (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-semibold text-primary border border-primary/20">
                   {user.first_name ? user.first_name.substring(0, 1) : '-'}
@@ -378,28 +386,28 @@ export default function Users() {
           {
             key: 'phone',
             header: 'Mobile Number',
-            render: (user) => (
+            render: (row) => (
               <div className="text-sm font-mono text-text">{user.phone || user.number || '-'}</div>
             )
           },
           {
             key: 'email',
             header: 'Email',
-            render: (user) => (
+            render: (row) => (
               <div className="text-sm text-text-secondary">{user.email || <span className="opacity-50">No Email</span>}</div>
             )
           },
           {
             key: 'gender',
             header: 'Gender',
-            render: (user) => (
+            render: (row) => (
               <div className="text-sm text-text-secondary">{user.gender || '-'}</div>
             )
           },
           {
             key: 'status',
             header: 'Status',
-            render: (user) => (
+            render: (row) => (
               <div className="flex items-center gap-2">
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -428,9 +436,8 @@ export default function Users() {
           {
             key: 'actions',
             header: 'Actions',
-            align: 'right',
-            render: (user) => (
-              <div className="flex items-center justify-end gap-2">
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
                 <button onClick={() => handleView(user)} className="p-2 text-indigo-500 hover:text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all" title="View Profile">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
@@ -455,7 +462,9 @@ export default function Users() {
         emptyState={{
           icon: UsersIcon,
           title: 'No Members found',
-          description: 'Try expanding your search criteria or register a new member'
+          description: 'Try expanding your search criteria or register a new member',
+          actionLabel: 'Add Member',
+          onAction: handleCreate
         }}
         pagination={{
           currentPage,
@@ -586,3 +595,7 @@ export default function Users() {
     </div>
   )
 }
+
+
+
+

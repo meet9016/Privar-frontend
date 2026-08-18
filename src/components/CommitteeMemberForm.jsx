@@ -141,36 +141,51 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-text">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="First Name"
-          required
-          placeholder="Enter First Name"
-          value={formData.first_name}
-          onChange={(e) => handleFieldChange('first_name', e.target.value.replace(/[0-9]/g, ''))}
-          disabled={isLoading}
-          error={errors.first_name}
-        />
-        <Input
-          label="Middle Name"
-          placeholder="Enter Middle Name"
-          value={formData.middle_name}
-          onChange={(e) => handleFieldChange('middle_name', e.target.value.replace(/[0-9]/g, ''))}
-          disabled={isLoading}
-        />
+      {/* Row 1: Image (left) + First Name, Middle Name, Last Name (right) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+        <div className="md:col-span-1">
+          <ImageUpload
+            label="Image (300*300 px, Max 1MB)"
+            value={formData.image}
+            onChange={(file, remove = false) => {
+              setFormData(prev => ({ ...prev, image: file, remove_image: remove }))
+              if (errors.image) setErrors(prev => ({ ...prev, image: null }))
+            }}
+            disabled={isLoading}
+            error={errors.image}
+          />
+        </div>
+        <div className="md:col-span-2 grid grid-cols-1 gap-3">
+          <Input
+            label="First Name"
+            required
+            placeholder="Enter First Name"
+            value={formData.first_name}
+            onChange={(e) => handleFieldChange('first_name', e.target.value.replace(/[0-9]/g, ''))}
+            disabled={isLoading}
+            error={errors.first_name}
+          />
+          <Input
+            label="Middle Name"
+            placeholder="Enter Middle Name"
+            value={formData.middle_name}
+            onChange={(e) => handleFieldChange('middle_name', e.target.value.replace(/[0-9]/g, ''))}
+            disabled={isLoading}
+          />
+          <Input
+            label="Last Name"
+            required
+            placeholder="Enter Last Name"
+            value={formData.last_name}
+            onChange={(e) => handleFieldChange('last_name', e.target.value.replace(/[0-9]/g, ''))}
+            disabled={isLoading || !!(member && member.last_name)}
+            error={errors.last_name}
+          />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Last Name"
-          required
-          placeholder="Enter Last Name"
-          value={formData.last_name}
-          onChange={(e) => handleFieldChange('last_name', e.target.value.replace(/[0-9]/g, ''))}
-          disabled={isLoading || !!(member && member.last_name)}
-          error={errors.last_name}
-        />
-
+      {/* Row 2: Designation, Contact Number, Status */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="Designation"
           required
@@ -181,39 +196,6 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           title={isEditingSelf ? 'You cannot change your own role' : undefined}
           error={errors.designation}
         />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          label="Email Address"
-          type="email"
-          placeholder="email@example.com"
-          value={formData.email}
-          onChange={(e) => handleFieldChange('email', e.target.value)}
-          disabled={isLoading}
-          error={errors.email}
-        />
-
-        <Input
-          label={member ? "Password (Leave blank to keep)" : "Password"}
-          type="password"
-          placeholder={member ? "Enter password to update" : "Enter login password"}
-          value={formData.password}
-          onChange={(e) => handleFieldChange('password', e.target.value)}
-          disabled={isLoading}
-          error={errors.password}
-        />
-
-        <Select
-          label="Assign Role"
-          value={formData.role_id}
-          onChange={(val) => handleFieldChange('role_id', val)}
-          disabled={isLoading}
-          options={roleOptions}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="Contact Number"
           required
@@ -240,15 +222,34 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             { label: 'Inactive', value: 0 }
           ]}
         />
-        <ImageUpload
-          label="Image (300*300 px, Max 1MB)"
-          value={formData.image}
-          onChange={(file, remove = false) => {
-            setFormData(prev => ({ ...prev, image: file, remove_image: remove }))
-            if (errors.image) setErrors(prev => ({ ...prev, image: null }))
-          }}
+      </div>
+
+      {/* Row 3: Email, Password, Assign Role */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input
+          label="Email Address"
+          type="email"
+          placeholder="email@example.com"
+          value={formData.email}
+          onChange={(e) => handleFieldChange('email', e.target.value)}
           disabled={isLoading}
-          error={errors.image}
+          error={errors.email}
+        />
+        <Input
+          label={member ? "Password (Leave blank to keep)" : "Password"}
+          type="password"
+          placeholder={member ? "Enter password to update" : "Enter login password"}
+          value={formData.password}
+          onChange={(e) => handleFieldChange('password', e.target.value)}
+          disabled={isLoading}
+          error={errors.password}
+        />
+        <Select
+          label="Assign Role"
+          value={formData.role_id}
+          onChange={(val) => handleFieldChange('role_id', val)}
+          disabled={isLoading}
+          options={roleOptions}
         />
       </div>
 

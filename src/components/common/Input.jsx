@@ -16,7 +16,7 @@ export default function Input({
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
-  const isTel = type === 'tel' || onlyNumbers || (label && /contact|phone|mobile|number/i.test(label) && !/account_number|gst|serial|code/i.test(label));
+  const isTel = type === 'tel' || onlyNumbers || (type !== 'email' && label && /contact|phone|mobile|number/i.test(label) && !/email|account_number|gst|serial|code/i.test(label));
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : (isTel ? 'tel' : type);
   const maxLen = maxLength || (isTel ? 10 : undefined);
 

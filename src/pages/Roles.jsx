@@ -193,9 +193,6 @@ export default function Roles() {
 
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button onClick={fetchAll} variant="secondary" title="Refresh">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search roles..." className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50" />
@@ -236,11 +233,11 @@ export default function Roles() {
           {
             header: 'Actions',
             key: 'actions',
-            align: 'right',
+            align: 'left',
             render: (role) => {
               const isSystemRole = role.name === 'admin' || role.name === 'UserRole';
               return (
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center justify-start gap-2">
                 <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
@@ -258,7 +255,9 @@ export default function Roles() {
         emptyState={{
           icon: ShieldCheck,
           title: 'No roles found',
-          description: 'Try expanding your search criteria or add a new role'
+          description: 'Try expanding your search criteria or create a new role',
+          actionLabel: 'Add Role',
+          onAction: openCreate
         }}
         pagination={{
           currentPage: page,
@@ -272,46 +271,50 @@ export default function Roles() {
         }}
       />
 
-      <Modal isOpen={isModalOpen} title={selected ? 'Edit Role' : 'Add Role'} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSave} className="space-y-5 text-text">
+      <Modal isOpen={isModalOpen} maxWidth="max-w-4xl" title={selected ? 'Edit Role' : 'Add Role'} onClose={() => setIsModalOpen(false)}>
+        <form onSubmit={handleSave} className="text-text relative flex flex-col" style={{ maxHeight: 'calc(92vh - 80px)' }}>
           {formError && (
-            <div className="bg-error-bg border border-error-border text-error-text p-3 rounded-xl text-sm">{formError}</div>
+            <div className="bg-error-bg border border-error-border text-error-text px-3 py-2 rounded-xl text-xs mb-2">{formError}</div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="Role Name"
-              required
-              placeholder="Enter Role Name"
-              value={formData.name}
-              onChange={(e) => {
-                const val = e.target.value.replace(/[^a-zA-Z\s]/g, '')
-                setFormData(prev => ({ ...prev, name: val }))
-                if (val.trim()) setFieldErrors(prev => ({ ...prev, name: null }))
-              }}
-              disabled={saving}
-              error={fieldErrors.name}
-            />
-            <Input
-              label="Description"
-              placeholder="Short role description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              disabled={saving}
-            />
-            <Select
-              label="Status"
-              value={formData.status}
-              onChange={(val) => setFormData({ ...formData, status: val })}
-              disabled={saving}
-              options={[
-                { label: 'Active', value: 1 },
-                { label: 'Inactive', value: 0 }
-              ]}
-            />
+          {/* Sticky Role Name, Description, Status Row */}
+          <div className="sticky top-0 z-20 bg-surface pb-3 pt-0 border-b border-border shadow-xs">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Input
+                label="Role Name"
+                required
+                placeholder="Enter Role Name"
+                value={formData.name}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                  setFormData(prev => ({ ...prev, name: val }))
+                  if (val.trim()) setFieldErrors(prev => ({ ...prev, name: null }))
+                }}
+                disabled={saving}
+                error={fieldErrors.name}
+              />
+              <Input
+                label="Description"
+                placeholder="Short role description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                disabled={saving}
+              />
+              <Select
+                label="Status"
+                placement="down"
+                value={formData.status}
+                onChange={(val) => setFormData({ ...formData, status: val })}
+                disabled={saving}
+                options={[
+                  { label: 'Active', value: 1 },
+                  { label: 'Inactive', value: 0 }
+                ]}
+              />
+            </div>
           </div>
 
-          <div>
-            <div className="grid gap-2 border-b border-border pb-2 text-sm  font-semibold text-text-secondary" style={permissionGridStyle}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar pt-2">
+            <div className="sticky top-0 z-10 bg-surface grid gap-2 border-b border-border pb-2 pt-1 text-xs font-bold text-text-secondary uppercase tracking-wider" style={permissionGridStyle}>
               <div>Permission</div>
               {permissionConfig.actions.map((action) => <div key={action.key} className="text-center">{action.label}</div>)}
             </div>
@@ -364,3 +367,5 @@ export default function Roles() {
     </div>
   )
 }
+
+

@@ -197,23 +197,18 @@ export default function Donations() {
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <div className="w-64 sm:w-72">
             <div className="relative">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
+                <Search className="w-4 h-4" />
+              </div>
               <input
-                type="text"
+                type="search"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); applyFilters(); }}
                 placeholder="Search donator or purpose..."
-                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
+                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
               />
             </div>
           </div>
-          <button
-            onClick={fetchDonations}
-            className="flex items-center justify-center p-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-all"
-            title="Refresh"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
           <button
             onClick={handleCreate}
             className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
@@ -337,96 +332,108 @@ export default function Donations() {
         </div>
       )}
 
-      {/* Donation Cards Grid */}
-      {loading && donations.length === 0 ? (
-        <div className="py-20"><Loader text="Loading donations..." /></div>
-      ) : (
-        <Table
-          columns={[
-            {
-              header: 'Donator',
-              key: 'donator',
-              render: (donation) => <span className="font-semibold">{donation.donator_name || '-'}</span>
-            },
-            {
-              header: 'Amount',
-              key: 'amount',
-              render: (donation) => (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-success/10 border border-success/20 text-success font-semibold text-sm">
-                  <IndianRupee className="w-3.5 h-3.5" />
-                  {Number(donation.donate_amount || 0).toLocaleString('en-IN')}
-                </span>
-              )
-            },
-            {
-              header: 'Purpose',
-              key: 'purpose',
-              render: (donation) => (
-                <div className="text-text-secondary max-w-xs">
-                  <div className="line-clamp-2 italic">"{(donation.donation_purpose || '-').slice(0, 60)}"</div>
-                </div>
-              )
-            },
-            {
-              header: 'Date',
-              key: 'date',
-              render: (donation) => (
-                <div className="flex items-center gap-1.5 whitespace-nowrap text-text-secondary">
-                  <CalendarDays className="w-3.5 h-3.5 text-primary shrink-0" />
-                  {donation.date || '-'}
-                </div>
-              )
-            },
-            {
-              header: 'Status',
-              key: 'status',
-              render: (donation) => (
-                <span className={`inline-flex px-2.5 py-1 rounded-lg border text-sm font-semibold ${Number(donation.status) === 1
+      <Table
+        columns={[
+          {
+            header: 'Donator',
+            key: 'donator',
+            render: (donation) => <span className="font-semibold">{donation.donator_name || '-'}</span>
+          },
+          {
+            header: 'Amount',
+            key: 'amount',
+            render: (donation) => (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-success/10 border border-success/20 text-success font-semibold text-sm">
+                <IndianRupee className="w-3.5 h-3.5" />
+                {Number(donation.donate_amount || 0).toLocaleString('en-IN')}
+              </span>
+            )
+          },
+          {
+            header: 'Date',
+            key: 'date',
+            render: (donation) => (
+              <div className="text-text-secondary text-sm">
+                {donation.donate_date ? donation.donate_date.slice(0, 10).split('-').reverse().join('-') : '-'}
+              </div>
+            )
+          },
+          {
+            header: 'Event',
+            key: 'event',
+            render: (donation) => <span className="text-text-secondary text-sm">{donation.event_name || '-'}</span>
+          },
+          {
+            header: 'Payment Mode',
+            key: 'payment_mode',
+            render: (donation) => (
+              <span className="inline-flex px-2.5 py-1 rounded-lg bg-surface-secondary border border-border text-text-secondary text-xs font-semibold uppercase">
+                {donation.payment_mode || 'Cash'}
+              </span>
+            )
+          },
+          {
+            header: 'Trust / Organization',
+            key: 'trust',
+            render: (donation) => <span className="text-text-secondary text-sm">{donation.trust_name || '-'}</span>
+          },
+          {
+            header: 'Status',
+            key: 'status',
+            render: (donation) => (
+              <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${
+                Number(donation.status ?? 1) === 1
                   ? 'bg-success-bg border-success-border text-success-text'
                   : 'bg-surface-secondary border-border text-text-secondary'
-                  }`}>
-                  {Number(donation.status) === 1 ? 'Active' : 'Inactive'}
-                </span>
-              )
-            },
-            {
-              header: 'Actions',
-              key: 'actions',
-              align: 'right',
-              render: (donation) => (
-                <div className="flex items-center justify-end gap-2">
-                  <button onClick={() => handleEdit(donation)}
-                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(donation.id)}
-                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )
-            }
-          ]}
-          data={donations}
-          keyField="id"
-          loading={loading}
-          emptyState={{
-            icon: Landmark,
-            title: 'No donations found',
-            description: 'There are no donation records matching your criteria'
-          }}
-          pagination={{
-            currentPage: page,
-            totalPages,
-            total,
-            pageNumbers,
-            loading,
-            onPageChange: setPage,
-            limit,
-            onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
-          }}
-        />
-      )}
+              }`}>
+                {Number(donation.status ?? 1) === 1 ? 'Active' : 'Inactive'}
+              </span>
+            )
+          },
+          {
+            header: 'Actions',
+            key: 'actions',
+            align: 'left',
+            render: row=> ( <div className="flex items-center justify-start gap-2">
+                <button
+                  onClick={() => handleEdit(donation)}
+                  className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
+                  title="Edit Donation"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleDelete(donation.id || donation._id)}
+                  className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
+                  title="Delete Donation"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          }
+        ]}
+        data={donations}
+        keyField={(d) => d.id || d._id}
+        loading={loading}
+        emptyState={{
+          icon: Landmark,
+          title: 'No donations found',
+          description: 'There are no donation records matching your criteria',
+          actionLabel: 'Add Donation',
+          onAction: handleCreate
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages,
+          total,
+          pageNumbers,
+          loading,
+          onPageChange: setPage,
+          limit,
+          onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+      />
 
       {/* Add/Edit Modal */}
       <Modal
@@ -513,3 +520,6 @@ export default function Donations() {
     </div>
   )
 }
+
+
+

@@ -6,6 +6,7 @@ import { masterLabels, routeTitles } from '../config/navigation'
 import GoogleTranslate from './GoogleTranslate'
 import GlobalSearch from './GlobalSearch'
 import { getUserRoleLabel } from '../lib/roles'
+import ThemePicker from './ThemePicker'
 import NotificationDropdown from './NotificationDropdown'
 import { confirm } from '../lib/confirm'
 
@@ -37,7 +38,7 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between px-8 py-5 bg-surface/85 backdrop-blur-md border-b border-border shadow-glass-sm">
+    <header className="sticky top-0 z-20 flex items-center justify-between px-8 py-5 bg-surface border-b border-border shadow-glass-md backdrop-blur-xl">
       {/* Title block */}
       <div className="flex items-center gap-3">
         {/* Dynamic Global Search box */}
@@ -46,6 +47,7 @@ export default function Header() {
 
       {/* Control bar */}
       <div className="flex items-center gap-4">
+        <ThemePicker />
         <NotificationDropdown variant="dark" />
 
         {/* Vertical divider */}

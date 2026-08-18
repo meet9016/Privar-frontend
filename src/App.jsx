@@ -23,6 +23,7 @@ import News from './pages/News'
 import { hasPermission } from './lib/permissions'
 import Posts from './pages/Post'
 import { activeTheme, applyTheme } from './theme/theme'
+import { ThemeProvider } from './context/ThemeContext'
 // ___________________________________________________________
 
 import Home from './pages/websitePages/Home'
@@ -38,9 +39,10 @@ applyTheme(activeTheme)
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-      <Suspense fallback={null}>
+    <ThemeProvider>
+      <AuthProvider>
+        <NotificationProvider>
+        <Suspense fallback={null}>
         <ReactToaster />
         <ConfirmDialog />
       </Suspense>
@@ -98,7 +100,8 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </NotificationProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 
