@@ -356,7 +356,7 @@ export default function Users() {
                 )}
               </div>
             ),
-            render: (row) => (
+            render: (user) => (
               <div className="flex items-center justify-center">
                 <input 
                   type="checkbox" 
@@ -370,7 +370,7 @@ export default function Users() {
           {
             key: 'name',
             header: 'Name',
-            render: (row) => (
+            render: (user) => (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-semibold text-primary border border-primary/20">
                   {user.first_name ? user.first_name.substring(0, 1) : '-'}
@@ -386,28 +386,28 @@ export default function Users() {
           {
             key: 'phone',
             header: 'Mobile Number',
-            render: (row) => (
+            render: (user) => (
               <div className="text-sm font-mono text-text">{user.phone || user.number || '-'}</div>
             )
           },
           {
             key: 'email',
             header: 'Email',
-            render: (row) => (
+            render: (user) => (
               <div className="text-sm text-text-secondary">{user.email || <span className="opacity-50">No Email</span>}</div>
             )
           },
           {
             key: 'gender',
             header: 'Gender',
-            render: (row) => (
+            render: (user) => (
               <div className="text-sm text-text-secondary">{user.gender || '-'}</div>
             )
           },
           {
             key: 'status',
             header: 'Status',
-            render: (row) => (
+            render: (user) => (
               <div className="flex items-center gap-2">
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -437,7 +437,7 @@ export default function Users() {
             key: 'actions',
             header: 'Actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
+            render: user=> ( <div className="flex items-center justify-start gap-2">
                 <button onClick={() => handleView(user)} className="p-2 text-indigo-500 hover:text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all" title="View Profile">
                   <Eye className="w-3.5 h-3.5" />
                 </button>

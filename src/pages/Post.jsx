@@ -232,7 +232,7 @@ export default function Post() {
           {
             header: 'Image',
             key: 'image',
-            render: (row) => (
+            render: (post) => (
               post.image ? (
                 <img src={assetUrl(post.image)} alt={post.title} className="h-12 w-16 rounded-lg object-cover border border-border" />
               ) : (
@@ -245,12 +245,12 @@ export default function Post() {
           {
             header: 'Title',
             key: 'title',
-            render: (row) => <div className="font-semibold">{post.title || '-'}</div>
+            render: (post) => <div className="font-semibold">{post.title || '-'}</div>
           },
           {
             header: 'Description',
             key: 'description',
-            render: (row) => (
+            render: (post) => (
               <div className="text-text-secondary text-sm line-clamp-2 max-w-md">
                 {post.description || '-'}
               </div>
@@ -259,7 +259,7 @@ export default function Post() {
           {
             header: 'Post Date',
             key: 'date',
-            render: (row) => (
+            render: (post) => (
               <div className="text-text-secondary text-sm">
                 {post.cdate ? post.cdate.slice(0, 10).split('-').reverse().join('-') : '-'}
               </div>
@@ -268,7 +268,7 @@ export default function Post() {
           {
             header: 'Status',
             key: 'status',
-            render: (row) => (
+            render: (post) => (
               <div className="flex items-center">
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -286,7 +286,7 @@ export default function Post() {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
+            render: post=> ( <div className="flex items-center justify-start gap-2">
                 <button onClick={() => handleEdit(post)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>

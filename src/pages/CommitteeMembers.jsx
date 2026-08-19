@@ -196,7 +196,7 @@ export default function CommitteeMembers() {
           {
             header: 'Name',
             key: 'name',
-            render: (row) => (
+            render: (member) => (
               <div className="flex items-center gap-3">
                 {member.image ? (
                   <img src={member.image} alt="" className="h-9 w-9 rounded-lg object-cover border border-border" />
@@ -213,12 +213,12 @@ export default function CommitteeMembers() {
           {
             header: 'Contact',
             key: 'contact',
-            render: (row) => <span>{member.number || '-'}</span>
+            render: (member) => <span>{member.number || '-'}</span>
           },
           {
             header: 'Designation',
             key: 'designation',
-            render: (row) => (
+            render: (member) => (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary font-medium">
                 {member.designation || 'Committee'}
               </span>
@@ -227,7 +227,7 @@ export default function CommitteeMembers() {
           {
             header: 'Assigned Role',
             key: 'role',
-            render: (row) => (
+            render: (member) => (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-secondary border border-border text-text font-semibold text-xs">
                 {member.role_name || (roles.find(r => String(r.id || r._id) === String(member.role_id))?.name) || '-'}
               </span>
@@ -236,7 +236,7 @@ export default function CommitteeMembers() {
           {
             header: 'Status',
             key: 'status',
-            render: (row) => (
+            render: (member) => (
               <span className={`inline-flex px-2.5 py-1 rounded-lg border text-sm font-semibold ${Number(member.status ?? 1) === 1 ? 'bg-success-bg border-success-border text-success-text' : 'bg-surface-secondary border-border text-text-secondary'}`}>
                 {Number(member.status ?? 1) === 1 ? 'Active' : 'Inactive'}
               </span>
@@ -246,7 +246,7 @@ export default function CommitteeMembers() {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
+            render: member=> ( <div className="flex items-center justify-start gap-2">
                 {hasPermission(currentUser, ['committee.edit', 'members.edit', 'users.manage']) && (
                   <button onClick={() => openEdit(member)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
                     <Edit2 className="w-3.5 h-3.5" />

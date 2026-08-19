@@ -313,8 +313,8 @@ export default function Roles() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar pt-2">
-            <div className="sticky top-0 z-10 bg-surface grid gap-2 border-b border-border pb-2 pt-1 text-xs font-bold text-text-secondary uppercase tracking-wider" style={permissionGridStyle}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="sticky top-0 z-10 bg-surface grid gap-2 border-b border-border pb-2 pt-3 text-xs font-bold text-text-secondary uppercase tracking-wider" style={permissionGridStyle}>
               <div>Permission</div>
               {permissionConfig.actions.map((action) => <div key={action.key} className="text-center">{action.label}</div>)}
             </div>
