@@ -48,23 +48,22 @@ const definitions = {
     supportIsOwn: true,
     fields: [
       { name: 'full_name', label: 'Full Name', required: true },
+      { name: 'middle_name', label: 'Middle Name', required: true },
       {
         name: 'gender',
         label: 'Gender',
         type: 'select',
-        required: true,
         options: [
           { value: 'Male', label: 'Male' },
           { value: 'Female', label: 'Female' },
           { value: 'Other', label: 'Other' }
         ]
       },
-      { name: 'birthdate', label: 'Birthdate', type: 'date', required: true },
+      { name: 'birthdate', label: 'Birthdate', type: 'date' },
       {
         name: 'marital_status',
         label: 'Marital Status',
         type: 'select',
-        required: true,
         options: [
           { value: 'Single', label: 'Single' },
           { value: 'Never Married', label: 'Never Married' },
@@ -73,15 +72,14 @@ const definitions = {
           { value: 'Awaiting Divorce', label: 'Awaiting Divorce' }
         ]
       },
-      { name: 'height', label: 'Height', required: true },
-      { name: 'weight', label: 'Weight', required: true },
-      { name: 'mobile_number', label: 'Mobile Number', required: true },
+      { name: 'height', label: 'Height' },
+      { name: 'weight', label: 'Weight' },
+      { name: 'mobile_number', label: 'Mobile Number' },
       { name: 'city', label: 'City', required: true },
       {
         name: 'status',
         label: 'Status',
         type: 'select',
-        required: true,
         options: [
           { value: 1, label: 'Active' },
           { value: 0, label: 'Inactive' }
@@ -91,6 +89,26 @@ const definitions = {
       { name: 'occupation', label: 'Occupation', required: true },
       { name: 'father_name', label: 'Father Name', required: true },
       { name: 'mother_name', label: 'Mother Name', required: true },
+      {
+        name: 'complexion',
+        label: 'Complexion',
+        type: 'select',
+        options: [
+          { value: 'Fair', label: 'Fair' },
+          { value: 'Wheatish', label: 'Wheatish' },
+          { value: 'Dark', label: 'Dark' }
+        ]
+      },
+      { name: 'gotra', label: 'Gotra' },
+      {
+        name: 'family_type',
+        label: 'Family Type',
+        type: 'select',
+        options: [
+          { value: 'Joint Family', label: 'Joint Family' },
+          { value: 'Nuclear Family', label: 'Nuclear Family' }
+        ]
+      },
       { name: 'about', label: 'About', type: 'textarea' },
       { name: 'biodata', label: 'Biodata (PDF/Image)', type: 'file', accept: 'image/*,application/pdf' },
       { name: 'person_image', label: 'Person Image', type: 'file' }
@@ -189,9 +207,28 @@ const definitions = {
     fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date', required: true }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
     columns: [
       { key: 'name', label: 'Name' },
-      { key: 'dob', label: 'Date of Birth', render: (row) => row.dob ? new Date(row.dob).toLocaleDateString('en-IN') : '-' },
-      { key: 'anniversary', label: 'Anniversary', render: (row) => row.anniversary ? new Date(row.anniversary).toLocaleDateString('en-IN') : '-' }
-
+      {
+        key: 'dob',
+        label: 'Date of Birth',
+        render: (row) => {
+          if (!row.dob) return '-'
+          const parts = String(row.dob).split('T')[0].split('-')
+          if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
+          const d = new Date(row.dob)
+          return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('en-IN')
+        }
+      },
+      {
+        key: 'anniversary',
+        label: 'Anniversary',
+        render: (row) => {
+          if (!row.anniversary) return '-'
+          const parts = String(row.anniversary).split('T')[0].split('-')
+          if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
+          const d = new Date(row.anniversary)
+          return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('en-IN')
+        }
+      }
     ]
   },
   'job-vacancy': {

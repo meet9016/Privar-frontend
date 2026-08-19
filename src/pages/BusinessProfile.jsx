@@ -25,7 +25,7 @@ const toExternalHref = (value) => {
   if (!text) return ''
   if (/^https?:\/\//i.test(text)) return text
   return `https://${text}`
-}
+}  
 const toMailHref = (value) => {
   const text = normalizeValue(value, '')
   const markdownMail = String(value || '').match(/\]\(mailto:([^)]+)\)/i)

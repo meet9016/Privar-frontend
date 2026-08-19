@@ -6,6 +6,7 @@ import Loader from '../components/common/Loader'
 import Table from '../components/common/Table'
 import Select from '../components/common/Select'
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 export default function EventRegistrations() {
     const [rows, setRows] = useState([])
@@ -14,6 +15,7 @@ export default function EventRegistrations() {
     const [loading, setLoading] = useState(false)
     const [page, setPage] = useState(1)
     const [search, setSearchValue] = useState('')
+    const debouncedSearch = useDebounce(search, 400)
     const [error, setError] = useState('')
     const [selectedReg, setSelectedReg] = useState(null)
     const [events, setEvents] = useState([])
@@ -46,7 +48,7 @@ export default function EventRegistrations() {
         setLoading(true)
         setError('')
         try {
-            const params = { page, limit, search }
+            const params = { page, limit, search: debouncedSearch }
             if (filterEventId) params.event_id = filterEventId
             const res = await api.get('/event-registrations', { params })
             const data = res.data?.data || []
@@ -64,7 +66,7 @@ export default function EventRegistrations() {
         } finally {
             setLoading(false)
         }
-    }, [page, search, filterEventId, limit])
+    }, [page, debouncedSearch, filterEventId, limit])
 
     useEffect(() => { fetchEvents() }, [fetchEvents])
     useEffect(() => { fetchRows() }, [fetchRows])

@@ -11,6 +11,7 @@ import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 export default function Students() {
   const [students, setStudents] = useState([])
@@ -24,6 +25,7 @@ export default function Students() {
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [showFilters, setShowFilters] = useState(false)
 
 
@@ -45,7 +47,7 @@ export default function Students() {
   const fetchStudents = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getStudentsList(getParams({ search }))
+      const res = await getStudentsList(getParams({ search: debouncedSearch }))
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setStudents(Array.isArray(rows) ? rows : [])
@@ -57,7 +59,7 @@ export default function Students() {
     } finally {
       setLoading(false)
     }
-  }, [search, page])
+  }, [debouncedSearch, page, getParams, setPaginationData])
 
   useEffect(() => {
     fetchStudents()
@@ -263,7 +265,7 @@ export default function Students() {
             key: 'actions',
             header: 'Actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
+            render: student => ( <div className="flex items-center justify-start gap-2">
                 <button onClick={() => handleEdit(student)}
                   className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
                   <Edit2 className="w-3.5 h-3.5" />

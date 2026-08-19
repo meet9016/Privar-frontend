@@ -24,7 +24,6 @@ import { hasPermission } from './lib/permissions'
 import Posts from './pages/Post'
 import { activeTheme, applyTheme } from './theme/theme'
 import { ThemeProvider } from './context/ThemeContext'
-// ___________________________________________________________
 
 import Home from './pages/websitePages/Home'
 import PrivacyPolicy from './components/webComponents/PrivacyAndPolicy'
@@ -34,7 +33,6 @@ const ReactToaster = lazy(() => import('./components/ReactToaster'))
 const ConfirmDialog = lazy(() => import('./components/ConfirmDialog'))
 
 
-// Bootstrap selected design system theme
 applyTheme(activeTheme)
 
 export default function App() {

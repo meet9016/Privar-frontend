@@ -19,7 +19,18 @@ export default function DatePicker({
   disableFuture = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
   const [viewMode, setViewMode] = useState(mode);
+
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      // Calendar height is ~340px. If space below is less than 340px and space above is larger, drop up.
+      setDropUp(spaceBelow < 340 && spaceAbove > spaceBelow);
+    }
+  }, [isOpen]);
   
   // Calculate maximum allowed date (e.g. today for DOB & Anniversary)
   const getMaxAllowedDate = () => {
@@ -337,7 +348,7 @@ export default function DatePicker({
 
       {/* Popover */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 bg-surface border border-border rounded-xl shadow-glass overflow-hidden w-[270px] right-0 sm:left-0 sm:right-auto animate-slide-up origin-top text-text">
+        <div className={`absolute z-50 ${dropUp ? 'bottom-full mb-1 origin-bottom' : 'mt-1 origin-top'} bg-surface border border-border rounded-xl shadow-glass overflow-hidden w-[270px] right-0 sm:left-0 sm:right-auto animate-slide-up text-text`}>
           {/* Header */}
           <div className="flex items-center justify-between p-3 border-b border-border bg-surface-secondary/50">
             <button type="button" onClick={prev} className="p-1.5 hover:bg-surface rounded-lg text-text-secondary hover:text-text transition-colors">

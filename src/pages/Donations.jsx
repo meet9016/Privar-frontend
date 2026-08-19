@@ -24,6 +24,8 @@ import Table from '../components/common/Table'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { Download } from 'lucide-react'
+import useDebounce from '../hooks/useDebounce'
+
 export default function Donations() {
   const [donations, setDonations] = useState([])
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
@@ -38,7 +40,7 @@ export default function Donations() {
   })
 
   const [search, setSearch] = useState('')
-  const [activeSearch, setActiveSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
 
 
   const [error, setError] = useState('')
@@ -50,7 +52,7 @@ export default function Donations() {
   const fetchDonations = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getDonationsList(getParams({ search: activeSearch }))
+      const res = await getDonationsList(getParams({ search: debouncedSearch }))
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setDonations(Array.isArray(rows) ? rows : [])
@@ -62,7 +64,7 @@ export default function Donations() {
     } finally {
       setLoading(false)
     }
-  }, [activeSearch, page])
+  }, [debouncedSearch, page, getParams, setPaginationData])
 
 
   useEffect(() => {
@@ -203,7 +205,7 @@ export default function Donations() {
               <input
                 type="search"
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); applyFilters(); }}
+                onChange={(e) => { setSearch(e.target.value); resetPage(); }}
                 placeholder="Search donator or purpose..."
                 className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
               />
@@ -394,7 +396,7 @@ export default function Donations() {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
+            render: donation => ( <div className="flex items-center justify-start gap-2">
                 <button
                   onClick={() => handleEdit(donation)}
                   className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"

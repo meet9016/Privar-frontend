@@ -1,5 +1,5 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter } from 'lucide-react'
+import React, { useCallback, useContext, useEffect, useState, useMemo } from 'react'
+import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet } from 'lucide-react'
 import api, { getUsersList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
@@ -11,6 +11,7 @@ import Select from '../components/common/Select'
 import Input from '../components/common/Input'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 export default function Users() {
   const { user: currentUser } = useContext(AuthContext)
@@ -20,6 +21,7 @@ export default function Users() {
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 400)
   const [filters, setFiltersValue] = useState({
     gender: '',
     status: ''
@@ -41,6 +43,71 @@ export default function Users() {
   const [viewingUser, setViewingUser] = useState(null)
   const [familyMembers, setFamilyMembers] = useState([])
   const [membersLoading, setMembersLoading] = useState(false)
+  const [collapsedHeads, setCollapsedHeads] = useState([])
+
+  const toggleExpand = (headId, e) => {
+    e.stopPropagation()
+    setCollapsedHeads(prev =>
+      prev.includes(headId)
+        ? prev.filter(id => id !== headId)
+        : [...prev, headId]
+    )
+  }
+
+  const groupedUsers = useMemo(() => {
+    // Identify all heads in the list
+    const heads = users.filter(u => u.familyHead || u.relation === 'Self')
+    const members = users.filter(u => !u.familyHead && u.relation !== 'Self')
+
+    const result = []
+    const processedMemberIds = new Set()
+
+    heads.forEach(head => {
+      const headId = String(head.id || head._id)
+      const headMemberId = String(head.member_id || '')
+      const headMembers = members.filter(m => {
+        const mHeadId = String(m.family_head?.id || m.family_head?._id || m.family_head_id || '')
+        const mParentId = String(m.parent_member_id || '')
+        return (mHeadId && (mHeadId === headId || mHeadId === headMemberId)) ||
+               (mParentId && (mParentId === headMemberId || mParentId === headId))
+      })
+      
+      result.push({
+        ...head,
+        isGroupParent: true,
+        hasChildren: headMembers.length > 0,
+        childrenCount: headMembers.length
+      })
+
+      headMembers.forEach(m => {
+        result.push({
+          ...m,
+          isGroupChild: true,
+          parentHeadId: headId
+        })
+        processedMemberIds.add(String(m.id || m._id))
+      })
+    });
+
+    // Add remaining members who don't have their head in the list
+    members.forEach(m => {
+      const id = String(m.id || m._id)
+      if (!processedMemberIds.has(id)) {
+        result.push(m)
+      }
+    })
+
+    return result
+  }, [users])
+
+  const visibleUsers = useMemo(() => {
+    return groupedUsers.filter(u => {
+      if (u.isGroupChild) {
+        return !collapsedHeads.includes(u.parentHeadId)
+      }
+      return true
+    })
+  }, [groupedUsers, collapsedHeads])
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
   const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
@@ -49,7 +116,7 @@ export default function Users() {
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getUsersList({ page, limit, search: searchQuery, ...filters })
+      const res = await getUsersList({ page, limit, search: debouncedSearch, ...filters })
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       const total = Number(pg.total || 0)
@@ -82,7 +149,7 @@ export default function Users() {
     } finally {
       setLoading(false)
     }
-  }, [filters, page, searchQuery, limit])
+  }, [filters, page, debouncedSearch, limit])
 
   useEffect(() => {
     fetchUsers()
@@ -91,7 +158,7 @@ export default function Users() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await api.get('/roles')
+        const res = await api.get('/roles', { params: { limit: 100 } })
         setRoles(normalizeRoles(unwrapApiData(res)))
       } catch (err) {
         console.error(err)
@@ -295,6 +362,12 @@ export default function Users() {
       </div>
 
       {/* Operation Status alerts */}
+      {error && (
+        <div className="rounded-xl border border-error-border bg-error-bg p-3 text-sm text-error-text flex items-center justify-between">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError('')} className="text-xs font-semibold underline cursor-pointer">Dismiss</button>
+        </div>
+      )}
 
 
       {/* Advanced Filter panel */}
@@ -344,16 +417,13 @@ export default function Users() {
             className: 'w-12',
             headerRender: () => (
               <div className="flex items-center justify-center">
-                {!loading && users.length > 0 ? (
-                  <input 
-                    type="checkbox" 
-                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
-                    checked={users.length > 0 && users.every(u => selectedUsers.includes(u.id))}
-                    onChange={handleSelectAll}
-                  />
-                ) : (
-                  <div className="w-4 h-4 rounded border border-border/40 bg-surface-secondary/40" />
-                )}
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                  checked={users.length > 0 && users.every(u => selectedUsers.includes(u.id))}
+                  disabled={loading || users.length === 0}
+                  onChange={handleSelectAll}
+                />
               </div>
             ),
             render: (user) => (
@@ -370,18 +440,40 @@ export default function Users() {
           {
             key: 'name',
             header: 'Name',
-            render: (user) => (
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-semibold text-primary border border-primary/20">
-                  {user.first_name ? user.first_name.substring(0, 1) : '-'}
-                  {user.last_name ? user.last_name.substring(0, 1) : ''}
+            render: (user) => {
+              const headId = String(user.id || user._id)
+              const isCollapsed = collapsedHeads.includes(headId)
+              return (
+                <div className="flex items-center gap-2" style={{ paddingLeft: user.isGroupChild ? '1.75rem' : '0' }}>
+                  {user.isGroupParent && user.hasChildren ? (
+                    <button
+                      type="button"
+                      onClick={(e) => toggleExpand(headId, e)}
+                      className="p-1 hover:bg-surface-secondary rounded-lg transition-colors text-text-secondary hover:text-text cursor-pointer shrink-0"
+                    >
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                    </button>
+                  ) : (
+                    <div className="w-5.5 shrink-0" />
+                  )}
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <span className="font-semibold text-text">{user.name}</span>
+                    {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+                        <span>Family Head</span>
+                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold rounded-full bg-primary text-white leading-none">
+                          {user.childrenCount ?? 0}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary text-text-secondary border border-border/60 capitalize font-medium">
+                        {user.relation}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-text">{user.name}</div>
-                  <div className="text-sm text-text-secondary mt-0.5 capitalize">{user.relation == 'Self' && "Family Head"}</div>
-                </div>
-              </div>
-            )
+              )
+            }
           },
           {
             key: 'phone',
@@ -455,7 +547,7 @@ export default function Users() {
             )
           }
         ]}
-        data={users}
+        data={visibleUsers}
         keyField="id"
         loading={loading}
         rowClassName={(user) => selectedUsers.includes(user.id) ? 'bg-primary/5' : ''}
@@ -529,13 +621,18 @@ export default function Users() {
                   </div>
                   <div>
                     <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Personal</p>
-                    <p className="text-text font-medium flex items-center gap-2">Gender: {viewingUser.gender || '-'}</p>
-                    <p className="text-text font-medium mt-1 flex items-center gap-2">Blood Group: {viewingUser.blood_group || '-'}</p>
-                    <p className="text-text font-medium mt-1 flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-text-secondary" /> DOB: {viewingUser.dob ? new Date(viewingUser.dob).toLocaleDateString() : '-'}</p>
+                    <p className="text-text font-medium flex items-center gap-2"><User className="w-3.5 h-3.5 text-text-secondary shrink-0" /> Gender: {viewingUser.gender || '-'}</p>
+                    <p className="text-text font-medium mt-1 flex items-center gap-2"><Droplet className="w-3.5 h-3.5 text-red-500 shrink-0" /> Blood Group: {viewingUser.blood_group || '-'}</p>
+                    <p className="text-text font-medium mt-1 flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-text-secondary shrink-0" /> DOB: {viewingUser.dob ? new Date(viewingUser.dob).toLocaleDateString() : '-'}</p>
                   </div>
                   <div className="sm:col-span-2">
                     <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Location</p>
-                    <p className="text-text font-medium flex items-center gap-2 mt-1"><MapPin className="w-3.5 h-3.5 text-text-secondary flex-shrink-0" /> {viewingUser.address || '-'} {viewingUser.city_id ? `, City: ${viewingUser.city_id}` : ''}</p>
+                    <p className="text-text font-medium flex items-center gap-2 mt-1 flex-wrap">
+                      <MapPin className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+                      <span>{viewingUser.address || '-'}</span>
+                      {viewingUser.village && <span className="text-primary font-semibold">({viewingUser.village})</span>}
+                      {viewingUser.city_name ? `, City: ${viewingUser.city_name}` : (viewingUser.city_id?.name ? `, City: ${viewingUser.city_id.name}` : (viewingUser.city ? `, City: ${viewingUser.city}` : ''))}
+                    </p>
                   </div>
                   {viewingUser.family_head && viewingUser.family_head.name && viewingUser.relation !== 'Self' && (
                     <div className="sm:col-span-2">

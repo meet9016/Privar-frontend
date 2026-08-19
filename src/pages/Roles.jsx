@@ -12,6 +12,7 @@ import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
 import Checkbox from '../components/common/Checkbox'
+import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 const emptyRoleForm = { name: '', description: '', status: 1, permissions: [] }
@@ -25,6 +26,7 @@ export default function Roles() {
   const [page, setPage] = useState(1)
   const [permissionConfig, setPermissionConfig] = useState({ actions: [], modules: [] })
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -45,13 +47,13 @@ export default function Roles() {
 
   useEffect(() => {
     fetchAll()
-  }, [page, search, limit])
+  }, [page, debouncedSearch, limit])
 
   const fetchAll = async () => {
     setLoading(true)
     try {
       const [rolesRes, permissionsRes] = await Promise.all([
-        api.get('/roles', { params: { page, limit, search } }),
+        api.get('/roles', { params: { page, limit, search: debouncedSearch } }),
         api.get('/permissions')
       ])
       const data = rolesRes.data?.data || rolesRes.data || []
@@ -133,6 +135,29 @@ export default function Roles() {
         ? current.permissions.filter((key) => !keys.includes(key))
         : [...new Set([...current.permissions, ...keys])]
     }))
+  }
+
+  const selectablePermissions = useMemo(() => {
+    return permissionConfig.modules
+      .filter((m) => !['committee', 'roles'].includes(m.key))
+      .flatMap((m) => m.permissions.map((p) => p.key))
+  }, [permissionConfig.modules])
+
+  const isAllSelected = selectablePermissions.length > 0 && selectablePermissions.every((key) => formData.permissions.includes(key))
+  const isSomeSelected = selectablePermissions.some((key) => formData.permissions.includes(key)) && !isAllSelected
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setFormData(prev => ({
+        ...prev,
+        permissions: prev.permissions.filter(k => !selectablePermissions.includes(k))
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        permissions: Array.from(new Set([...prev.permissions, ...selectablePermissions]))
+      }))
+    }
   }
 
   const handleSave = async (event) => {
@@ -314,8 +339,16 @@ export default function Roles() {
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="sticky top-0 z-10 bg-surface grid gap-2 border-b border-border pb-2 pt-3 text-xs font-bold text-text-secondary uppercase tracking-wider" style={permissionGridStyle}>
-              <div>Permission</div>
+            <div className="sticky top-0 z-10 bg-surface grid gap-2 border-b border-border pb-2 pt-3 text-xs font-bold text-text-secondary uppercase tracking-wider items-center" style={permissionGridStyle}>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={isAllSelected}
+                  indeterminate={isSomeSelected}
+                  disabled={saving}
+                  onChange={toggleSelectAll}
+                  label={<span className="font-bold text-xs uppercase tracking-wider text-text">Select All Permissions</span>}
+                />
+              </div>
               {permissionConfig.actions.map((action) => <div key={action.key} className="text-center">{action.label}</div>)}
             </div>
             <div className="divide-y divide-border">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import useDebounce from './useDebounce'
 
 const cleanParams = (params) => Object.fromEntries(
   Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
@@ -20,6 +21,7 @@ export default function usePaginatedApi(fetcher, options = {}) {
   const [page, setPage] = useState(initialPage)
   const [limit, setLimit] = useState(initialLimit)
   const [search, setSearchValue] = useState(initialSearch)
+  const debouncedSearch = useDebounce(search, 400)
   const [filters, setFiltersValue] = useState(initialFilters)
 
   const filterKey = JSON.stringify(filters)
@@ -27,11 +29,11 @@ export default function usePaginatedApi(fetcher, options = {}) {
   const params = useMemo(() => cleanParams({
     page,
     limit,
-    search,
+    search: debouncedSearch,
     sort_by: sortBy,
     sort_order: sortOrder,
     ...filters
-  }), [page, limit, search, sortBy, sortOrder, filterKey])
+  }), [page, limit, debouncedSearch, sortBy, sortOrder, filterKey])
 
   const refetch = useCallback(async () => {
     setLoading(true)

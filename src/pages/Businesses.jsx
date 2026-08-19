@@ -9,6 +9,7 @@ import BusinessForm from '../components/BusinessForm'
 import usePagination from '../hooks/usePagination'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 export default function Businesses() {
   const navigate = useNavigate()
@@ -16,6 +17,7 @@ export default function Businesses() {
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
   const [loading, setLoading] = useState(false)
   const [search, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [formLoading, setFormLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -37,7 +39,7 @@ export default function Businesses() {
   const fetchBusinesses = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getBusinessesList(getParams({ search }))
+      const res = await getBusinessesList(getParams({ search: debouncedSearch }))
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setBusinesses(Array.isArray(rows) ? rows : [])
@@ -49,7 +51,7 @@ export default function Businesses() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, , getParams, setPaginationData])
+  }, [page, debouncedSearch, getParams, setPaginationData])
 
   useEffect(() => {
     fetchBusinesses()
@@ -249,7 +251,7 @@ export default function Businesses() {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
+            render: biz => ( <div className="flex items-center justify-start gap-2">
                 <button onClick={() => handleView(biz)} className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all" title="View">
                   <Eye className="w-3.5 h-3.5" />
                 </button>

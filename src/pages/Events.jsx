@@ -12,6 +12,7 @@ import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
 import FileDropzone from '../components/common/FileDropzone'
 import DateTimePicker from '../components/common/DateTimePicker'
+import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -41,6 +42,7 @@ export default function Events() {
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -69,7 +71,7 @@ export default function Events() {
   const fetchRows = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getEventsList({ page, limit, search, sort_by: 'start_time', sort_order: 'asc' })
+      const res = await getEventsList({ page, limit, search: debouncedSearch, sort_by: 'start_time', sort_order: 'asc' })
       const data = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setRows(Array.isArray(data) ? data : [])
@@ -86,7 +88,7 @@ export default function Events() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, limit])
+  }, [page, debouncedSearch, limit])
 
   const fetchCountryList = useCallback(async () => {
     try {

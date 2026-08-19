@@ -4,11 +4,8 @@ import { masterLabels } from '../config/navigation'
 
 const parentFieldsConfig = {
   state: { source: '/masters/country', label: 'Country', key: 'name' },
-  district: { source: '/masters/state', label: 'State', key: 'name' },
-  taluka: { source: '/masters/district', label: 'District', key: 'name' },
   city: { source: '/masters/state', label: 'State', key: 'name' },
-  village: { source: '/masters/taluka', label: 'Taluka', key: 'name' },
-  area: { source: '/masters/village', label: 'Village', key: 'name' }
+  village: { source: '/masters/city', label: 'City', key: 'name' }
 }
 
 export default function MasterPage({ type }) {

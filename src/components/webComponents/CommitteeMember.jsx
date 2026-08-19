@@ -13,7 +13,7 @@ const normalizeCommitteeMember = (member, index) => {
   return {
     id: member.id || `${name}-${index}`,
     name: name || 'Committee Member',
-    role: member.designation || member.role || 'Committee',
+    role: member.role_name || (typeof member.role_id === 'object' ? member.role_id?.name : '') || member.role || 'Member',
     image: member.image || "/image.png",
   }
 }

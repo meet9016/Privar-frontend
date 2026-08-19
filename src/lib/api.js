@@ -60,9 +60,18 @@ const setupInterceptors = (axiosInstance) => {
         localStorage.removeItem('auth_token')
         localStorage.removeItem('auth_user')
         window.location.href = '/login'
+        return Promise.reject(error)
       }
 
-      // Error toasts are handled by individual components to avoid duplicates
+      // Handle error toasts for API responses
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error
+
+      if (errorMessage) {
+        toast.error(errorMessage)
+      }
+
       return Promise.reject(error)
     }
   )

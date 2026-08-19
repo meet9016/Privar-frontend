@@ -14,22 +14,37 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
   const [countries, setCountries] = useState([])
   const [states, setStates] = useState([])
   const [cities, setCities] = useState([])
+  const [villages, setVillages] = useState([])
   const [heads, setHeads] = useState([])
   const [isHead, setIsHead] = useState(true)
 
   useEffect(() => {
     const fetchMasters = async () => {
       try {
-        const [cRes, sRes, ciRes, hRes] = await Promise.all([
+        const [cRes, sRes, ciRes, vRes, hRes] = await Promise.all([
           api.get('/masters/country'),
           api.get('/masters/state'),
           api.get('/masters/city'),
+          api.get('/masters/village').catch(() => ({ data: { data: [] } })),
           api.get('/users?familyHead=true&limit=1000')
         ])
-        setCountries(cRes.data?.data || [])
+        const countryList = cRes.data?.data || []
+        setCountries(countryList)
         setStates(sRes.data?.data || [])
         setCities(ciRes.data?.data || [])
+        setVillages(vRes.data?.data || [])
         setHeads(hRes.data?.data || [])
+
+        // If country not yet selected, default to India
+        setFormData(prev => {
+          if (!prev.country_id) {
+            const india = countryList.find(c => /india/i.test(c.name))
+            if (india) {
+              return { ...prev, country_id: india._id || india.id }
+            }
+          }
+          return prev
+        })
       } catch (err) {
         console.error(err)
       }
@@ -43,7 +58,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     last_name: '',
     email: '',
     number: '',
-    gender: '',
+    gender: 'Male',
     dob: '',
     anniversary: '',
     blood_group: '',
@@ -54,9 +69,10 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     country_id: '',
     state_id: '',
     city_id: '',
+    village: '',
     family_head_id: '',
     address: '',
-    status: 0
+    status: 1
   })
   const [errors, setErrors] = useState({})
 
@@ -84,7 +100,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         last_name: user.last_name || '',
         email: user.email || '',
         number: user.number || '',
-        gender: user.gender || '',
+        gender: user.gender || 'Male',
         dob: formattedDob,
         anniversary: formattedAnniversary ,
         blood_group: user.blood_group || '',
@@ -95,20 +111,22 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         country_id: user.country_id || '',
         state_id: user.state_id || '',
         city_id: user.city_id || '',
+        village: user.village || user.village_id || '',
         family_head_id: user.family_head?.id || '',
         address: user.address || '',
-        status: user.status || 0
+        status: user.status !== undefined ? Number(user.status) : 1
       })
       setIsHead(user.familyHead ?? (!user.family_head?.id || user.relation === 'Self'))
     } else {
       setIsHead(true)
+      const india = countries.find(c => /india/i.test(c.name))
       setFormData({
         first_name: '',
         middle_name: '',
         last_name: '',
         email: '',
         number: '',
-        gender: '',
+        gender: 'Male',
         dob: '',
         anniversary: '',
         blood_group: '',
@@ -116,15 +134,16 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         is_committee: false,
         committee_role: '',
         role_id: '',
-        country_id: '',
+        country_id: india ? (india._id || india.id) : '',
         state_id: '',
         city_id: '',
+        village: '',
         family_head_id: '',
         address: '',
-        status: 0
+        status: 1
       })
     }
-  }, [user])
+  }, [user, countries])
 
   const activeRoles = useMemo(() => roles.filter((role) => Number(role.status ?? 1) === 1), [roles])
   const isEditingSelf = Boolean(user && loggedInUser && [
@@ -209,133 +228,184 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
   const countryOptions = countries.map(c => ({ label: c.name, value: c._id || c.id }))
   const stateOptions = states.map(s => ({ label: s.name, value: s._id || s.id }))
   const cityOptions = cities.map(c => ({ label: c.name, value: c._id || c.id }))
+  const villageOptions = villages.map(v => ({ label: v.name, value: v.name }))
   const headOptions = heads.map(h => ({ label: `${h.name || `${h.first_name} ${h.last_name}`} - ${h.number}`, value: h._id || h.id }))
   const relationOptions = ['Self', 'Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Grandfather', 'Grandmother', 'Other'].map(rel => ({ label: rel, value: rel }))
   const genderOptions = [
-    { label: 'Unspecified', value: '' },
     { label: 'Male', value: 'Male' },
     { label: 'Female', value: 'Female' },
     { label: 'Other', value: 'Other' },
   ]
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3.5 px-1 text-text">
+    <form onSubmit={handleSubmit} className="space-y-4 px-1 text-text">
 
-      {/* SECTION 1: Personal Name details */}
-      <div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Input
-            label="First Name"
-            value={formData.first_name}
-            onChange={(e) => handleChange('first_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
-            disabled={isLoading}
-            required={true}
-            error={errors.first_name}
-          />
-          <Input
-            label="Middle Name"
-            value={formData.middle_name}
-            onChange={(e) => handleChange('middle_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
-            disabled={isLoading}
-            required={true}
-            error={errors.middle_name}
-          />
-          <Input
-            label="Last Name"
-            value={formData.last_name}
-            onChange={(e) => handleChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
-            disabled={isLoading || !!(user && user.last_name)}
-            required={true}
-            error={errors.last_name}
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Input
+          label="First Name"
+          value={formData.first_name}
+          onChange={(e) => handleChange('first_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+          disabled={isLoading}
+          required={true}
+          error={errors.first_name}
+        />
+        <Input
+          label="Middle Name"
+          value={formData.middle_name}
+          onChange={(e) => handleChange('middle_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+          disabled={isLoading}
+          required={true}
+          error={errors.middle_name}
+        />
+        <Input
+          label="Last Name"
+          value={formData.last_name}
+          onChange={(e) => handleChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+          disabled={isLoading || !!(user && user.last_name)}
+          required={true}
+          error={errors.last_name}
+        />
       </div>
 
-      {/* SECTION 2: Contact & Authentication */}
-      <div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Input
-            label="Email Address"
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            disabled={isLoading}
-            required={true}
-            error={errors.email}
-          />
-          <Input
-            label="Mobile Number"
-            type="tel"
-            maxLength={10}
-            value={formData.number}
-            onChange={(e) => handleChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
-            disabled={isLoading}
-            required={true}
-            error={errors.number}
-          />
-        </div>
+      {/* Row 2: Contact & Relationship (3 inputs) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Input
+          label="Email Address"
+          type="email"
+          value={formData.email}
+          onChange={(e) => handleChange('email', e.target.value)}
+          disabled={isLoading}
+          required={true}
+          error={errors.email}
+        />
+        <Input
+          label="Mobile Number"
+          type="tel"
+          maxLength={10}
+          value={formData.number}
+          onChange={(e) => handleChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
+          disabled={isLoading}
+          required={true}
+          error={errors.number}
+        />
+        <Select
+          label="Relationship"
+          value={formData.relation}
+          onChange={(val) => handleChange('relation', val)}
+          options={relationOptions}
+          disabled={isHead || isLoading}
+          required={true}
+          searchable={true}
+          error={errors.relation}
+        />
       </div>
 
-      {/* SECTION 3: Bio Metrics & Relation */}
-      <div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 items-start">
+      {/* Row 3: Bio Metrics (3 inputs) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Select
+          label="Gender"
+          value={formData.gender}
+          onChange={(val) => handleChange('gender', val)}
+          options={genderOptions}
+          disabled={isLoading}
+          searchable={true}
+        />
+        <DatePicker
+          label="Date of Birth"
+          required
+          value={formData.dob}
+          onChange={(val) => handleChange('dob', val)}
+          disabled={isLoading}
+          placeholder="Select DOB"
+          error={errors.dob}
+        />
+        <DatePicker
+          label="Anniversary"
+          value={formData.anniversary}
+          onChange={(val) => handleChange('anniversary', val)}
+          disabled={isLoading}
+          placeholder="Select Anniversary"
+        />
+      </div>
+
+      {/* Row 4: Country, State, City, Village (4 inputs) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <Select
+          label="Country"
+          value={formData.country_id}
+          onChange={(val) => handleChange('country_id', val)}
+          options={countryOptions}
+          required={true}
+          error={errors.country_id}
+          placeholder="Select Country"
+          searchable={true}
+        />
+        <Select
+          label="State"
+          value={formData.state_id}
+          onChange={(val) => handleChange('state_id', val)}
+          options={stateOptions}
+          required={true}
+          error={errors.state_id}
+          placeholder="Select State"
+          searchable={true}
+        />
+        <Select
+          label="City"
+          value={formData.city_id}
+          onChange={(val) => handleChange('city_id', val)}
+          options={cityOptions}
+          required={true}
+          error={errors.city_id}
+          placeholder="Select City"
+          searchable={true}
+        />
+        {villageOptions.length > 0 ? (
           <Select
-            label="Relationship"
-            value={formData.relation}
-            onChange={(val) => handleChange('relation', val)}
-            options={relationOptions}
+            label="Village"
+            value={formData.village}
+            onChange={(val) => handleChange('village', val)}
+            options={[{ label: 'Select Village', value: '' }, ...villageOptions]}
+            placeholder="Select Village"
+            searchable={true}
             disabled={isLoading}
-            searchable={false}
-            error={errors.relation}
           />
-          <Select
-            label="Gender"
-            value={formData.gender}
-            onChange={(val) => handleChange('gender', val)}
-            options={genderOptions}
+        ) : (
+          <Input
+            label="Village"
+            value={formData.village}
+            onChange={(e) => handleChange('village', e.target.value)}
+            placeholder="Enter Village"
             disabled={isLoading}
-            searchable={false}
           />
-          <DatePicker
-            label="Date of Birth"
-            required
-            value={formData.dob}
-            onChange={(val) => handleChange('dob', val)}
-            disabled={isLoading}
-            placeholder="Select DOB"
-            error={errors.dob}
-          />
-          <DatePicker
-            label="Anniversary"
-            value={formData.anniversary}
-            onChange={(val) => handleChange('anniversary', val)}
-            disabled={isLoading}
-            placeholder="Select Anniversary"
-          />
-          <div className="flex flex-col justify-start">
-            <label className="block text-sm font-semibold text-text-secondary mb-1.5">Status</label>
-            <label className="flex items-center gap-2 h-9 px-3 bg-input-bg border border-border rounded-xl cursor-pointer">
+        )}
+      </div>
+
+      {/* Row 5: 3-Column Grid: Status (col 1), Head/Under Head (col 2), Select Family Head (col 3) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+        <div>
+          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Status</label>
+          <div className="flex items-center justify-between h-[38px] px-3 bg-input-bg border border-border rounded-xl">
+            <span className="text-xs font-semibold text-text-secondary">Status</span>
+            <label className="relative inline-flex items-center cursor-pointer">
               <input
-                className="h-4 w-4 accent-primary rounded cursor-pointer"
                 type="checkbox"
-                id="status"
-                name="Approved"
-                checked={formData.status == 1 || formData.status == '1'}
+                className="sr-only peer"
+                checked={Number(formData.status ?? 1) === 1}
                 onChange={(e) => handleChange('status', e.target.checked ? 1 : 0)}
                 disabled={isLoading}
               />
-              <span className="text-xs font-medium text-text">
-                {formData.status == 1 ? 'Approved' : 'Pending'}
+              <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+              <span className="ml-2 text-xs font-semibold text-text">
+                {Number(formData.status ?? 1) === 1 ? 'Active' : 'Inactive'}
               </span>
             </label>
           </div>
         </div>
-      </div>
 
-      {/* SECTION 4: Family Hierarchy */}
-      <div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-          <div>
+        <div>
+          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Hierarchy</label>
+          <div className="flex items-center h-[38px] px-3 bg-input-bg border border-border rounded-xl">
             <RadioGroup
               name="hierarchy"
               options={[
@@ -351,64 +421,42 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
               }}
             />
           </div>
-          {!isHead && (
-            <div className="md:col-span-2">
-              <Select
-                label="Select Family Head"
-                value={formData.family_head_id}
-                onChange={(val) => handleChange('family_head_id', val)}
-                options={headOptions}
-                required={true}
-                error={errors.family_head_id}
-                placeholder="Search and select head..."
-              />
+        </div>
+
+        <div>
+          {!isHead ? (
+            <Select
+              label="Select Family Head"
+              value={formData.family_head_id}
+              onChange={(val) => handleChange('family_head_id', val)}
+              options={headOptions}
+              required={true}
+              error={errors.family_head_id}
+              placeholder="Search and select head..."
+              searchable={true}
+            />
+          ) : (
+            <div className="hidden md:block">
+              <label className="block text-sm font-semibold text-transparent mb-1.5 pointer-events-none select-none">Spacer</label>
+              <div className="h-[38px]"></div>
             </div>
           )}
         </div>
       </div>
 
-      {/* SECTION 5: Location Details */}
+      {/* Row 6: Address Field (Textarea) */}
       <div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-          <Select
-            label="Country"
-            value={formData.country_id}
-            onChange={(val) => handleChange('country_id', val)}
-            options={countryOptions}
-            required={true}
-            error={errors.country_id}
-            placeholder="Select Country"
-          />
-          <Select
-            label="State"
-            value={formData.state_id}
-            onChange={(val) => handleChange('state_id', val)}
-            options={stateOptions}
-            required={true}
-            error={errors.state_id}
-            placeholder="Select State"
-          />
-          <Select
-            label="City"
-            value={formData.city_id}
-            onChange={(val) => handleChange('city_id', val)}
-            options={cityOptions}
-            required={true}
-            error={errors.city_id}
-            placeholder="Select City"
-          />
-        </div>
-        <div>
-          <Input
-            label="Address"
-            required={true}
-            value={formData.address}
-            onChange={(e) => handleChange('address', e.target.value)}
-            disabled={isLoading}
-            placeholder="Enter full address"
-            error={errors.address}
-          />
-        </div>
+        <Input
+          label="Address"
+          type="textarea"
+          rows={2}
+          required={true}
+          value={formData.address}
+          onChange={(e) => handleChange('address', e.target.value)}
+          disabled={isLoading}
+          placeholder="Enter full address"
+          error={errors.address}
+        />
       </div>
 
       {/* SUBMIT BUTTON */}

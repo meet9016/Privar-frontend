@@ -10,6 +10,7 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 export default function News() {
   const [rows, setRows] = useState([])
@@ -18,6 +19,7 @@ export default function News() {
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -45,7 +47,7 @@ export default function News() {
   const fetchNews = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getNewsList({ page, limit, search })
+      const res = await getNewsList({ page, limit, search: debouncedSearch })
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setRows(Array.isArray(rows) ? rows : [])
@@ -62,7 +64,7 @@ export default function News() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, limit])
+  }, [page, debouncedSearch, limit])
 
   useEffect(() => {
     fetchNews()

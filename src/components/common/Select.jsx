@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronDown } from 'lucide-react';
 
 export default function Select({
@@ -16,34 +17,88 @@ export default function Select({
   placement = 'auto'
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [dropUp, setDropUp] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const wrapperRef = useRef(null);
+  const [menuStyle, setMenuStyle] = useState({});
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const menuMaxHeight = 240;
+
+    let isDropUp = false;
+    if (placement === 'up') {
+      isDropUp = true;
+    } else if (placement === 'down') {
+      isDropUp = false;
+    } else {
+      isDropUp = spaceBelow < 240 && spaceAbove > spaceBelow;
+    }
+
+    const availableHeight = isDropUp ? spaceAbove - 16 : spaceBelow - 16;
+    const calculatedMaxHeight = Math.max(120, Math.min(menuMaxHeight + 50, availableHeight));
+
+    if (isDropUp) {
+      setMenuStyle({
+        position: 'fixed',
+        bottom: `${window.innerHeight - rect.top + 4}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        maxHeight: `${calculatedMaxHeight}px`,
+        zIndex: 999999,
+      });
+    } else {
+      setMenuStyle({
+        position: 'fixed',
+        top: `${rect.bottom + 4}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        maxHeight: `${calculatedMaxHeight}px`,
+        zIndex: 999999,
+      });
+    }
+  };
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+    if (!isOpen) return;
+
+    updatePosition();
+
+    const handleScrollOrResize = () => {
+      updatePosition();
+    };
+
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    const handleClickOutside = (event) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
+        setSearchTerm('');
       }
-    }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, placement]);
 
   const toggleOpen = () => {
     if (disabled) return;
-    if (!isOpen && wrapperRef.current) {
-      if (placement === 'down') {
-        setDropUp(false);
-      } else if (placement === 'up') {
-        setDropUp(true);
-      } else {
-        const rect = wrapperRef.current.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const spaceAbove = rect.top;
-        // If less than 220px below and more space above, open upwards
-        setDropUp(spaceBelow < 220 && spaceAbove > spaceBelow);
-      }
+    if (!isOpen) {
+      setSearchTerm('');
     }
     setIsOpen(!isOpen);
   };
@@ -60,10 +115,10 @@ export default function Select({
     setSearchTerm('');
   };
 
-  const showSearch = searchable && options.length > 5;
+  const showSearch = searchable;
 
   return (
-    <div className={`relative ${className}`} ref={wrapperRef}>
+    <div className={`relative ${className}`}>
       {name && <input type="hidden" name={name} value={value ?? ''} />}
       {label && (
         <label className="block text-sm font-semibold text-text-secondary mb-1.5">
@@ -71,7 +126,7 @@ export default function Select({
         </label>
       )}
       
-      <div className="relative w-full">
+      <div className="relative w-full" ref={triggerRef}>
         <div 
           className={`w-full px-3 py-2 bg-input-bg text-text border ${
             error ? 'border-red-500' : 'border-border focus:border-primary/50'
@@ -81,51 +136,56 @@ export default function Select({
           onClick={toggleOpen}
           tabIndex={disabled ? -1 : 0}
         >
-          <span className={selectedOption ? 'text-text font-medium' : 'text-text-secondary'}>
+          <span className={selectedOption ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <ChevronDown size={16} className={`text-text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown size={16} className={`text-text-secondary shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </div>
+      </div>
 
-        {isOpen && (
-          <div className={`absolute z-[9999] w-full ${dropUp ? 'bottom-full mb-1' : 'top-full mt-1'} bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden`}>
-            {showSearch && (
-              <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2">
-                <Search size={16} className="text-text-secondary" />
-                <input 
-                  type="text"
-                  className="w-full bg-transparent text-sm outline-none text-text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  autoFocus
-                />
+      {isOpen && createPortal(
+        <div
+          ref={menuRef}
+          style={menuStyle}
+          className="bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden flex flex-col animate-scale-in"
+        >
+          {showSearch && (
+            <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2 flex-shrink-0">
+              <Search size={16} className="text-text-secondary shrink-0" />
+              <input 
+                type="text"
+                className="w-full bg-transparent text-sm outline-none text-text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+              />
+            </div>
+          )}
+          
+          <div className="overflow-y-auto flex-1 custom-scrollbar">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <div 
+                  key={option.value}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors ${
+                    String(value) === String(option.value) ? 'bg-primary/5 text-primary font-semibold' : 'text-text'
+                  }`}
+                  onClick={() => handleSelect(option.value)}
+                >
+                  {option.label}
+                </div>
+              ))
+            ) : (
+              <div className="px-3 py-3 text-sm text-text-secondary text-center">
+                No options found
               </div>
             )}
-            
-            <div className="max-h-60 overflow-y-auto">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((option) => (
-                  <div 
-                    key={option.value}
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors ${
-                      String(value) === String(option.value) ? 'bg-primary/5 text-primary font-semibold' : 'text-text'
-                    }`}
-                    onClick={() => handleSelect(option.value)}
-                  >
-                    {option.label}
-                  </div>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-text-secondary text-center">
-                  No options found
-                </div>
-              )}
-            </div>
           </div>
-        )}
-      </div>
+        </div>,
+        document.body
+      )}
 
       {error && <p className="text-red-500 text-xs mt-1 font-semibold">{error}</p>}
     </div>

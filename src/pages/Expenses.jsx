@@ -25,6 +25,7 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-shadow'
 
@@ -34,7 +35,7 @@ export default function Expenses() {
   const [loading, setLoading] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [activeSearch, setActiveSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [monthFilter, setMonthFilter] = useState('') // YYYY-MM
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -66,7 +67,7 @@ export default function Expenses() {
     try {
       const params = {
         ...getParams(),
-        search: activeSearch,
+        search: debouncedSearch,
         month: monthFilter
       }
       const res = await getExpensesList(params)
@@ -79,7 +80,7 @@ export default function Expenses() {
     } finally {
       setLoading(false)
     }
-  }, [getParams, activeSearch, monthFilter, setPaginationData])
+  }, [getParams, debouncedSearch, monthFilter, setPaginationData])
 
   const fetchDropdownData = async () => {
     try {
@@ -231,7 +232,7 @@ export default function Expenses() {
   const handleExport = async () => {
     try {
       const params = {}
-      if (activeSearch) params.search = activeSearch
+      if (debouncedSearch) params.search = debouncedSearch
       if (monthFilter) params.month = monthFilter
       
       const response = await exportExpensesExcel(params)
@@ -249,16 +250,11 @@ export default function Expenses() {
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value)
-    if (e.target.value === '') {
-      setActiveSearch('')
-      resetPage()
-    }
+    resetPage()
   }
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
-    setActiveSearch(search)
-    resetPage()
   }
 
   const handleMonthFilterChange = (value) => {
@@ -389,7 +385,7 @@ export default function Expenses() {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-1.5">
+            render: expense => ( <div className="flex items-center justify-start gap-1.5">
                 <button onClick={() => handleEdit(expense)} className="p-1.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-all" title="Edit">
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>

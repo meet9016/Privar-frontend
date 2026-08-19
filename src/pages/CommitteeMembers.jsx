@@ -12,6 +12,7 @@ import Loader from '../components/common/Loader'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 
 export default function CommitteeMembers() {
@@ -22,6 +23,7 @@ export default function CommitteeMembers() {
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [showFilters, setShowFilters] = useState(false)
   const [roles, setRoles] = useState([])
   const [saving, setSaving] = useState(false)
@@ -48,7 +50,7 @@ export default function CommitteeMembers() {
   const fetchCommitteeMembers = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getCommitteeMembersList({ page, limit, search })
+      const res = await getCommitteeMembersList({ page, limit, search: debouncedSearch })
       const rawData = res.data?.data || res.data?.members || res.data || []
       const rows = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : [])
       const pg = res.data?.pagination || res.data?.data?.pagination || {}
@@ -66,7 +68,7 @@ export default function CommitteeMembers() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, limit])
+  }, [page, debouncedSearch, limit])
 
   useEffect(() => {
     fetchCommitteeMembers()
@@ -75,7 +77,7 @@ export default function CommitteeMembers() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await api.get('/roles')
+        const res = await api.get('/roles', { params: { limit: 100 } })
         setRoles(normalizeRoles(unwrapApiData(res)))
       } catch (err) {
         console.warn('Could not load roles list:', err.message)
@@ -205,7 +207,6 @@ export default function CommitteeMembers() {
                 )}
                 <div>
                   <div className="font-semibold text-text">{member.first_name} {member.middle_name} {member.last_name}</div>
-                  <div className="text-sm text-text-secondary">{member.designation}</div>
                 </div>
               </div>
             )
@@ -216,13 +217,9 @@ export default function CommitteeMembers() {
             render: (member) => <span>{member.number || '-'}</span>
           },
           {
-            header: 'Designation',
-            key: 'designation',
-            render: (member) => (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary font-medium">
-                {member.designation || 'Committee'}
-              </span>
-            )
+            header: 'Email',
+            key: 'email',
+            render: (member) => <span>{member.email || '-'}</span>
           },
           {
             header: 'Assigned Role',

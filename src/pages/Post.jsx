@@ -9,8 +9,8 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
-
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 export default function Post() {
   const [posts, setPosts] = useState([])
@@ -19,6 +19,7 @@ export default function Post() {
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -43,7 +44,7 @@ export default function Post() {
   const fetchPosts = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getPostsList({ page, limit, search })
+      const res = await getPostsList({ page, limit, search: debouncedSearch })
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setPosts(Array.isArray(rows) ? rows : [])
@@ -60,7 +61,7 @@ export default function Post() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, limit])
+  }, [page, debouncedSearch, limit])
 
   useEffect(() => {
     fetchPosts()
@@ -105,6 +106,8 @@ export default function Post() {
 
   const handleSave = async (event) => {
     event.preventDefault()
+    if (saving) return
+    setSaving(true)
     setFieldErrors({})
     try {
       const payload = new FormData()

@@ -18,14 +18,13 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     email: '',
     password: '',
     role_id: '',
-    designation: '',
     remove_image: false,
     status: 1,
     image: null
   })
   const [errors, setErrors] = useState({})
 
-      useEffect(() => {
+  useEffect(() => {
     setFormData({
       first_name: member?.first_name || '',
       middle_name: member?.middle_name || '',
@@ -34,7 +33,6 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
       email: member?.email || '',
       password: '',
       role_id: member?.role_id || '',
-      designation: member?.designation || '',
       status: member ? Number(member.status) : '',
       image: member?.image
     })
@@ -73,7 +71,6 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     const nextErrors = {}
     if (!formData.first_name?.trim()) nextErrors.first_name = 'First name is required'
     if (!formData.last_name?.trim()) nextErrors.last_name = 'Last name is required'
-    if (!formData.designation?.trim()) nextErrors.designation = 'Designation is required'
     if (!formData.number?.trim()) {
       nextErrors.number = 'Contact number is required'
     } else if (formData.number.length < 10) {
@@ -96,7 +93,6 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
       const updated = { ...prev }
       if (field === 'first_name' && value.trim()) delete updated.first_name
       if (field === 'last_name' && value.trim()) delete updated.last_name
-      if (field === 'designation' && value.trim()) delete updated.designation
       if (field === 'number' && value.trim().length === 10) delete updated.number
       if (field === 'email') {
         if (!value || isValidEmail(value)) delete updated.email
@@ -124,7 +120,6 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
       payload.append('password', formData.password)
     }
     payload.append('role_id', formData.role_id)
-    payload.append('designation', formData.designation)
     payload.append('status', formData.status)
     payload.append('remove_image', formData.remove_image ? 'true' : 'false')
 
@@ -184,18 +179,8 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         </div>
       </div>
 
-      {/* Row 2: Designation, Contact Number, Status */}
+      {/* Row 2: Contact Number, Status, Assign Role */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          label="Designation"
-          required
-          placeholder="Enter Designation"
-          value={formData.designation}
-          onChange={(e) => handleFieldChange('designation', e.target.value)}
-          disabled={isLoading || isEditingSelf}
-          title={isEditingSelf ? 'You cannot change your own role' : undefined}
-          error={errors.designation}
-        />
         <Input
           label="Contact Number"
           required
@@ -222,10 +207,17 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             { label: 'Inactive', value: 0 }
           ]}
         />
+        <Select
+          label="Assign Role"
+          value={formData.role_id}
+          onChange={(val) => handleFieldChange('role_id', val)}
+          disabled={isLoading}
+          options={roleOptions}
+        />
       </div>
 
-      {/* Row 3: Email, Password, Assign Role */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Row 3: Email, Password */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Email Address"
           type="email"
@@ -243,13 +235,6 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           onChange={(e) => handleFieldChange('password', e.target.value)}
           disabled={isLoading}
           error={errors.password}
-        />
-        <Select
-          label="Assign Role"
-          value={formData.role_id}
-          onChange={(val) => handleFieldChange('role_id', val)}
-          disabled={isLoading}
-          options={roleOptions}
         />
       </div>
 

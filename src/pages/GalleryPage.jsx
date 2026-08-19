@@ -11,6 +11,7 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
+import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -23,6 +24,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
   const [filterCategories, setFilterCategories] = useState([])
@@ -35,7 +37,9 @@ export default function GalleryPage() {
   const [categoryId, setCategoryId] = useState('')
   const [categoryName, setCategoryName] = useState('')
   const [year, setYear] = useState('')
+  const [month, setMonth] = useState('')
   const [filterYear, setFilterYear] = useState('')
+  const [filterMonth, setFilterMonth] = useState('')
   const [filterCategoryId, setFilterCategoryId] = useState('')
   const [existingImages, setExistingImages] = useState([])
   const [newFiles, setNewFiles] = useState([])
@@ -58,8 +62,9 @@ export default function GalleryPage() {
   const fetchGallery = useCallback(async () => {
     setLoading(true)
     try {
-      const params = { page, limit, search }
+      const params = { page, limit, search: debouncedSearch }
       if (filterYear) params.year = filterYear
+      if (filterMonth) params.month = filterMonth
       if (filterCategoryId) params.gallery_category_id = filterCategoryId
       const res = await getGalleryList(params)
       const data = res.data?.data || res.data || []
@@ -78,7 +83,7 @@ export default function GalleryPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, filterYear, filterCategoryId, limit])
+  }, [page, limit, debouncedSearch, filterYear, filterMonth, filterCategoryId])
 
   useEffect(() => {
     fetchGallery()
@@ -110,6 +115,7 @@ export default function GalleryPage() {
       setCategoryId('')
       setCategoryName('')
       setYear('')
+      setMonth('')
       setExistingImages([])
       setNewFiles([])
       setFilePreviews([])
@@ -160,6 +166,7 @@ export default function GalleryPage() {
     setCategoryId('')
     setCategoryName('')
     setYear('')
+    setMonth('')
     setExistingImages([])
     setNewFiles([])
     setFilePreviews([])
@@ -171,6 +178,7 @@ export default function GalleryPage() {
     setCategoryId(row.gallery_category_id || '')
     setCategoryName(row.category || '')
     setYear(row.year || '')
+    setMonth(row.month || '')
     setExistingImages(Array.isArray(row.images) ? row.images : [])
     setNewFiles([])
     setFilePreviews([])
@@ -207,6 +215,7 @@ export default function GalleryPage() {
 
   const handleSave = async (event) => {
     event.preventDefault()
+    if (saving) return
     setSaving(true)
     setFormError('')
     setError('')
@@ -230,13 +239,11 @@ export default function GalleryPage() {
         return
       }
 
-    
-
-
       const payload = new FormData()
       payload.append('category', titleCategory)
       if (categoryIdToSave) payload.append('gallery_category_id', categoryIdToSave)
       payload.append('year', year || '')
+      payload.append('month', month || '')
 
       existingImages.forEach((image) => payload.append('existing_images', image))
       newFiles.forEach((file) => payload.append('images', file))
@@ -347,7 +354,20 @@ export default function GalleryPage() {
           {
             header: 'Month/Year',
             key: 'month_year',
-            render: (row) => row.year ? new Date(row.year + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '-'
+            render: (row) => {
+              const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+              let mText = ''
+              if (row.month) {
+                const mIdx = parseInt(row.month, 10)
+                mText = (!isNaN(mIdx) && monthNames[mIdx]) ? monthNames[mIdx] : row.month
+              }
+              if (mText && row.year) return `${mText} ${row.year}`
+              if (row.year) {
+                return row.year.includes('-') ? new Date(row.year + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : row.year
+              }
+              if (mText) return mText
+              return '-'
+            }
           },
           {
             header: 'Images',
@@ -428,10 +448,19 @@ export default function GalleryPage() {
             <div>
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Month &amp; Year <span className="text-text-secondary font-normal text-xs">(Optional)</span></label>
               <DatePicker
-                name="year"
+                name="month_year"
                 mode="month"
-                value={year}
-                onChange={(val) => setYear(val)}
+                value={year && month ? `${year}-${month.padStart(2, '0')}` : (year || '')}
+                onChange={(val) => {
+                  if (val && val.includes('-')) {
+                    const [y, m] = val.split('-')
+                    setYear(y)
+                    setMonth(m)
+                  } else {
+                    setYear(val || '')
+                    setMonth('')
+                  }
+                }}
                 className={fieldClass}
                 disabled={saving}
               />

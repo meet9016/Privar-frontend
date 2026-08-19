@@ -13,6 +13,7 @@ import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
 import { toast } from '../lib/toast'
 import { isValidEmail } from '../lib/validation'
+import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, deleteAction }) {
@@ -24,6 +25,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
   const [loading, setLoading] = useState(false)
   const [search, setSearchValue] = useState('')
+  const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -44,7 +46,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const fetchRows = useCallback(async () => {
     setLoading(true)
     try {
-      const params = getParams({ search })
+      const params = getParams({ search: debouncedSearch })
       if (supportIsOwn) params.is_own = isOwn
       const res = await api.get(endpoint, { params })
       const data = res.data?.data || res.data || []
@@ -58,7 +60,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     } finally {
       setLoading(false)
     }
-  }, [endpoint, page, search, title])
+  }, [endpoint, page, debouncedSearch, title, supportIsOwn, isOwn, getParams, setPaginationData])
 
   useEffect(() => {
     fetchRows()
@@ -174,7 +176,12 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
 
     if (missingRequired.length > 0) {
       setFieldErrors(missing)
-      setFormError(`${missingRequired[0].label} is required`)
+      const missingNames = missingRequired.map(f => f.label).join(', ')
+      setFormError(
+        missingRequired.length === 1
+          ? `${missingRequired[0].label} is required`
+          : `Please fill all required fields: ${missingNames}`
+      )
       setSaving(false)
       return
     }
@@ -424,13 +431,13 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         }}
       />
 
-      <Modal isOpen={isModalOpen} maxWidth={fields.length > 5 ? 'max-w-5xl' : 'max-w-3xl'} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
+      <Modal isOpen={isModalOpen} maxWidth={fields.length > 10 ? 'max-w-7xl' : fields.length > 5 ? 'max-w-5xl' : 'max-w-3xl'} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-3.5 text-text" noValidate>
-          <div className={`grid grid-cols-1 ${fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2'} gap-3.5`} style={{ overflow: 'visible' }}>
+          <div className={`grid grid-cols-1 ${fields.length > 10 ? 'sm:grid-cols-2 md:grid-cols-4' : fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2'} gap-3.5`} style={{ overflow: 'visible' }}>
             {fields.map((field, fieldIdx) => {
               const isFullRow = field.type === 'textarea' || (field.type === 'file' && field.multiple);
               const colSpanClass = isFullRow 
-                ? (fields.length > 4 ? 'sm:col-span-2 md:col-span-3' : 'md:col-span-2')
+                ? (fields.length > 10 ? 'sm:col-span-2 md:col-span-4' : fields.length > 4 ? 'sm:col-span-2 md:col-span-3' : 'md:col-span-2')
                 : '';
               
               return (
@@ -565,7 +572,14 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                       } else {
                         // For name, country, state, city, village, taluka, district, title, full_name, etc. -> Alphabets & spaces ONLY!
                         if (nameLower.includes('name') || nameLower.includes('title') || nameLower.includes('country') || nameLower.includes('state') || nameLower.includes('city') || nameLower.includes('district') || nameLower.includes('taluka') || nameLower.includes('village') || nameLower.includes('gotra') || nameLower.includes('occupation') || nameLower.includes('complexion') || nameLower.includes('education')) {
-                          val = val.replace(/[^a-zA-Z\s]/g, '')
+                          if (title && title.toLowerCase().includes('blood group')) {
+                            val = val.replace(/[^a-zA-Z\s+-]/g, '')
+                          } else if (nameLower.includes('title')) {
+                            val = val.replace(/[^a-zA-Z0-9\s.,/#+-]/g, '')
+                          } else {
+                            val = val.replace(/[^a-zA-Z\s]/g, '')
+                          }
+                          
                           if (nameLower.includes('full_name') || nameLower === 'name') {
                             val = val.slice(0, 30)
                           }
