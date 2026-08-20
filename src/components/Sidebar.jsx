@@ -48,31 +48,50 @@ const SectionLabel = ({ children }) => (
   </div>
 )
 
-const CollapsibleMenu = ({ label, icon: Icon, children, defaultOpen = false, basePath }) => {
+const CollapsibleMenu = ({ label, icon: Icon, children, defaultOpen = false, items = [], basePath }) => {
   const location = useLocation()
-  const isActive = basePath && location.pathname.startsWith(basePath)
-  const [isOpen, setIsOpen] = useState(defaultOpen || isActive)
+  
+  // Check if any child item or basePath is active
+  const isChildActive = items.some(item => {
+    const itemPath = item.to || (item.type ? `/admin/masters/${item.type}` : '')
+    if (!itemPath) return false
+    return location.pathname === itemPath || location.pathname.startsWith(`${itemPath}/`)
+  }) || (basePath && location.pathname.startsWith(basePath))
 
-  // Keep open if child is active
+  const [isOpen, setIsOpen] = useState(defaultOpen || isChildActive)
+
+  // Automatically keep open whenever a child route is active
   useEffect(() => {
-    if (isActive) {
+    if (isChildActive) {
       setIsOpen(true)
     }
-  }, [isActive])
+  }, [isChildActive, location.pathname])
 
   return (
     <div className="space-y-1.5">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`group flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 cursor-pointer ${
-          isActive && !isOpen
+          isChildActive && !isOpen
             ? 'text-white font-bold shadow-md border-transparent bg-primary'
+            : isChildActive
+            ? 'border-primary/20 bg-primary/10 text-primary font-semibold'
             : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
         }`}
       >
-        {Icon && <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive && !isOpen ? 'text-white font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />}
+        {Icon && (
+          <Icon 
+            className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+              isChildActive && !isOpen ? 'text-white font-bold stroke-[2.2]' : isChildActive ? 'text-primary' : 'text-text-secondary group-hover:text-text'
+            }`} 
+          />
+        )}
         <span className="truncate flex-1 text-left tracking-tight">{label}</span>
-        <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : (isActive && !isOpen ? 'text-white' : 'text-text-secondary')}`} />
+        <ChevronDown 
+          className={`h-4 w-4 transition-transform duration-300 ${
+            isOpen ? 'rotate-180 text-primary' : (isChildActive && !isOpen ? 'text-white' : 'text-text-secondary')
+          }`} 
+        />
       </button>
       
       <div 
@@ -81,7 +100,7 @@ const CollapsibleMenu = ({ label, icon: Icon, children, defaultOpen = false, bas
         }`}
       >
         <div className="overflow-hidden">
-          <div className="ml-4 mt-1.5 space-y-1.5 border-l border-border/80 pl-3 pb-1">
+          <div className="ml-4 mt-1.5 space-y-1.5 border-l-2 border-primary/25 pl-3 pb-1">
             {children}
           </div>
         </div>
@@ -144,7 +163,7 @@ export default function Sidebar() {
         </div>
 
         {visibleActivityNavigation.length > 0 && (
-          <CollapsibleMenu label="Activities" icon={CalendarDays}>
+          <CollapsibleMenu label="Activities" icon={CalendarDays} items={visibleActivityNavigation}>
             {visibleActivityNavigation.map((item) => (
               <LinkItem key={item.to} {...item} />
             ))}
@@ -152,7 +171,7 @@ export default function Sidebar() {
         )}
 
         {visibleServicesNavigation.length > 0 && (
-          <CollapsibleMenu label="Services" icon={Briefcase}>
+          <CollapsibleMenu label="Services" icon={Briefcase} items={visibleServicesNavigation}>
             {visibleServicesNavigation.map((item) => (
               <LinkItem key={item.to} {...item} />
             ))}
@@ -160,7 +179,7 @@ export default function Sidebar() {
         )}
 
         {visibleMediaNavigation.length > 0 && (
-          <CollapsibleMenu label="Media & Content" icon={Layers}>
+          <CollapsibleMenu label="Media & Content" icon={Layers} items={visibleMediaNavigation}>
             {visibleMediaNavigation.map((item) => (
               <LinkItem key={item.to} {...item} />
             ))}
@@ -168,7 +187,7 @@ export default function Sidebar() {
         )}
 
         {visibleEngagementNavigation.length > 0 && (
-          <CollapsibleMenu label="Engagements" icon={Activity}>
+          <CollapsibleMenu label="Engagements" icon={Activity} items={visibleEngagementNavigation}>
             {visibleEngagementNavigation.map((item) => (
               <LinkItem key={item.to} {...item} />
             ))}
@@ -176,7 +195,7 @@ export default function Sidebar() {
         )}
 
         {visibleMasterNavigation.length > 0 && (
-          <CollapsibleMenu label="Masters" icon={Database} basePath="/admin/masters">
+          <CollapsibleMenu label="Masters" icon={Database} basePath="/admin/masters" items={visibleMasterNavigation}>
             {visibleMasterNavigation.map((item) => (
               <NavLink
                 key={item.type}
@@ -196,7 +215,7 @@ export default function Sidebar() {
         )}
 
         {visibleConfigurationNavigation.length > 0 && (
-          <CollapsibleMenu label="Configuration" icon={Shield}>
+          <CollapsibleMenu label="Configuration" icon={Shield} items={visibleConfigurationNavigation}>
             {visibleConfigurationNavigation.map((item) => (
               <LinkItem key={item.to} {...item} />
             ))}

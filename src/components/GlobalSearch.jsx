@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, User, Briefcase, UserCog, Loader2 } from 'lucide-react';
+import { Search, User, Briefcase, UserCog, Loader2, X } from 'lucide-react';
 import { getUsersList, getBusinessesList, getCommitteeMembersList } from '../lib/api';
 
 export default function GlobalSearch() {
@@ -72,15 +72,30 @@ export default function GlobalSearch() {
         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
       </span>
       <input
-        type="search"
+        type="text"
         placeholder="Global Search (Name, Contact...)"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => {
           if (query.trim() && totalResults > 0) setIsOpen(true);
         }}
-        className="w-80 md:w-[480px] lg:w-[600px] bg-surface-secondary text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:shadow-glow-primary transition-all duration-300"
+        className={`w-80 md:w-[480px] lg:w-[600px] bg-surface-secondary text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2 pl-10 ${query ? 'pr-9' : 'pr-4'} text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:shadow-glow-primary transition-all duration-300`}
       />
+      {query && (
+        <button
+          type="button"
+          onClick={() => {
+            setQuery('');
+            setIsOpen(false);
+          }}
+          className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-secondary/60 hover:text-text cursor-pointer transition-colors"
+          title="Clear search"
+        >
+          <div className="w-4 h-4 rounded-full bg-surface border border-border flex items-center justify-center hover:bg-border/60 transition-colors">
+            <X className="w-2.5 h-2.5" />
+          </div>
+        </button>
+      )}
 
       {isOpen && (query.trim().length > 0) && (
         <div className="absolute top-full left-0 mt-2 w-full bg-surface border border-border rounded-xl shadow-glass-lg overflow-hidden z-50 max-h-96 flex flex-col">

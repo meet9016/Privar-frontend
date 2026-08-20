@@ -1,6 +1,7 @@
 import React from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
+import { formatDate } from '../lib/api'
 
 const definitions = {
   festivals: {
@@ -17,7 +18,7 @@ const definitions = {
     columns: [
       { key: 'image', label: 'Image', type: 'image' },
       { key: 'title', label: 'Title' },
-      { key: 'festival_date', label: 'Date', render: (row) => row.festival_date ? new Date(row.festival_date).toLocaleDateString('en-IN') : '-' },
+      { key: 'festival_date', label: 'Date', render: (row) => formatDate(row.festival_date) },
       { key: 'status', label: 'Status' }
     ]
   },

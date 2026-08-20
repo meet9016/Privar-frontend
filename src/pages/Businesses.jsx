@@ -9,6 +9,7 @@ import BusinessForm from '../components/BusinessForm'
 import usePagination from '../hooks/usePagination'
 import Table from '../components/common/Table'
 import Button from '../components/common/Button'
+import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -182,18 +183,12 @@ export default function Businesses() {
         <h2 className="text-xl font-semibold text-text">Business Directory</h2>
       </div>
       <div className="flex items-center gap-3 w-full sm:w-auto">
-        <div className="relative flex-1 sm:w-64">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
-            <Search className="w-4 h-4" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search listings..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
-          />
-        </div>
+        <SearchInput
+          placeholder="Search listings..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onClear={() => setSearch('')}
+        />
         <Button
           onClick={handleCreate}
           variant="primary"

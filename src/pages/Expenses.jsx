@@ -13,7 +13,7 @@ import {
   Eye,
   Receipt
 } from 'lucide-react'
-import api, { getExpensesList, exportExpensesExcel, getCommitteeMembersList, assetUrl } from '../lib/api'
+import api, { getExpensesList, exportExpensesExcel, getCommitteeMembersList, assetUrl, formatDate } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import Modal from '../components/Modal'
@@ -24,6 +24,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -272,18 +273,16 @@ export default function Expenses() {
           <h2 className="text-xl font-semibold text-text">Expenses</h2>
         </div>
         <div className="flex flex-wrap items-center sm:justify-end gap-3 flex-1">
-          <div className="w-64 sm:w-72">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-secondary/60" />
-              <input
-                type="text"
-                value={search}
-                onChange={handleSearchChange}
-                placeholder="Search expenses..."
-                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
-              />
-            </div>
-          </div>
+          <SearchInput
+            value={search}
+            onChange={handleSearchChange}
+            onClear={() => {
+              setSearch('')
+              setPage(1)
+            }}
+            placeholder="Search expenses..."
+            wrapperClassName="w-64 sm:w-72"
+          />
           
           <div className="w-full sm:w-auto flex-none">
             <DatePicker
@@ -322,7 +321,7 @@ export default function Expenses() {
             render: (expense) => (
               <div className="flex items-center gap-2 whitespace-nowrap">
                 <CalendarDays className="w-4 h-4 text-text-secondary/60" />
-                {expense.date ? new Date(expense.date).toLocaleDateString() : '-'}
+                {formatDate(expense.date)}
               </div>
             )
           },

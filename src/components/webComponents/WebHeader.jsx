@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, Menu, X, LogIn, Home, Info, Users, Image as ImageIcon, Calendar, GraduationCap, HeartHandshake } from 'lucide-react'
 import NotificationDropdown from '../NotificationDropdown'
-import { assetUrl } from '../../lib/api'
+import { assetUrl, getCommunitySurname, getCommunityFullName } from '../../lib/api'
 
 export default function WebHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -176,7 +176,7 @@ export default function WebHeader() {
               ) : null}
               <div className="hidden sm:block">
                 <h1 className="text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.textColor || '#123524' }}>
-                  {theme?.name || 'Vala'}
+                  {theme?.name || getCommunityFullName()}
                 </h1>
               </div>
             </div>

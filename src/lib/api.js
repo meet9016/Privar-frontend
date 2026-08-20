@@ -11,19 +11,35 @@ export const assetUrl = (path) => {
 
 /**
  * Extracts the clean community surname/name without 'Parivar' suffix
- * e.g. 'Vala Parivar' -> 'Vala', 'test.parivar.me' -> 'test' or configured name
+ * e.g. 'vala.parivar.com' -> 'Vala', 'test.parivar.com' -> 'Test', 'patel.parivar.com' -> 'Patel'
  */
 export const getCommunitySurname = () => {
+  // 1. Check live link / domain / subdomain first (e.g. test.parivar.in, vala.parivar.com, etc.)
+  const hostname = window.location.hostname
+  const hostParts = hostname.split('.')
+  if (hostParts.length > 1 && !['localhost', '127.0.0.1'].includes(hostname)) {
+    const firstPart = hostParts[0].toLowerCase()
+    if (firstPart !== 'www' && firstPart !== 'admin' && firstPart !== 'api') {
+      const cleanFirst = firstPart.replace(/parivar/gi, '').trim()
+      if (cleanFirst) {
+        return cleanFirst.charAt(0).toUpperCase() + cleanFirst.slice(1)
+      }
+    }
+  }
+
+  // 2. Check saved app name in localStorage / Theme Config
   const webName = localStorage.getItem('web_name') || ''
   const cleaned = webName.replace(/parivar/gi, '').trim()
-  if (cleaned) return cleaned
-
-  // If subdomain is present (e.g. test.parivar.me -> test)
-  const hostParts = window.location.hostname.split('.')
-  if (hostParts.length > 2 && hostParts[0] !== 'www' && hostParts[0] !== 'admin') {
-    return hostParts[0].charAt(0).toUpperCase() + hostParts[0].slice(1)
+  if (cleaned) {
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
   }
+
   return 'Vala'
+}
+
+export const getCommunityFullName = () => {
+  const surname = getCommunitySurname()
+  return `${surname} Parivar`
 }
 
 const api = axios.create({
@@ -111,5 +127,31 @@ export const getExpensesList = (params = {}) => api.get('/expenses', { params })
 
 export const exportExpensesExcel = (params = {}) =>
   api.get('/expenses/export', { params, responseType: 'blob' })
+
+// Standard Universal Date Formatter: DD/MM/YYYY
+export const formatDate = (val) => {
+  if (!val) return '-'
+  try {
+    const str = String(val).trim()
+    if (!str) return '-'
+    if (str.includes('/')) {
+      const parts = str.split('/')
+      if (parts.length === 3) {
+        const d = parts[0].padStart(2, '0')
+        const m = parts[1].padStart(2, '0')
+        const y = parts[2]
+        return `${d}/${m}/${y}`
+      }
+    }
+    const d = new Date(val)
+    if (isNaN(d.getTime())) return String(val)
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    return `${day}/${month}/${year}`
+  } catch {
+    return String(val || '-')
+  }
+}
 
 export default api

@@ -10,6 +10,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -312,18 +313,12 @@ export default function GalleryPage() {
 
         </div>
         <div className="flex flex-wrap items-center sm:justify-end gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
-              <Search className="w-4 h-4" />
-            </div>
-            <input
-              type="search"
-              placeholder="Search gallery..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
-            />
-          </div>
+          <SearchInput
+            placeholder="Search gallery..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
+          />
           <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
             Add Images
           </Button>

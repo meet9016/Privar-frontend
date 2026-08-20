@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Edit2, Plus, RefreshCw, Search, Trash2, Settings, ImageOff } from 'lucide-react'
-import api, { assetUrl } from '../lib/api'
+import api, { assetUrl, formatDate } from '../lib/api'
 import Loader from '../components/common/Loader'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -11,6 +11,7 @@ import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
+import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
@@ -335,18 +336,12 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               <span className="text-sm font-medium text-text-secondary">My Records</span>
             </label>
           )}
-          <div className="relative flex-1 sm:w-64">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
-              <Search className="w-4 h-4" />
-            </span>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={`Search ${title.toLowerCase()}...`}
-              className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
-            />
-          </div>
+          <SearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
+            placeholder={`Search ${title.toLowerCase()}...`}
+          />
           {!hideAdd && (
             <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
               Add {title}
@@ -385,6 +380,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     <ImageOff className="h-4 w-4 text-text-secondary/40" />
                   </div>
                 )
+              ) : c.type === 'date' || c.key.includes('date') || c.key === 'dob' || c.key === 'anniversary' ? (
+                <span>{c.render ? c.render(row) : formatDate(row[c.key])}</span>
               ) : (
                 (() => {
                   const displayValue = c.render ? c.render(row) : (

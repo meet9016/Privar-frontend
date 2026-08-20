@@ -10,6 +10,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import Checkbox from '../components/common/Checkbox'
 import useDebounce from '../hooks/useDebounce'
@@ -217,18 +218,12 @@ export default function Roles() {
           <h2 className="text-xl font-semibold text-text">Roles</h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
-              <Search className="w-4 h-4" />
-            </span>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search roles..."
-              className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
-            />
-          </div>
+          <SearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
+            placeholder="Search roles..."
+          />
           <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
             Add Role
           </Button>

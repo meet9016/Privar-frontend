@@ -14,7 +14,7 @@ import {
   Landmark,
   FileDown
 } from 'lucide-react'
-import api, { getDonationsList, getBankDetailsList, exportDonationsExcel } from '../lib/api'
+import api, { getDonationsList, getBankDetailsList, exportDonationsExcel, formatDate } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import Modal from '../components/Modal'
@@ -23,6 +23,7 @@ import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
+import SearchInput from '../components/common/SearchInput'
 import { Download } from 'lucide-react'
 import useDebounce from '../hooks/useDebounce'
 import { toast } from '../lib/toast'
@@ -202,20 +203,13 @@ export default function Donations() {
           <h2 className="text-xl font-semibold text-text">Donations</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="w-64 sm:w-72">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
-                <Search className="w-4 h-4" />
-              </div>
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); resetPage(); }}
-                placeholder="Search donator or purpose..."
-                className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
-              />
-            </div>
-          </div>
+          <SearchInput
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+            onClear={() => { setSearch(''); resetPage(); }}
+            placeholder="Search donator or purpose..."
+            wrapperClassName="w-64 sm:w-72"
+          />
           <button
             onClick={handleCreate}
             className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
@@ -347,7 +341,7 @@ export default function Donations() {
             key: 'date',
             render: (donation) => (
               <div className="text-text-secondary text-sm">
-                {donation.donate_date ? donation.donate_date.slice(0, 10).split('-').reverse().join('-') : '-'}
+                {formatDate(donation.date || donation.donate_date)}
               </div>
             )
           },

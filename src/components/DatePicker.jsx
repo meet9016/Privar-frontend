@@ -96,18 +96,14 @@ export default function DatePicker({
     }
   }, [isOpen]);
   
-  // Calculate maximum allowed date (e.g. today for DOB & Anniversary)
+  // Calculate maximum allowed date only if explicitly requested
   const getMaxAllowedDate = () => {
     if (maxDate) {
       if (maxDate instanceof Date) return maxDate;
       const p = String(maxDate).split('-');
       if (p.length === 3) return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10), 23, 59, 59, 999);
     }
-    const isBirthOrAnniversary = disableFuture || 
-      (label && /birth|dob|anniversary/i.test(label)) || 
-      (name && /birth|dob|anniversary/i.test(name));
-    
-    if (isBirthOrAnniversary) {
+    if (disableFuture) {
       const today = new Date();
       today.setHours(23, 59, 59, 999);
       return today;
@@ -162,10 +158,17 @@ export default function DatePicker({
     }
   }, [value]);
 
+  const popoverRef = useRef(null);
+
   // Handle click outside to close popover
   useEffect(() => {
     function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     }
@@ -347,11 +350,7 @@ export default function DatePicker({
     for (let i = 0; i < firstDayIndex; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
 
-    let selectedTime = null;
-    if (value && value.split('-').length === 3) {
-      const p = value.split('-');
-      selectedTime = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getTime();
-    }
+    const selectedDateObj = value ? parseDate(value) : null;
 
     return (
       <div className="p-2">
@@ -365,7 +364,10 @@ export default function DatePicker({
         <div className="grid grid-cols-7 gap-y-1 gap-x-1">
           {days.map((d, i) => {
             if (!d) return <div key={`empty-${i}`} className="w-8 h-8" />;
-            const isSelected = selectedTime === d.getTime();
+            const isSelected = selectedDateObj &&
+              d.getFullYear() === selectedDateObj.getFullYear() &&
+              d.getMonth() === selectedDateObj.getMonth() &&
+              d.getDate() === selectedDateObj.getDate();
             const isToday = new Date().toDateString() === d.toDateString();
             const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
             const isDisabled = maxAllowed && dStart.getTime() > maxAllowed.getTime();
@@ -427,6 +429,7 @@ export default function DatePicker({
       {/* Popover */}
       {isOpen && typeof document !== 'undefined' && ReactDOM.createPortal(
         <div 
+          ref={popoverRef}
           style={popoverStyle}
           className="bg-surface border border-border rounded-xl shadow-glass overflow-hidden text-text"
         >

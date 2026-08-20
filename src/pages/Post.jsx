@@ -9,6 +9,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -208,18 +209,12 @@ export default function Post() {
           <h2 className="text-xl font-semibold text-text">Post Moderator</h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative group flex-1 sm:w-64">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-text-secondary/60">
-              <Search className="w-4 h-4" />
-            </span>
-            <input
-              type="search"
-              placeholder="Search posts..."
-              value={search}
-              onChange={(e) => { setSearchValue(e.target.value); setPage(1); }}
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all duration-300"
-            />
-          </div>
+          <SearchInput
+            placeholder="Search posts..."
+            value={search}
+            onChange={(e) => { setSearchValue(e.target.value); setPage(1); }}
+            onClear={() => { setSearchValue(''); setPage(1); }}
+          />
           <Button
             onClick={openCreate}
             variant="primary"

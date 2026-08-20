@@ -9,6 +9,7 @@ import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import FileDropzone from '../components/common/FileDropzone'
 import DateTimePicker from '../components/common/DateTimePicker'
@@ -182,10 +183,25 @@ export default function Events() {
   }, [])
 
   const formatDate = (val) => {
-    if (!val) return ''
-    const d = new Date(val)
-    if (isNaN(d.getTime())) return String(val)
-    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    if (!val) return '-'
+    try {
+      const str = String(val).trim()
+      if (!str) return '-'
+      if (str.includes('/')) {
+        const parts = str.split('/')
+        if (parts.length === 3) {
+          return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`
+        }
+      }
+      const d = new Date(val)
+      if (isNaN(d.getTime())) return String(val)
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const year = d.getFullYear()
+      return `${day}/${month}/${year}`
+    } catch {
+      return String(val || '-')
+    }
   }
 
   const formatTime = (val) => {
@@ -354,18 +370,12 @@ export default function Events() {
           <h2 className="text-xl font-semibold text-text">Events</h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
-              <Search className="w-4 h-4" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search events..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
-            />
-          </div>
+          <SearchInput
+            placeholder="Search events..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
+          />
           <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
             Add Event
           </Button>

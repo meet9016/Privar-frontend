@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState, useMemo } from 'react'
 import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet } from 'lucide-react'
-import api, { getUsersList } from '../lib/api'
+import api, { getUsersList, formatDate } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
 import { hasPermission } from '../lib/permissions'
@@ -11,6 +11,7 @@ import Select from '../components/common/Select'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
+import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -313,15 +314,13 @@ export default function Users() {
           <h2 className="text-xl font-semibold text-text">Family Registry</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="w-64 sm:w-80">
-            <Input
-              icon={<Search className="w-4 h-4" />}
-              type="text"
-              placeholder="Search by name, phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchInput
+            placeholder="Search by name, phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onClear={() => setSearchQuery('')}
+            wrapperClassName="w-64 sm:w-80"
+          />
 
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -631,7 +630,7 @@ export default function Users() {
                     <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Personal</p>
                     <p className="text-text font-medium flex items-center gap-2"><User className="w-3.5 h-3.5 text-text-secondary shrink-0" /> Gender: {viewingUser.gender || '-'}</p>
                     <p className="text-text font-medium mt-1 flex items-center gap-2"><Droplet className="w-3.5 h-3.5 text-red-500 shrink-0" /> Blood Group: {viewingUser.blood_group || '-'}</p>
-                    <p className="text-text font-medium mt-1 flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-text-secondary shrink-0" /> DOB: {viewingUser.dob ? new Date(viewingUser.dob).toLocaleDateString() : '-'}</p>
+                    <p className="text-text font-medium mt-1 flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-text-secondary shrink-0" /> DOB: {formatDate(viewingUser.dob)}</p>
                   </div>
                   <div className="sm:col-span-2">
                     <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Location</p>
