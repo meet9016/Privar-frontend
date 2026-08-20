@@ -130,6 +130,7 @@ export default function Table({
   emptyState,
   pagination,
   loading = false,
+  showSkeleton = false,
   className = '',
   maxHeightClass = 'max-h-[620px]',
   stickyHeader = true,
@@ -216,8 +217,6 @@ export default function Table({
     if (!pagination) return [];
     return getPageNumbers(pagination.currentPage || 1, pagination.totalPages || 1);
   }, [pagination?.currentPage, pagination?.totalPages]);
-
-  // Calculate "Showing X to Y of Z"
   const totalRecords = pagination ? (pagination.total || 0) : data.length;
   const showingFrom = pagination ? (totalRecords === 0 ? 0 : ((pagination.currentPage - 1) * (pagination.limit || 10)) + 1) : (data.length === 0 ? 0 : 1);
   const showingTo = pagination ? Math.min(showingFrom + (pagination.limit || 10) - 1, totalRecords) : data.length;
@@ -225,7 +224,7 @@ export default function Table({
   return (
     <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col ${className}`}>
       <div className={`overflow-x-auto overflow-y-auto custom-scrollbar ${maxHeightClass}`}>
-        <table className="w-full text-left border-collapse table-auto bg-white">
+        <table className="w-full min-w-full text-left border-collapse table-auto bg-white">
           <thead className={stickyHeader ? "sticky top-0 z-10 shadow-sm" : ""}>
             <tr className="border-b border-primary/20 text-text text-xs uppercase tracking-wider font-bold bg-primary-bg">
               {finalColumns.map((col, idx) => {
@@ -241,23 +240,21 @@ export default function Table({
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-white">
-            {loading ? (
+            {loading && data.length === 0 && showSkeleton ? (
               skeletonRows.map((n) => <SkeletonRow key={n} columns={finalColumns} />)
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={finalColumns.length} className="p-0">
-                  <div className="relative flex flex-col items-center justify-center min-h-[360px] p-12 text-center overflow-hidden animate-fade-in">
-                    <div className="absolute w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none -z-0" />
-                    <div className="relative z-10 w-20 h-20 rounded-3xl bg-gradient-to-b from-primary/15 to-primary/5 border border-primary/25 flex items-center justify-center mb-4 shadow-glow-primary/20 backdrop-blur-sm transition-transform hover:scale-105">
-                      <div className="absolute inset-0 rounded-3xl bg-primary/10 animate-pulse pointer-events-none" />
+                  <div className="relative flex flex-col items-center justify-center min-h-[300px] p-8 text-center overflow-hidden">
+                    <div className="relative z-10 w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-3">
                       {emptyState?.icon ? (
-                        React.createElement(emptyState.icon, { className: 'w-9 h-9 text-primary relative z-10' })
+                        React.createElement(emptyState.icon, { className: 'w-8 h-8 text-primary relative z-10' })
                       ) : (
-                        <FolderOpen className="w-9 h-9 text-primary relative z-10" />
+                        <FolderOpen className="w-8 h-8 text-primary relative z-10" />
                       )}
                     </div>
 
-                    <h4 className="relative z-10 text-lg font-bold text-text tracking-wide mb-1.5">
+                    <h4 className="relative z-10 text-base font-bold text-text tracking-wide mb-1">
                       {emptyState?.title || 'No records found'}
                     </h4>
                     <p className="relative z-10 text-text-secondary text-xs max-w-sm font-medium leading-relaxed mb-1">
@@ -303,8 +300,6 @@ export default function Table({
           </tbody>
         </table>
       </div>
-
-      {/* Floating Bulk Actions Bar */}
       {effectiveSelected.length > 0 && (
         <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-primary/10 border-t border-primary/20 animate-fade-in text-text">
           <div className="flex items-center gap-2 text-xs font-semibold">
@@ -355,8 +350,6 @@ export default function Table({
           </div>
         </div>
       )}
-
-      {/* Pagination Footer */}
       {pagination && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 border-t border-border bg-surface-secondary/40 text-sm">
           {/* Left: Rows selector + Showing info */}
@@ -371,8 +364,6 @@ export default function Table({
               Showing <span className="font-semibold text-text">{showingFrom}</span> to <span className="font-semibold text-text">{showingTo}</span> of <span className="font-semibold text-text">{totalRecords}</span>
             </span>
           </div>
-
-          {/* Right: Pagination buttons */}
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -383,7 +374,6 @@ export default function Table({
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-
             {smartPageNumbers.map((item, idx) => (
               item === '...' ? (
                 <span key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-text-secondary text-xs">...</span>
@@ -402,7 +392,6 @@ export default function Table({
                 </button>
               )
             ))}
-
             <button
               type="button"
               disabled={pagination.loading || pagination.currentPage >= pagination.totalPages}

@@ -27,13 +27,27 @@ export default function Students() {
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [showFilters, setShowFilters] = useState(false)
-
+  const [selectedStdTab, setSelectedStdTab] = useState('all')
 
   const [existingStudentImage, setExistingStudentImage] = useState('')
   const [existingResultImage, setExistingResultImage] = useState('')
   const [imageData, setImageData] = useState({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
   const [statusVal, setStatusVal] = useState('')
+  const [standardVal, setStandardVal] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
+
+  const standardOptions = [
+    { label: 'Jr. KG', value: 'Jr. KG' },
+    { label: 'Sr. KG', value: 'Sr. KG' },
+    ...Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))
+  ]
+
+  const stdTabs = [
+    { label: 'All', value: 'all' },
+    { label: 'Jr. KG', value: 'Jr. KG' },
+    { label: 'Sr. KG', value: 'Sr. KG' },
+    ...Array.from({ length: 12 }, (_, i) => ({ label: `Std ${i + 1}`, value: `${i + 1}` }))
+  ]
 
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
@@ -43,11 +57,14 @@ export default function Students() {
     setPage(1)
   }
 
-
   const fetchStudents = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getStudentsList(getParams({ search: debouncedSearch }))
+      const params = getParams({ search: debouncedSearch })
+      if (selectedStdTab && selectedStdTab !== 'all') {
+        params.standard = selectedStdTab
+      }
+      const res = await getStudentsList(params)
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setStudents(Array.isArray(rows) ? rows : [])
@@ -59,7 +76,7 @@ export default function Students() {
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, page, getParams, setPaginationData])
+  }, [debouncedSearch, page, selectedStdTab, getParams, setPaginationData])
 
   useEffect(() => {
     fetchStudents()
@@ -81,7 +98,8 @@ export default function Students() {
     setExistingStudentImage('')
     setExistingResultImage('')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
-    setStatusVal('')
+    setStatusVal(1)
+    setStandardVal('')
     setFieldErrors({})
     setError('')
     setIsModalOpen(true)
@@ -92,11 +110,14 @@ export default function Students() {
     setExistingStudentImage(student.student_image || '')
     setExistingResultImage(student.result_image || '')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
-    setStatusVal(student.status !== undefined && student.status !== null ? Number(student.status) : '')
+    setStatusVal(student.status !== undefined && student.status !== null ? Number(student.status) : 1)
+    setStandardVal(student.standard ? String(student.standard) : '')
     setFieldErrors({})
     setError('')
     setIsModalOpen(true)
   }
+
+  const defaultSurname = (localStorage.getItem('web_name') || 'Parivar').trim()
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
@@ -105,8 +126,21 @@ export default function Students() {
     setExistingResultImage('')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
     setStatusVal('')
+    setStandardVal('')
     setFieldErrors({})
     setError('')
+  }
+
+  const handleOpenAdd = () => {
+    setSelectedStudent(null)
+    setExistingStudentImage('')
+    setExistingResultImage('')
+    setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
+    setStatusVal(1)
+    setStandardVal('1')
+    setFieldErrors({})
+    setError('')
+    setIsModalOpen(true)
   }
 
   const handleSubmit = async (e) => {
@@ -116,7 +150,7 @@ export default function Students() {
     setFieldErrors({})
     const fields = new FormData(e.target)
 
-    const requiredKeys = ['surname', 'student_name', 'father_name', 'school_name', 'standard', 'percentage', 'mobile_number', 'year']
+    const requiredKeys = ['surname', 'student_name', 'father_name', 'school_name', 'percentage', 'mobile_number', 'year']
     const errors = {}
     requiredKeys.forEach(k => {
       const val = fields.get(k)
@@ -124,6 +158,10 @@ export default function Students() {
         errors[k] = true
       }
     })
+
+    if (!standardVal || !standardVal.trim()) {
+      errors.standard = 'Standard is required'
+    }
 
     if (statusVal === '' || statusVal === undefined || statusVal === null) {
       errors.status = true
@@ -151,6 +189,7 @@ export default function Students() {
 
     const payload = new FormData()
     requiredKeys.forEach(k => payload.append(k, fields.get(k) ?? ''))
+    payload.append('standard', standardVal)
     payload.append('status', statusVal)
 
     const hasStudentImg = imageData.student_image instanceof File
@@ -177,17 +216,8 @@ export default function Students() {
     }
   }
 
-  const groupedStudents = React.useMemo(() => {
-    return students.reduce((acc, student) => {
-      const year = student.createdAt ? new Date(student.createdAt).getFullYear() : (student.cdate ? new Date(student.cdate).getFullYear() : 'Unknown');
-      if (!acc[year]) acc[year] = [];
-      acc[year].push(student);
-      return acc;
-    }, {});
-  }, [students]);
-
   return (
-    <div className="space-y-6 animate-slide-up text-text">
+    <div className="space-y-6 text-text">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -199,17 +229,41 @@ export default function Students() {
               <Search className="w-4 h-4" />
             </div>
             <input
-              type="search"
+              type="text"
               placeholder="Search students..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+              className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
             />
           </div>
-          <Button onClick={handleCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
-            Add
+          <Button onClick={handleCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
+            Add Student
           </Button>
         </div>
+      </div>
+
+      {/* Standard Filter Pills/Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+        {stdTabs.map((tab) => {
+          const isActive = selectedStdTab === tab.value
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => {
+                setSelectedStdTab(tab.value)
+                setPage(1)
+              }}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-primary text-white shadow-glow-primary scale-105'
+                  : 'bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text'
+              }`}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
       </div>
 
 
@@ -306,17 +360,15 @@ export default function Students() {
       >
         <form key={selectedStudent?._id || selectedStudent?.id || 'new'} onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Surname"
-              name="surname"
-              defaultValue={selectedStudent?.surname || ''}
-              required
-              error={fieldErrors.surname ? 'Surname is required' : undefined}
-              onChange={(e) => {
-                e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
-                if (fieldErrors.surname) setFieldErrors(prev => ({ ...prev, surname: null }))
-              }}
-            />
+            <div className="relative">
+              <input type="hidden" name="surname" value={selectedStudent ? (selectedStudent.surname || '') : defaultSurname} />
+              <Input
+                label="Surname"
+                defaultValue={selectedStudent ? (selectedStudent.surname || '') : defaultSurname}
+                disabled={true}
+                className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
+              />
+            </div>
             <Input
               label="Student Name"
               name="student_name"
@@ -352,17 +404,16 @@ export default function Students() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
+            <Select
               label="Standard"
               name="standard"
-              defaultValue={selectedStudent?.standard || ''}
               required
-              maxLength={2}
-              placeholder="e.g. 10 or 12"
+              value={standardVal}
+              placeholder="Select Standard"
+              options={standardOptions}
               error={fieldErrors.standard ? 'Standard is required' : undefined}
-              onChange={(e) => {
-                let val = e.target.value.replace(/\D/g, '').slice(0, 2)
-                e.target.value = val
+              onChange={(val) => {
+                setStandardVal(val)
                 if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null }))
               }}
             />

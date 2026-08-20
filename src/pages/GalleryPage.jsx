@@ -446,16 +446,17 @@ export default function GalleryPage() {
             />
 
             <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Month &amp; Year <span className="text-text-secondary font-normal text-xs">(Optional)</span></label>
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Date <span className="text-text-secondary font-normal text-xs">(Optional)</span></label>
               <DatePicker
-                name="month_year"
-                mode="month"
+                name="date"
+                mode="date"
+                placeholder="Select date"
                 value={year && month ? `${year}-${month.padStart(2, '0')}` : (year || '')}
                 onChange={(val) => {
                   if (val && val.includes('-')) {
-                    const [y, m] = val.split('-')
-                    setYear(y)
-                    setMonth(m)
+                    const parts = val.split('-')
+                    setYear(parts[0])
+                    setMonth(parts[1] || '')
                   } else {
                     setYear(val || '')
                     setMonth('')

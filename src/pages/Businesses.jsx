@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Briefcase, MapPin, Phone, Globe, Trash2, Search, Edit2, RefreshCw, Plus, Eye } from 'lucide-react'
+import { Briefcase, MapPin, Phone, Globe, Trash2, Search, Edit2, RefreshCw, Plus, Eye, Mail, Instagram, Youtube, Facebook } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api, { assetUrl, getBusinessesList } from '../lib/api'
 import { confirm } from '../lib/confirm'
@@ -8,6 +8,7 @@ import Loader from '../components/common/Loader'
 import BusinessForm from '../components/BusinessForm'
 import usePagination from '../hooks/usePagination'
 import Table from '../components/common/Table'
+import Button from '../components/common/Button'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -23,6 +24,7 @@ export default function Businesses() {
   const [success, setSuccess] = useState('')
   const [selectedBusiness, setSelectedBusiness] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [viewBusiness, setViewBusiness] = useState(null)
   const location = useLocation()
 
   useEffect(() => {
@@ -73,13 +75,28 @@ export default function Businesses() {
     }
   }
 
+  const handleToggleStatus = async (biz) => {
+    const currentStatus = Number(biz.status ?? 1);
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    try {
+      await api.put(`/businesses/${biz._id || biz.id}`, {
+        ...biz,
+        status: newStatus
+      });
+      setBusinesses(prev => prev.map(b => (b._id === biz._id || b.id === biz.id) ? { ...b, status: newStatus } : b));
+      toast.success(`Business status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update status');
+    }
+  };
+
   const handleEdit = (business) => {
     setSelectedBusiness(business)
     setIsModalOpen(true)
   }
 
   const handleView = (business) => {
-    navigate(`/businesses/${business.id}`, { state: { business } })
+    setViewBusiness(business)
   }
 
   const handleCreate = () => {
@@ -158,7 +175,7 @@ export default function Businesses() {
   const filtered = businesses
 
   return (
-  <div className="space-y-6 animate-slide-up text-text">
+  <div className="space-y-6 text-text">
     {/* Header bar */}
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
@@ -170,27 +187,26 @@ export default function Businesses() {
             <Search className="w-4 h-4" />
           </div>
           <input
-            type="search"
+            type="text"
             placeholder="Search listings..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+            className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
           />
         </div>
-        <button
+        <Button
           onClick={handleCreate}
-          className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
+          variant="primary"
+          icon={<Plus className="w-4 h-4" />}
+          className="h-10"
         >
-          <Plus className="w-4 h-4" /> Add
-        </button>
+          Add Business
+        </Button>
       </div>
     </div>
 
     {/* Main List */}
-    {loading && filtered.length === 0 ? (
-      <div className="py-20"><Loader text="Loading businesses..." /></div>
-    ) : (
-      <Table
+    <Table
         columns={[
           {
             header: 'Business',
@@ -242,9 +258,17 @@ export default function Businesses() {
             header: 'Status',
             key: 'status',
             render: (biz) => (
-              <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${Number(biz.status) === 1 ? 'bg-success-bg border-success-border text-success-text' : 'bg-surface-secondary text-text-secondary border-border'}`}>
-                {Number(biz.status) === 1 ? 'Active' : 'Inactive'}
-              </span>
+              <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={Number(biz.status ?? 1) === 1}
+                    onChange={() => handleToggleStatus(biz)}
+                  />
+                  <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
             )
           },
           {
@@ -284,10 +308,47 @@ export default function Businesses() {
           onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
         }}
       />
-    )}
 
-    <Modal isOpen={isModalOpen} title={selectedBusiness ? 'Edit Business Directory' : 'Add New Business Directory'} onClose={() => setIsModalOpen(false)}>
+    <Modal isOpen={isModalOpen} maxWidth="max-w-6xl" title={selectedBusiness ? 'Edit Business Directory' : 'Add New Business Directory'} onClose={() => setIsModalOpen(false)}>
       <BusinessForm business={selectedBusiness} onSubmit={handleSubmit} isLoading={formLoading} onCancel={() => setIsModalOpen(false)} />
+    </Modal>
+
+    <Modal isOpen={!!viewBusiness} maxWidth="max-w-xl" title="Business Details" onClose={() => setViewBusiness(null)}>
+      {viewBusiness && (
+        <div className="space-y-0 text-sm text-text divide-y divide-border">
+          <div className="flex items-center gap-4 pb-4">
+            {viewBusiness.image ? (
+              <img src={viewBusiness.image} alt={viewBusiness.business_name} className="w-16 h-16 rounded-xl object-cover border border-border shrink-0" />
+            ) : (
+              <div className="w-16 h-16 rounded-xl bg-surface-secondary border border-border flex items-center justify-center shrink-0">
+                <Briefcase className="w-7 h-7 text-text-secondary" />
+              </div>
+            )}
+            <div>
+              <div className="font-bold text-base text-text">{viewBusiness.business_name}</div>
+              <div className="text-xs text-primary font-medium mt-0.5">{viewBusiness.business_category_name || '—'}</div>
+            </div>
+          </div>
+          {[
+            ['Phone', viewBusiness.number],
+            ['WhatsApp', viewBusiness.whatsapp_number],
+            ['Email', viewBusiness.email],
+            ['GST Number', viewBusiness.GST_number],
+            ['Address', viewBusiness.address],
+            ['Website', viewBusiness.website],
+            ['Facebook', viewBusiness.facebook],
+            ['Instagram', viewBusiness.instagram],
+            ['YouTube', viewBusiness.youtube],
+            ['About', viewBusiness.about_us],
+            ['Status', Number(viewBusiness.status) === 1 ? 'Active' : 'Inactive'],
+          ].filter(([, val]) => val).map(([label, value]) => (
+            <div key={label} className="flex justify-between gap-4 py-3">
+              <span className="font-semibold text-text-secondary shrink-0">{label}</span>
+              <span className="text-right text-text break-words max-w-[60%]">{value}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </Modal>
   </div>
 )

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Plus, Trash2, Globe, Facebook, Instagram, Youtube, Share2 } from 'lucide-react'
 import api from '../lib/api'
 import Input from './common/Input'
 import Select from './common/Select'
@@ -31,8 +32,18 @@ const initialState = {
   status: 0
 }
 
+const ALL_SOCIAL_PLATFORMS = [
+  { key: 'website', label: 'Website', placeholder: 'https://example.com' },
+  { key: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...' },
+  { key: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/...' },
+  { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/@...' },
+  { key: 'pinterest', label: 'Pinterest', placeholder: 'https://pinterest.com/...' }
+]
+
 export default function BusinessForm({ business, onSubmit, isLoading, onCancel }) {
   const [formData, setFormData] = useState(initialState)
+  const [selectedSocials, setSelectedSocials] = useState([])
+  const [socialPickerValue, setSocialPickerValue] = useState('')
   const [errors, setErrors] = useState({})
   const [businessCategories, setBusinessCategories] = useState([])
   const [countries, setCountries] = useState([])
@@ -149,6 +160,12 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       gallery_images: business?.gallery_images || [],
       status: Number(business?.status ?? 0)
     })
+    // Auto-enable social platforms that have values in this business record
+    const activeSocials = ALL_SOCIAL_PLATFORMS
+      .map(p => p.key)
+      .filter(k => business && business[k] && String(business[k]).trim() !== '')
+    setSelectedSocials(activeSocials)
+
     setGalleryPreviews([])
     setExistingGalleryImages(
       (business?.gallery_images || []).filter((img) => typeof img === 'string' && img.trim())
@@ -208,7 +225,8 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   return (
     <form onSubmit={handleSubmit} className="space-y-5 text-text" noValidate>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Main Details: 4 Inputs Per Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Input
           label="Business Name"
           required
@@ -236,6 +254,14 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           error={errors.email}
         />
         <Input
+          label="Primary Phone"
+          required
+          value={formData.number}
+          onChange={(e) => handleFieldChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
+          disabled={isLoading}
+          error={errors.number}
+        />
+        <Input
           label="WhatsApp Number"
           value={formData.whatsapp_number}
           onChange={(e) => {
@@ -245,22 +271,11 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           disabled={isLoading}
         />
         <Input
-          label="Number"
-          required
-          value={formData.number}
-          onChange={(e) => handleFieldChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
-          disabled={isLoading}
-          error={errors.number}
-        />
-        <Input
           label="GST Number"
           value={formData.GST_number}
           onChange={(e) => setFormData({ ...formData, GST_number: e.target.value })}
           disabled={isLoading}
         />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Select
           label="Country"
           required
@@ -288,62 +303,126 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           options={cities.map(c => ({ label: c.name, value: c._id || c.id }))}
           error={errors.city_id}
         />
+        <div className="sm:col-span-2 md:col-span-3">
+          <Input
+            label="Location Link (Google Maps)"
+            required
+            placeholder="https://maps.google.com/..."
+            value={formData.location_link}
+            onChange={(e) => setFormData({ ...formData, location_link: e.target.value })}
+            disabled={isLoading}
+            error={errors.location_link}
+          />
+        </div>
       </div>
 
-      <Input
-        label="Location Link (Google Maps)"
-        required
-        placeholder="https://maps.google.com/..."
-        value={formData.location_link}
-        onChange={(e) => setFormData({ ...formData, location_link: e.target.value })}
-        disabled={isLoading}
-        error={errors.location_link}
-      />
-
-      <Input
-        type="textarea"
-        rows={3}
-        label="Address"
-        required
-        value={formData.address}
-        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-        disabled={isLoading}
-        error={errors.address}
-      />
-
-      <Input
-        type="textarea"
-        rows={4}
-        label="About Business"
-        value={formData.about_us}
-        onChange={(e) => setFormData({ ...formData, about_us: e.target.value })}
-        disabled={isLoading}
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input label="Website" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} disabled={isLoading} />
-        <Input label="Facebook" value={formData.facebook} onChange={(e) => setFormData({ ...formData, facebook: e.target.value })} disabled={isLoading} />
-        <Input label="Instagram" value={formData.instagram} onChange={(e) => setFormData({ ...formData, instagram: e.target.value })} disabled={isLoading} />
-        <Input label="Pinterest" value={formData.pinterest} onChange={(e) => setFormData({ ...formData, pinterest: e.target.value })} disabled={isLoading} />
-        <Input label="YouTube" value={formData.youtube} onChange={(e) => setFormData({ ...formData, youtube: e.target.value })} disabled={isLoading} />
-      </div>
-
+      {/* Address & About Business side by side in a 2-column grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ImageUpload
-          label="Profile Image"
-          value={formData.image || profilePreview}
-          onChange={(file) => {
-            setFormData({ ...formData, image: file || '' })
-            if (file) {
-              setProfilePreview(URL.createObjectURL(file))
-            } else {
-              setProfilePreview(null)
-            }
-          }}
+        <Input
+          type="textarea"
+          rows={3}
+          label="Address"
+          required
+          value={formData.address}
+          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
           disabled={isLoading}
+          error={errors.address}
         />
 
-        <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
+        <Input
+          type="textarea"
+          rows={4}
+          label="About Business"
+          value={formData.about_us}
+          onChange={(e) => setFormData({ ...formData, about_us: e.target.value })}
+          disabled={isLoading}
+        />
+      </div>
+
+      {/* Row with 3 Columns: [1] Social Links Selector & Inputs, [2] Profile Image, [3] Gallery Images */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+        {/* Col 1: Dynamic Social Links & Website */}
+        <div className="flex flex-col h-full">
+          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Social Links & Website</label>
+          <div className="flex-1 flex flex-col p-3 rounded-2xl bg-surface-secondary/40 border border-border min-h-[176px]">
+            <div className="flex items-center justify-between gap-1 mb-2">
+              <span className="text-xs font-semibold text-text">Platform Links</span>
+              <div className="w-36">
+                <Select
+                  placeholder="+ Add Link"
+                  searchable={false}
+                  value={socialPickerValue}
+                  options={ALL_SOCIAL_PLATFORMS
+                    .filter(p => !selectedSocials.includes(p.key))
+                    .map(p => ({ label: p.label, value: p.key }))
+                  }
+                  onChange={(val) => {
+                    if (val && !selectedSocials.includes(val)) {
+                      setSelectedSocials([...selectedSocials, val])
+                    }
+                    setSocialPickerValue('')
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1 max-h-[120px]">
+              {selectedSocials.length > 0 ? (
+                selectedSocials.map((key) => {
+                  const platform = ALL_SOCIAL_PLATFORMS.find(p => p.key === key)
+                  if (!platform) return null
+                  return (
+                    <div key={key} className="space-y-0.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-text-secondary">{platform.label}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedSocials(selectedSocials.filter(k => k !== key))
+                            setFormData({ ...formData, [key]: '' })
+                          }}
+                          className="text-[10px] text-red-500 hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <Trash2 className="w-2.5 h-2.5" /> Remove
+                        </button>
+                      </div>
+                      <Input
+                        placeholder={platform.placeholder}
+                        value={formData[key] || ''}
+                        onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="flex items-center justify-center h-full text-[11px] text-text-secondary text-center italic py-4">
+                  + Add Link upar click karke Website, Facebook, Instagram add karein.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Col 2: Profile Image */}
+        <div className="flex flex-col h-full">
+          <ImageUpload
+            label="Profile Image"
+            value={formData.image || profilePreview}
+            onChange={(file) => {
+              setFormData({ ...formData, image: file || '' })
+              if (file) {
+                setProfilePreview(URL.createObjectURL(file))
+              } else {
+                setProfilePreview(null)
+              }
+            }}
+            disabled={isLoading}
+          />
+        </div>
+
+        {/* Col 3: Gallery Images */}
+        <div className="flex flex-col h-full">
           <label className="block text-sm font-semibold text-text-secondary mb-1.5">Gallery Images</label>
           <FileDropzone
             multiple
@@ -356,7 +435,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
             }}
             disabled={isLoading}
             label="Drag & Drop or Click"
-            subLabel="Multiple images supported"
+            subLabel="Multiple images"
             previews={[
               ...existingGalleryImages.map((img, idx) => ({
                 url: img,
@@ -371,17 +450,26 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
         </div>
       </div>
 
-      <Select
-        label="Status"
-        placement="down"
-        value={formData.status}
-        onChange={(val) => setFormData({ ...formData, status: Number(val) })}
-        disabled={isLoading}
-        options={[
-          { label: 'Active', value: 1 },
-          { label: 'Inactive', value: 0 }
-        ]}
-      />
+      <div className="flex flex-col justify-center pt-1">
+        <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+          Status
+        </label>
+        <div className="flex items-center gap-3 py-1">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={Number(formData.status ?? 1) === 1}
+              onChange={(e) => handleChange('status', e.target.checked ? 1 : 0)}
+              disabled={isLoading}
+            />
+            <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+          <span className="text-sm font-semibold text-text">
+            {Number(formData.status ?? 1) === 1 ? 'Active' : 'Inactive'}
+          </span>
+        </div>
+      </div>
 
       <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
         {onCancel && (

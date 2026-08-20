@@ -9,6 +9,7 @@ import Modal from '../components/Modal'
 import UserForm from '../components/UserForm'
 import Select from '../components/common/Select'
 import Input from '../components/common/Input'
+import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
@@ -305,12 +306,11 @@ export default function Users() {
   
 
   return (
-    <div className="space-y-4 animate-slide-up">
+    <div className="space-y-4">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Family Registry</h2>
-   
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="w-64 sm:w-80">
@@ -325,38 +325,40 @@ export default function Users() {
 
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center justify-center p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+            className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
             title="Toggle Filters"
           >
             <Filter className="w-4 h-4" />
           </button>
           
           {selectedUsers.length > 0 && (
-            <div className="flex items-center gap-2 bg-surface-secondary border border-border p-1.5 rounded-xl animate-fade-in shadow-sm">
+            <div className="flex items-center gap-2 bg-surface-secondary border border-border p-1 rounded-xl shadow-sm">
               <span className="text-xs font-semibold text-text-secondary px-2">{selectedUsers.length} selected:</span>
               <button
                 onClick={() => handleBulkUpdateStatus(1)}
                 disabled={formLoading}
-                className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+                className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm cursor-pointer"
               >
                 <CheckCircle className="w-3.5 h-3.5" /> Active
               </button>
               <button
                 onClick={() => handleBulkUpdateStatus(0)}
                 disabled={formLoading}
-                className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+                className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm cursor-pointer"
               >
                 <XCircle className="w-3.5 h-3.5" /> Inactive
               </button>
             </div>
           )}
           {hasPermission(currentUser, ['members.add', 'members.create', 'users.manage']) && (
-            <button
+            <Button
               onClick={handleCreate}
-              className="flex text-white items-center gap-2 bg-primary hover:bg-primary-hover hover:shadow-glow-primary text-text px-4 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300"
+              variant="primary"
+              icon={<Plus className="w-4 h-4" />}
+              className="h-10"
             >
-              <Plus className="w-4 h-4 text-white font-semibold text-text tracking-tight" /> Add Member
-            </button>
+              Add Member
+            </Button>
           )}
         </div>
       </div>
@@ -440,6 +442,7 @@ export default function Users() {
           {
             key: 'name',
             header: 'Name',
+            className: 'min-w-[240px]',
             render: (user) => {
               const headId = String(user.id || user._id)
               const isCollapsed = collapsedHeads.includes(headId)
@@ -459,14 +462,17 @@ export default function Users() {
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="font-semibold text-text">{user.name}</span>
                     {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+                      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium shrink-0">
                         <span>Family Head</span>
-                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold rounded-full bg-primary text-white leading-none">
-                          {user.childrenCount ?? 0}
+                        <span 
+                          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold shrink-0 select-none"
+                          style={{ lineHeight: 0 }}
+                        >
+                          <span className="translate-y-[-0.5px]">{user.childrenCount ?? 0}</span>
                         </span>
                       </span>
                     ) : (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary text-text-secondary border border-border/60 capitalize font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary text-text-secondary border border-border/60 capitalize font-medium shrink-0">
                         {user.relation}
                       </span>
                     )}
@@ -478,15 +484,17 @@ export default function Users() {
           {
             key: 'phone',
             header: 'Mobile Number',
+            className: 'min-w-[140px] whitespace-nowrap',
             render: (user) => (
-              <div className="text-sm font-mono text-text">{user.phone || user.number || '-'}</div>
+              <div className="text-sm font-mono text-text whitespace-nowrap">{user.phone || user.number || '-'}</div>
             )
           },
           {
             key: 'email',
             header: 'Email',
+            className: 'min-w-[180px]',
             render: (user) => (
-              <div className="text-sm text-text-secondary">{user.email || <span className="opacity-50">No Email</span>}</div>
+              <div className="text-sm text-text-secondary truncate max-w-[200px]">{user.email || <span className="opacity-50">No Email</span>}</div>
             )
           },
           {

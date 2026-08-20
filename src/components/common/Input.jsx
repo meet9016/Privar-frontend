@@ -51,6 +51,8 @@ export default function Input({
     if (onChange) onChange(e);
   };
 
+  const defaultPlaceholder = label ? `Enter ${label}` : undefined;
+
   return (
     <div className={className}>
       {label && (
@@ -60,6 +62,7 @@ export default function Input({
       )}
       {type === 'textarea' ? (
         <textarea
+          placeholder={defaultPlaceholder}
           {...props}
           value={value}
           onChange={onChange}
@@ -75,6 +78,7 @@ export default function Input({
             </span>
           )}
           <input
+            placeholder={defaultPlaceholder}
             {...props}
             type={inputType}
             value={value}

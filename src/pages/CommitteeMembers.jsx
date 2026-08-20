@@ -165,26 +165,26 @@ export default function CommitteeMembers() {
   };
 
   return (
-    <div className="space-y-6 animate-slide-up text-text">
+    <div className="space-y-6 text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Committee Members</h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative group flex-1 sm:w-64">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-text-secondary/60">
+          <div className="relative flex-1 sm:w-64">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
               <Search className="w-4 h-4" />
             </span>
             <input
-              type="search"
+              type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search committee..."
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+              className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
             />
           </div>
           {hasPermission(currentUser, ['committee.add', 'members.add', 'users.manage']) && (
-            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
               Add Member
             </Button>
           )}

@@ -6,30 +6,40 @@ import { configurationNavigation, coreNavigation, masterNavigation, mediaNavigat
 import { hasPermission } from '../lib/permissions'
 import { getUserRoleLabel } from '../lib/roles'
 
-const LinkItem = ({ to, icon: Icon, label, end }) => (
-  <NavLink
-    to={to}
-    end={end}
-    className={({ isActive }) =>
-      `group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${
-        isActive
-          ? 'text-white font-bold shadow-md border-transparent bg-primary'
-          : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
-      }`
-    }
-    title={label}
-  >
-    {({ isActive }) => (
-      <>
-        <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />
-        <span className="truncate tracking-tight">{label}</span>
-        {isActive && (
-          <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-white animate-pulse shadow-sm"></span>
-        )}
-      </>
-    )}
-  </NavLink>
-)
+const LinkItem = ({ to, icon: Icon, label, end }) => {
+  const location = useLocation()
+  const isDashboardActive = (to === '/admin' || to === '/admin/dashboard') && 
+    (location.pathname === '/admin' || location.pathname === '/admin/' || location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/')
+
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) => {
+        const active = isActive || isDashboardActive
+        return `group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${
+          active
+            ? 'text-white font-bold shadow-md border-transparent bg-primary'
+            : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
+        }`
+      }}
+      title={label}
+    >
+      {({ isActive }) => {
+        const active = isActive || isDashboardActive
+        return (
+          <>
+            <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-white font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />
+            <span className="truncate tracking-tight">{label}</span>
+            {active && (
+              <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-white animate-pulse shadow-sm"></span>
+            )}
+          </>
+        )
+      }}
+    </NavLink>
+  )
+}
 
 const SectionLabel = ({ children }) => (
   <div className="px-3 pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-text-secondary/60 first:pt-0">

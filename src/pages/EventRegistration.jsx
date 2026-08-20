@@ -8,7 +8,7 @@ import Select from '../components/common/Select'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
-export default function EventRegistrations() {
+export default function EventRegistrations({ eventIdProp }) {
     const [rows, setRows] = useState([])
     const [limit, setLimit] = useState(10)
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
@@ -19,7 +19,7 @@ export default function EventRegistrations() {
     const [error, setError] = useState('')
     const [selectedReg, setSelectedReg] = useState(null)
     const [events, setEvents] = useState([])
-    const [filterEventId, setFilterEventId] = useState('')
+    const [filterEventId, setFilterEventId] = useState(eventIdProp || '')
 
     const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
     const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
@@ -31,11 +31,15 @@ export default function EventRegistrations() {
     const [initialized, setInitialized] = useState(false)
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search)
-        const eventId = params.get('event_id')
-        if (eventId) setFilterEventId(eventId)
+        if (!eventIdProp) {
+            const params = new URLSearchParams(window.location.search)
+            const eventId = params.get('event_id')
+            if (eventId) setFilterEventId(eventId)
+        } else {
+            setFilterEventId(eventIdProp)
+        }
         setInitialized(true)
-    }, [])
+    }, [eventIdProp])
 
     const fetchEvents = useCallback(async () => {
         try {

@@ -25,15 +25,16 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
+    const defaultCommunityName = (localStorage.getItem('web_name') || 'Parivar').trim()
     setFormData({
       first_name: member?.first_name || '',
       middle_name: member?.middle_name || '',
-      last_name: member?.last_name || '',
+      last_name: member ? (member.last_name || '') : defaultCommunityName,
       number: member?.number || '',
       email: member?.email || '',
       password: '',
       role_id: member?.role_id || '',
-      status: member ? Number(member.status) : '',
+      status: member ? Number(member.status) : 1,
       image: member?.image
     })
     setErrors({})
@@ -121,7 +122,9 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     }
     payload.append('role_id', formData.role_id)
     payload.append('status', formData.status)
-    payload.append('remove_image', formData.remove_image ? 'true' : 'false')
+    if (formData.remove_image) {
+      payload.append('remove_image', 'true')
+    }
 
     if (formData.image instanceof File) {
       payload.append('image', formData.image)
@@ -169,12 +172,10 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
           />
           <Input
             label="Last Name"
-            required
             placeholder="Enter Last Name"
             value={formData.last_name}
-            onChange={(e) => handleFieldChange('last_name', e.target.value.replace(/[0-9]/g, ''))}
-            disabled={isLoading || !!(member && member.last_name)}
-            error={errors.last_name}
+            disabled={true}
+            className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
           />
         </div>
       </div>

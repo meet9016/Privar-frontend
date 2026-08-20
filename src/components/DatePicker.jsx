@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -19,16 +20,79 @@ export default function DatePicker({
   disableFuture = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [dropUp, setDropUp] = useState(false);
+  const [popoverStyle, setPopoverStyle] = useState({});
   const [viewMode, setViewMode] = useState(mode);
+
+  const toggleOpen = () => {
+    if (disabled) return;
+    if (!isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const calHeight = 350;
+      const width = 270;
+      let left = rect.left;
+      if (left + width > window.innerWidth - 10) {
+        left = Math.max(10, window.innerWidth - width - 10);
+      }
+      if (spaceBelow < calHeight && rect.top > calHeight) {
+        setPopoverStyle({
+          position: 'fixed',
+          bottom: `${window.innerHeight - rect.top + 4}px`,
+          left: `${left}px`,
+          width: `${width}px`,
+          zIndex: 99999,
+        });
+      } else {
+        setPopoverStyle({
+          position: 'fixed',
+          top: `${rect.bottom + 4}px`,
+          left: `${left}px`,
+          width: `${width}px`,
+          zIndex: 99999,
+        });
+      }
+    }
+    setIsOpen(!isOpen);
+  };
 
   useEffect(() => {
     if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      // Calendar height is ~340px. If space below is less than 340px and space above is larger, drop up.
-      setDropUp(spaceBelow < 340 && spaceAbove > spaceBelow);
+      const updatePosition = () => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const calHeight = 350;
+        const width = 270;
+        let left = rect.left;
+        if (left + width > window.innerWidth - 10) {
+          left = Math.max(10, window.innerWidth - width - 10);
+        }
+        if (spaceBelow < calHeight && rect.top > calHeight) {
+          setPopoverStyle({
+            position: 'fixed',
+            bottom: `${window.innerHeight - rect.top + 4}px`,
+            left: `${left}px`,
+            width: `${width}px`,
+            zIndex: 99999,
+          });
+        } else {
+          setPopoverStyle({
+            position: 'fixed',
+            top: `${rect.bottom + 4}px`,
+            left: `${left}px`,
+            width: `${width}px`,
+            zIndex: 99999,
+          });
+        }
+      };
+
+      updatePosition();
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
+      };
     }
   }, [isOpen]);
   
@@ -330,7 +394,7 @@ export default function DatePicker({
       )}
       {/* Trigger Input */}
       <div
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className={`relative cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <input
@@ -347,8 +411,11 @@ export default function DatePicker({
       </div>
 
       {/* Popover */}
-      {isOpen && (
-        <div className={`absolute z-50 ${dropUp ? 'bottom-full mb-1 origin-bottom' : 'mt-1 origin-top'} bg-surface border border-border rounded-xl shadow-glass overflow-hidden w-[270px] right-0 sm:left-0 sm:right-auto animate-slide-up text-text`}>
+      {isOpen && typeof document !== 'undefined' && ReactDOM.createPortal(
+        <div 
+          style={popoverStyle}
+          className="bg-surface border border-border rounded-xl shadow-glass overflow-hidden text-text"
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-3 border-b border-border bg-surface-secondary/50">
             <button type="button" onClick={prev} className="p-1.5 hover:bg-surface rounded-lg text-text-secondary hover:text-text transition-colors">
@@ -401,7 +468,8 @@ export default function DatePicker({
               </button>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
       {error && <p className="text-red-500 text-xs mt-1 font-semibold">{error}</p>}
     </div>

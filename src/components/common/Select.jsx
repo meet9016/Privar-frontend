@@ -25,6 +25,8 @@ export default function Select({
   const updatePosition = () => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return;
+    
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
     const menuMaxHeight = 240;
@@ -66,6 +68,7 @@ export default function Select({
     if (!isOpen) return;
 
     updatePosition();
+    const rafId = requestAnimationFrame(updatePosition);
 
     const handleScrollOrResize = () => {
       updatePosition();
@@ -89,6 +92,7 @@ export default function Select({
     document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
+      cancelAnimationFrame(rafId);
       window.removeEventListener('scroll', handleScrollOrResize, true);
       window.removeEventListener('resize', handleScrollOrResize);
       document.removeEventListener('mousedown', handleClickOutside);
@@ -99,6 +103,7 @@ export default function Select({
     if (disabled) return;
     if (!isOpen) {
       setSearchTerm('');
+      updatePosition();
     }
     setIsOpen(!isOpen);
   };
@@ -139,7 +144,7 @@ export default function Select({
           <span className={selectedOption ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <ChevronDown size={16} className={`text-text-secondary shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown size={16} className={`text-text-secondary shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </div>
 
@@ -147,7 +152,7 @@ export default function Select({
         <div
           ref={menuRef}
           style={menuStyle}
-          className="bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden flex flex-col animate-scale-in"
+          className="bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden flex flex-col transition-opacity duration-150 animate-fade-in"
         >
           {showSearch && (
             <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2 flex-shrink-0">
@@ -191,3 +196,4 @@ export default function Select({
     </div>
   );
 }
+  

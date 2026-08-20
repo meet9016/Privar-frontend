@@ -16,7 +16,7 @@ import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, deleteAction }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, deleteAction, gridCols }) {
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ ...acc, [field.name]: field.defaultValue ?? '' }), {})
   }, [fields])
@@ -91,12 +91,16 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const openEdit = async (row) => {
     setSelected(row)
     setError('')
-    setIsModalOpen(true)
+    setFormError('')
+    setFieldErrors({})
     setImagePreview(null)
     setRemovedImages({})
 
     const buildFormData = (data) => fields.reduce((acc, field) => {
-      let val = field.type === 'file' ? '' : data[field.name] ?? data[field.fallback] ?? field.defaultValue ?? ''
+      let val = field.type === 'file' 
+        ? '' 
+        : (data[field.name] !== undefined && data[field.name] !== null ? data[field.name] : (data[field.fallback] !== undefined && data[field.fallback] !== null ? data[field.fallback] : (field.defaultValue ?? '')))
+      
       // For 'name' field on birthday/user records: compose from first_name + last_name if name is empty
       if (field.name === 'name' && !val && (data.first_name || data.last_name)) {
         val = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ')
@@ -110,23 +114,24 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     }, {})
 
     // Set initial values from the row list data immediately
-    setFormData(buildFormData(row))
+    const initialForm = buildFormData(row)
+    setFormData(initialForm)
+    setIsModalOpen(true)
 
     const cleanEndpoint = endpoint.split('?')[0]
-    try {
-      // Fetch fresh, absolute latest data from the backend by ID
-      const res = await api.get(`${cleanEndpoint}/${row._id || row.id}`)
-      const freshData = res.data?.data || res.data
-      if (freshData) {
-        setSelected(freshData)
-        setFormData(buildFormData(freshData))
+    const rowId = row._id || row.id
+    if (rowId) {
+      try {
+        const res = await api.get(`${cleanEndpoint}/${rowId}`)
+        const freshData = res.data?.data || res.data
+        if (freshData) {
+          setSelected(freshData)
+          setFormData(buildFormData(freshData))
+        }
+      } catch (err) {
+        console.error("Failed to fetch fresh row data:", err)
       }
-    } catch (err) {
-      console.error("Failed to fetch fresh row data:", err)
-      // Fallback: keep the initial local row data in the form
     }
-    setFormError('')
-    setFieldErrors({})
     loadRemoteOptions(fields)
   }
 
@@ -239,6 +244,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     }
   }
 
+
   const handleDelete = async (row) => {
     if (!await confirm(`Delete ${getRowTitle?.(row) || row.title || row.name || 'this record'}?`)) return
     try {
@@ -309,7 +315,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   }
 
   return (
-    <div className="space-y-6 animate-slide-up text-text">
+    <div className="space-y-6 text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">{title}</h2>
@@ -334,14 +340,15 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               <Search className="w-4 h-4" />
             </span>
             <input
+              type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={`Search ${title.toLowerCase()}...`}
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary/50"
+              className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
             />
           </div>
           {!hideAdd && (
-            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
               Add {title}
             </Button>
           )}
@@ -355,14 +362,16 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             key: c.key,
             render: (row) => (
               c.key === 'status' ? (
-                <div className="flex items-center">
-                  <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${
-                    Number(row.status ?? 1) === 1 || String(row.status).toLowerCase() === 'active' || String(row.status).toLowerCase() === 'approved'
-                      ? 'bg-success-bg border-success-border text-success-text'
-                      : 'bg-surface-secondary border-border text-text-secondary'
-                  }`}>
-                    {Number(row.status) === 1 ? 'Active' : (Number(row.status) === 0 ? 'Inactive' : (row.status || 'Active'))}
-                  </span>
+                <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={Number(row.status ?? 1) === 1 || String(row.status).toLowerCase() === 'active' || String(row.status).toLowerCase() === 'approved'}
+                      onChange={() => handleToggleStatus(row)}
+                    />
+                    <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
                 </div>
               ) : c.key === 'marital_status' ? (
                 <span className="inline-flex px-2.5 py-1 rounded-lg bg-surface-secondary border border-border text-text-secondary font-medium text-xs">
@@ -377,8 +386,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   </div>
                 )
               ) : (
-                <span className="line-clamp-2">
-                  {c.render ? c.render(row) : (
+                (() => {
+                  const displayValue = c.render ? c.render(row) : (
                     row[c.key + '_name'] ||
                     row[c.key?.replace(/_id$/, '_name')] ||
                     (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.name ||
@@ -386,8 +395,18 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.state ||
                     (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.city ||
                     row[c.key] || '-'
-                  )}
-                </span>
+                  );
+                  const rawString = typeof displayValue === 'string' ? displayValue : (typeof row[c.key] === 'string' ? row[c.key] : '');
+                  const hasLongText = rawString && rawString.length > 25;
+                  return (
+                    <span 
+                      className={`block max-w-[260px] truncate ${hasLongText ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                      title={rawString && rawString !== '-' ? rawString : undefined}
+                    >
+                      {displayValue}
+                    </span>
+                  );
+                })()
               )
             )
           })),
@@ -433,12 +452,12 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
 
       <Modal isOpen={isModalOpen} maxWidth={fields.length > 10 ? 'max-w-7xl' : fields.length > 5 ? 'max-w-5xl' : 'max-w-3xl'} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-3.5 text-text" noValidate>
-          <div className={`grid grid-cols-1 ${fields.length > 10 ? 'sm:grid-cols-2 md:grid-cols-4' : fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2'} gap-3.5`} style={{ overflow: 'visible' }}>
+          <div className={`grid grid-cols-1 ${gridCols || (fields.some(f => f.className) ? 'md:grid-cols-2' : fields.length > 10 ? 'sm:grid-cols-2 md:grid-cols-4' : fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2')} gap-3.5`} style={{ overflow: 'visible' }}>
             {fields.map((field, fieldIdx) => {
               const isFullRow = field.type === 'textarea' || (field.type === 'file' && field.multiple);
-              const colSpanClass = isFullRow 
-                ? (fields.length > 10 ? 'sm:col-span-2 md:col-span-4' : fields.length > 4 ? 'sm:col-span-2 md:col-span-3' : 'md:col-span-2')
-                : '';
+              const colSpanClass = field.className || (isFullRow 
+                ? (gridCols ? 'md:col-span-2' : fields.length > 10 ? 'sm:col-span-2 md:col-span-4' : fields.length > 4 ? 'sm:col-span-2 md:col-span-3' : 'md:col-span-2')
+                : '');
               
               return (
               <div key={field.name} className={colSpanClass} style={{ zIndex: fields.length - fieldIdx, position: 'relative' }}>
@@ -451,6 +470,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                       required={field.required} 
                       rows="2" 
                       value={formData[field.name] || ''} 
+                      placeholder={field.placeholder || `Enter ${field.label}`}
                       onChange={(e) => {
                         setFormData({ ...formData, [field.name]: e.target.value })
                         if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
@@ -460,6 +480,31 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     />
                     {fieldErrors[field.name] && <p className="text-red-500 text-xs mt-1 font-semibold">{field.label} is required</p>}
                   </>
+                ) : (field.name === 'status' || field.type === 'switch') ? (
+                  <div className="flex flex-col justify-center h-full pt-1">
+                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                      {field.label || 'Status'}
+                    </label>
+                    <div className="flex items-center gap-3 py-1">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={Number(formData[field.name] ?? 1) === 1}
+                          onChange={(e) => {
+                            const newStatus = e.target.checked ? 1 : 0;
+                            setFormData({ ...formData, [field.name]: newStatus });
+                            if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false });
+                          }}
+                          disabled={saving || field.disabled}
+                        />
+                        <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                      </label>
+                      <span className="text-sm font-semibold text-text">
+                        {Number(formData[field.name] ?? 1) === 1 ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
                 ) : field.type === 'select' ? (
                   <Select 
                     label={field.label}
@@ -492,45 +537,43 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 ) : field.type === 'file' ? (
-                  <>
+                  <div className="flex flex-col">
                     <label className="block text-sm font-semibold text-text-secondary mb-1.5">
                       {field.label} {field.required && <span className="text-red-500">*</span>}
                     </label>
-                    <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
-                      <FileDropzone
-                        accept={field.accept || 'image/*'}
-                        multiple={field.multiple}
-                        error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
-                        onFilesSelected={(files) => {
-                          const file = field.multiple ? files : files?.[0] || ''
-                          setFormData({ ...formData, [field.name]: file })
-                          if (!field.multiple && file) {
-                            setImagePreview((prev) => ({ ...prev, [field.name]: URL.createObjectURL(file) }))
-                            setRemovedImages((prev) => ({ ...prev, [field.name]: false }))
+                    <FileDropzone
+                      accept={field.accept || 'image/*'}
+                      multiple={field.multiple}
+                      error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
+                      onFilesSelected={(files) => {
+                        const file = field.multiple ? files : files?.[0] || ''
+                        setFormData({ ...formData, [field.name]: file })
+                        if (!field.multiple && file) {
+                          setImagePreview((prev) => ({ ...prev, [field.name]: URL.createObjectURL(file) }))
+                          setRemovedImages((prev) => ({ ...prev, [field.name]: false }))
+                        }
+                      }}
+                      disabled={saving}
+                      label={`Click or Drag ${field.label}`}
+                      previews={[
+                        ...(imagePreview?.[field.name] ? [{
+                          url: imagePreview[field.name],
+                          onRemove: () => {
+                            setImagePreview((prev) => ({ ...prev, [field.name]: null }))
+                            setFormData((prev) => ({ ...prev, [field.name]: '' }))
                           }
-                        }}
-                        disabled={saving}
-                        label={`Click or Drag ${field.label}`}
-                        previews={[
-                          ...(imagePreview?.[field.name] ? [{
-                            url: imagePreview[field.name],
-                            onRemove: () => {
-                              setImagePreview((prev) => ({ ...prev, [field.name]: null }))
-                              setFormData((prev) => ({ ...prev, [field.name]: '' }))
-                            }
-                          }] : (selected?.[field.name] || formData[field.name]) && !removedImages[field.name] && !field.multiple ? [{
-                            url: assetUrl(selected?.[field.name] || formData[field.name]),
-                            onRemove: () => {
-                              setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
-                            }
-                          }] : [])
-                        ]}
-                      />
-                      {removedImages[field.name] && (
-                        <span className="text-xs text-error-text">Image will be removed on save.</span>
-                      )}
-                    </div>
-                  </>
+                        }] : (selected?.[field.name] || formData[field.name]) && !removedImages[field.name] && !field.multiple ? [{
+                          url: assetUrl(selected?.[field.name] || formData[field.name]),
+                          onRemove: () => {
+                            setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
+                          }
+                        }] : [])
+                      ]}
+                    />
+                    {removedImages[field.name] && (
+                      <span className="text-xs text-error-text mt-1">Image will be removed on save.</span>
+                    )}
+                  </div>
                 ) : field.type === 'date' ? (
                   <>
                     <label className="block text-sm font-semibold text-text-secondary mb-1.5">
@@ -553,6 +596,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     type={field.type || 'text'} 
                     label={field.label}
                     required={field.required}
+                    placeholder={field.placeholder || `Enter ${field.label}`}
                     value={formData[field.name] || ''} 
                     onChange={(e) => {
                       let val = e.target.value

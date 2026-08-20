@@ -13,6 +13,7 @@ import { toast } from '../lib/toast'
 import FileDropzone from '../components/common/FileDropzone'
 import DateTimePicker from '../components/common/DateTimePicker'
 import useDebounce from '../hooks/useDebounce'
+import EventRegistrations from './EventRegistration'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -55,7 +56,28 @@ export default function Events() {
   const [countryList, setCountryList] = useState([])
   const [stateList, setStateList] = useState([])
   const [cityList, setCityList] = useState([])
+  const [viewEventDetail, setViewEventDetail] = useState(null)
+  const [viewRegistrationsEvent, setViewRegistrationsEvent] = useState(null)
+  const [eventRegistrations, setEventRegistrations] = useState([])
+  const [registrationsLoading, setRegistrationsLoading] = useState(false)
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
+
+  const handleViewRegistrations = async (eventRow) => {
+    setViewRegistrationsEvent(eventRow)
+    setRegistrationsLoading(true)
+    setEventRegistrations([])
+    try {
+      const eventId = eventRow.id || eventRow._id
+      const res = await api.get(`/event-registrations?event_id=${eventId}&limit=1000`)
+      const list = res.data?.data || res.data || []
+      setEventRegistrations(Array.isArray(list) ? list : [])
+    } catch (err) {
+      console.error('Failed to load event registrations:', err)
+      setEventRegistrations([])
+    } finally {
+      setRegistrationsLoading(false)
+    }
+  }
   const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
@@ -326,11 +348,10 @@ export default function Events() {
   }
 
   return (
-    <div className="space-y-6 animate-slide-up text-text">
+    <div className="space-y-6 text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-text">Events</h2>
-
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
@@ -338,14 +359,14 @@ export default function Events() {
               <Search className="w-4 h-4" />
             </div>
             <input
-              type="search"
+              type="text"
               placeholder="Search events..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+              className="w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-colors"
             />
           </div>
-          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
             Add Event
           </Button>
         </div>
@@ -411,10 +432,10 @@ export default function Events() {
           },
           {
             header: 'Registrations',
-            key: 'registration_count',
+            key: 'total_registrations',
             render: (row) => (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                {row.registration_count || 0}
+                {row.total_registrations || row.registration_count || 0}
               </span>
             )
           },
@@ -439,10 +460,10 @@ export default function Events() {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
+            render: (row) => ( <div className="flex items-center justify-start gap-2">
                 <button
-                  onClick={() => navigate(`/admin/event-registrations?event_id=${row.id || row._id}`)}
-                  className="p-2 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all"
+                  onClick={() => handleViewRegistrations(row)}
+                  className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all"
                   title="View Registrations"
                 >
                   <Eye className="w-3.5 h-3.5" />
@@ -489,57 +510,56 @@ export default function Events() {
 
       <Modal isOpen={isModalOpen} maxWidth="max-w-5xl" title={selectedId ? 'Edit Event' : 'Add Event'} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-4 text-text" noValidate>
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Top Section: Left (Title, Category, Description) & Right (Image Upload) */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-4">
+              <Input
+                label="Title"
+                required
+                value={formData.title}
+                onChange={(e) => {
+                  setFormData({ ...formData, title: e.target.value })
+                  if (fieldErrors.title) setFieldErrors({ ...fieldErrors, title: null })
+                }}
+                disabled={saving}
+                error={fieldErrors.title}
+              />
 
-            <Input
-              label="Title"
-              required
-              value={formData.title}
-              onChange={(e) => {
-                setFormData({ ...formData, title: e.target.value })
-                if (fieldErrors.title) setFieldErrors({ ...fieldErrors, title: null })
-              }}
-              disabled={saving}
-              error={fieldErrors.title}
-            />
+              <Select
+                label="Category"
+                required
+                value={formData.event_category_id}
+                onChange={(val) => {
+                  const selectedOption = categories.find((item) => String(item.id) === String(val)) || {}
+                  setFormData({
+                    ...formData,
+                    event_category_id: val,
+                    event_category_name: selectedOption.name || ''
+                  })
+                  if (fieldErrors.event_category_id) setFieldErrors({ ...fieldErrors, event_category_id: null })
+                }}
+                disabled={saving}
+                options={categories.map((c) => ({ label: c.name, value: c.id }))}
+                error={fieldErrors.event_category_id}
+              />
 
-            <Select
-              label="Category"
-              required
-              value={formData.event_category_id}
-              onChange={(val) => {
-                const selectedOption = categories.find((item) => String(item.id) === String(val)) || {}
-                setFormData({
-                  ...formData,
-                  event_category_id: val,
-                  event_category_name: selectedOption.name || ''
-                })
-                if (fieldErrors.event_category_id) setFieldErrors({ ...fieldErrors, event_category_id: null })
-              }}
-              disabled={saving}
-              options={categories.map((c) => ({ label: c.name, value: c.id }))}
-              error={fieldErrors.event_category_id}
-            />
-          </div>
+              <Input
+                type="textarea"
+                rows={3}
+                label="Description"
+                required
+                value={formData.description}
+                onChange={(e) => {
+                  setFormData({ ...formData, description: e.target.value })
+                  if (fieldErrors.description) setFieldErrors({ ...fieldErrors, description: null })
+                }}
+                disabled={saving}
+                error={fieldErrors.description}
+              />
+            </div>
 
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              type="textarea"
-              rows={4}
-              label="Description"
-              required
-              value={formData.description}
-              onChange={(e) => {
-                setFormData({ ...formData, description: e.target.value })
-                if (fieldErrors.description) setFieldErrors({ ...fieldErrors, description: null })
-              }}
-              disabled={saving}
-              error={fieldErrors.description}
-            />
-             <div className="flex flex-col bg-input-bg border border-border rounded-xl p-3">
+            <div className="flex flex-col h-full">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Image</label>
-
               <FileDropzone
                 accept="image/*"
                 onFilesSelected={(files) => setFormData({ ...formData, image: files[0] || '', remove_image: false })}
@@ -558,7 +578,6 @@ export default function Events() {
               />
             </div>
           </div>
-
 
           <div className="grid gap-4 sm:grid-cols-3">
             <DateTimePicker
@@ -620,17 +639,26 @@ export default function Events() {
             />
           </div>
           
-          <Input
-            label="Venue / Location"
-            required
-            value={formData.event_location}
-            onChange={(e) => {
-              setFormData({ ...formData, event_location: e.target.value })
-              if (fieldErrors.event_location) setFieldErrors({ ...fieldErrors, event_location: null })
-            }}
-            disabled={saving}
-            error={fieldErrors.event_location}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Venue / Location"
+              required
+              value={formData.event_location}
+              onChange={(e) => {
+                setFormData({ ...formData, event_location: e.target.value })
+                if (fieldErrors.event_location) setFieldErrors({ ...fieldErrors, event_location: null })
+              }}
+              disabled={saving}
+              error={fieldErrors.event_location}
+            />
+
+            <Input
+              label="Location Link"
+              value={formData.location_link}
+              onChange={(e) => setFormData({ ...formData, location_link: e.target.value })}
+              disabled={saving}
+            />
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <Select
@@ -671,15 +699,6 @@ export default function Events() {
             />
           </div>
 
-
-
-          <Input
-            label="Location Link"
-            value={formData.location_link}
-            onChange={(e) => setFormData({ ...formData, location_link: e.target.value })}
-            disabled={saving}
-          />
-
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
@@ -689,6 +708,106 @@ export default function Events() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* View Event & Registrations Modal */}
+      <Modal
+        isOpen={!!viewRegistrationsEvent}
+        maxWidth="max-w-4xl"
+        title={`Event Details & Registrations: ${viewRegistrationsEvent?.title || ''}`}
+        onClose={() => setViewRegistrationsEvent(null)}
+      >
+        {viewRegistrationsEvent && (
+          <div className="space-y-5 text-text">
+            {/* Event Summary Bar */}
+            <div className="p-4 rounded-2xl bg-surface-secondary/40 border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                {viewRegistrationsEvent.image ? (
+                  <img
+                    src={assetUrl(viewRegistrationsEvent.image)}
+                    alt={viewRegistrationsEvent.title}
+                    className="w-14 h-14 rounded-xl object-cover border border-border shrink-0"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-surface border border-border flex items-center justify-center shrink-0">
+                    <Calendar className="w-6 h-6 text-primary" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-base font-bold text-text">{viewRegistrationsEvent.title}</h3>
+                  <p className="text-xs text-text-secondary line-clamp-1">{viewRegistrationsEvent.description || 'No description'}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-text-secondary">
+                    <span>📍 {viewRegistrationsEvent.event_location || viewRegistrationsEvent.venue || '-'}</span>
+                    <span>•</span>
+                    <span>📅 {formatDate(viewRegistrationsEvent.start_time || viewRegistrationsEvent.event_date)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-border">
+                <span className="text-xs text-text-secondary">Total Registrations:</span>
+                <span className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full">
+                  {eventRegistrations.length}
+                </span>
+              </div>
+            </div>
+
+            {/* Registrations List */}
+            <div>
+              <h4 className="text-sm font-bold text-text mb-2">Registered Attendees</h4>
+              {registrationsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader />
+                </div>
+              ) : eventRegistrations.length === 0 ? (
+                <div className="p-8 text-center bg-surface rounded-xl border border-dashed border-border text-text-secondary text-sm">
+                  No attendees have registered for this event yet.
+                </div>
+              ) : (
+                <div className="border border-border rounded-xl overflow-hidden bg-white">
+                  <div className="overflow-x-auto max-h-72 custom-scrollbar">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-surface-secondary/70 border-b border-border text-xs uppercase text-text-secondary">
+                        <tr>
+                          <th className="px-4 py-2.5">#</th>
+                          <th className="px-4 py-2.5">Name</th>
+                          <th className="px-4 py-2.5">Email</th>
+                          <th className="px-4 py-2.5">Phone</th>
+                          <th className="px-4 py-2.5 text-center">Attendees</th>
+                          <th className="px-4 py-2.5 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {eventRegistrations.map((reg, idx) => (
+                          <tr key={reg.id || reg._id || idx} className="hover:bg-surface-secondary/20 transition-colors">
+                            <td className="px-4 py-2.5 text-text-secondary text-xs">{idx + 1}</td>
+                            <td className="px-4 py-2.5 font-semibold text-text">{reg.name}</td>
+                            <td className="px-4 py-2.5 text-text-secondary text-xs">{reg.email || '-'}</td>
+                            <td className="px-4 py-2.5 text-text-secondary text-xs font-mono">{reg.number || '-'}</td>
+                            <td className="px-4 py-2.5 text-center font-bold text-primary">{reg.total_attendee ?? 1}</td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                reg.status === 'confirmed' ? 'bg-success-bg text-success-text border border-success-border' : 'bg-surface-secondary text-text-secondary'
+                              }`}>
+                                {reg.status || 'confirmed'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-border">
+              <Button type="button" variant="primary" onClick={() => setViewRegistrationsEvent(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )

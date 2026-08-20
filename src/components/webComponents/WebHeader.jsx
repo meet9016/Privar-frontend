@@ -176,7 +176,7 @@ export default function WebHeader() {
               ) : null}
               <div className="hidden sm:block">
                 <h1 className="text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.textColor || '#123524' }}>
-                  {theme?.name} Parivar
+                  {theme?.name || 'Vala'}
                 </h1>
               </div>
             </div>

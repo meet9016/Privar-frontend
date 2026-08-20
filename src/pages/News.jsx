@@ -343,7 +343,7 @@ export default function News() {
 
       <Modal isOpen={isModalOpen} maxWidth="max-w-3xl" title={selected ? 'Edit News' : 'Add News'} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-3 text-text">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
             <Input
               label="Title"
               required
@@ -355,23 +355,32 @@ export default function News() {
               disabled={saving}
               error={fieldErrors.title}
             />
-            <Select
-              label="Status"
-              placement="down"
-              value={formData.status}
-              onChange={(val) => setFormData({ ...formData, status: val })}
-              disabled={saving}
-              options={[
-                { label: 'Active', value: 1 },
-                { label: 'Pending (Inactive)', value: 0 }
-              ]}
-            />
+            <div className="flex flex-col justify-center pt-1">
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                Status
+              </label>
+              <div className="flex items-center gap-3 py-1">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={Number(formData.status ?? 1) === 1}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.checked ? 1 : 0 })}
+                    disabled={saving}
+                  />
+                  <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+                <span className="text-sm font-semibold text-text">
+                  {Number(formData.status ?? 1) === 1 ? 'Approved' : 'Inactive'}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
             <Input
               type="textarea"
-              rows={3}
+              rows={4}
               label="Description"
               required
               value={formData.description}
@@ -383,8 +392,8 @@ export default function News() {
               error={fieldErrors.description}
             />
 
-            <div className="flex flex-col bg-input-bg border border-border rounded-xl p-2.5">
-              <label className="block text-xs font-semibold text-text-secondary mb-1">Image</label>
+            <div className="flex flex-col">
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">Image</label>
 
               <FileDropzone
                 accept="image/*"
@@ -404,20 +413,6 @@ export default function News() {
               />
             </div>
           </div>
-
-
-          {/*NOTIFICATIONS */}
-          {!selected && (
-            <label className="flex items-center gap-2.5 cursor-pointer p-2 bg-input-bg border border-border rounded-xl">
-              <input
-                type="checkbox"
-                checked={formData.send_notification}
-                onChange={(e) => setFormData({ ...formData, send_notification: e.target.checked })}
-                className="w-4 h-4 rounded text-primary focus:ring-primary/20 bg-input-bg border-border"
-              />
-              <span className="text-xs font-medium text-text">Send as Push Notification to all users</span>
-            </label>
-          )}
 
           <div className="flex justify-end gap-3 mt-3 pt-3 border-t border-border">
             <Button

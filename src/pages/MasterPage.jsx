@@ -13,7 +13,7 @@ export default function MasterPage({ type }) {
   const parentConfig = parentFieldsConfig[type]
   
   const fields = useMemo(() => [
-    ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*' }] : []),
+    ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*', className: 'sm:col-span-2' }] : []),
     { name: 'name', label: `${label} Name`, required: true },
     ...(parentConfig ? [{ 
       name: 'parent_id', 

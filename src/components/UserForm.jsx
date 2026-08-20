@@ -120,10 +120,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     } else {
       setIsHead(true)
       const india = countries.find(c => /india/i.test(c.name))
+      const defaultCommunityName = (localStorage.getItem('web_name') || 'Parivar').trim()
       setFormData({
         first_name: '',
         middle_name: '',
-        last_name: '',
+        last_name: defaultCommunityName,
         email: '',
         number: '',
         gender: 'Male',
@@ -260,10 +261,8 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         <Input
           label="Last Name"
           value={formData.last_name}
-          onChange={(e) => handleChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
-          disabled={isLoading || !!(user && user.last_name)}
-          required={true}
-          error={errors.last_name}
+          disabled={true}
+          className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
         />
       </div>
 
