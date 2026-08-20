@@ -25,6 +25,7 @@ import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { Download } from 'lucide-react'
 import useDebounce from '../hooks/useDebounce'
+import { toast } from '../lib/toast'
 
 export default function Donations() {
   const [donations, setDonations] = useState([])
@@ -178,15 +179,19 @@ export default function Donations() {
 
   const handleExport = async () => {
     try {
-      const res = await exportDonationsExcel(activeSearch)
-      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const res = await exportDonationsExcel(debouncedSearch || search || '')
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' })
+      const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'donations.csv'
+      a.download = `donations-${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-    } catch {
-      setError('Failed to export donations')
+      toast.success('Donations exported successfully')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to export donations')
     }
   }
   return (
@@ -317,20 +322,6 @@ export default function Donations() {
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Alerts */}
-      {error && (
-        <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="bg-success-bg border border-success-border text-success-text p-4 rounded-2xl text-sm flex items-center gap-2 animate-fade-in shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-success animate-ping"></span>
-          {success}
         </div>
       )}
 

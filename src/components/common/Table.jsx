@@ -239,18 +239,29 @@ export default function Table({
               })}
             </tr>
           </thead>
-          <tbody className={`divide-y divide-border bg-white transition-opacity duration-150 ${loading && data.length > 0 ? 'opacity-70 pointer-events-none' : 'opacity-100'}`}>
+          <tbody className={`divide-y divide-border bg-white transition-opacity duration-200 ${loading && data.length > 0 ? 'opacity-65 pointer-events-none' : 'opacity-100'}`}>
             {loading && data.length === 0 ? (
               showSkeleton ? (
                 skeletonRows.map((n) => <SkeletonRow key={n} columns={finalColumns} />)
               ) : (
                 <tr>
-                  <td colSpan={finalColumns.length} className="py-20 px-4 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3.5">
-                      <div className="relative">
-                        <div className="w-9 h-9 rounded-full border-3 border-primary/20 border-t-primary animate-spin"></div>
+                  <td colSpan={finalColumns.length} className="py-24 px-4 text-center">
+                    <div className="inline-flex flex-col items-center justify-center gap-4 p-8 rounded-3xl bg-surface/90 border border-border/80 shadow-glass-md backdrop-blur-xl">
+                      <div className="relative flex items-center justify-center w-12 h-12">
+                        <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full animate-pulse-slow"></div>
+                        <div className="absolute inset-0 rounded-full border-2 border-primary/20 border-t-primary border-r-primary animate-spin"></div>
+                        <div className="absolute inset-1.5 rounded-full border-2 border-primary/15 border-b-primary animate-[spin_1.5s_reverse_infinite]"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-glow-primary animate-ping opacity-75"></div>
+                        <div className="w-2 h-2 rounded-full bg-primary shadow-glow-primary relative z-10"></div>
                       </div>
-                      <span className="text-xs font-semibold text-text-secondary tracking-wide">Loading data, please wait...</span>
+                      <div className="flex flex-col items-center gap-1.5">
+                        <span className="text-xs font-bold tracking-wider text-text uppercase">Loading Records</span>
+                        <div className="flex gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                        </div>
+                      </div>
                     </div>
                   </td>
                 </tr>

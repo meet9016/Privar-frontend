@@ -467,17 +467,16 @@ export default function GalleryPage() {
               />
             </div>
           </div>
-        <div className={`flex flex-col bg-input-bg border ${fieldErrors.images ? 'border-red-500' : 'border-border'} rounded-xl p-3`}>
 
-            <div>
-              <label className="block text-sm  font-semibold text-text-secondary mb-1.5">Gallery Images <span className="text-red-500">*</span></label>
-              <FileDropzone
-                multiple
-                accept="image/*"
-                onFilesSelected={(files) => {
-                  const fakeEvent = { target: { files } };
-                  handleFileChange(fakeEvent);
-                }}
+          <div>
+            <label className="block text-sm font-semibold text-text-secondary mb-1.5">Gallery Images <span className="text-red-500">*</span></label>
+            <FileDropzone
+              multiple
+              accept="image/*"
+              onFilesSelected={(files) => {
+                const fakeEvent = { target: { files } };
+                handleFileChange(fakeEvent);
+              }}
                 disabled={saving}
                 label="Click or Drag Gallery Images"
                 subLabel="Upload multiple images. Existing images stay unless removed below."
@@ -493,7 +492,6 @@ export default function GalleryPage() {
                 ]}
               />
               {fieldErrors.images && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.images}</p>}
-            </div>
           </div>
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>

@@ -65,10 +65,10 @@ export default function FileDropzone({
       >
         {hasPreviews ? (
           multiple ? (
-            <div className="flex flex-col h-full p-4 justify-between">
-              <div className="flex flex-wrap gap-3 flex-1 overflow-y-auto custom-scrollbar max-h-36">
+            <div className="flex flex-col h-full p-3.5 justify-between">
+              <div className="flex flex-wrap gap-2.5 flex-1 overflow-y-auto custom-scrollbar max-h-48">
                 {previews.map((preview, index) => (
-                  <div key={index} className="relative group/preview w-20 h-20 rounded-xl overflow-hidden border border-border bg-surface shrink-0 shadow-sm">
+                  <div key={index} className="relative group/preview w-24 h-24 rounded-xl overflow-hidden border border-border bg-surface shrink-0 shadow-sm">
                     {preview.url.endsWith('.pdf') ? (
                       <div className="w-full h-full flex flex-col items-center justify-center p-1 bg-surface-secondary text-text">
                         <FileText className="w-6 h-6 text-primary mb-1" />
@@ -79,7 +79,7 @@ export default function FileDropzone({
                         src={preview.url}
                         alt="Preview"
                         draggable={false}
-                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-300 select-none cursor-zoom-in"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 select-none cursor-zoom-in"
                         onContextMenu={(e) => e.preventDefault()}
                         onClick={(e) => { e.stopPropagation(); setFullscreenImage(preview.url); }}
                       />
@@ -90,17 +90,17 @@ export default function FileDropzone({
                         e.stopPropagation();
                         preview.onRemove();
                       }}
-                      className="preview-action-btn absolute top-1 right-1 bg-red-550/90 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition-colors z-10 cursor-pointer"
+                      className="preview-action-btn absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition-colors z-10 cursor-pointer"
                       title="Remove"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
-              <div className="text-center pt-3 border-t border-dashed border-border/60 mt-3">
-                <p className="text-xs text-text-secondary flex items-center justify-center gap-1.5 font-medium">
-                  <UploadCloud className="w-4 h-4 text-primary" /> Click or drag to add more
+              <div className="text-center pt-2.5 border-t border-dashed border-border/60 mt-2.5">
+                <p className="text-xs text-text-secondary flex items-center justify-center gap-1.5 font-semibold">
+                  <UploadCloud className="w-4 h-4 text-primary" /> Click or drag to add more images
                 </p>
               </div>
             </div>

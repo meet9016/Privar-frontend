@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext'
 import { configurationNavigation, coreNavigation, masterNavigation, mediaNavigation, engagementNavigation, activityNavigation, servicesNavigation } from '../config/navigation'
 import { hasPermission } from '../lib/permissions'
 import { getUserRoleLabel } from '../lib/roles'
+import { getCommunitySurname } from '../lib/api'
 
 const LinkItem = ({ to, icon: Icon, label, end }) => {
   const location = useLocation()
@@ -206,7 +207,7 @@ export default function Sidebar() {
       <div className="mt-5 flex shrink-0 items-center justify-center p-3 border-t border-border/50">
         <div className="text-center">
           <h2 className="font-bold text-sm tracking-tight text-text truncate">
-            {webTheme.name ? `${webTheme.name} Admin` : 'Parivar Admin'}
+            {`${getCommunitySurname()} Admin`}
           </h2>
           <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary/70 block mt-0.5">Management Panel</span>
         </div>
