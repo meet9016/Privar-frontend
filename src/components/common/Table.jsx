@@ -239,9 +239,22 @@ export default function Table({
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border bg-white">
-            {loading && data.length === 0 && showSkeleton ? (
-              skeletonRows.map((n) => <SkeletonRow key={n} columns={finalColumns} />)
+          <tbody className={`divide-y divide-border bg-white transition-opacity duration-150 ${loading && data.length > 0 ? 'opacity-70 pointer-events-none' : 'opacity-100'}`}>
+            {loading && data.length === 0 ? (
+              showSkeleton ? (
+                skeletonRows.map((n) => <SkeletonRow key={n} columns={finalColumns} />)
+              ) : (
+                <tr>
+                  <td colSpan={finalColumns.length} className="py-20 px-4 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3.5">
+                      <div className="relative">
+                        <div className="w-9 h-9 rounded-full border-3 border-primary/20 border-t-primary animate-spin"></div>
+                      </div>
+                      <span className="text-xs font-semibold text-text-secondary tracking-wide">Loading data, please wait...</span>
+                    </div>
+                  </td>
+                </tr>
+              )
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={finalColumns.length} className="p-0">

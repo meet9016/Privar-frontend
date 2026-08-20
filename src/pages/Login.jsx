@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Shield, Eye, EyeOff, Key } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { toast } from '../lib/toast'
+import { getCommunitySurname } from '../lib/api'
 
 export default function Login() {
   const { login } = useContext(AuthContext)
@@ -78,17 +79,9 @@ export default function Login() {
             )}
           </div>
           <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
-            {webTheme.name || 'Parivar'}
+            {webTheme.name || `${getCommunitySurname()} Parivar`}
           </h1>
         </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-2xl text-sm flex items-center gap-2 mb-6 animate-fade-in shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>
-            <span>{error}</span>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email input */}

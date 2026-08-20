@@ -5,6 +5,7 @@ import Select from './common/Select'
 import Button from './common/Button'
 import ImageUpload from './common/ImageUpload'
 import { isValidEmail } from '../lib/validation'
+import { getCommunitySurname } from '../lib/api'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all'
 
@@ -25,7 +26,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
-    const defaultCommunityName = (localStorage.getItem('web_name') || 'Parivar').trim()
+    const defaultCommunityName = getCommunitySurname()
     setFormData({
       first_name: member?.first_name || '',
       middle_name: member?.middle_name || '',

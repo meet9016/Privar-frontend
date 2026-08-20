@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter } from 'lucide-react'
-import api, { assetUrl, getStudentsList } from '../lib/api'
+import api, { assetUrl, getStudentsList, getCommunitySurname } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import usePagination from '../hooks/usePagination'
@@ -117,7 +117,7 @@ export default function Students() {
     setIsModalOpen(true)
   }
 
-  const defaultSurname = (localStorage.getItem('web_name') || 'Parivar').trim()
+  const defaultSurname = getCommunitySurname()
 
   const handleCloseModal = () => {
     setIsModalOpen(false)

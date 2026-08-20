@@ -9,6 +9,23 @@ export const assetUrl = (path) => {
   return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`
 }
 
+/**
+ * Extracts the clean community surname/name without 'Parivar' suffix
+ * e.g. 'Vala Parivar' -> 'Vala', 'test.parivar.me' -> 'test' or configured name
+ */
+export const getCommunitySurname = () => {
+  const webName = localStorage.getItem('web_name') || ''
+  const cleaned = webName.replace(/parivar/gi, '').trim()
+  if (cleaned) return cleaned
+
+  // If subdomain is present (e.g. test.parivar.me -> test)
+  const hostParts = window.location.hostname.split('.')
+  if (hostParts.length > 2 && hostParts[0] !== 'www' && hostParts[0] !== 'admin') {
+    return hostParts[0].charAt(0).toUpperCase() + hostParts[0].slice(1)
+  }
+  return 'Vala'
+}
+
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: { 'Content-Type': 'multipart/form-data' },

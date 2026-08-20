@@ -75,14 +75,16 @@ export default function News() {
     setPage(1)
   }
 
-  const handleDelete = async (id) => {
-    if (!await confirm('Are you sure you want to delete this news announcement from the community board?')) return
+  const handleDelete = async (rowOrId) => {
+    const id = typeof rowOrId === 'object' ? (rowOrId.id || rowOrId._id) : rowOrId
+    if (!id) return
+    if (!await confirm('Are you sure you want to delete this news announcement?')) return
     try {
       await api.delete(`/news/${id}`)
       await fetchNews()
-      toast.success('News announcement deleted and moderated successfully')
+      toast.success('News deleted successfully')
     } catch (err) {
-      toast.error('Failed to delete news announcement')
+      toast.error(err.response?.data?.message || 'Failed to delete news announcement')
     }
   }
 

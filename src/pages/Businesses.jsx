@@ -251,7 +251,7 @@ export default function Businesses() {
                 <a href={biz.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono text-xs truncate max-w-[120px] inline-block">
                   {biz.website.replace(/^https?:\/\//i, '')}
                 </a>
-              ) : <span className="text-text-secondary text-xs">—</span>
+              ) : <span className="text-text-secondary text-xs">—</span> 
             )
           },
           {

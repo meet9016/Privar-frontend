@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { normalizeRoleId } from '../lib/roles'
-import api from '../lib/api'
+import api, { getCommunitySurname } from '../lib/api'
 import Input from './common/Input'
 import Select from './common/Select'
 import Button from './common/Button'
@@ -120,7 +120,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     } else {
       setIsHead(true)
       const india = countries.find(c => /india/i.test(c.name))
-      const defaultCommunityName = (localStorage.getItem('web_name') || 'Parivar').trim()
+      const defaultCommunityName = getCommunitySurname()
       setFormData({
         first_name: '',
         middle_name: '',

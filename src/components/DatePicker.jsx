@@ -117,17 +117,34 @@ export default function DatePicker({
 
   const maxAllowed = getMaxAllowedDate();
 
-  // The date that drives the currently viewed month/year in the calendar popover
-  const [viewDate, setViewDate] = useState(() => {
-    if (!value) return new Date();
-    const parts = value.split('-');
+  const parseDate = (val) => {
+    if (!val) return new Date();
+    if (val instanceof Date) return isNaN(val.getTime()) ? new Date() : val;
+    const str = String(val).trim();
+    if (str.includes('/')) {
+      const parts = str.split('/');
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[2], 10);
+        const parsed = new Date(y, m, d);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+    }
+    const parts = str.split('-');
     const y = parseInt(parts[0], 10);
     const m = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
     const d = parts[2] ? parseInt(parts[2], 10) : 1;
-    const initialDate = new Date(y, isNaN(m) ? 0 : m, isNaN(d) ? 1 : d);
-    if (isNaN(initialDate.getTime())) return new Date();
-    if (maxAllowed && initialDate.getTime() > maxAllowed.getTime()) return new Date(maxAllowed);
-    return initialDate;
+    const parsed = new Date(y, isNaN(m) ? 0 : m, isNaN(d) ? 1 : d);
+    if (!isNaN(parsed.getTime())) return parsed;
+    return new Date();
+  };
+
+  // The date that drives the currently viewed month/year in the calendar popover
+  const [viewDate, setViewDate] = useState(() => {
+    const initial = parseDate(value);
+    if (maxAllowed && initial.getTime() > maxAllowed.getTime()) return new Date(maxAllowed);
+    return initial;
   });
 
   const containerRef = useRef(null);
@@ -138,15 +155,9 @@ export default function DatePicker({
 
   useEffect(() => {
     if (value) {
-      const parts = value.split('-');
-      const y = parseInt(parts[0], 10);
-      const m = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
-      const d = parts[2] ? parseInt(parts[2], 10) : 1;
-      if (!isNaN(y)) {
-        const nextDate = new Date(y, isNaN(m) ? 0 : m, isNaN(d) ? 1 : d);
-        if (!isNaN(nextDate.getTime())) {
-          setViewDate(nextDate);
-        }
+      const nextDate = parseDate(value);
+      if (!isNaN(nextDate.getTime())) {
+        setViewDate(nextDate);
       }
     }
   }, [value]);
@@ -174,8 +185,7 @@ export default function DatePicker({
 
   const getDisplayValue = () => {
     if (!value) return '';
-    const parts = value.split('-');
-    const d = new Date(parseInt(parts[0], 10), parts[1] ? parseInt(parts[1], 10) - 1 : 0, parts[2] ? parseInt(parts[2], 10) : 1);
+    const d = parseDate(value);
     if (isNaN(d.getTime())) return value;
 
     if (mode === 'year') return d.getFullYear();
@@ -186,7 +196,8 @@ export default function DatePicker({
   };
 
   // View navigation
-  const prev = () => {
+  const prev = (e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     const d = new Date(viewDate);
     if (viewMode === 'year') d.setFullYear(d.getFullYear() - 12);
     else if (viewMode === 'month') d.setFullYear(d.getFullYear() - 1);
@@ -209,7 +220,8 @@ export default function DatePicker({
     }
   };
 
-  const next = () => {
+  const next = (e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     if (isNextDisabled()) return;
     const d = new Date(viewDate);
     if (viewMode === 'year') d.setFullYear(d.getFullYear() + 12);
@@ -224,7 +236,7 @@ export default function DatePicker({
     d.setFullYear(y);
     setViewDate(d);
     if (mode === 'year') {
-      onChange(formatOutput(d));
+      if (onChange) onChange(formatOutput(d));
       setIsOpen(false);
     } else {
       setViewMode('month');
@@ -236,15 +248,17 @@ export default function DatePicker({
     d.setMonth(mIndex);
     setViewDate(d);
     if (mode === 'month') {
-      onChange(formatOutput(d));
+      if (onChange) onChange(formatOutput(d));
       setIsOpen(false);
     } else {
       setViewMode('date');
     }
   };
 
-  const handleSelectDate = (d) => {
-    onChange(formatOutput(d));
+  const handleSelectDate = (d, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    const formatted = formatOutput(d);
+    if (onChange) onChange(formatted);
     setIsOpen(false);
   };
 
@@ -372,7 +386,7 @@ export default function DatePicker({
                 key={i}
                 type="button"
                 disabled={isDisabled}
-                onClick={() => !isDisabled && handleSelectDate(d)}
+                onClick={(e) => !isDisabled && handleSelectDate(d, e)}
                 className={btnClass}
               >
                 {d.getDate()}

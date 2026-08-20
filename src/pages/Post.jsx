@@ -326,7 +326,7 @@ export default function Post() {
 
       <Modal isOpen={isModalOpen} maxWidth="max-w-3xl" title={selected ? 'Edit Post' : 'Add Post'} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-4 text-text">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+          <div>
             <Input
               label="Title"
               required
@@ -338,32 +338,12 @@ export default function Post() {
               disabled={saving}
               error={fieldErrors.title}
             />
-            <div className="flex flex-col justify-center pt-1">
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">
-                Status
-              </label>
-              <div className="flex items-center gap-3 py-1">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={Number(formData.status ?? 1) === 1}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.checked ? 1 : 0 })}
-                    disabled={saving}
-                  />
-                  <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                </label>
-                <span className="text-sm font-semibold text-text">
-                  {Number(formData.status ?? 1) === 1 ? 'Approved' : 'Inactive'}
-                </span>
-              </div>
-            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             <Input
               type="textarea"
-              rows={4}
+              rows={5}
               label="Description"
               required
               value={formData.description}
@@ -394,6 +374,26 @@ export default function Post() {
                 ]}
               />
             </div>
+          </div>
+
+          {/* Status moved to bottom */}
+          <div className="flex items-center gap-3 pt-1">
+            <label className="block text-sm font-semibold text-text-secondary">
+              Status:
+            </label>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={Number(formData.status ?? 1) === 1}
+                onChange={(e) => setFormData({ ...formData, status: e.target.checked ? 1 : 0 })}
+                disabled={saving}
+              />
+              <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+            <span className="text-sm font-semibold text-text">
+              {Number(formData.status ?? 1) === 1 ? 'Approved' : 'Inactive'}
+            </span>
           </div>
 
           <div className="flex justify-end gap-3 mt-3 pt-3 border-t border-border">
