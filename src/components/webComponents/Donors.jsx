@@ -62,8 +62,10 @@ export default function Donors() {
       try {
         setLoading(true)
         setError('')
-        const response = await memberApi.get('/donations')
-        setDonors(Array.isArray(response.data?.data) ? response.data.data : [])
+        const response = await memberApi.get('/donations?status=1')
+        const rows = Array.isArray(response.data?.data) ? response.data.data : []
+        const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active')
+        setDonors(activeRows)
       } catch (err) {
         setError('Unable to load donors right now')
         setDonors([])

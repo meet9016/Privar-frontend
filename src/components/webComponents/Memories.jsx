@@ -7,18 +7,24 @@ import { assetUrl, memberApi } from '../../lib/api'
 
 const normalizeGalleryMemories = (galleryRows, categories) => {
   const categoryMap = categories.reduce((map, category) => {
-    return { ...map, [String(category.id)]: category.category || 'Gallery' }
+    const id = String(category.id || category._id || '')
+    if (id) map[id] = category.category || category.name || 'Gallery'
+    return map
   }, {})
 
-  return galleryRows.flatMap((row, rowIndex) => {
-    const images = Array.isArray(row.images) ? row.images : []
+  const activeRows = galleryRows.filter(row => row.status === undefined || row.status === null || Number(row.status) === 1)
+
+  return activeRows.flatMap((row, rowIndex) => {
+    const images = Array.isArray(row.images) ? row.images : (row.image ? [row.image] : [])
     const categoryId = String(row.gallery_category_id || '')
-    const categoryName = categoryMap[categoryId] || row.year || 'Gallery'
+    const rawCat = row.category || row.category_name || (row.gallery_category_id && categoryMap[categoryId]) || 'General'
+    const categoryName = (typeof rawCat === 'object' && rawCat?.name) ? rawCat.name : String(rawCat)
 
     return images.map((image, imageIndex) => ({
       src: assetUrl(image),
       fallback: `/${((rowIndex + imageIndex) % 4) + 1}.png`,
-      category: categoryId || categoryName,
+      category: categoryName,
+      categoryId: categoryId || categoryName,
       alt: `${categoryName} memory`,
     }))
   })
@@ -79,22 +85,37 @@ export default function Memories() {
       try {
         setLoading(true)
         const [galleryResponse, categoryResponse] = await Promise.all([
-          memberApi.get('/gallery'),
-          memberApi.get('/gallery-categories'),
+          memberApi.get('/gallery?status=1&limit=100'),
+          memberApi.get('/gallery-categories?status=1&limit=100'),
         ])
 
         const galleryRows = Array.isArray(galleryResponse.data?.data) ? galleryResponse.data.data : []
         const categories = Array.isArray(categoryResponse.data?.data) ? categoryResponse.data.data : []
+        
+        const normalized = normalizeGalleryMemories(galleryRows, categories)
+        setMemories(normalized)
+
+        // Build list of category tabs from category table AND from actual items
+        const catMap = new Map()
+        categories.forEach(c => {
+          const name = (c.category || '').trim()
+          if (name) catMap.set(name, name)
+        })
+        normalized.forEach(m => {
+          if (m.category && m.category !== 'General') {
+            catMap.set(m.category, m.category)
+          }
+        })
+
         const dynamicTabs = [
           { id: 'all', label: 'All' },
-          ...categories.slice(0, 3).map((category) => ({
-            id: String(category.id),
-            label: category.category || 'Gallery',
-          })),
+          ...Array.from(catMap.keys()).map(name => ({
+            id: name,
+            label: name
+          }))
         ]
 
         setCategoryTabs(dynamicTabs)
-        setMemories(normalizeGalleryMemories(galleryRows, categories))
       } catch (error) {
         setCategoryTabs([{ id: 'all', label: 'All' }])
         setMemories([])
@@ -110,20 +131,23 @@ export default function Memories() {
   const visibleTabs = memories.length > 0 ? categoryTabs : []
 
   const filteredMemories = useMemo(() => {
-    const list = activeTab === 'all'
-      ? visibleMemories
-      : visibleMemories.filter((memory) => memory.category === activeTab)
-    return list ? list.slice(0, 9) : []
+    if (activeTab === 'all') {
+      return visibleMemories
+    }
+    return visibleMemories.filter((memory) => 
+      String(memory.category).toLowerCase().trim() === String(activeTab).toLowerCase().trim() ||
+      String(memory.categoryId) === String(activeTab)
+    )
   }, [activeTab, visibleMemories])
 
   return (
     <section
       id="gallery"
-      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16 relative overflow-hidden"
       style={{ backgroundColor: theme.backgroundColor }}
     >
       <div className="max-w-[1600px] mx-auto">
-        <div className="text-center mb-10  relative">
+        <div className="text-center mb-10 relative">
 
 
           <div className="relative z-10 flex flex-col items-center text-center">

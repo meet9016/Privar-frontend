@@ -211,17 +211,17 @@ export default function Donations() {
             wrapperClassName="w-64 sm:w-72"
           />
           <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary"
-          >
-            <Plus className="w-4 h-4" /> Add Donation
-          </button>
-          <button
             onClick={handleExport}
-            className="flex items-center gap-2 bg-surface-secondary hover:bg-surface border border-border text-text px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            className="flex items-center gap-2 bg-surface-secondary hover:bg-surface border border-border text-text px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
             title="Export to CSV"
           >
             <Download className="w-4 h-4" /> Export
+          </button>
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Add Donation
           </button>
         </div>
       </div>

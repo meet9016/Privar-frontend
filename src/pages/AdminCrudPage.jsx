@@ -356,7 +356,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             placeholder={`Search ${title.toLowerCase()}...`}
           />
           {!hideFilter && (
-            <div className="relative z-20">
+            <div className="relative z-30">
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
@@ -366,27 +366,54 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 <Filter className="w-4 h-4" />
               </button>
               {showFilters && (
-                <div className="absolute right-0 top-full mt-2 w-[240px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
-                  <div className="flex flex-col gap-3">
-                    {customFilters}
-                    <Select
-                      value={filterStatus}
-                      onChange={(val) => { setFilterStatus(val); resetPage(); }}
-                      placeholder="All Status"
-                      searchable={false}
-                      options={[
-                        { label: 'All Status', value: '' },
-                        { label: 'Active', value: '1' },
-                        { label: 'Inactive', value: '0' }
-                      ]}
-                    />
+                <>
+                  <div 
+                    className="fixed inset-0 bg-black/25 backdrop-blur-[2px] z-40 transition-opacity" 
+                    onClick={() => setShowFilters(false)} 
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-[260px] bg-surface border border-border rounded-2xl p-4 shadow-xl z-50 animate-fade-in space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-border">
+                      <span className="text-xs font-bold uppercase tracking-wider text-text">Filters</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowFilters(false)}
+                        className="p-1 rounded-lg text-text-secondary hover:bg-surface-secondary cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {customFilters}
+                      <Select
+                        value={filterStatus}
+                        onChange={(val) => { setFilterStatus(val); }}
+                        placeholder="All Status"
+                        searchable={false}
+                        options={[
+                          { label: 'All Status', value: '' },
+                          { label: 'Active', value: '1' },
+                          { label: 'Inactive', value: '0' }
+                        ]}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
+                      <button 
+                        type="button" 
+                        onClick={() => { setFilterStatus(''); resetPage(); setShowFilters(false); }} 
+                        className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Clear
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => { resetPage(); setShowFilters(false); }} 
+                        className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
+                      >
+                        Apply
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-end border-t border-border pt-3">
-                    <button type="button" onClick={() => { setFilterStatus(''); resetPage(); }} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
-                      <RefreshCw className="w-3.5 h-3.5" /> Clear
-                    </button>
-                  </div>
-                </div>
+                </>
               )}
             </div>
           )}
@@ -418,9 +445,27 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   </label>
                 </div>
               ) : c.key === 'marital_status' ? (
-                <span className="inline-flex px-2.5 py-1 rounded-lg bg-surface-secondary border border-border text-text-secondary font-medium text-xs">
-                  {row.marital_status || '-'}
-                </span>
+                (() => {
+                  const status = String(row.marital_status || '').trim();
+                  const lower = status.toLowerCase();
+                  let colorClass = 'bg-surface-secondary text-text-secondary border-border';
+                  if (lower.includes('never married') || lower === 'single') {
+                    colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
+                  } else if (lower.includes('divorce') || lower.includes('divorced') || lower.includes('awaiting divorce')) {
+                    colorClass = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800';
+                  } else if (lower.includes('widow') || lower.includes('widowed')) {
+                    colorClass = 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800';
+                  } else if (lower.includes('married')) {
+                    colorClass = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800';
+                  } else if (status) {
+                    colorClass = 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800';
+                  }
+                  return (
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg border font-semibold text-xs transition-all shadow-2xs ${colorClass}`}>
+                      {status || '-'}
+                    </span>
+                  );
+                })()
               ) : c.type === 'image' ? (
                 row[c.key] ? (
                   <img src={assetUrl(row[c.key])} alt={row.title || title} className="h-8 w-11 rounded-lg object-cover border border-border" />

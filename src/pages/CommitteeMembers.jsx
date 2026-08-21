@@ -182,7 +182,7 @@ export default function CommitteeMembers() {
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
           />
-          <div className="relative z-20">
+          <div className="relative z-30">
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
@@ -192,36 +192,63 @@ export default function CommitteeMembers() {
               <Filter className="w-4 h-4" />
             </button>
             {showFilters && (
-              <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
-                <div className="flex flex-col gap-3">
-                  <Select
-                    value={filters.status}
-                    onChange={(val) => setFilters(current => ({ ...current, status: val }))}
-                    placeholder="All Status"
-                    searchable={false}
-                    options={[
-                      { label: 'All Status', value: '' },
-                      { label: 'Active', value: '1' },
-                      { label: 'Inactive', value: '0' }
-                    ]}
-                  />
-                  <Select
-                    value={filters.role}
-                    onChange={(val) => setFilters(current => ({ ...current, role: val }))}
-                    placeholder="All Roles"
-                    searchable={false}
-                    options={[
-                      { label: 'All Roles', value: '' },
-                      ...roles.map(r => ({ label: r.name, value: r.name }))
-                    ]}
-                  />
+              <>
+                <div 
+                  className="fixed inset-0 bg-black/25 backdrop-blur-[2px] z-40 transition-opacity" 
+                  onClick={() => setShowFilters(false)} 
+                />
+                <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-xl z-50 animate-fade-in space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-border">
+                    <span className="text-xs font-bold uppercase tracking-wider text-text">Filters</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowFilters(false)}
+                      className="p-1 rounded-lg text-text-secondary hover:bg-surface-secondary cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <Select
+                      value={filters.status}
+                      onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                      placeholder="All Status"
+                      searchable={false}
+                      options={[
+                        { label: 'All Status', value: '' },
+                        { label: 'Active', value: '1' },
+                        { label: 'Inactive', value: '0' }
+                      ]}
+                    />
+                    <Select
+                      value={filters.role}
+                      onChange={(val) => setFilters(current => ({ ...current, role: val }))}
+                      placeholder="All Roles"
+                      searchable={false}
+                      options={[
+                        { label: 'All Roles', value: '' },
+                        ...roles.map(r => ({ label: r.name, value: r.name }))
+                      ]}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => { setFilters({ status: '', role: '' }); resetPage(); setShowFilters(false); }} 
+                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Clear
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => { resetPage(); setShowFilters(false); }} 
+                      className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
+                    >
+                      Apply
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-end border-t border-border pt-3">
-                  <button type="button" onClick={() => setFilters({ status: '', role: '' })} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
-                    <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
-                  </button>
-                </div>
-              </div>
+              </>
             )}
           </div>
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (

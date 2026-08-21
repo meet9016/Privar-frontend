@@ -1,30 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, Menu, X, LogIn, Home, Info, Users, Image as ImageIcon, Calendar, GraduationCap, HeartHandshake } from 'lucide-react'
 import NotificationDropdown from '../NotificationDropdown'
 import { assetUrl, getCommunitySurname, getCommunityFullName } from '../../lib/api'
 
+const getStoredWebTheme = () => {
+  const colorKeys = [
+    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
+    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
+    'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp',
+  ]
+  const loadedTheme = {}
+  colorKeys.forEach((key) => {
+    const value = localStorage.getItem(`web_${key}`)
+    if (value) loadedTheme[key] = value
+  })
+  return loadedTheme
+}
+
 export default function WebHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [theme, setTheme] = useState({})
+  const [theme, setTheme] = useState(getStoredWebTheme)
   const mobileMenuRef = useRef(null)
 
   useEffect(() => {
     const loadTheme = () => {
-      const colorKeys = [
-        'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-        'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
-        'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp',
-      ]
-
-      const loadedTheme = {}
-      colorKeys.forEach((key) => {
-        const value = localStorage.getItem(`web_${key}`)
-        if (value) loadedTheme[key] = value
-      })
-
-
-
-      setTheme(loadedTheme)
+      setTheme(getStoredWebTheme())
     }
 
     loadTheme()
@@ -56,13 +57,13 @@ export default function WebHeader() {
   }, [])
 
   const navigationLinks = [
-    { label: 'Home', href: '#home', icon: Home },
-    { label: 'About', href: '#about', icon: Info },
-    { label: 'Members', href: '#members', icon: Users },
-    { label: 'Gallery', href: '#gallery', icon: ImageIcon },
-    { label: 'Events', href: '#events', icon: Calendar },
-    { label: 'Students', href: '#students', icon: GraduationCap },
-    { label: 'Donors', href: '#donors', icon: HeartHandshake },
+    { label: 'Home', href: '/', icon: Home },
+    { label: 'About', href: '/about', icon: Info },
+    { label: 'Members', href: '/members', icon: Users },
+    { label: 'Gallery', href: '/gallery', icon: ImageIcon },
+    { label: 'Events', href: '/events', icon: Calendar },
+    { label: 'Students', href: '/students', icon: GraduationCap },
+    { label: 'Donors', href: '/donors', icon: HeartHandshake },
   ]
 
   const socialLinks = [
@@ -184,9 +185,9 @@ export default function WebHeader() {
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-5 xl:gap-8 flex-1 justify-center px-6">
               {navigationLinks.map((link) => (
-                <a
+                <Link
                   key={link.label}
-                  href={link.href}
+                  to={link.href}
                   className="text-sm font-semibold flex items-center gap-1.5 relative group transition-colors duration-200"
                   style={{
                     color: theme.textColor || '#123524'
@@ -206,7 +207,7 @@ export default function WebHeader() {
                       backgroundColor: theme.primaryColor
                     }}
                   ></span>
-                </a>
+                </Link>
               ))}
             </nav>
 
@@ -277,9 +278,9 @@ export default function WebHeader() {
             >
               <div className="flex flex-col gap-3 mb-4">
                 {navigationLinks.map((link) => (
-                  <a
+                  <Link
                     key={link.label}
-                    href={link.href}
+                    to={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
                     style={{
@@ -293,7 +294,7 @@ export default function WebHeader() {
                     }}
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
 

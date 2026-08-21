@@ -197,6 +197,7 @@ const definitions = {
     subtitle: 'View and manage member birthdays',
     endpoint: '/users?birthday',
     hideAdd: true,
+    hideFilter: true,
     fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date', required: true }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
     columns: [
       { key: 'name', label: 'Name' },

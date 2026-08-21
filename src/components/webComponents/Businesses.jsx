@@ -55,7 +55,7 @@ export default function Businesses() {
     const fetchBusinesses = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/businesses')
+        const response = await memberApi.get('/businesses?status=1')
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         setBusinesses(rows.map(normalizeBusiness))
       } catch (error) {

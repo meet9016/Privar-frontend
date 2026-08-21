@@ -110,12 +110,11 @@ export default function Events() {
     const fetchEvents = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/events')
+        const response = await memberApi.get('/events?status=1')
 
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
-        const normalizedEvents = normalizeEvent
-
-        setEvents(rows.map(normalizeEvent))
+        const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active' || String(r.status).toLowerCase() === 'approved')
+        setEvents(activeRows.map(normalizeEvent))
       } catch (error) {
         setEvents([])
       } finally {

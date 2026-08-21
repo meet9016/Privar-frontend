@@ -1,30 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, Menu, X, LogIn } from 'lucide-react'
 import NotificationDropdown from '../NotificationDropdown'
 import { assetUrl } from '../../lib/api'
 
+const getStoredWebTheme = () => {
+  const colorKeys = [
+    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
+    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
+    'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp',
+  ]
+  const loadedTheme = {}
+  colorKeys.forEach((key) => {
+    const value = localStorage.getItem(`web_${key}`)
+    if (value) loadedTheme[key] = value
+  })
+  return loadedTheme
+}
+
 export default function WebFooter() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [theme, setTheme] = useState({})
+  const [theme, setTheme] = useState(getStoredWebTheme)
   const mobileMenuRef = useRef(null)
 
   useEffect(() => {
     const loadTheme = () => {
-      const colorKeys = [
-        'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-        'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
-        'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp',
-      ]
-
-      const loadedTheme = {}
-      colorKeys.forEach((key) => {
-        const value = localStorage.getItem(`web_${key}`)
-        if (value) loadedTheme[key] = value
-      })
-
-
-
-      setTheme(loadedTheme)
+      setTheme(getStoredWebTheme())
     }
 
     loadTheme()
@@ -56,13 +57,15 @@ export default function WebFooter() {
   }, [])
 
   const navigationLinks = [
-    { label: 'Home', href: '#home' },
-    { label: 'About', href: '#about' },
-    { label: 'Members', href: '#members' },
-    { label: 'Gallery', href: '#gallery' },
-    { label: 'Events', href: '#events' },
-    { label: 'Students', href: '#students' },
-    { label: 'Donors', href: '#donors' },
+    { label: 'Home', href: '/' },
+    { label: 'About', href: '/about' },
+    { label: 'Members', href: '/members' },
+    { label: 'Gallery', href: '/gallery' },
+    { label: 'Events', href: '/events' },
+    { label: 'Students', href: '/students' },
+    { label: 'Donors', href: '/donors' },
+    { label: 'Matrimonial', href: '/matrimonial' },
+    { label: 'Job Vacancies', href: '/jobs' },
   ]
 
   const socialLinks = [
@@ -156,9 +159,9 @@ export default function WebFooter() {
               </div>
               <nav className="flex flex-col gap-2.5">
                 {navigationLinks.map((link) => (
-                  <a
+                  <Link
                     key={link.label}
-                    href={link.href}
+                    to={link.href}
                     className="group flex items-center gap-2.5 text-white/60 text-sm font-semibold hover:text-white transition-colors duration-200"
                   >
                     <span
@@ -166,7 +169,7 @@ export default function WebFooter() {
                       style={{ backgroundColor: theme.primaryColor || '#4caf50' }}
                     />
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
               </nav>
             </div>

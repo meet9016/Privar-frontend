@@ -26,8 +26,18 @@ import { activeTheme, applyTheme } from './theme/theme'
 import { ThemeProvider } from './context/ThemeContext'
 
 import Home from './pages/websitePages/Home'
+import AboutPage from './pages/websitePages/AboutPage'
+import MembersPage from './pages/websitePages/MembersPage'
+import GalleryWebPage from './pages/websitePages/GalleryWebPage'
+import EventsWebPage from './pages/websitePages/EventsWebPage'
+import StudentsWebPage from './pages/websitePages/StudentsWebPage'
+import DonorsWebPage from './pages/websitePages/DonorsWebPage'
+import JobVacancyWebPage from './pages/websitePages/JobVacancyWebPage'
+import MatrimonialWebPage from './pages/websitePages/MatrimonialWebPage'
 import PrivacyPolicy from './components/webComponents/PrivacyAndPolicy'
 import TermsAndConditions from './components/webComponents/TermsAndConditions'
+
+import WebLayout from './components/webComponents/WebLayout'
 
 const ReactToaster = lazy(() => import('./components/ReactToaster'))
 const ConfirmDialog = lazy(() => import('./components/ConfirmDialog'))
@@ -45,12 +55,24 @@ export default function App() {
         <ConfirmDialog />
       </Suspense>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
+        {/* Public Website Routes with Persistent WebLayout (Header & Footer fixed) */}
+        <Route element={<WebLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/members" element={<MembersPage />} />
+          <Route path="/gallery" element={<GalleryWebPage />} />
+          <Route path="/events" element={<EventsWebPage />} />
+          <Route path="/students" element={<StudentsWebPage />} />
+          <Route path="/donors" element={<DonorsWebPage />} />
+          <Route path="/matrimonial" element={<MatrimonialWebPage />} />
+          <Route path="/jobs" element={<JobVacancyWebPage />} />
+          <Route path="/job-vacancy" element={<JobVacancyWebPage />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        </Route>
+
         <Route path="/login" element={<Login />} />
         <Route path="/businesses/:id" element={<BusinessProfile />} />
-        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
 
 
