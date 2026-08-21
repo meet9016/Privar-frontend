@@ -11,7 +11,7 @@ export default function FileDropzone({
   subLabel = "",
   name = "",
   error = "",
-  previews = [] // Array of { url: string, onRemove: function }
+  previews = [] 
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState(null);

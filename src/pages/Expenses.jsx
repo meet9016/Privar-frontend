@@ -27,6 +27,7 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
+import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -283,86 +284,48 @@ export default function Expenses() {
             placeholder="Search expenses..."
             wrapperClassName="w-64 sm:w-72"
           />
-          <div className="relative z-30">
-            <button
-              type="button"
-              onClick={() => {
-                setDraftFilters(filters)
-                setShowFilters(!showFilters)
-              }}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.category || filters.month ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-              title="Toggle Filters"
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-            {showFilters && (
-              <>
-                <div 
-                  className="fixed inset-0 bg-black/25 backdrop-blur-[2px] z-40 transition-opacity" 
-                  onClick={() => setShowFilters(false)} 
-                />
-                <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-xl z-50 animate-fade-in space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-border">
-                    <span className="text-xs font-bold uppercase tracking-wider text-text">Filters</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setShowFilters(false)}
-                      className="p-1 rounded-lg text-text-secondary hover:bg-surface-secondary cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <Select
-                      value={draftFilters.category}
-                      onChange={(val) => { setDraftFilters(current => ({ ...current, category: val })); }}
-                      placeholder="All Categories"
-                      searchable={false}
-                      options={[
-                        { label: 'All Categories', value: '' },
-                        ...expenseCategories.map(c => ({ label: c.name || c.category || c.title || c.category_name, value: c.id || c._id }))
-                      ]}
-                    />
-                    <div className="space-y-1">
-                      <label className="block text-sm font-medium text-text-secondary">Month</label>
-                      <DatePicker
-                        mode="month"
-                        value={draftFilters.month}
-                        onChange={(val) => { setDraftFilters(current => ({ ...current, month: val })); }}
-                        placeholder="Select Month"
-                        className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        setDraftFilters({ category: '', month: '' }); 
-                        setFilters({ category: '', month: '' }); 
-                        resetPage(); 
-                        setShowFilters(false); 
-                      }} 
-                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Clear
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        setFilters(draftFilters); 
-                        resetPage(); 
-                        setShowFilters(false); 
-                      }} 
-                      className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <FilterPopover
+            isOpen={showFilters}
+            onToggle={() => {
+              setDraftFilters(filters)
+              setShowFilters(!showFilters)
+            }}
+            onClose={() => setShowFilters(false)}
+            activeCount={(filters.category ? 1 : 0) + (filters.month ? 1 : 0)}
+            onClear={() => {
+              setDraftFilters({ category: '', month: '' })
+              setFilters({ category: '', month: '' })
+              resetPage()
+              setShowFilters(false)
+            }}
+            onApply={() => {
+              setFilters(draftFilters)
+              resetPage()
+              setShowFilters(false)
+            }}
+          >
+            <Select
+              label="Expense Category"
+              value={draftFilters.category}
+              onChange={(val) => { setDraftFilters(current => ({ ...current, category: val })); }}
+              placeholder="All Categories"
+              searchable={false}
+              options={[
+                { label: 'All Categories', value: '' },
+                ...expenseCategories.map(c => ({ label: c.name || c.category || c.title || c.category_name, value: c.id || c._id }))
+              ]}
+            />
+            <div className="space-y-1">
+              <label className="block text-xs font-semibold text-text-secondary">Month</label>
+              <DatePicker
+                mode="month"
+                value={draftFilters.month}
+                onChange={(val) => { setDraftFilters(current => ({ ...current, month: val })); }}
+                placeholder="Select Month"
+                className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
+              />
+            </div>
+          </FilterPopover>
           <Button
             onClick={handleExport}
             variant="secondary"

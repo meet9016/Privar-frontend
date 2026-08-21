@@ -10,6 +10,7 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
+import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import FileDropzone from '../components/common/FileDropzone'
 import DateTimePicker from '../components/common/DateTimePicker'
@@ -405,87 +406,50 @@ export default function Events() {
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
           />
-          <div className="relative z-30">
-            <button
-              type="button"
-              onClick={() => {
-                setDraftFilters(filters)
-                setShowFilters(!showFilters)
-              }}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.status || filters.event_category_id ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-              title="Toggle Filters"
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-            {showFilters && (
-              <>
-                <div 
-                  className="fixed inset-0 bg-black/25 backdrop-blur-[2px] z-40 transition-opacity" 
-                  onClick={() => setShowFilters(false)} 
-                />
-                <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-xl z-50 animate-fade-in space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-border">
-                    <span className="text-xs font-bold uppercase tracking-wider text-text">Filters</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setShowFilters(false)}
-                      className="p-1 rounded-lg text-text-secondary hover:bg-surface-secondary cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <Select
-                      value={draftFilters.event_category_id}
-                      onChange={(val) => setDraftFilters(current => ({ ...current, event_category_id: val }))}
-                      placeholder="All Categories"
-                      searchable={false}
-                      options={[
-                        { label: 'All Categories', value: '' },
-                        ...categories.map(c => ({ label: c.name || c.category || c.title || c.category_name, value: c.id || c._id }))
-                      ]}
-                    />
-                    <Select
-                      value={draftFilters.status}
-                      onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
-                      placeholder="All Status"
-                      searchable={false}
-                      options={[
-                        { label: 'All Status', value: '' },
-                        { label: 'Active', value: '1' },
-                        { label: 'Inactive', value: '0' }
-                      ]}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        setDraftFilters({ status: '', event_category_id: '' }); 
-                        setFilters({ status: '', event_category_id: '' }); 
-                        resetPage(); 
-                        setShowFilters(false); 
-                      }} 
-                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Clear
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        setFilters(draftFilters); 
-                        resetPage(); 
-                        setShowFilters(false); 
-                      }} 
-                      className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <FilterPopover
+            isOpen={showFilters}
+            onToggle={() => {
+              setDraftFilters(filters)
+              setShowFilters(!showFilters)
+            }}
+            onClose={() => setShowFilters(false)}
+            activeCount={(filters.status ? 1 : 0) + (filters.event_category_id ? 1 : 0)}
+            onClear={() => {
+              setDraftFilters({ status: '', event_category_id: '' })
+              setFilters({ status: '', event_category_id: '' })
+              resetPage()
+              setShowFilters(false)
+            }}
+            onApply={() => {
+              setFilters(draftFilters)
+              resetPage()
+              setShowFilters(false)
+            }}
+          >
+            <Select
+              label="Event Category"
+              value={draftFilters.event_category_id}
+              onChange={(val) => setDraftFilters(current => ({ ...current, event_category_id: val }))}
+              placeholder="All Categories"
+              searchable={false}
+              options={[
+                { label: 'All Categories', value: '' },
+                ...categories.map(c => ({ label: c.name || c.category || c.title || c.category_name, value: c.id || c._id }))
+              ]}
+            />
+            <Select
+              label="Status"
+              value={draftFilters.status}
+              onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
+              placeholder="All Status"
+              searchable={false}
+              options={[
+                { label: 'All Status', value: '' },
+                { label: 'Active', value: '1' },
+                { label: 'Inactive', value: '0' }
+              ]}
+            />
+          </FilterPopover>
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
               Add Event

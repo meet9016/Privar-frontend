@@ -12,6 +12,7 @@ import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
+import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
@@ -323,89 +324,53 @@ export default function Users() {
             wrapperClassName="w-64 sm:w-80"
           />
 
-          <div className="relative z-30">
-            <button
-              onClick={() => {
-                setDraftFilters(filters)
-                setShowFilters(!showFilters)
-              }}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.gender || filters.status ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-              title="Toggle Filters"
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-            {showFilters && (
-              <>
-                <div 
-                  className="fixed inset-0 bg-black/25 backdrop-blur-[2px] z-40 transition-opacity" 
-                  onClick={() => setShowFilters(false)} 
-                />
-                <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-xl z-50 animate-fade-in space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-border">
-                    <span className="text-xs font-bold uppercase tracking-wider text-text">Filters</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setShowFilters(false)}
-                      className="p-1 rounded-lg text-text-secondary hover:bg-surface-secondary cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <Select
-                      value={draftFilters.gender || ''}
-                      onChange={(val) => setDraftFilters(current => ({ ...current, gender: val }))}
-                      placeholder="All Genders"
-                      searchable={false}
-                      options={[
-                        { label: 'All Genders', value: '' },
-                        { label: 'Male', value: 'Male' },
-                        { label: 'Female', value: 'Female' },
-                        { label: 'Other', value: 'Other' }
-                      ]}
-                    />
+          <FilterPopover
+            isOpen={showFilters}
+            onToggle={() => {
+              setDraftFilters(filters)
+              setShowFilters(!showFilters)
+            }}
+            onClose={() => setShowFilters(false)}
+            activeCount={(filters.gender ? 1 : 0) + (filters.status ? 1 : 0)}
+            onClear={() => {
+              setDraftFilters({ gender: '', status: '' })
+              setFilters({ gender: '', status: '' })
+              setPage(1)
+              setShowFilters(false)
+            }}
+            onApply={() => {
+              setFilters(draftFilters)
+              setPage(1)
+              setShowFilters(false)
+            }}
+          >
+            <Select
+              label="Gender"
+              value={draftFilters.gender || ''}
+              onChange={(val) => setDraftFilters(current => ({ ...current, gender: val }))}
+              placeholder="All Genders"
+              searchable={false}
+              options={[
+                { label: 'All Genders', value: '' },
+                { label: 'Male', value: 'Male' },
+                { label: 'Female', value: 'Female' },
+                { label: 'Other', value: 'Other' }
+              ]}
+            />
 
-                    <Select
-                      value={draftFilters.status || ''}
-                      onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
-                      placeholder="All Status"
-                      searchable={false}
-                      options={[
-                        { label: 'All Status', value: '' },
-                        { label: 'Active', value: '1' },
-                        { label: 'Inactive', value: '0' }
-                      ]}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        setDraftFilters({ gender: '', status: '' }); 
-                        setFilters({ gender: '', status: '' }); 
-                        setPage(1); 
-                        setShowFilters(false); 
-                      }} 
-                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Clear
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        setFilters(draftFilters); 
-                        setPage(1); 
-                        setShowFilters(false); 
-                      }} 
-                      className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+            <Select
+              label="Status"
+              value={draftFilters.status || ''}
+              onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
+              placeholder="All Status"
+              searchable={false}
+              options={[
+                { label: 'All Status', value: '' },
+                { label: 'Active', value: '1' },
+                { label: 'Inactive', value: '0' }
+              ]}
+            />
+          </FilterPopover>
           
           {selectedUsers.length > 0 && (
             <div className="flex items-center gap-2 bg-surface-secondary border border-border p-1 rounded-xl shadow-sm">

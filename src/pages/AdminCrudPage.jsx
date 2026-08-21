@@ -13,6 +13,7 @@ import Tooltip from '../components/common/Tooltip'
 import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
 import SearchInput from '../components/common/SearchInput'
+import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
@@ -357,78 +358,40 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             placeholder={`Search ${title.toLowerCase()}...`}
           />
           {!hideFilter && (
-            <div className="relative z-30">
-              <button
-                type="button"
-                onClick={() => {
-                  setDraftFilterStatus(appliedFilterStatus)
-                  setShowFilters(!showFilters)
-                }}
-                className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || appliedFilterStatus ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-                title="Toggle Filters"
-              >
-                <Filter className="w-4 h-4" />
-              </button>
-              {showFilters && (
-                <>
-                  <div 
-                    className="fixed inset-0 bg-black/25 backdrop-blur-[2px] z-40 transition-opacity" 
-                    onClick={() => setShowFilters(false)} 
-                  />
-                  <div className="absolute right-0 top-full mt-2 w-[260px] bg-surface border border-border rounded-2xl p-4 shadow-xl z-50 animate-fade-in space-y-4">
-                    <div className="flex items-center justify-between pb-2 border-b border-border">
-                      <span className="text-xs font-bold uppercase tracking-wider text-text">Filters</span>
-                      <button 
-                        type="button" 
-                        onClick={() => setShowFilters(false)}
-                        className="p-1 rounded-lg text-text-secondary hover:bg-surface-secondary cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      {customFilters}
-                      <Select
-                        value={draftFilterStatus}
-                        onChange={(val) => { setDraftFilterStatus(val); }}
-                        placeholder="All Status"
-                        searchable={false}
-                        options={[
-                          { label: 'All Status', value: '' },
-                          { label: 'Active', value: '1' },
-                          { label: 'Inactive', value: '0' }
-                        ]}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => { 
-                          setDraftFilterStatus(''); 
-                          setAppliedFilterStatus(''); 
-                          resetPage(); 
-                          setShowFilters(false); 
-                        }} 
-                        className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
-                      >
-                        <RefreshCw className="w-3 h-3" /> Clear
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => { 
-                          setAppliedFilterStatus(draftFilterStatus); 
-                          resetPage(); 
-                          setShowFilters(false); 
-                        }} 
-                        className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            <FilterPopover
+              isOpen={showFilters}
+              onToggle={() => {
+                setDraftFilterStatus(appliedFilterStatus)
+                setShowFilters(!showFilters)
+              }}
+              onClose={() => setShowFilters(false)}
+              activeCount={appliedFilterStatus ? 1 : 0}
+              onClear={() => {
+                setDraftFilterStatus('')
+                setAppliedFilterStatus('')
+                resetPage()
+                setShowFilters(false)
+              }}
+              onApply={() => {
+                setAppliedFilterStatus(draftFilterStatus)
+                resetPage()
+                setShowFilters(false)
+              }}
+            >
+              {customFilters}
+              <Select
+                label="Status"
+                value={draftFilterStatus}
+                onChange={(val) => { setDraftFilterStatus(val); }}
+                placeholder="All Status"
+                searchable={false}
+                options={[
+                  { label: 'All Status', value: '' },
+                  { label: 'Active', value: '1' },
+                  { label: 'Inactive', value: '0' }
+                ]}
+              />
+            </FilterPopover>
           )}
           {customHeaderActions}
           {!hideAdd && (

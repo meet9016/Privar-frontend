@@ -11,6 +11,7 @@ import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
+import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -37,19 +38,35 @@ export default function Students() {
   const [imageData, setImageData] = useState({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
   const [statusVal, setStatusVal] = useState('')
   const [standardVal, setStandardVal] = useState('')
+  const [streamVal, setStreamVal] = useState('')
+  const [degreeVal, setDegreeVal] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
 
-  const standardOptions = [
+  const baseStandardOptions = [
     { label: 'Jr. KG', value: 'Jr. KG' },
     { label: 'Sr. KG', value: 'Sr. KG' },
-    ...Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))
+    ...Array.from({ length: 10 }, (_, i) => ({ label: `Std ${i + 1}`, value: `${i + 1}` })),
+    { label: 'Std 11', value: '11' },
+    { label: 'Std 12', value: '12' },
+    { label: 'Graduation (Bachelor Degree)', value: 'Graduation' },
+    { label: 'Post Graduation (Master Degree)', value: 'Post Graduation' }
+  ]
+
+  const streamOptions = [
+    { label: 'Commerce', value: 'Commerce' },
+    { label: 'Science', value: 'Science' },
+    { label: 'Arts', value: 'Arts' }
   ]
 
   const stdTabs = [
     { label: 'All', value: 'all' },
     { label: 'Jr. KG', value: 'Jr. KG' },
     { label: 'Sr. KG', value: 'Sr. KG' },
-    ...Array.from({ length: 12 }, (_, i) => ({ label: `Std ${i + 1}`, value: `${i + 1}` }))
+    ...Array.from({ length: 10 }, (_, i) => ({ label: `Std ${i + 1}`, value: `${i + 1}` })),
+    { label: 'Std 11', value: '11' },
+    { label: 'Std 12', value: '12' },
+    { label: 'Graduation', value: 'Graduation' },
+    { label: 'Post Graduation', value: 'Post Graduation' }
   ]
 
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
@@ -103,6 +120,8 @@ export default function Students() {
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
     setStatusVal(1)
     setStandardVal('')
+    setStreamVal('')
+    setDegreeVal('')
     setFieldErrors({})
     setError('')
     setIsModalOpen(true)
@@ -114,7 +133,35 @@ export default function Students() {
     setExistingResultImage(student.result_image || '')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
     setStatusVal(student.status !== undefined && student.status !== null ? Number(student.status) : 1)
-    setStandardVal(student.standard ? String(student.standard) : '')
+    
+    const rawStd = student.standard ? String(student.standard) : ''
+    // Parse if it was saved like "11 (Commerce)" or "Graduation - B.Com"
+    if (rawStd.startsWith('11') || rawStd.startsWith('Std 11')) {
+      setStandardVal('11')
+      const match = rawStd.match(/\((.*?)\)/)
+      setStreamVal(match ? match[1] : '')
+      setDegreeVal('')
+    } else if (rawStd.startsWith('12') || rawStd.startsWith('Std 12')) {
+      setStandardVal('12')
+      const match = rawStd.match(/\((.*?)\)/)
+      setStreamVal(match ? match[1] : '')
+      setDegreeVal('')
+    } else if (rawStd.startsWith('Graduation')) {
+      setStandardVal('Graduation')
+      const parts = rawStd.split('-')
+      setDegreeVal(parts[1] ? parts.slice(1).join('-').trim() : '')
+      setStreamVal('')
+    } else if (rawStd.startsWith('Post Graduation')) {
+      setStandardVal('Post Graduation')
+      const parts = rawStd.split('-')
+      setDegreeVal(parts[1] ? parts.slice(1).join('-').trim() : '')
+      setStreamVal('')
+    } else {
+      setStandardVal(rawStd)
+      setStreamVal('')
+      setDegreeVal('')
+    }
+    
     setFieldErrors({})
     setError('')
     setIsModalOpen(true)
@@ -130,6 +177,8 @@ export default function Students() {
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
     setStatusVal('')
     setStandardVal('')
+    setStreamVal('')
+    setDegreeVal('')
     setFieldErrors({})
     setError('')
   }
@@ -184,6 +233,27 @@ export default function Students() {
       errors.result_image = 'Result Image is required'
     }
 
+    let finalStandard = standardVal
+    if (standardVal === '11' || standardVal === '12') {
+      if (!streamVal) {
+        errors.stream = 'Please select a stream'
+      } else {
+        finalStandard = `Std ${standardVal} (${streamVal})`
+      }
+    } else if (standardVal === 'Graduation') {
+      if (!degreeVal.trim()) {
+        errors.degree = 'Please enter degree / course name (e.g. B.Com, B.Tech, BBA)'
+      } else {
+        finalStandard = `Graduation - ${degreeVal.trim()}`
+      }
+    } else if (standardVal === 'Post Graduation') {
+      if (!degreeVal.trim()) {
+        errors.degree = 'Please enter master degree / course name (e.g. M.Com, MBA, M.Tech)'
+      } else {
+        finalStandard = `Post Graduation - ${degreeVal.trim()}`
+      }
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       setFormLoading(false)
@@ -192,7 +262,7 @@ export default function Students() {
 
     const payload = new FormData()
     requiredKeys.forEach(k => payload.append(k, fields.get(k) ?? ''))
-    payload.append('standard', standardVal)
+    payload.append('standard', finalStandard)
     payload.append('status', statusVal)
 
     const hasStudentImg = imageData.student_image instanceof File
@@ -232,83 +302,46 @@ export default function Students() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="relative z-30">
-            <button
-              onClick={() => {
-                setDraftFilters(filters)
-                setShowFilters(!showFilters)
-              }}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.status || filters.year ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-              title="Toggle Filters"
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-            {showFilters && (
-              <>
-                <div 
-                  className="fixed inset-0 bg-black/25 backdrop-blur-[2px] z-40 transition-opacity" 
-                  onClick={() => setShowFilters(false)} 
-                />
-                <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-xl z-50 animate-fade-in space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-border">
-                    <span className="text-xs font-bold uppercase tracking-wider text-text">Filters</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setShowFilters(false)}
-                      className="p-1 rounded-lg text-text-secondary hover:bg-surface-secondary cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <Select
-                      value={draftFilters.status}
-                      onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
-                      placeholder="All Status"
-                      searchable={false}
-                      options={[
-                        { label: 'All Status', value: '' },
-                        { label: 'Active', value: '1' },
-                        { label: 'Inactive', value: '0' }
-                      ]}
-                    />
-                    <div className="space-y-1">
-                      <label className="block text-sm font-medium text-text-secondary">Year</label>
-                      <YearSelect
-                        value={draftFilters.year}
-                        onChange={(val) => setDraftFilters(current => ({ ...current, year: val }))}
-                        placeholder="All Years"
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        setDraftFilters({ status: '', year: '' }); 
-                        setFilters({ status: '', year: '' }); 
-                        setShowFilters(false); 
-                      }} 
-                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Clear
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => { 
-                        setFilters(draftFilters); 
-                        setShowFilters(false); 
-                      }} 
-                      className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <FilterPopover
+            isOpen={showFilters}
+            onToggle={() => {
+              setDraftFilters(filters)
+              setShowFilters(!showFilters)
+            }}
+            onClose={() => setShowFilters(false)}
+            activeCount={(filters.status ? 1 : 0) + (filters.year ? 1 : 0)}
+            onClear={() => {
+              setDraftFilters({ status: '', year: '' })
+              setFilters({ status: '', year: '' })
+              setShowFilters(false)
+            }}
+            onApply={() => {
+              setFilters(draftFilters)
+              setShowFilters(false)
+            }}
+          >
+            <Select
+              label="Status"
+              value={draftFilters.status}
+              onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
+              placeholder="All Status"
+              searchable={false}
+              options={[
+                { label: 'All Status', value: '' },
+                { label: 'Active', value: '1' },
+                { label: 'Inactive', value: '0' }
+              ]}
+            />
+            <div className="space-y-1">
+              <label className="block text-xs font-semibold text-text-secondary">Year</label>
+              <YearSelect
+                value={draftFilters.year}
+                onChange={(val) => setDraftFilters(current => ({ ...current, year: val }))}
+                placeholder="All Years"
+                className="h-10"
+              />
+            </div>
+          </FilterPopover>
           <Button onClick={handleCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
             Add Student
           </Button>
@@ -476,60 +509,143 @@ export default function Students() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Standard"
-              name="standard"
-              required
-              value={standardVal}
-              placeholder="Select Standard"
-              options={standardOptions}
-              error={fieldErrors.standard ? 'Standard is required' : undefined}
-              onChange={(val) => {
-                setStandardVal(val)
-                if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null }))
-              }}
-            />
-            <Input
-              label="Percentage"
-              name="percentage"
-              type="text"
-              defaultValue={selectedStudent?.percentage || ''}
-              required
-              placeholder="e.g. 11.22"
-              maxLength={5}
-              error={fieldErrors.percentage ? 'Percentage is required' : undefined}
-              onChange={(e) => {
-                let val = e.target.value.replace(/[^0-9.]/g, '')
-                // Allow only one decimal point
-                const parts = val.split('.')
-                if (parts.length > 2) {
-                  val = parts[0] + '.' + parts.slice(1).join('')
-                }
-                // Max 4 digits entered total (excluding the decimal dot, e.g. 11.22 is 4 digits)
-                const digitCount = val.replace(/\./g, '').length
-                if (digitCount > 4) {
-                  // Keep only first 4 digits while preserving dot
-                  let counted = 0
-                  let newVal = ''
-                  for (let char of val) {
-                    if (char === '.') {
-                      newVal += char
-                    } else if (counted < 4) {
-                      newVal += char
-                      counted++
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              <div>
+                <Select
+                  label="Standard / Level"
+                  name="standard"
+                  required
+                  value={standardVal}
+                  placeholder="Select Standard"
+                  options={baseStandardOptions}
+                  error={fieldErrors.standard}
+                  onChange={(val) => {
+                    setStandardVal(val)
+                    if (val !== '11' && val !== '12') setStreamVal('')
+                    if (val !== 'Graduation' && val !== 'Post Graduation') setDegreeVal('')
+                    if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null, stream: null, degree: null }))
+                  }}
+                />
+              </div>
+
+              {/* Slide-in side dropdown for 11th & 12th stream */}
+              {(standardVal === '11' || standardVal === '12') && (
+                <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                  <Select
+                    label={`Stream (Std ${standardVal})`}
+                    required
+                    value={streamVal}
+                    placeholder="Select Stream (Commerce, Science, Arts)"
+                    options={streamOptions}
+                    error={fieldErrors.stream}
+                    onChange={(val) => {
+                      setStreamVal(val)
+                      if (fieldErrors.stream) setFieldErrors(prev => ({ ...prev, stream: null }))
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Slide-down input for Graduation & Post Graduation */}
+              {(standardVal === 'Graduation' || standardVal === 'Post Graduation') && (
+                <div className="animate-in fade-in slide-in-from-top-3 duration-300">
+                  <Input
+                    label={standardVal === 'Graduation' ? 'Bachelor Degree / Course' : 'Master Degree / Course'}
+                    placeholder={standardVal === 'Graduation' ? 'e.g. B.Com, B.Tech, BBA, MBBS, BCA' : 'e.g. M.Com, MBA, M.Tech, MD, MCA'}
+                    required
+                    value={degreeVal}
+                    error={fieldErrors.degree}
+                    onChange={(e) => {
+                      setDegreeVal(e.target.value)
+                      if (fieldErrors.degree) setFieldErrors(prev => ({ ...prev, degree: null }))
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* If not 11/12/Grad, Percentage takes right slot, otherwise it goes on next row */}
+              {standardVal !== '11' && standardVal !== '12' && standardVal !== 'Graduation' && standardVal !== 'Post Graduation' && (
+                <Input
+                  label="Percentage"
+                  name="percentage"
+                  type="text"
+                  defaultValue={selectedStudent?.percentage || ''}
+                  required
+                  placeholder="e.g. 11.22"
+                  maxLength={5}
+                  error={fieldErrors.percentage ? 'Percentage is required' : undefined}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/[^0-9.]/g, '')
+                    const parts = val.split('.')
+                    if (parts.length > 2) {
+                      val = parts[0] + '.' + parts.slice(1).join('')
                     }
-                  }
-                  val = newVal
-                }
-                // Cap value at 100 max
-                if (parseFloat(val) > 100) {
-                  val = '100'
-                }
-                e.target.value = val
-                if (fieldErrors.percentage) setFieldErrors(prev => ({ ...prev, percentage: null }))
-              }}
-            />
+                    const digitCount = val.replace(/\./g, '').length
+                    if (digitCount > 4) {
+                      let counted = 0
+                      let newVal = ''
+                      for (let char of val) {
+                        if (char === '.') {
+                          newVal += char
+                        } else if (counted < 4) {
+                          newVal += char
+                          counted++
+                        }
+                      }
+                      val = newVal
+                    }
+                    if (parseFloat(val) > 100) {
+                      val = '100'
+                    }
+                    e.target.value = val
+                    if (fieldErrors.percentage) setFieldErrors(prev => ({ ...prev, percentage: null }))
+                  }}
+                />
+              )}
+            </div>
+
+            {/* When standard is 11, 12, Graduation or Post Graduation, render Percentage on its own row */}
+            {(standardVal === '11' || standardVal === '12' || standardVal === 'Graduation' || standardVal === 'Post Graduation') && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Percentage"
+                  name="percentage"
+                  type="text"
+                  defaultValue={selectedStudent?.percentage || ''}
+                  required
+                  placeholder="e.g. 11.22"
+                  maxLength={5}
+                  error={fieldErrors.percentage ? 'Percentage is required' : undefined}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/[^0-9.]/g, '')
+                    const parts = val.split('.')
+                    if (parts.length > 2) {
+                      val = parts[0] + '.' + parts.slice(1).join('')
+                    }
+                    const digitCount = val.replace(/\./g, '').length
+                    if (digitCount > 4) {
+                      let counted = 0
+                      let newVal = ''
+                      for (let char of val) {
+                        if (char === '.') {
+                          newVal += char
+                        } else if (counted < 4) {
+                          newVal += char
+                          counted++
+                        }
+                      }
+                      val = newVal
+                    }
+                    if (parseFloat(val) > 100) {
+                      val = '100'
+                    }
+                    e.target.value = val
+                    if (fieldErrors.percentage) setFieldErrors(prev => ({ ...prev, percentage: null }))
+                  }}
+                />
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input

@@ -8,6 +8,32 @@ import { assetUrl, memberApi } from '../../lib/api';
  * - Uses same color scheme as WebHeader (localStorage web_* keys)
  * - Features: Autoplay, Touch/Swipe, Keyboard, Smooth animations
  */
+const getInitialWebTheme = () => {
+  const colorKeys = [
+    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
+    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
+    'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp', 'bannerImages'
+  ];
+  const loaded = {};
+  colorKeys.forEach((key) => {
+    const value = localStorage.getItem(`web_${key}`);
+    if (value) loaded[key] = value;
+  });
+  return loaded;
+}
+
+const normalizeBannerImages = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean).map(assetUrl)
+  if (typeof value !== 'string' || !value.trim()) return []
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed)) return parsed.filter(Boolean).map(assetUrl)
+  } catch (error) {
+    // Fall back to comma-separated values for older saved localStorage data.
+  }
+  return value.split(',').map((item) => item.trim()).filter(Boolean).map(assetUrl)
+}
+
 const Carousel = ({
   autoplay = true,
   autoplayInterval = 4000,
@@ -19,67 +45,32 @@ const Carousel = ({
   const [direction, setDirection] = useState(1);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
-  const [theme, setTheme] = useState({});
-  const [images, setImages] = useState([])
-
-  const normalizeBannerImages = (value) => {
-    if (Array.isArray(value)) return value.filter(Boolean).map(assetUrl)
-
-    if (typeof value !== 'string' || !value.trim()) return []
-
-    try {
-      const parsed = JSON.parse(value)
-      if (Array.isArray(parsed)) return parsed.filter(Boolean).map(assetUrl)
-    } catch (error) {
-      // Fall back to comma-separated values for older saved localStorage data.
-    }
-
-    return value.split(',').map((item) => item.trim()).filter(Boolean).map(assetUrl)
-  }
-
-  // Load theme from localStorage (same as WebHeader)
+  const [theme, setTheme] = useState(getInitialWebTheme);
+  const [images, setImages] = useState(() => normalizeBannerImages(getInitialWebTheme().bannerImages));
   useEffect(() => {
-    const loadTheme = () => {
-      const colorKeys = [
-        'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-        'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
-        'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp', "bannerImages"
-      ];
-
-
-      const loadedTheme = {};
-      colorKeys.forEach((key) => {
-        const value = localStorage.getItem(`web_${key}`);
-        if (value) {
-          loadedTheme[key] = value;
-        }
-      });
-
-
-      setTheme(loadedTheme);
-      setImages(normalizeBannerImages(loadedTheme.bannerImages));
-
+    const handleStorage = () => {
+      const loaded = getInitialWebTheme();
+      setTheme(loaded);
+      const parsed = normalizeBannerImages(loaded.bannerImages);
+      if (parsed.length) setImages(parsed);
     };
-
-    loadTheme();
-    window.addEventListener('storage', loadTheme);
-    return () => window.removeEventListener('storage', loadTheme);
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   useEffect(() => {
     const fetchBannerImages = async () => {
       try {
-        const res = await memberApi.get('/get_app_theme')
-        const data = res.data?.data || res.data || {}
-        const bannerImages = normalizeBannerImages(data.bannerImages)
-        if (bannerImages.length) setImages(bannerImages)
+        const res = await memberApi.get('/get_app_theme');
+        const data = res.data?.data || res.data || {};
+        const bannerImages = normalizeBannerImages(data.bannerImages);
+        if (bannerImages.length) setImages(bannerImages);
       } catch (error) {
-        console.error('Failed to load banner images:', error)
+        console.error('Failed to load banner images:', error);
       }
-    }
-
-    fetchBannerImages()
-  }, [])
+    };
+    fetchBannerImages();
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
@@ -181,9 +172,11 @@ const Carousel = ({
             </div>
           );
         }) : (
-          <div className="absolute inset-0" style={{
-            backgroundImage: `linear-gradient(135deg, ${theme.gradientStart || '#E65100'}, ${theme.gradientEnd || '#7B0D1C'})`
-          }} />
+          <div className="absolute inset-0 bg-surface-secondary flex items-center justify-center" style={{
+            backgroundColor: theme.backgroundColor || '#f8fafc'
+          }}>
+            <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+          </div>
         )}
       </div>
 
