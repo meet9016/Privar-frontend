@@ -42,7 +42,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const [isOwn, setIsOwn] = useState(false)
   const [formError, setFormError] = useState('')
   const [showFilters, setShowFilters] = useState(false)
-  const [filterStatus, setFilterStatus] = useState('')
+  const [draftFilterStatus, setDraftFilterStatus] = useState('')
+  const [appliedFilterStatus, setAppliedFilterStatus] = useState('')
 
   const [imagePreview, setImagePreview] = useState(null)
   const [removedImages, setRemovedImages] = useState({})
@@ -56,7 +57,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     try {
       const params = getParams({ search: debouncedSearch, ...(extraParams || {}) })
       if (supportIsOwn) params.is_own = isOwn
-      if (filterStatus !== '') params.status = filterStatus
+      if (appliedFilterStatus !== '') params.status = appliedFilterStatus
       const res = await api.get(endpoint, { params })
       const data = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
@@ -69,7 +70,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     } finally {
       setLoading(false)
     }
-  }, [endpoint, page, debouncedSearch, title, supportIsOwn, isOwn, getParams, setPaginationData, extraParams, filterStatus])
+  }, [endpoint, page, debouncedSearch, title, supportIsOwn, isOwn, getParams, setPaginationData, extraParams, appliedFilterStatus])
 
   useEffect(() => {
     setRows([])
@@ -359,8 +360,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             <div className="relative z-30">
               <button
                 type="button"
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+                onClick={() => {
+                  setDraftFilterStatus(appliedFilterStatus)
+                  setShowFilters(!showFilters)
+                }}
+                className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || appliedFilterStatus ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
                 title="Toggle Filters"
               >
                 <Filter className="w-4 h-4" />
@@ -385,8 +389,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     <div className="flex flex-col gap-3">
                       {customFilters}
                       <Select
-                        value={filterStatus}
-                        onChange={(val) => { setFilterStatus(val); }}
+                        value={draftFilterStatus}
+                        onChange={(val) => { setDraftFilterStatus(val); }}
                         placeholder="All Status"
                         searchable={false}
                         options={[
@@ -399,14 +403,23 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
                       <button 
                         type="button" 
-                        onClick={() => { setFilterStatus(''); resetPage(); setShowFilters(false); }} 
+                        onClick={() => { 
+                          setDraftFilterStatus(''); 
+                          setAppliedFilterStatus(''); 
+                          resetPage(); 
+                          setShowFilters(false); 
+                        }} 
                         className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
                       >
                         <RefreshCw className="w-3 h-3" /> Clear
                       </button>
                       <button 
                         type="button" 
-                        onClick={() => { resetPage(); setShowFilters(false); }} 
+                        onClick={() => { 
+                          setAppliedFilterStatus(draftFilterStatus); 
+                          resetPage(); 
+                          setShowFilters(false); 
+                        }} 
                         className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
                       >
                         Apply

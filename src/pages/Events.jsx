@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter } from 'lucide-react'
+import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter, X } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -51,6 +51,7 @@ export default function Events() {
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [filters, setFilters] = useState({ status: '', event_category_id: '' })
+  const [draftFilters, setDraftFilters] = useState({ status: '', event_category_id: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -407,8 +408,11 @@ export default function Events() {
           <div className="relative z-30">
             <button
               type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              onClick={() => {
+                setDraftFilters(filters)
+                setShowFilters(!showFilters)
+              }}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.status || filters.event_category_id ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
               title="Toggle Filters"
             >
               <Filter className="w-4 h-4" />
@@ -432,8 +436,8 @@ export default function Events() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Select
-                      value={filters.event_category_id}
-                      onChange={(val) => setFilters(current => ({ ...current, event_category_id: val }))}
+                      value={draftFilters.event_category_id}
+                      onChange={(val) => setDraftFilters(current => ({ ...current, event_category_id: val }))}
                       placeholder="All Categories"
                       searchable={false}
                       options={[
@@ -442,8 +446,8 @@ export default function Events() {
                       ]}
                     />
                     <Select
-                      value={filters.status}
-                      onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
                       placeholder="All Status"
                       searchable={false}
                       options={[
@@ -456,14 +460,23 @@ export default function Events() {
                   <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
                     <button 
                       type="button" 
-                      onClick={() => { setFilters({ status: '', event_category_id: '' }); resetPage(); setShowFilters(false); }} 
-                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
+                      onClick={() => { 
+                        setDraftFilters({ status: '', event_category_id: '' }); 
+                        setFilters({ status: '', event_category_id: '' }); 
+                        resetPage(); 
+                        setShowFilters(false); 
+                      }} 
+                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="w-3 h-3" /> Clear
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => { resetPage(); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setFilters(draftFilters); 
+                        resetPage(); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
                     >
                       Apply

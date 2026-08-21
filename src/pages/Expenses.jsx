@@ -12,7 +12,8 @@ import {
   Paperclip,
   Eye,
   Receipt,
-  Filter
+  Filter,
+  X
 } from 'lucide-react'
 import api, { getExpensesList, exportExpensesExcel, getCommitteeMembersList, assetUrl, formatDate } from '../lib/api'
 import usePagination from '../hooks/usePagination'
@@ -40,6 +41,7 @@ export default function Expenses() {
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [filters, setFilters] = useState({ month: '', category: '' })
+  const [draftFilters, setDraftFilters] = useState({ month: '', category: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -284,8 +286,11 @@ export default function Expenses() {
           <div className="relative z-30">
             <button
               type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              onClick={() => {
+                setDraftFilters(filters)
+                setShowFilters(!showFilters)
+              }}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.category || filters.month ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
               title="Toggle Filters"
             >
               <Filter className="w-4 h-4" />
@@ -309,8 +314,8 @@ export default function Expenses() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Select
-                      value={filters.category}
-                      onChange={(val) => { setFilters(current => ({ ...current, category: val })); }}
+                      value={draftFilters.category}
+                      onChange={(val) => { setDraftFilters(current => ({ ...current, category: val })); }}
                       placeholder="All Categories"
                       searchable={false}
                       options={[
@@ -322,8 +327,8 @@ export default function Expenses() {
                       <label className="block text-sm font-medium text-text-secondary">Month</label>
                       <DatePicker
                         mode="month"
-                        value={filters.month}
-                        onChange={(val) => { setFilters(current => ({ ...current, month: val })); }}
+                        value={draftFilters.month}
+                        onChange={(val) => { setDraftFilters(current => ({ ...current, month: val })); }}
                         placeholder="Select Month"
                         className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
                       />
@@ -332,14 +337,23 @@ export default function Expenses() {
                   <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
                     <button 
                       type="button" 
-                      onClick={() => { setFilters({ category: '', month: '' }); resetPage(); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setDraftFilters({ category: '', month: '' }); 
+                        setFilters({ category: '', month: '' }); 
+                        resetPage(); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="w-3 h-3" /> Clear
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => { resetPage(); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setFilters(draftFilters); 
+                        resetPage(); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
                     >
                       Apply

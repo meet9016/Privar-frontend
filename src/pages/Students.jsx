@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter } from 'lucide-react'
+import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter, X } from 'lucide-react'
 import api, { assetUrl, getStudentsList, getCommunitySurname } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -28,6 +28,7 @@ export default function Students() {
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [filters, setFilters] = useState({ status: '', year: '' })
+  const [draftFilters, setDraftFilters] = useState({ status: '', year: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [selectedStdTab, setSelectedStdTab] = useState('all')
 
@@ -233,8 +234,11 @@ export default function Students() {
           />
           <div className="relative z-30">
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              onClick={() => {
+                setDraftFilters(filters)
+                setShowFilters(!showFilters)
+              }}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.status || filters.year ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
               title="Toggle Filters"
             >
               <Filter className="w-4 h-4" />
@@ -258,8 +262,8 @@ export default function Students() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Select
-                      value={filters.status}
-                      onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
                       placeholder="All Status"
                       searchable={false}
                       options={[
@@ -271,8 +275,8 @@ export default function Students() {
                     <div className="space-y-1">
                       <label className="block text-sm font-medium text-text-secondary">Year</label>
                       <YearSelect
-                        value={filters.year}
-                        onChange={(val) => setFilters(current => ({ ...current, year: val }))}
+                        value={draftFilters.year}
+                        onChange={(val) => setDraftFilters(current => ({ ...current, year: val }))}
                         placeholder="All Years"
                         className="h-10"
                       />
@@ -281,14 +285,21 @@ export default function Students() {
                   <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
                     <button 
                       type="button" 
-                      onClick={() => { setFilters({ status: '', year: '' }); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setDraftFilters({ status: '', year: '' }); 
+                        setFilters({ status: '', year: '' }); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="w-3 h-3" /> Clear
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => { fetchStudents(); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setFilters(draftFilters); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
                     >
                       Apply

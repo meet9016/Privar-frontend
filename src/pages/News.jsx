@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter } from 'lucide-react'
-import api, { assetUrl, getNewsList } from '../lib/api'
+import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter, X } from 'lucide-react'
+import api, { assetUrl, getNewsList, formatDate } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Loader from '../components/common/Loader'
 import Modal from '../components/Modal'
@@ -25,6 +25,7 @@ export default function News() {
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [filters, setFilters] = useState({ status: '', category: '' })
+  const [draftFilters, setDraftFilters] = useState({ status: '', category: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -235,8 +236,11 @@ export default function News() {
           <div className="relative z-30">
             <button
               type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              onClick={() => {
+                setDraftFilters(filters)
+                setShowFilters(!showFilters)
+              }}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.status ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
               title="Toggle Filters"
             >
               <Filter className="w-4 h-4" />
@@ -260,8 +264,8 @@ export default function News() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Select
-                      value={filters.status}
-                      onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
                       placeholder="All Status"
                       searchable={false}
                       options={[
@@ -274,14 +278,23 @@ export default function News() {
                   <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
                     <button 
                       type="button" 
-                      onClick={() => { setFilters({ status: '', category: '' }); setPage(1); setShowFilters(false); }} 
-                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
+                      onClick={() => { 
+                        setDraftFilters({ status: '', category: '' }); 
+                        setFilters({ status: '', category: '' }); 
+                        setPage(1); 
+                        setShowFilters(false); 
+                      }} 
+                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="w-3 h-3" /> Clear
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => { setPage(1); fetchNews(); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setFilters(draftFilters); 
+                        setPage(1); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
                     >
                       Apply
@@ -339,7 +352,7 @@ export default function News() {
             key: 'post_date',
             render: (row) => (
               <div className="text-text-secondary text-sm line-clamp-2 max-w-md">
-                {row.cdate ? row.cdate.slice(0, 10).split('-').reverse().join('-') : '-'}
+                {formatDate(row.cdate || row.createdAt || row.post_date)}
               </div>
             )
           },

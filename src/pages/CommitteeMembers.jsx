@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter } from 'lucide-react'
+import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter, X } from 'lucide-react'
 import api, { getCommitteeMembersList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import { normalizeRoles, unwrapApiData } from '../lib/roles'
@@ -29,6 +29,7 @@ export default function CommitteeMembers() {
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [filters, setFilters] = useState({ status: '', role: '' })
+  const [draftFilters, setDraftFilters] = useState({ status: '', role: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [roles, setRoles] = useState([])
   const [saving, setSaving] = useState(false)
@@ -185,8 +186,11 @@ export default function CommitteeMembers() {
           <div className="relative z-30">
             <button
               type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              onClick={() => {
+                setDraftFilters(filters)
+                setShowFilters(!showFilters)
+              }}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.status || filters.role ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
               title="Toggle Filters"
             >
               <Filter className="w-4 h-4" />
@@ -210,8 +214,8 @@ export default function CommitteeMembers() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Select
-                      value={filters.status}
-                      onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
                       placeholder="All Status"
                       searchable={false}
                       options={[
@@ -221,8 +225,8 @@ export default function CommitteeMembers() {
                       ]}
                     />
                     <Select
-                      value={filters.role}
-                      onChange={(val) => setFilters(current => ({ ...current, role: val }))}
+                      value={draftFilters.role}
+                      onChange={(val) => setDraftFilters(current => ({ ...current, role: val }))}
                       placeholder="All Roles"
                       searchable={false}
                       options={[
@@ -234,14 +238,23 @@ export default function CommitteeMembers() {
                   <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
                     <button 
                       type="button" 
-                      onClick={() => { setFilters({ status: '', role: '' }); resetPage(); setShowFilters(false); }} 
-                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
+                      onClick={() => { 
+                        setDraftFilters({ status: '', role: '' }); 
+                        setFilters({ status: '', role: '' }); 
+                        resetPage(); 
+                        setShowFilters(false); 
+                      }} 
+                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="w-3 h-3" /> Clear
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => { resetPage(); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setFilters(draftFilters); 
+                        resetPage(); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
                     >
                       Apply

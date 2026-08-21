@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState, useMemo } from 'react'
-import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet } from 'lucide-react'
+import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet, X } from 'lucide-react'
 import api, { getUsersList, formatDate } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
@@ -26,7 +26,11 @@ export default function Users() {
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(searchQuery, 400)
-  const [filters, setFiltersValue] = useState({
+  const [filters, setFilters] = useState({
+    gender: '',
+    status: ''
+  })
+  const [draftFilters, setDraftFilters] = useState({
     gender: '',
     status: ''
   })
@@ -177,11 +181,6 @@ export default function Users() {
     setPage(1)
   }
 
-  const setFilters = (value) => {
-    setFiltersValue((current) => (typeof value === 'function' ? value(current) : value))
-    setPage(1)
-  }
-
   // Handle Search submit
   const handleSearchSubmit = (e) => {
     e.preventDefault()
@@ -326,8 +325,11 @@ export default function Users() {
 
           <div className="relative z-30">
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              onClick={() => {
+                setDraftFilters(filters)
+                setShowFilters(!showFilters)
+              }}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters || filters.gender || filters.status ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
               title="Toggle Filters"
             >
               <Filter className="w-4 h-4" />
@@ -351,8 +353,8 @@ export default function Users() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Select
-                      value={filterGender}
-                      onChange={(val) => setFilters(current => ({ ...current, gender: val }))}
+                      value={draftFilters.gender || ''}
+                      onChange={(val) => setDraftFilters(current => ({ ...current, gender: val }))}
                       placeholder="All Genders"
                       searchable={false}
                       options={[
@@ -364,8 +366,8 @@ export default function Users() {
                     />
 
                     <Select
-                      value={filterStatus}
-                      onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                      value={draftFilters.status || ''}
+                      onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
                       placeholder="All Status"
                       searchable={false}
                       options={[
@@ -378,14 +380,23 @@ export default function Users() {
                   <div className="flex items-center justify-between border-t border-border pt-3 gap-2">
                     <button 
                       type="button" 
-                      onClick={() => { clearFilters(); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setDraftFilters({ gender: '', status: '' }); 
+                        setFilters({ gender: '', status: '' }); 
+                        setPage(1); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="w-3 h-3" /> Clear
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => { fetchUsers(); setShowFilters(false); }} 
+                      onClick={() => { 
+                        setFilters(draftFilters); 
+                        setPage(1); 
+                        setShowFilters(false); 
+                      }} 
                       className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors cursor-pointer shadow-xs"
                     >
                       Apply

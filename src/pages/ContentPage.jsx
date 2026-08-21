@@ -201,28 +201,8 @@ const definitions = {
     fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date', required: true }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
     columns: [
       { key: 'name', label: 'Name' },
-      {
-        key: 'dob',
-        label: 'Date of Birth',
-        render: (row) => {
-          if (!row.dob) return '-'
-          const parts = String(row.dob).split('T')[0].split('-')
-          if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
-          const d = new Date(row.dob)
-          return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('en-IN')
-        }
-      },
-      {
-        key: 'anniversary',
-        label: 'Anniversary',
-        render: (row) => {
-          if (!row.anniversary) return '-'
-          const parts = String(row.anniversary).split('T')[0].split('-')
-          if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
-          const d = new Date(row.anniversary)
-          return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('en-IN')
-        }
-      }
+      { key: 'dob', label: 'Date of Birth', render: (row) => formatDate(row.dob) },
+      { key: 'anniversary', label: 'Anniversary', render: (row) => formatDate(row.anniversary) }
     ]
   },
   'job-vacancy': {
