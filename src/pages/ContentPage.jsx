@@ -2,6 +2,7 @@ import React from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
 import { formatDate } from '../lib/api'
+import usePermissions from '../hooks/usePermissions'
 
 const definitions = {
   festivals: {
@@ -77,15 +78,6 @@ const definitions = {
       { name: 'weight', label: 'Weight' },
       { name: 'mobile_number', label: 'Mobile Number' },
       { name: 'city', label: 'City', required: true },
-      {
-        name: 'status',
-        label: 'Status',
-        type: 'select',
-        options: [
-          { value: 1, label: 'Active' },
-          { value: 0, label: 'Inactive' }
-        ]
-      },
       { name: 'education', label: 'Education', required: true },
       { name: 'occupation', label: 'Occupation', required: true },
       { name: 'father_name', label: 'Father Name', required: true },
@@ -111,8 +103,8 @@ const definitions = {
         ]
       },
       { name: 'about', label: 'About', type: 'textarea' },
-      { name: 'biodata', label: 'Biodata (PDF/Image)', type: 'file', accept: 'image/*,application/pdf' },
-      { name: 'person_image', label: 'Person Image', type: 'file' }
+      { name: 'biodata', label: 'Biodata (PDF/Image)', type: 'file', accept: 'image/*,application/pdf', className: 'md:col-span-1' },
+      { name: 'person_image', label: 'Person Image', type: 'file', multiple: true, className: 'md:col-span-1' }
     ],
     columns: [
       { key: 'person_image', label: 'Photo', type: 'image' },
@@ -187,17 +179,17 @@ const definitions = {
     title: 'Feedback',
     subtitle: 'Manage user feedback and suggestions',
     endpoint: '/feedback',
+    hideAdd: true,
+    hideActions: true,
     fields: [
       { name: 'name', label: 'Name', required: true },
       { name: 'email', label: 'Email', type: 'email', required: true },
-      { name: 'message', label: 'Message', type: 'textarea', required: true },
-      { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
+      { name: 'message', label: 'Message', type: 'textarea', required: true }
     ],
     columns: [
       { key: 'name', label: 'Name' },
       { key: 'email', label: 'Email' },
-      { key: 'message', label: 'Message' },
-      { key: 'status', label: 'Status' }
+      { key: 'message', label: 'Message' }
     ]
   },
   birthday: {
@@ -252,13 +244,13 @@ const definitions = {
       { name: 'contact_email', label: 'Contact Email', type: 'email', required: true, className: 'md:col-span-1' }
     ],
     columns: [
-      { key: 'title', label: 'Title' },
-      { key: 'company_name', label: 'Company' },
-      { key: 'qualifications', label: 'Qualifications' },
-      { key: 'image', label: 'Image', type: 'image' },
-      { key: 'contact_number', label: 'Number' },
-      { key: 'job_type', label: 'Job Type' },
-      { key: 'status', label: 'Status' }
+      { key: 'title', label: 'Title', className: 'min-w-[150px]' },
+      { key: 'company_name', label: 'Company', className: 'min-w-[150px]' },
+      { key: 'qualifications', label: 'Qualifications', className: 'min-w-[200px]' },
+      { key: 'image', label: 'Image', type: 'image', className: 'min-w-[80px]' },
+      { key: 'contact_number', label: 'Number', className: 'min-w-[120px]' },
+      { key: 'job_type', label: 'Job Type', className: 'min-w-[120px]' },
+      { key: 'status', label: 'Status', className: 'min-w-[100px]' }
     ]
   },
   'bank-details': {
@@ -285,6 +277,8 @@ const definitions = {
 }
 
 export default function ContentPage({ type }) {
+  const permissions = usePermissions(type === 'birthday' ? 'members' : type === 'donation' ? 'donations' : type)
+  
   if (type === 'gallery') {
     return <GalleryPage />
   }
@@ -297,5 +291,12 @@ export default function ContentPage({ type }) {
     )
   }
 
-  return <AdminCrudPage {...definitions[type]} hideDelete={type === 'birthday'} deleteAction={type === 'birthday' ? 'clear-dob' : undefined} getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} />
+  return <AdminCrudPage 
+    {...definitions[type]} 
+    hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
+    hideEdit={definitions[type].hideEdit || (!permissions.canEdit && !permissions.isSuperAdmin)}
+    hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))} 
+    deleteAction={type === 'birthday' ? 'clear-dob' : undefined} 
+    getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} 
+  />
 }

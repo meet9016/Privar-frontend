@@ -11,11 +11,12 @@ import {
   User2,
   Paperclip,
   Eye,
-  Receipt
+  Receipt,
+  Filter
 } from 'lucide-react'
 import api, { getExpensesList, exportExpensesExcel, getCommitteeMembersList, assetUrl, formatDate } from '../lib/api'
-import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
+import usePermissions from '../hooks/usePermissions'
 import Modal from '../components/Modal'
 import FileDropzone from '../components/common/FileDropzone'
 import Loader from '../components/common/Loader'
@@ -31,13 +32,15 @@ import useDebounce from '../hooks/useDebounce'
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-shadow'
 
 export default function Expenses() {
+  const permissions = usePermissions('expenses')
   const [expenses, setExpenses] = useState([])
-  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
+  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 400)
-  const [monthFilter, setMonthFilter] = useState('') // YYYY-MM
+  const [filters, setFilters] = useState({ month: '', category: '' })
+  const [showFilters, setShowFilters] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
@@ -66,11 +69,10 @@ export default function Expenses() {
     setLoading(true)
     setError('')
     try {
-      const params = {
-        ...getParams(),
-        search: debouncedSearch,
-        month: monthFilter
-      }
+      const params = getParams({ search: debouncedSearch })
+      if (filters.month) params.month = filters.month
+      if (filters.category) params.category = filters.category
+      
       const res = await getExpensesList(params)
       const data = res.data?.data || []
       const pagination = res.data?.pagination || {}
@@ -81,7 +83,7 @@ export default function Expenses() {
     } finally {
       setLoading(false)
     }
-  }, [getParams, debouncedSearch, monthFilter, setPaginationData])
+  }, [debouncedSearch, filters, page, getParams, setPaginationData])
 
   const fetchDropdownData = async () => {
     try {
@@ -234,7 +236,8 @@ export default function Expenses() {
     try {
       const params = {}
       if (debouncedSearch) params.search = debouncedSearch
-      if (monthFilter) params.month = monthFilter
+      if (filters.month) params.month = filters.month
+      if (filters.category) params.category = filters.category
       
       const response = await exportExpensesExcel(params)
       const url = window.URL.createObjectURL(new Blob([response.data]))
@@ -258,11 +261,6 @@ export default function Expenses() {
     e.preventDefault()
   }
 
-  const handleMonthFilterChange = (value) => {
-    setMonthFilter(value)
-    resetPage()
-  }
-
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
   const currentPage = page
 
@@ -283,17 +281,47 @@ export default function Expenses() {
             placeholder="Search expenses..."
             wrapperClassName="w-64 sm:w-72"
           />
-          
-          <div className="w-full sm:w-auto flex-none">
-            <DatePicker
-              mode="month"
-              value={monthFilter}
-              onChange={handleMonthFilterChange}
-              placeholder="Month"
-              className="w-full sm:w-32 bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
-            />
+          <div className="relative z-20">
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              title="Toggle Filters"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                <div className="flex flex-col gap-3">
+                  <Select
+                    value={filters.category}
+                    onChange={(val) => { setFilters(current => ({ ...current, category: val })); resetPage(); }}
+                    placeholder="All Categories"
+                    searchable={false}
+                    options={[
+                      { label: 'All Categories', value: '' },
+                      ...expenseCategories.map(c => ({ label: c.name || c.category || c.title || c.category_name, value: c.id || c._id }))
+                    ]}
+                  />
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-text-secondary">Month</label>
+                    <DatePicker
+                      mode="month"
+                      value={filters.month}
+                      onChange={(val) => { setFilters(current => ({ ...current, month: val })); resetPage(); }}
+                      placeholder="Select Month"
+                      className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 shadow-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <button type="button" onClick={() => { setFilters({ category: '', month: '' }); resetPage(); }} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-
           <Button
             onClick={handleExport}
             variant="secondary"
@@ -301,13 +329,15 @@ export default function Expenses() {
           >
             Export CSV
           </Button>
-          <Button
-            onClick={handleCreate}
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-          >
-            Add Expense
-          </Button>
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <Button
+              onClick={handleCreate}
+              variant="primary"
+              icon={<Plus className="w-4 h-4" />}
+            >
+              Add Expense
+            </Button>
+          )}
         </div>
       </div>
 
@@ -328,46 +358,56 @@ export default function Expenses() {
           {
             header: 'Category',
             key: 'category',
-            render: (expense) => (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-surface-secondary border border-border">
-                {expense.expense_category_name || '-'}
-              </span>
-            )
+            render: (expense) => {
+              const name = expense.expense_category_name || '';
+              const colors = [
+                'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+                'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
+                'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+                'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800',
+                'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800',
+                'bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/30 dark:text-pink-400 dark:border-pink-800',
+                'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800',
+                'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800'
+              ];
+              let hash = 0;
+              for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+              const colorClass = name ? colors[Math.abs(hash) % colors.length] : 'bg-surface-secondary text-text-secondary border-border';
+
+              return (
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
+                  {name || '-'}
+                </span>
+              );
+            }
           },
           {
             header: 'Committee Member',
             key: 'member',
-            render: (expense) => expense.committee_member_name ? (
-              <div className="flex items-center gap-2">
-                <User2 className="w-4 h-4 text-text-secondary/60" />
-                {expense.committee_member_name}
-              </div>
-            ) : '-'
+            render: (expense) => {
+              if (!expense.committee_member_name) return '-';
+              const member = committeeMembers.find(m => String(m.id || m._id) === String(expense.committee_member_id));
+              return (
+                <div className="flex items-center gap-2">
+                  {member?.image ? (
+                    <img src={assetUrl(member.image)} alt={expense.committee_member_name} className="w-6 h-6 rounded-full object-cover border border-border" />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                      <User2 className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                  )}
+                  <span className="truncate max-w-[150px]" title={expense.committee_member_name}>{expense.committee_member_name}</span>
+                </div>
+              );
+            }
           },
           {
             header: 'Description',
             key: 'description',
             render: (expense) => (
-              <div className="max-w-xs truncate" title={expense.description}>
+              <div className="max-w-[200px] truncate" title={expense.description}>
                 {expense.description || '-'}
               </div>
-            )
-          },
-          {
-            header: 'Proof',
-            key: 'proof',
-            render: (expense) => expense.image ? (
-              <a href={assetUrl(expense.image)} target="_blank" rel="noopener noreferrer" className="relative inline-block hover:opacity-80 transition-opacity max-w-[80px]" title="View Proof">
-                {typeof expense.image === 'string' && expense.image.toLowerCase().endsWith('.pdf') ? (
-                   <div className="h-8 w-11 flex justify-center items-center rounded-lg border border-border bg-primary/10 text-primary">
-                     <Paperclip className="w-4 h-4" />
-                   </div>
-                ) : (
-                   <img src={assetUrl(expense.image)} alt="Proof" className="h-8 w-11 rounded-lg object-cover border border-border" />
-                )}
-              </a>
-            ) : (
-              <span className="text-text-secondary/50 text-xs">-</span>
             )
           },
           {
@@ -385,12 +425,16 @@ export default function Expenses() {
             key: 'actions',
             align: 'left',
             render: expense => ( <div className="flex items-center justify-start gap-1.5">
-                <button onClick={() => handleEdit(expense)} className="p-1.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-all" title="Edit">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => handleDelete(expense.id)} className="p-1.5 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-lg transition-all" title="Delete">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleEdit(expense)} className="p-1.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleDelete(expense.id)} className="p-1.5 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-lg transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )
           }
@@ -402,8 +446,8 @@ export default function Expenses() {
           icon: Receipt,
           title: 'No expenses found',
           description: 'There are no expense records matching your search criteria',
-          actionLabel: 'Add Expense',
-          onAction: handleCreate
+          actionLabel: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : 'Add Expense',
+          onAction: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : handleCreate
         }}
         pagination={{
           currentPage: page,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff } from 'lucide-react'
+import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter } from 'lucide-react'
 import api, { assetUrl, getNewsList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Loader from '../components/common/Loader'
@@ -12,8 +12,11 @@ import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
+import Tooltip from '../components/common/Tooltip'
+import usePermissions from '../hooks/usePermissions'
 
 export default function News() {
+  const permissions = usePermissions('news')
   const [rows, setRows] = useState([])
   const [limit, setLimit] = useState(10)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
@@ -21,6 +24,8 @@ export default function News() {
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
+  const [filters, setFilters] = useState({ status: '', category: '' })
+  const [showFilters, setShowFilters] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -46,26 +51,24 @@ export default function News() {
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
   const fetchNews = useCallback(async () => {
-    setLoading(true)
     try {
-      const res = await getNewsList({ page, limit, search: debouncedSearch })
-      const rows = res.data?.data || res.data || []
-      const pg = res.data?.pagination || {}
-      setRows(Array.isArray(rows) ? rows : [])
+      setLoading(true)
+      const res = await getNewsList({ page, limit, search: debouncedSearch, ...filters })
+      const data = res.data?.data || []
+      setRows(Array.isArray(data) ? data : [])
       setPagination({
-        page: Number(pg.page || page),
-        totalPages: Number(pg.totalPages || pg.total_pages || pg.last_page || 1),
-        total: Number(pg.total || 0),
-        limit: Number(pg.limit || limit)
+        page: res.data?.pagination?.page || page,
+        totalPages: res.data?.pagination?.totalPages || 1,
+        total: res.data?.pagination?.total || 0,
+        limit: res.data?.pagination?.limit || limit
       })
     } catch (err) {
       setRows([])
-      setPagination({ page, totalPages: 1, total: 0, limit })
       setError(err.response?.data?.message || 'Failed to load news')
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, limit])
+  }, [page, limit, debouncedSearch, filters])
 
   useEffect(() => {
     fetchNews()
@@ -229,13 +232,47 @@ export default function News() {
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
           />
-          <Button
-            onClick={openCreate}
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-          >
-            Add News
-          </Button>
+          <div className="relative z-20">
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              title="Toggle Filters"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                <div className="flex flex-col gap-3">
+                  <Select
+                    value={filters.status}
+                    onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                    placeholder="All Status"
+                    searchable={false}
+                    options={[
+                      { label: 'All Status', value: '' },
+                      { label: 'Active', value: '1' },
+                      { label: 'Inactive', value: '0' }
+                    ]}
+                  />
+                </div>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <button type="button" onClick={() => setFilters({ status: '', category: '' })} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <Button
+              onClick={openCreate}
+              variant="primary"
+              icon={<Plus className="w-4 h-4" />}
+            >
+              Add News
+            </Button>
+          )}
         </div>
       </div>
 
@@ -260,7 +297,13 @@ export default function News() {
             render: (row) => (
               <div className="max-w-md">
                 <div className="font-semibold">{row.title || '-'}</div>
-                <div className="text-text-secondary text-sm line-clamp-2">{row.description.slice(0, 50) || '-'}</div>
+                {row.description && row.description.length > 50 ? (
+                  <Tooltip content={row.description}>
+                    <div className="text-text-secondary text-sm line-clamp-2 cursor-pointer hover:text-primary transition-colors">{row.description}</div>
+                  </Tooltip>
+                ) : (
+                  <div className="text-text-secondary text-sm line-clamp-2">{row.description || '-'}</div>
+                )}
               </div>
             )
           },
@@ -304,12 +347,16 @@ export default function News() {
             key: 'actions',
             align: 'left',
             render: row=> ( <div className="flex items-center justify-start gap-2">
-                <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )
           }
@@ -323,8 +370,8 @@ export default function News() {
           icon: FileText,
           title: 'No News found',
           description: 'There are no News under this search criteria',
-          actionLabel: 'Add News',
-          onAction: openCreate
+          actionLabel: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : 'Add News',
+          onAction: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : openCreate
         }}
         pagination={{
           currentPage: page,

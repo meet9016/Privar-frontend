@@ -16,7 +16,7 @@ import useDebounce from '../hooks/useDebounce'
 
 export default function Students() {
   const [students, setStudents] = useState([])
-  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
+  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
 
   const [formLoading, setFormLoading] = useState(false)
@@ -27,6 +27,7 @@ export default function Students() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
+  const [filters, setFilters] = useState({ status: '', year: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [selectedStdTab, setSelectedStdTab] = useState('all')
 
@@ -61,7 +62,7 @@ export default function Students() {
   const fetchStudents = useCallback(async () => {
     setLoading(true)
     try {
-      const params = getParams({ search: debouncedSearch })
+      const params = getParams({ search: debouncedSearch, ...filters })
       if (selectedStdTab && selectedStdTab !== 'all') {
         params.standard = selectedStdTab
       }
@@ -77,7 +78,7 @@ export default function Students() {
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, page, selectedStdTab, getParams, setPaginationData])
+  }, [debouncedSearch, page, selectedStdTab, getParams, setPaginationData, filters])
 
   useEffect(() => {
     fetchStudents()
@@ -229,8 +230,47 @@ export default function Students() {
             placeholder="Search students..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onClear={() => setSearch('')}
           />
+          <div className="relative z-20">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              title="Toggle Filters"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                <div className="flex flex-col gap-3">
+                  <Select
+                    value={filters.status}
+                    onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                    placeholder="All Status"
+                    searchable={false}
+                    options={[
+                      { label: 'All Status', value: '' },
+                      { label: 'Active', value: '1' },
+                      { label: 'Inactive', value: '0' }
+                    ]}
+                  />
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-text-secondary">Year</label>
+                    <YearSelect
+                      value={filters.year}
+                      onChange={(val) => setFilters(current => ({ ...current, year: val }))}
+                      placeholder="All Years"
+                      className="h-10"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <button type="button" onClick={() => setFilters({ status: '', year: '' })} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           <Button onClick={handleCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
             Add Student
           </Button>

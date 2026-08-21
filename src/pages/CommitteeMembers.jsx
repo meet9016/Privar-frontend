@@ -12,12 +12,15 @@ import Loader from '../components/common/Loader'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
+import Select from '../components/common/Select'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
+import usePermissions from '../hooks/usePermissions'
 
 
 export default function CommitteeMembers() {
   const { user: currentUser } = useContext(AuthContext)
+  const permissions = usePermissions('committee')
   const [members, setMembers] = useState([])
   const [limit, setLimit] = useState(10)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
@@ -25,6 +28,7 @@ export default function CommitteeMembers() {
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
+  const [filters, setFilters] = useState({ status: '', role: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [roles, setRoles] = useState([])
   const [saving, setSaving] = useState(false)
@@ -51,7 +55,7 @@ export default function CommitteeMembers() {
   const fetchCommitteeMembers = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getCommitteeMembersList({ page, limit, search: debouncedSearch })
+      const res = await getCommitteeMembersList({ page, limit, search: debouncedSearch, ...filters })
       const rawData = res.data?.data || res.data?.members || res.data || []
       const rows = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : [])
       const pg = res.data?.pagination || res.data?.data?.pagination || {}
@@ -69,7 +73,7 @@ export default function CommitteeMembers() {
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, limit])
+  }, [page, debouncedSearch, limit, filters])
 
   useEffect(() => {
     fetchCommitteeMembers()
@@ -105,7 +109,7 @@ export default function CommitteeMembers() {
       setIsModalOpen(false)
       toast.success(selected ? 'Committee member updated successfully' : 'Committee member added successfully')
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update committee member')
+      if (!err.response?.data?.message) toast.error('Failed to update committee member')
     } finally {
       setSaving(false)
     }
@@ -122,7 +126,7 @@ export default function CommitteeMembers() {
       await fetchCommitteeMembers()
       toast.success('Committee member deleted successfully')
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete committee member')
+      if (!err.response?.data?.message) toast.error('Failed to delete committee member')
     } finally {
       setSaving(false)
     }
@@ -147,7 +151,7 @@ export default function CommitteeMembers() {
       toast.success(`Selected members marked as ${newStatus === 1 ? 'Active' : 'Inactive'}`);
       await fetchCommitteeMembers();
     } catch (err) {
-      toast.error('Failed to update status for selected members');
+      if (!err.response?.data?.message) toast.error('Failed to update status for selected members');
       await fetchCommitteeMembers();
     }
   };
@@ -160,7 +164,7 @@ export default function CommitteeMembers() {
       toast.success(`${selectedIds.length} members deleted successfully`);
       await fetchCommitteeMembers();
     } catch (err) {
-      toast.error('Failed to delete selected members');
+      if (!err.response?.data?.message) toast.error('Failed to delete selected members');
       await fetchCommitteeMembers();
     }
   };
@@ -178,7 +182,49 @@ export default function CommitteeMembers() {
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
           />
-          {hasPermission(currentUser, ['committee.add', 'members.add', 'users.manage']) && (
+          <div className="relative z-20">
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              title="Toggle Filters"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                <div className="flex flex-col gap-3">
+                  <Select
+                    value={filters.status}
+                    onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                    placeholder="All Status"
+                    searchable={false}
+                    options={[
+                      { label: 'All Status', value: '' },
+                      { label: 'Active', value: '1' },
+                      { label: 'Inactive', value: '0' }
+                    ]}
+                  />
+                  <Select
+                    value={filters.role}
+                    onChange={(val) => setFilters(current => ({ ...current, role: val }))}
+                    placeholder="All Roles"
+                    searchable={false}
+                    options={[
+                      { label: 'All Roles', value: '' },
+                      ...roles.map(r => ({ label: r.name, value: r.name }))
+                    ]}
+                  />
+                </div>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <button type="button" onClick={() => setFilters({ status: '', role: '' })} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
               Add Member
             </Button>
@@ -229,9 +275,26 @@ export default function CommitteeMembers() {
             header: 'Status',
             key: 'status',
             render: (member) => (
-              <span className={`inline-flex px-2.5 py-1 rounded-lg border text-sm font-semibold ${Number(member.status ?? 1) === 1 ? 'bg-success-bg border-success-border text-success-text' : 'bg-surface-secondary border-border text-text-secondary'}`}>
-                {Number(member.status ?? 1) === 1 ? 'Active' : 'Inactive'}
-              </span>
+              <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={Number(member.status ?? 1) === 1}
+                    onChange={async () => {
+                      const newStatus = Number(member.status ?? 1) === 1 ? 0 : 1;
+                      try {
+                        await api.put(`/committee-members/${member.id}`, { status: newStatus });
+                        toast.success('Status updated successfully');
+                        fetchCommitteeMembers();
+                      } catch (err) {
+                        console.error('Status update failed:', err);
+                      }
+                    }}
+                  />
+                  <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
             )
           },
           {
@@ -239,12 +302,12 @@ export default function CommitteeMembers() {
             key: 'actions',
             align: 'left',
             render: member=> ( <div className="flex items-center justify-start gap-2">
-                {hasPermission(currentUser, ['committee.edit', 'members.edit', 'users.manage']) && (
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
                   <button onClick={() => openEdit(member)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                 )}
-                {hasPermission(currentUser, ['committee.delete', 'members.delete', 'users.manage']) && (
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
                   <button
                     onClick={() => handleDelete(member.id)}
                     className="p-2 text-error bg-error/10 hover:bg-error/20 border border-error/20 rounded-xl transition-all" title="Delete"
@@ -259,14 +322,14 @@ export default function CommitteeMembers() {
         data={filtered}
         keyField="id"
         loading={loading}
-        onBulkStatus={hasPermission(currentUser, ['committee.edit', 'members.edit', 'users.manage']) ? handleBulkStatus : undefined}
-        onBulkDelete={hasPermission(currentUser, ['committee.delete', 'members.delete', 'users.manage']) ? handleBulkDelete : undefined}
+        onBulkStatus={!permissions.canEdit && !permissions.isSuperAdmin ? undefined : handleBulkStatus}
+        onBulkDelete={!permissions.canDelete && !permissions.isSuperAdmin ? undefined : handleBulkDelete}
         emptyState={{
           icon: Users,
           title: 'No committee members found',
           description: 'Try adjusting your search criteria or add a new member',
-          actionLabel: 'Add Member',
-          onAction: hasPermission(currentUser, ['committee.add', 'members.add', 'users.manage']) ? openCreate : undefined
+          actionLabel: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : 'Add Member',
+          onAction: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : openCreate
         }}
         pagination={{
           currentPage: page,

@@ -1,6 +1,10 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import { masterLabels } from '../config/navigation'
+import { Filter } from 'lucide-react'
+import Select from '../components/common/Select'
+import api from '../lib/api'
+import usePermissions from '../hooks/usePermissions'
 
 const parentFieldsConfig = {
   state: { source: '/masters/country', label: 'Country', key: 'name' },
@@ -11,7 +15,23 @@ const parentFieldsConfig = {
 export default function MasterPage({ type }) {
   const label = masterLabels[type]
   const parentConfig = parentFieldsConfig[type]
+  const permissions = usePermissions(type)
   
+  const [filterValue, setFilterValue] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
+  const [parentOptions, setParentOptions] = useState([])
+
+  useEffect(() => {
+    setFilterValue('')
+    setShowFilters(false)
+    if (parentConfig) {
+      api.get(parentConfig.source).then(res => {
+        const data = res.data?.data || res.data || []
+        setParentOptions(data.map(d => ({ label: d.name || d.title, value: d.id || d._id })))
+      }).catch(console.error)
+    }
+  }, [type, parentConfig])
+
   const fields = useMemo(() => [
     ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*', className: 'sm:col-span-2' }] : []),
     { name: 'name', label: `${label} Name`, required: true },
@@ -22,7 +42,7 @@ export default function MasterPage({ type }) {
       required: true,
       source: parentConfig.source
     }] : []),
-    { name: 'status', label: 'Status', type: 'select', required: true, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
+    { name: 'status', label: 'Status', type: 'select', required: true, defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
   ], [label, type, parentConfig])
 
   const columns = useMemo(() => [
@@ -40,6 +60,17 @@ export default function MasterPage({ type }) {
     )
   }
 
+  const customFilters = parentConfig ? (
+    <Select
+      value={filterValue}
+      onChange={setFilterValue}
+      placeholder={`All ${parentConfig.label}s`}
+      options={[{ label: `All ${parentConfig.label}s`, value: '' }, ...parentOptions]}
+    />
+  ) : null;
+
+  const extraParams = filterValue ? { parent_id: filterValue } : {};
+
   return (
     <AdminCrudPage
       title={`${label} Master`}
@@ -48,6 +79,11 @@ export default function MasterPage({ type }) {
       fields={fields}
       columns={columns}
       getRowTitle={(row) => row.name}
+      customFilters={customFilters}
+      extraParams={extraParams}
+      hideAdd={!permissions.canAdd && !permissions.isSuperAdmin}
+      hideEdit={!permissions.canEdit && !permissions.isSuperAdmin}
+      hideDelete={!permissions.canDelete && !permissions.isSuperAdmin}
     />
   )
 }

@@ -9,31 +9,49 @@ import RadioGroup from './common/RadioGroup'
 import DatePicker from './DatePicker'
 import { isValidEmail } from '../lib/validation'
 
+let cachedMasters = null;
+let mastersPromise = null;
+
 export default function UserForm({ user, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
-  const [countries, setCountries] = useState([])
-  const [states, setStates] = useState([])
-  const [cities, setCities] = useState([])
-  const [villages, setVillages] = useState([])
-  const [heads, setHeads] = useState([])
+  const [countries, setCountries] = useState(cachedMasters ? cachedMasters.countries : [])
+  const [states, setStates] = useState(cachedMasters ? cachedMasters.states : [])
+  const [cities, setCities] = useState(cachedMasters ? cachedMasters.cities : [])
+  const [villages, setVillages] = useState(cachedMasters ? cachedMasters.villages : [])
+  const [heads, setHeads] = useState(cachedMasters ? cachedMasters.heads : [])
   const [isHead, setIsHead] = useState(true)
 
   useEffect(() => {
     const fetchMasters = async () => {
-      try {
-        const [cRes, sRes, ciRes, vRes, hRes] = await Promise.all([
+      if (cachedMasters) return;
+      
+      if (!mastersPromise) {
+        mastersPromise = Promise.all([
           api.get('/masters/country'),
           api.get('/masters/state'),
           api.get('/masters/city'),
           api.get('/masters/village').catch(() => ({ data: { data: [] } })),
           api.get('/users?familyHead=true&limit=1000')
         ])
+      }
+      
+      try {
+        const [cRes, sRes, ciRes, vRes, hRes] = await mastersPromise
         const countryList = cRes.data?.data || []
-        setCountries(countryList)
-        setStates(sRes.data?.data || [])
-        setCities(ciRes.data?.data || [])
-        setVillages(vRes.data?.data || [])
-        setHeads(hRes.data?.data || [])
+        
+        cachedMasters = {
+          countries: countryList,
+          states: sRes.data?.data || [],
+          cities: ciRes.data?.data || [],
+          villages: vRes.data?.data || [],
+          heads: hRes.data?.data || []
+        }
+
+        setCountries(cachedMasters.countries)
+        setStates(cachedMasters.states)
+        setCities(cachedMasters.cities)
+        setVillages(cachedMasters.villages)
+        setHeads(cachedMasters.heads)
 
         // If country not yet selected, default to India
         setFormData(prev => {

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-export default function usePagination(defaultLimit = 10) {
+export default function usePagination(defaultLimit = 15) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(defaultLimit);
   const [totalPages, setTotalPages] = useState(1);

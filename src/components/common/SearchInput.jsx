@@ -22,7 +22,7 @@ export default function SearchInput({
   const hasValue = Boolean(value && String(value).length > 0);
 
   return (
-    <div className={wrapperClassName}>
+    <div className={`relative ${wrapperClassName.replace('relative', '').trim()}`}>
       <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
         <Search className="w-4 h-4" />
       </span>

@@ -14,9 +14,11 @@ import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
+import usePermissions from '../hooks/usePermissions'
 
 export default function Users() {
   const { user: currentUser } = useContext(AuthContext)
+  const permissions = usePermissions('members')
   const [users, setUsers] = useState([])
   const [limit, setLimit] = useState(10)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
@@ -322,13 +324,50 @@ export default function Users() {
             wrapperClassName="w-64 sm:w-80"
           />
 
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-            title="Toggle Filters"
-          >
-            <Filter className="w-4 h-4" />
-          </button>
+          <div className="relative z-20">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              title="Toggle Filters"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                <div className="flex flex-col gap-3">
+                  <Select
+                    value={filterGender}
+                    onChange={(val) => setFilters(current => ({ ...current, gender: val }))}
+                    placeholder="All Genders"
+                    searchable={false}
+                    options={[
+                      { label: 'All Genders', value: '' },
+                      { label: 'Male', value: 'Male' },
+                      { label: 'Female', value: 'Female' },
+                      { label: 'Other', value: 'Other' }
+                    ]}
+                  />
+
+                  <Select
+                    value={filterStatus}
+                    onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                    placeholder="All Status"
+                    searchable={false}
+                    options={[
+                      { label: 'All Status', value: '' },
+                      { label: 'Active', value: '1' },
+                      { label: 'Inactive', value: '0' }
+                    ]}
+                  />
+                </div>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <button type="button" onClick={clearFilters} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           
           {selectedUsers.length > 0 && (
             <div className="flex items-center gap-2 bg-surface-secondary border border-border p-1 rounded-xl shadow-sm">
@@ -349,7 +388,7 @@ export default function Users() {
               </button>
             </div>
           )}
-          {hasPermission(currentUser, ['members.add', 'members.create', 'users.manage']) && (
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button
               onClick={handleCreate}
               variant="primary"
@@ -371,42 +410,7 @@ export default function Users() {
       )}
 
 
-      {/* Advanced Filter panel */}
-      <div className={`transition-all duration-300 ease-in-out ${showFilters ? 'max-h-[500px] opacity-100 mt-4 overflow-visible z-20 relative' : 'max-h-0 opacity-0 mt-0 overflow-hidden pointer-events-none'}`}>
-        <div className="bg-surface border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Select
-            value={filterGender}
-            onChange={(val) => setFilters(current => ({ ...current, gender: val }))}
-            placeholder="All Genders"
-            searchable={false}
-            options={[
-              { label: 'All Genders', value: '' },
-              { label: 'Male', value: 'Male' },
-              { label: 'Female', value: 'Female' },
-              { label: 'Other', value: 'Other' }
-            ]}
-          />
-
-          <Select
-            value={filterStatus}
-            onChange={(val) => setFilters(current => ({ ...current, status: val }))}
-            placeholder="All Status"
-            searchable={false}
-            options={[
-              { label: 'All Status', value: '' },
-              { label: 'Active', value: '1' },
-              { label: 'Inactive', value: '0' }
-            ]}
-          />
-        </div>
-        <div className="flex justify-end">
-          <button type="button" onClick={clearFilters} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
-          </button>
-        </div>
-        </div>
-      </div>
+      {/* Removed the inline filter panel, moved it into a dropdown below the button */}
 
       {/* Main Table view */}
       <Table
@@ -540,12 +544,12 @@ export default function Users() {
                 <button onClick={() => handleView(user)} className="p-2 text-indigo-500 hover:text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all" title="View Profile">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
-                {hasPermission(currentUser, ['members.edit', 'users.edit', 'users.manage']) && (
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
                   <button onClick={() => handleEdit(user)} className="p-2 text-primary hover:text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit Profile">
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                 )}
-                {hasPermission(currentUser, ['members.delete', 'users.delete', 'users.manage']) && (
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
                   <button onClick={() => handleDelete(user.id)} className="p-2 text-error-text hover:text-error bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete Member">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

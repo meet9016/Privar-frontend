@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff } from 'lucide-react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
+import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -15,6 +15,9 @@ import FileDropzone from '../components/common/FileDropzone'
 import DateTimePicker from '../components/common/DateTimePicker'
 import useDebounce from '../hooks/useDebounce'
 import EventRegistrations from './EventRegistration'
+import Tooltip from '../components/common/Tooltip'
+import { AuthContext } from '../context/AuthContext'
+import usePermissions from '../hooks/usePermissions'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -38,6 +41,8 @@ const defaultForm = {
 
 
 export default function Events() {
+  const { user: currentUser } = useContext(AuthContext)
+  const permissions = usePermissions('events')
   const [rows, setRows] = useState([])
   const [limit, setLimit] = useState(10)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
@@ -45,6 +50,8 @@ export default function Events() {
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
+  const [filters, setFilters] = useState({ status: '', event_category_id: '' })
+  const [showFilters, setShowFilters] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -91,27 +98,25 @@ export default function Events() {
   const navigate = useNavigate()
 
 
-  const fetchRows = useCallback(async () => {
-    setLoading(true)
+  const fetchEvents = useCallback(async () => {
     try {
-      const res = await getEventsList({ page, limit, search: debouncedSearch, sort_by: 'start_time', sort_order: 'asc' })
-      const data = res.data?.data || res.data || []
-      const pg = res.data?.pagination || {}
+      setLoading(true)
+      const res = await getEventsList({ page, limit, search: debouncedSearch, ...filters })
+      const data = res.data?.data || []
       setRows(Array.isArray(data) ? data : [])
       setPagination({
-        page: Number(pg.page || page),
-        totalPages: Number(pg.totalPages || pg.total_pages || pg.last_page || 1),
-        total: Number(pg.total || 0),
-        limit: Number(pg.limit || limit)
+        page: res.data?.pagination?.page || page,
+        totalPages: res.data?.pagination?.totalPages || 1,
+        total: res.data?.pagination?.total || 0,
+        limit: res.data?.pagination?.limit || limit
       })
     } catch (err) {
       setRows([])
-      setPagination({ page, totalPages: 1, total: 0, limit })
       setError(err.response?.data?.message || 'Failed to load events')
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, limit])
+  }, [page, limit, debouncedSearch, filters])
 
   const fetchCountryList = useCallback(async () => {
     try {
@@ -160,8 +165,8 @@ export default function Events() {
 
 
   useEffect(() => {
-    fetchRows()
-  }, [fetchRows])
+    fetchEvents()
+  }, [fetchEvents])
 
   const setSearch = (value) => {
     setSearchValue(value)
@@ -223,12 +228,35 @@ export default function Events() {
     const newStatus = Number(row.status) === 1 ? 0 : 1
     try {
       await api.put(`${endpoint}/${id}`, { status: newStatus })
-      await fetchRows()
+      await fetchEvents()
       toast.success('Status updated')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update status')
     }
   }
+
+  const handleBulkStatus = async (selectedIds, newStatus) => {
+    if (!selectedIds.length) return;
+    try {
+      await api.put(`${endpoint}/bulk/status`, { eventIds: selectedIds, status: newStatus });
+      toast.success(`Selected events marked as ${newStatus === 1 ? 'Approved' : 'Inactive'}`);
+      await fetchEvents();
+    } catch (err) {
+      toast.error('Failed to update status for selected events');
+    }
+  };
+
+  const handleBulkDelete = async (selectedIds) => {
+    if (!selectedIds.length) return;
+    if (!await confirm(`Are you sure you want to delete ${selectedIds.length} selected events?`)) return;
+    try {
+      await api.delete(`${endpoint}/bulk`, { data: { eventIds: selectedIds } });
+      toast.success(`${selectedIds.length} events deleted successfully`);
+      await fetchEvents();
+    } catch (err) {
+      toast.error('Failed to delete selected events');
+    }
+  };
 
   const resetForm = () => {
     setSelectedId('')
@@ -339,7 +367,7 @@ export default function Events() {
         await api.post(endpoint, payload)
       }
 
-      await fetchRows()
+      await fetchEvents()
       toast.success('Event saved successfully')
       setIsModalOpen(false)
       resetForm()
@@ -356,7 +384,7 @@ export default function Events() {
     if (!await confirm(`Delete ${row.title || 'this event'}?`)) return
     try {
       await api.delete(`${endpoint}/${id}`)
-      await fetchRows()
+      await fetchEvents()
       toast.success('Event deleted successfully')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete event')
@@ -376,9 +404,53 @@ export default function Events() {
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
           />
-          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
-            Add Event
-          </Button>
+          <div className="relative z-20">
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              title="Toggle Filters"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                <div className="flex flex-col gap-3">
+                  <Select
+                    value={filters.event_category_id}
+                    onChange={(val) => setFilters(current => ({ ...current, event_category_id: val }))}
+                    placeholder="All Categories"
+                    searchable={false}
+                    options={[
+                      { label: 'All Categories', value: '' },
+                      ...categories.map(c => ({ label: c.name || c.category || c.title || c.category_name, value: c.id || c._id }))
+                    ]}
+                  />
+                  <Select
+                    value={filters.status}
+                    onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                    placeholder="All Status"
+                    searchable={false}
+                    options={[
+                      { label: 'All Status', value: '' },
+                      { label: 'Active', value: '1' },
+                      { label: 'Inactive', value: '0' }
+                    ]}
+                  />
+                </div>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <button type="button" onClick={() => setFilters({ status: '', event_category_id: '' })} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
+              Add Event
+            </Button>
+          )}
         </div>
       </div>
 
@@ -400,8 +472,14 @@ export default function Events() {
             key: 'title',
             render: (row) => (
               <div className="max-w-xs">
-                <div className="font-semibold text-text truncate" title={row.title}>{row.title}</div>
-                <div className="text-xs text-text-secondary line-clamp-1" title={row.description}>{row.description}</div>
+                <div className="font-semibold text-text truncate">{row.title}</div>
+                {row.description && row.description.length > 30 ? (
+                  <Tooltip content={row.description}>
+                    <div className="text-xs text-text-secondary line-clamp-1 cursor-pointer hover:text-primary transition-colors">{row.description}</div>
+                  </Tooltip>
+                ) : (
+                  <div className="text-xs text-text-secondary line-clamp-1">{row.description}</div>
+                )}
               </div>
             )
           },
@@ -478,20 +556,24 @@ export default function Events() {
                 >
                   <Eye className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  onClick={() => openEdit(row)}
-                  className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
-                  title="Edit Event"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(row.id)}
-                  className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
-                  title="Delete Event"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                  <button
+                    onClick={() => openEdit(row)}
+                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
+                    title="Edit Event"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                  <button
+                    onClick={() => handleDelete(row.id)}
+                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
+                    title="Delete Event"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )
           }
@@ -499,12 +581,14 @@ export default function Events() {
         data={rows}
         keyField="id"
         loading={loading}
+        onBulkStatus={!permissions.canEdit && !permissions.isSuperAdmin ? undefined : handleBulkStatus}
+        onBulkDelete={!permissions.canDelete && !permissions.isSuperAdmin ? undefined : handleBulkDelete}
         emptyState={{
           icon: Calendar,
           title: 'No events found',
           description: 'Try expanding your search criteria or create a new event',
-          actionLabel: 'Add Event',
-          onAction: openCreate
+          actionLabel: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : 'Add Event',
+          onAction: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : openCreate
         }}
         pagination={{
           currentPage: page,

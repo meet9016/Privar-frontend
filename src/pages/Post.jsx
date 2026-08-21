@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff } from 'lucide-react'
+import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter } from 'lucide-react'
 import api, { assetUrl, getPostsList } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Loader from '../components/common/Loader'
@@ -10,10 +10,14 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
+import DateTimePicker from '../components/common/DateTimePicker'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
+import usePermissions from '../hooks/usePermissions'
+import Tooltip from '../components/common/Tooltip'
 
 export default function Post() {
+  const permissions = usePermissions('posts')
   const [posts, setPosts] = useState([])
   const [limit, setLimit] = useState(10)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
@@ -24,6 +28,8 @@ export default function Post() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [filters, setFilters] = useState({ status: '' })
+  const [showFilters, setShowFilters] = useState(false)
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const emptyPostForm = {
@@ -45,7 +51,7 @@ export default function Post() {
   const fetchPosts = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getPostsList({ page, limit, search: debouncedSearch })
+      const res = await getPostsList({ page, limit, search: debouncedSearch, ...filters })
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setPosts(Array.isArray(rows) ? rows : [])
@@ -62,7 +68,7 @@ export default function Post() {
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, limit])
+  }, [page, debouncedSearch, limit, filters])
 
   useEffect(() => {
     fetchPosts()
@@ -168,7 +174,7 @@ export default function Post() {
       setPosts(prevPosts => prevPosts.map(item => {
         if ((item.id || item._id) === id) {
           return { ...item, status: Number(post.status) === 1 ? 1 : 0 }
-        }
+        } 
         return item
       }))
       toast.error(err.response?.data?.message || 'Failed to update status')
@@ -215,13 +221,47 @@ export default function Post() {
             onChange={(e) => { setSearchValue(e.target.value); setPage(1); }}
             onClear={() => { setSearchValue(''); setPage(1); }}
           />
-          <Button
-            onClick={openCreate}
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-          >
-            Add Post
-          </Button>
+          <div className="relative z-20">
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              title="Toggle Filters"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                <div className="flex flex-col gap-3">
+                  <Select
+                    value={filters.status}
+                    onChange={(val) => setFilters(current => ({ ...current, status: val }))}
+                    placeholder="All Status"
+                    searchable={false}
+                    options={[
+                      { label: 'All Status', value: '' },
+                      { label: 'Active', value: '1' },
+                      { label: 'Inactive', value: '0' }
+                    ]}
+                  />
+                </div>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <button type="button" onClick={() => setFilters({ status: '' })} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <Button
+              onClick={openCreate}
+              variant="primary"
+              icon={<Plus className="w-4 h-4" />}
+            >
+              Add Post
+            </Button>
+          )}
         </div>
       </div>
 
@@ -249,9 +289,17 @@ export default function Post() {
             header: 'Description',
             key: 'description',
             render: (post) => (
-              <div className="text-text-secondary text-sm line-clamp-2 max-w-md">
-                {post.description || '-'}
-              </div>
+              post.description && post.description.length > 50 ? (
+                <Tooltip content={post.description}>
+                  <div className="text-text-secondary text-sm line-clamp-2 max-w-xs cursor-pointer hover:text-primary transition-colors">
+                    {post.description}
+                  </div>
+                </Tooltip>
+              ) : (
+                <div className="text-text-secondary text-sm line-clamp-2 max-w-xs">
+                  {post.description || '-'}
+                </div>
+              )
             )
           },
           {
@@ -285,12 +333,16 @@ export default function Post() {
             key: 'actions',
             align: 'left',
             render: post=> ( <div className="flex items-center justify-start gap-2">
-                <button onClick={() => handleEdit(post)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => handleDelete(post.id || post._id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleEdit(post)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleDelete(post.id || post._id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )
           }
@@ -304,8 +356,8 @@ export default function Post() {
           icon: FileText,
           title: 'No posts found',
           description: 'There are no Post under this search',
-          actionLabel: 'Add Post',
-          onAction: openCreate
+          actionLabel: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : 'Add Post',
+          onAction: !permissions.canAdd && !permissions.isSuperAdmin ? undefined : openCreate
         }}
         pagination={{
           currentPage: page,

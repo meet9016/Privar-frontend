@@ -16,7 +16,7 @@ function RowsSelector({ limit, onLimitChange }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const options = [10, 25, 50, 100];
+  const options = [10, 15, 25, 50, 100];
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
@@ -132,7 +132,7 @@ export default function Table({
   loading = false,
   showSkeleton = false,
   className = '',
-  maxHeightClass = 'max-h-[620px]',
+  maxHeightClass = 'max-h-[920px]',
   stickyHeader = true,
   rowClassName,
   // Checkbox selection & Bulk Actions (Default false as requested)

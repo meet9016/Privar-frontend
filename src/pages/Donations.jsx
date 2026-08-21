@@ -30,7 +30,7 @@ import { toast } from '../lib/toast'
 
 export default function Donations() {
   const [donations, setDonations] = useState([])
-  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
+  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
   const [bankDetails, setBankDetails] = useState([])
 

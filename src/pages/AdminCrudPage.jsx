@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Edit2, Plus, RefreshCw, Search, Trash2, Settings, ImageOff } from 'lucide-react'
+import { Edit2, Plus, RefreshCw, Search, Trash2, Settings, ImageOff, Filter, X } from 'lucide-react'
 import api, { assetUrl, formatDate } from '../lib/api'
 import Loader from '../components/common/Loader'
 import { confirm } from '../lib/confirm'
@@ -9,6 +9,7 @@ import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
+import Tooltip from '../components/common/Tooltip'
 import Table from '../components/common/Table'
 import FileDropzone from '../components/common/FileDropzone'
 import SearchInput from '../components/common/SearchInput'
@@ -17,13 +18,17 @@ import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, deleteAction, gridCols }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, deleteAction, gridCols, customHeaderActions, customFilters, extraParams }) {
+  const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
-    return fields.reduce((acc, field) => ({ ...acc, [field.name]: field.defaultValue ?? '' }), {})
+    return fields.reduce((acc, field) => ({ 
+      ...acc, 
+      [field.name]: field.defaultValue ?? (field.name === 'status' ? 1 : '')
+    }), {})
   }, [fields])
 
   const [rows, setRows] = useState([])
-  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(10)
+  const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
@@ -36,6 +41,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const [remoteOptions, setRemoteOptions] = useState({})
   const [isOwn, setIsOwn] = useState(false)
   const [formError, setFormError] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
+  const [filterStatus, setFilterStatus] = useState('')
 
   const [imagePreview, setImagePreview] = useState(null)
   const [removedImages, setRemovedImages] = useState({})
@@ -47,8 +54,9 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const fetchRows = useCallback(async () => {
     setLoading(true)
     try {
-      const params = getParams({ search: debouncedSearch })
+      const params = getParams({ search: debouncedSearch, ...(extraParams || {}) })
       if (supportIsOwn) params.is_own = isOwn
+      if (filterStatus !== '') params.status = filterStatus
       const res = await api.get(endpoint, { params })
       const data = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
@@ -61,11 +69,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     } finally {
       setLoading(false)
     }
-  }, [endpoint, page, debouncedSearch, title, supportIsOwn, isOwn, getParams, setPaginationData])
+  }, [endpoint, page, debouncedSearch, title, supportIsOwn, isOwn, getParams, setPaginationData, extraParams, filterStatus])
 
   useEffect(() => {
     fetchRows()
-  }, [fetchRows])
+  }, [fetchRows, endpoint])
 
   const setSearch = (value) => {
     setSearchValue(value)
@@ -342,6 +350,40 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             onClear={() => setSearch('')}
             placeholder={`Search ${title.toLowerCase()}...`}
           />
+          <div className="relative z-20">
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+              title="Toggle Filters"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-[240px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                <div className="flex flex-col gap-3">
+                  {customFilters}
+                  <Select
+                    value={filterStatus}
+                    onChange={(val) => setFilterStatus(val)}
+                    placeholder="All Status"
+                    searchable={false}
+                    options={[
+                      { label: 'All Status', value: '' },
+                      { label: 'Active', value: '1' },
+                      { label: 'Inactive', value: '0' }
+                    ]}
+                  />
+                </div>
+                <div className="flex justify-end border-t border-border pt-3">
+                  <button type="button" onClick={() => setFilterStatus('')} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Clear
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          {customHeaderActions}
           {!hideAdd && (
             <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
               Add {title}
@@ -395,11 +437,19 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   );
                   const rawString = typeof displayValue === 'string' ? displayValue : (typeof row[c.key] === 'string' ? row[c.key] : '');
                   const hasLongText = rawString && rawString.length > 25;
+                  
+                  if (hasLongText && rawString !== '-') {
+                    return (
+                      <Tooltip content={rawString}>
+                        <span className="block max-w-[260px] truncate hover:text-primary transition-colors">
+                          {displayValue}
+                        </span>
+                      </Tooltip>
+                    );
+                  }
+
                   return (
-                    <span 
-                      className={`block max-w-[260px] truncate ${hasLongText ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
-                      title={rawString && rawString !== '-' ? rawString : undefined}
-                    >
+                    <span className="block max-w-[260px] truncate">
                       {displayValue}
                     </span>
                   );
@@ -407,14 +457,16 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               )
             )
           })),
-          {
+          ...(shouldHideActions ? [] : [{
             header: 'Actions',
             key: 'actions',
             align: 'left',
             render: row=> ( <div className="flex items-center justify-start gap-2">
-                <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
+                {!hideEdit && (
+                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 {!hideDelete && (
                   <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -422,7 +474,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 )}
               </div>
             )
-          }
+          }])
         ]}
         data={rows}
         keyField="id"
@@ -543,31 +595,67 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                       multiple={field.multiple}
                       error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                       onFilesSelected={(files) => {
-                        const file = field.multiple ? files : files?.[0] || ''
-                        setFormData({ ...formData, [field.name]: file })
-                        if (!field.multiple && file) {
-                          setImagePreview((prev) => ({ ...prev, [field.name]: URL.createObjectURL(file) }))
-                          setRemovedImages((prev) => ({ ...prev, [field.name]: false }))
+                        if (field.multiple) {
+                          const current = Array.isArray(formData[field.name]) ? formData[field.name] : []
+                          setFormData({ ...formData, [field.name]: [...current, ...files] })
+                        } else {
+                          const file = files?.[0] || ''
+                          setFormData({ ...formData, [field.name]: file })
+                          if (file) {
+                            setImagePreview((prev) => ({ ...prev, [field.name]: URL.createObjectURL(file) }))
+                            setRemovedImages((prev) => ({ ...prev, [field.name]: false }))
+                          }
                         }
                       }}
                       disabled={saving}
                       label={`Click or Drag ${field.label}`}
-                      previews={[
-                        ...(imagePreview?.[field.name] ? [{
-                          url: imagePreview[field.name],
-                          onRemove: () => {
-                            setImagePreview((prev) => ({ ...prev, [field.name]: null }))
-                            setFormData((prev) => ({ ...prev, [field.name]: '' }))
-                          }
-                        }] : (selected?.[field.name] || formData[field.name]) && !removedImages[field.name] && !field.multiple ? [{
-                          url: assetUrl(selected?.[field.name] || formData[field.name]),
-                          onRemove: () => {
-                            setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
-                          }
-                        }] : [])
-                      ]}
+                      previews={(() => {
+                        if (field.multiple) {
+                          const existingUrls = Array.isArray(selected?.[field.name]) ? selected[field.name] : (selected?.[field.name] ? [selected[field.name]] : [])
+                          const newFiles = Array.isArray(formData[field.name]) ? formData[field.name] : (formData[field.name] ? [formData[field.name]] : [])
+                          const previews = []
+                          
+                          existingUrls.forEach((url, idx) => {
+                            if (!removedImages[`${field.name}_${idx}`]) {
+                              previews.push({
+                                url: assetUrl(url),
+                                onRemove: () => setRemovedImages(prev => ({ ...prev, [`${field.name}_${idx}`]: true }))
+                              })
+                            }
+                          })
+                          
+                          newFiles.forEach((file, idx) => {
+                            if (file instanceof File) {
+                              previews.push({
+                                url: URL.createObjectURL(file),
+                                onRemove: () => {
+                                  const newArr = [...newFiles]
+                                  newArr.splice(idx, 1)
+                                  setFormData(prev => ({ ...prev, [field.name]: newArr }))
+                                }
+                              })
+                            }
+                          })
+                          return previews
+                        } else {
+                          return [
+                            ...(imagePreview?.[field.name] ? [{
+                              url: imagePreview[field.name],
+                              onRemove: () => {
+                                setImagePreview((prev) => ({ ...prev, [field.name]: null }))
+                                setFormData((prev) => ({ ...prev, [field.name]: '' }))
+                              }
+                            }] : (selected?.[field.name] || formData[field.name]) && !removedImages[field.name] ? [{
+                              url: assetUrl(selected?.[field.name] || formData[field.name]),
+                              onRemove: () => {
+                                setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
+                              }
+                            }] : [])
+                          ]
+                        }
+                      })()}
                     />
-                    {removedImages[field.name] && (
+                    {removedImages[field.name] && !field.multiple && (
                       <span className="text-xs text-error-text mt-1">Image will be removed on save.</span>
                     )}
                   </div>

@@ -29,7 +29,7 @@ const initialState = {
   website: '',
   image: '',
   gallery_images: [],
-  status: 0
+  status: 1
 }
 
 const ALL_SOCIAL_PLATFORMS = [
@@ -331,7 +331,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
 
         <Input
           type="textarea"
-          rows={4}
+          rows={3}
           label="About Business"
           value={formData.about_us}
           onChange={(e) => setFormData({ ...formData, about_us: e.target.value })}
@@ -460,7 +460,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
               type="checkbox"
               className="sr-only peer"
               checked={Number(formData.status ?? 1) === 1}
-              onChange={(e) => handleChange('status', e.target.checked ? 1 : 0)}
+              onChange={(e) => setFormData({ ...formData, status: e.target.checked ? 1 : 0 })}
               disabled={isLoading}
             />
             <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>

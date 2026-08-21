@@ -182,7 +182,7 @@ export default function Roles() {
       setIsModalOpen(false)
       setSelected(null)
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Failed to save role')
+      if (!err.response?.data?.message) toast.error('Failed to save role')
     } finally {
       setSaving(false)
     }
@@ -195,7 +195,7 @@ export default function Roles() {
       setRoles(roles.filter((item) => item.id !== role.id))
       toast.success('Role deleted successfully')
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete role')
+      if (!err.response?.data?.message) toast.error('Failed to delete role')
     }
   }
 
@@ -255,7 +255,28 @@ export default function Roles() {
           {
             header: 'Status',
             key: 'status',
-            render: (role) => <span>{Number(role.status ?? 1) === 1 ? 'Active' : 'Inactive'}</span>
+            render: (role) => (
+              <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={Number(role.status ?? 1) === 1}
+                    onChange={async () => {
+                      const newStatus = Number(role.status ?? 1) === 1 ? 0 : 1;
+                      try {
+                        await api.put(`/roles/${role.id || role._id}`, { status: newStatus, name: role.name, permissions: role.permissions });
+                        toast.success('Status updated successfully');
+                        fetchRoles();
+                      } catch (err) {
+                        console.error('Status update failed:', err);
+                      }
+                    }}
+                  />
+                  <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+            )
           },
           {
             header: 'Actions',

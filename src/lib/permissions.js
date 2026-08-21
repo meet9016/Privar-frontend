@@ -38,7 +38,6 @@ export const hasPermission = (user, permission) => {
   
   // Superadmin or Admin roles have unrestricted access
   if (
-    user?.role === 'admin' ||
     user?.role === 'superadmin' ||
     user?.is_super_admin === true ||
     user?.committee_role === 'President' ||
@@ -52,8 +51,7 @@ export const hasPermission = (user, permission) => {
   const permissions = Array.isArray(user?.permissions) ? user.permissions : [];
 
   if (permissions.length === 0) {
-    // If user is committee or logged into admin, permit view by default
-    return true;
+    return false;
   }
 
   return required.some((item) => permissions.includes(item) || permissions.includes(legacyPermissionFor(item)));
