@@ -72,6 +72,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   }, [endpoint, page, debouncedSearch, title, supportIsOwn, isOwn, getParams, setPaginationData, extraParams, filterStatus])
 
   useEffect(() => {
+    setRows([])
+    setLoading(true)
+  }, [endpoint])
+
+  useEffect(() => {
     fetchRows()
   }, [fetchRows, endpoint])
 
