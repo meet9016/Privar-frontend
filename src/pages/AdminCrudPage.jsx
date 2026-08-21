@@ -18,7 +18,7 @@ import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, deleteAction, gridCols, customHeaderActions, customFilters, extraParams }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ 
@@ -350,39 +350,41 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             onClear={() => setSearch('')}
             placeholder={`Search ${title.toLowerCase()}...`}
           />
-          <div className="relative z-20">
-            <button
-              type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
-              title="Toggle Filters"
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-            {showFilters && (
-              <div className="absolute right-0 top-full mt-2 w-[240px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
-                <div className="flex flex-col gap-3">
-                  {customFilters}
-                  <Select
-                    value={filterStatus}
-                    onChange={(val) => setFilterStatus(val)}
-                    placeholder="All Status"
-                    searchable={false}
-                    options={[
-                      { label: 'All Status', value: '' },
-                      { label: 'Active', value: '1' },
-                      { label: 'Inactive', value: '0' }
-                    ]}
-                  />
+          {!hideFilter && (
+            <div className="relative z-20">
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center justify-center h-10 px-3 rounded-xl border transition-all cursor-pointer ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-secondary hover:bg-surface border-border text-text-secondary hover:text-text'}`}
+                title="Toggle Filters"
+              >
+                <Filter className="w-4 h-4" />
+              </button>
+              {showFilters && (
+                <div className="absolute right-0 top-full mt-2 w-[240px] bg-surface border border-border rounded-2xl p-4 shadow-glass-sm animate-fade-in space-y-4">
+                  <div className="flex flex-col gap-3">
+                    {customFilters}
+                    <Select
+                      value={filterStatus}
+                      onChange={(val) => { setFilterStatus(val); resetPage(); }}
+                      placeholder="All Status"
+                      searchable={false}
+                      options={[
+                        { label: 'All Status', value: '' },
+                        { label: 'Active', value: '1' },
+                        { label: 'Inactive', value: '0' }
+                      ]}
+                    />
+                  </div>
+                  <div className="flex justify-end border-t border-border pt-3">
+                    <button type="button" onClick={() => { setFilterStatus(''); resetPage(); }} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                      <RefreshCw className="w-3.5 h-3.5" /> Clear
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-end border-t border-border pt-3">
-                  <button type="button" onClick={() => setFilterStatus('')} className="text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
-                    <RefreshCw className="w-3.5 h-3.5" /> Clear
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
           {customHeaderActions}
           {!hideAdd && (
             <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">

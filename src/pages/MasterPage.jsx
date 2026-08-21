@@ -81,6 +81,7 @@ export default function MasterPage({ type }) {
       getRowTitle={(row) => row.name}
       customFilters={customFilters}
       extraParams={extraParams}
+      hideFilter={type === 'country'}
       hideAdd={!permissions.canAdd && !permissions.isSuperAdmin}
       hideEdit={!permissions.canEdit && !permissions.isSuperAdmin}
       hideDelete={!permissions.canDelete && !permissions.isSuperAdmin}
