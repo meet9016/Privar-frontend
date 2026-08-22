@@ -213,9 +213,9 @@ const definitions = {
     fields: [
       { name: 'title', label: 'Title', required: true, className: 'md:col-span-1' },
       { name: 'company_name', label: 'Company Name', required: true, className: 'md:col-span-1' },
-      { name: 'description', label: 'Description', type: 'textarea', required: true, className: 'md:col-span-1' },
-      { name: 'image', label: 'Image', type: 'file', className: 'md:col-span-1 md:row-span-2 [&>div]:h-[calc(100%-24px)]' },
-      { name: 'qualifications', label: 'Qualifications', type: 'textarea', required: true, className: 'md:col-span-1' },
+      { name: 'description', label: 'Description', type: 'textarea', rows: 4, required: true, className: 'md:col-span-1' },
+      { name: 'image', label: 'Image', type: 'file', className: 'md:col-span-1 md:row-span-2 [&>div]:h-[calc(100%-6px)] [&>div]:min-h-[140px]' },
+      { name: 'qualifications', label: 'Qualifications', type: 'textarea', rows: 4, required: true, className: 'md:col-span-1' },
       { name: 'location', label: 'Location', required: true, className: 'md:col-span-1' }, 
       { name: 'job_type', label: 'Job Type', type: 'select', required: true, className: 'md:col-span-1',
         options: [{ value: "full-time", label: 'Full Time' }, { value: "part-time", label: 'Part Time' }, { value: "contract", label: 'Contract' }, { value: "internship", label: 'Internship' }]},

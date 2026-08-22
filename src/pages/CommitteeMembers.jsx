@@ -190,12 +190,12 @@ export default function CommitteeMembers() {
             onClear={() => {
               setDraftFilters({ status: '', role: '' })
               setFilters({ status: '', role: '' })
-              resetPage()
+              setPage(1)
               setShowFilters(false)
             }}
             onApply={() => {
               setFilters(draftFilters)
-              resetPage()
+              setPage(1)
               setShowFilters(false)
             }}
           >

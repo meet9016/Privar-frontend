@@ -74,7 +74,14 @@ export default function FilterPopover({
             <div className="px-4 py-3 bg-surface-secondary/40 border-t border-border">
               <button
                 type="button"
-                onClick={onApply}
+                onClick={(e) => {
+                  if (onClose) onClose(e)
+                  try {
+                    if (onApply) onApply(e)
+                  } catch (err) {
+                    console.error('Error applying filters:', err)
+                  }
+                }}
                 className="w-full py-2 px-4 text-xs font-bold rounded-lg bg-primary hover:bg-primary-hover text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.99]"
               >
                 <Check className="w-3.5 h-3.5" /> Apply Filters

@@ -545,7 +545,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     </label>
                     <textarea 
                       required={field.required} 
-                      rows="2" 
+                      rows={field.rows || 2} 
                       value={formData[field.name] || ''} 
                       placeholder={field.placeholder || `Enter ${field.label}`}
                       onChange={(e) => {
@@ -614,11 +614,12 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 ) : field.type === 'file' ? (
-                  <div className="flex flex-col">
+                  <div className="flex flex-col h-full">
                     <label className="block text-sm font-semibold text-text-secondary mb-1.5">
                       {field.label} {field.required && <span className="text-red-500">*</span>}
                     </label>
                     <FileDropzone
+                      className="flex-1"
                       accept={field.accept || 'image/*'}
                       multiple={field.multiple}
                       error={fieldErrors[field.name] ? `${field.label} is required` : undefined}

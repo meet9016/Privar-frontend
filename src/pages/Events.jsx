@@ -417,12 +417,12 @@ export default function Events() {
             onClear={() => {
               setDraftFilters({ status: '', event_category_id: '' })
               setFilters({ status: '', event_category_id: '' })
-              resetPage()
+              setPage(1)
               setShowFilters(false)
             }}
             onApply={() => {
               setFilters(draftFilters)
-              resetPage()
+              setPage(1)
               setShowFilters(false)
             }}
           >

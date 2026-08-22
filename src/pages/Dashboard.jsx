@@ -1,83 +1,80 @@
 import React, { useEffect, useState } from 'react'
-import { Users, Briefcase, FileText, ArrowUpRight, Clock, Calendar, Eye, Activity, Shield, TrendingUp, Zap, Phone, Mail, Crown } from 'lucide-react'
+import { Users, Briefcase, FileText, ArrowUpRight, Clock, Calendar, Eye, Activity, Shield, TrendingUp, Zap, Phone, Mail, Crown, UserPlus, FileEdit, Settings, CreditCard, ChevronRight } from 'lucide-react'
 import api from '../lib/api'
 import Table from '../components/common/Table'
 import { useNavigate } from 'react-router-dom'
-import Modal from '../components/Modal'
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import Select from '../components/common/Select'
 
 /* ─── Premium Table Card ─────────────────────────────────── */
-function TableCard({ title, routePath, data = [], columns, accent = 'from-primary to-primary/60' }) {
+function TableCard({ title, routePath, data = [], columns }) {
   const navigate = useNavigate()
-  const total = data.length
-
+  
   return (
-    <div className="relative bg-card border border-border rounded-2xl overflow-hidden shadow-glass-md flex flex-col h-full group transition-all duration-300 hover:-translate-y-0.5 hover:shadow-glass-lg hover:border-primary/20">
-      {/* Accent bar top */}
-      <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${accent} opacity-60 group-hover:opacity-100 transition-opacity`} />
-
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border bg-surface-secondary/20">
-        <div className="flex items-center gap-2.5">
-          <div className={`w-1.5 h-5 rounded-full bg-gradient-to-b ${accent}`} />
-          <h4 className="text-sm font-bold text-text">{title}</h4>
-          <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-            {total}
-          </span>
-        </div>
+    <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-full overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+        <h4 className="text-base font-bold text-text">{title}</h4>
         <button
           onClick={() => navigate(routePath)}
-          className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-white bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary px-3 py-1.5 rounded-xl transition-all duration-200"
+          className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
         >
           View all
-          <ArrowUpRight className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <Table
-        className="border-none rounded-none shadow-none flex-1"
-        maxHeightClass="max-h-[280px] overflow-y-auto"
-        stickyHeader={true}
-        columns={columns.map(col => ({
-          header: col.label,
-          key: col.key,
-          render: col.render
-            ? (row) => col.render(row[col.key], row)
-            : col.key === 'image' || col.key === 'student_image'
-              ? (row) => row[col.key]
-                ? <img src={row[col.key]} alt="" className="w-9 h-9 rounded-lg object-cover border border-border" />
-                : <div className="w-9 h-9 rounded-lg bg-surface-secondary border border-border" />
-              : (row) => <span className="whitespace-nowrap max-w-[180px] truncate block" title={row[col.key]}>{row[col.key] ?? '—'}</span>
-        }))}
-        data={data}
-        keyField={(row) => row._id ?? row.id}
-        emptyState={{ title: 'No records found', description: '' }}
-      />
+      <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[250px]">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-surface-secondary/20 text-text-secondary text-xs font-bold uppercase tracking-wider">
+              {columns.map((col, i) => (
+                <th key={i} className="px-5 py-3 border-b border-border">{col.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {data.length === 0 ? (
+              <tr><td colSpan={columns.length} className="px-5 py-8 text-center text-sm text-text-secondary">No records found</td></tr>
+            ) : data.map((row, i) => (
+              <tr key={row._id || i} className="hover:bg-surface-secondary/10 transition-colors">
+                {columns.map((col, j) => (
+                  <td key={j} className="px-5 py-3.5 text-sm text-text">
+                    {col.render ? col.render(row[col.key], row) : row[col.key]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
 
 /* ─── Animated Stat Card ─────────────────────────────────── */
-function StatCard({ title, value, icon: Icon, gradient, glowClass, delay = 0 }) {
+function StatCard({ title, value, growth, icon: Icon, colorClass, gradientClass, delay = 0 }) {
+  const isPositive = growth >= 0;
+  
   return (
     <div
-      className={`relative overflow-hidden group bg-card border border-border rounded-2xl p-5 transition-all duration-300 hover:shadow-glass-lg hover:-translate-y-1 cursor-default`}
+      className="bg-white dark:bg-card border border-border rounded-xl p-5 shadow-sm flex items-start gap-4 transition-all duration-300 hover:shadow-md"
       style={{ animationDelay: `${delay}ms` }}
     >
-      {/* Background gradient blob */}
-      <div className={`absolute -top-6 -right-6 w-28 h-28 rounded-full bg-gradient-to-br ${gradient} opacity-10 group-hover:opacity-20 transition-opacity duration-500 blur-xl`} />
-      <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient} opacity-40 group-hover:opacity-100 transition-opacity duration-300`} />
-
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-3">{title}</p>
-          <p className="text-4xl font-black text-text tracking-tight leading-none">{value}</p>
-          <div className="flex items-center gap-1.5 mt-2">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-xs text-text-secondary font-medium">records</span>
-          </div>
-        </div>
-        <div className={`p-3 rounded-2xl bg-gradient-to-br ${gradient} ${glowClass} text-white shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-          <Icon className="w-5 h-5" />
+      <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${gradientClass} text-white shadow-sm flex-shrink-0`}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-text-secondary mb-1">{title}</p>
+        <p className="text-3xl font-bold text-text leading-tight mb-2">{value}</p>
+        <div className="flex items-center gap-1.5 text-xs font-semibold">
+          {growth !== undefined ? (
+             <span className={`flex items-center ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+               <TrendingUp className={`w-3.5 h-3.5 mr-0.5 ${isPositive ? '' : 'rotate-180'}`} />
+               {isPositive ? '+' : '-'}{Math.abs(growth)}%
+             </span>
+          ) : (
+            <span className="text-text-secondary">—</span>
+          )}
+          <span className="text-text-secondary font-medium ml-1">vs last month</span>
         </div>
       </div>
     </div>
@@ -86,305 +83,472 @@ function StatCard({ title, value, icon: Icon, gradient, glowClass, delay = 0 }) 
 
 /* ─── Dashboard ──────────────────────────────────────────── */
 export default function Dashboard() {
-  const [stats, setStats] = useState({ users: 0, businesses: 0, posts: 0, events: 0 })
-  const [recentActivities, setRecentActivities] = useState([])
+  const navigate = useNavigate()
+  const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [tableData, setTableData] = useState({
-    users: [], businesses: [], posts: [], committee: [],
-    festivals: [], events: [], students: [], donations: [],
-    news: [], jobs: [], familyHeads: []
-  })
-
-  const [selectedFamilyHead, setSelectedFamilyHead] = useState(null)
-  const [familyMembers, setFamilyMembers] = useState([])
-  const [membersLoading, setMembersLoading] = useState(false)
-
-  const handleViewFamilyHead = async (head) => {
-    setSelectedFamilyHead(head)
-    setMembersLoading(true)
-    try {
-      const headId = head.family_head?.id || head.id
-      const res = await api.get(`/users/family/${headId}`)
-      setFamilyMembers(res.data?.data || res.data || [])
-    } catch (err) {
-      console.error('Failed to fetch family members', err)
-    } finally {
-      setMembersLoading(false)
-    }
-  }
+  const [membersFilter, setMembersFilter] = useState('last_6_months')
+  const [activityFilter, setActivityFilter] = useState('last_6_months')
+  const [businessFilter, setBusinessFilter] = useState('last_6_months')
 
   useEffect(() => {
     let mounted = true
-
     const fetchDashboard = async () => {
       try {
-        const [statsRes, usersRes, businessesRes, postsRes, allUsersRes] = await Promise.all([
-          api.get('/stats').catch(() => ({ data: { data: { users: 0, businesses: 0, posts: 0, events: 0 } } })),
-          api.get('/users?limit=5').catch(() => ({ data: { data: [] } })),
-          api.get('/businesses?limit=5').catch(() => ({ data: { data: [] } })),
-          api.get('/posts?limit=5').catch(() => ({ data: { data: [] } })),
-          api.get('/users?limit=200').catch(() => ({ data: { data: [] } }))
-        ])
-
-        if (!mounted) return
-
-        const statsData = statsRes.data?.data || statsRes.data || { users: 0, businesses: 0, posts: 0, events: 0 }
-        const users = usersRes.data?.data || usersRes.data || []
-        const businesses = businessesRes.data?.data || businessesRes.data || []
-        const posts = postsRes.data?.data || postsRes.data || []
-        const allUsers = allUsersRes.data?.data || allUsersRes.data || []
-        const familyHeads = allUsers.filter(u => u.relation === 'Self')
-
-        setStats(statsData)
-        setTableData(prev => ({ ...prev, users, businesses, posts, familyHeads }))
-        setRecentActivities([
-          ...users.slice(0, 2).map(user => ({
-            id: `member-${user._id}`,
-            icon: Users,
-            text: `${user.name || 'A member'} joined the family directory`,
-            time: 'Recent',
-            date: user.phone || user.email || 'Member registry',
-            color: 'text-blue-500 bg-blue-500/10'
-          })),
-          ...businesses.slice(0, 1).map(business => ({
-            id: `business-${business._id}`,
-            icon: Briefcase,
-            text: `${business.business_name || 'A business'} listed in directory`,
-            time: Number(business.status) === 1 ? 'Active' : 'Inactive',
-            date: business.number || 'Business directory',
-            color: 'text-emerald-500 bg-emerald-500/10'
-          })),
-          ...posts.slice(0, 1).map(post => ({
-            id: `post-${post._id}`,
-            icon: FileText,
-            text: `${post.title || 'A post'} published on community board`,
-            time: 'Published',
-            date: post.cdate || 'Posts board',
-            color: 'text-violet-500 bg-violet-500/10'
-          }))
-        ])
+        const res = await api.get('/dashboard', {
+          params: { membersRange: membersFilter, activityRange: activityFilter, businessRange: businessFilter }
+        })
+        if (mounted) {
+          setData(res.data?.data || res.data)
+          setLoading(false)
+        }
       } catch (error) {
-        if (mounted) setRecentActivities([])
-      } finally {
+        console.error("Dashboard fetch error:", error)
         if (mounted) setLoading(false)
       }
     }
-
     fetchDashboard()
     return () => { mounted = false }
-  }, [])
+  }, [membersFilter, activityFilter, businessFilter])
 
-  const statCards = [
-    { title: 'Total Members', value: stats.users, icon: Users, gradient: 'from-indigo-500 to-blue-600', glowClass: 'shadow-glow-primary' },
-    { title: 'Businesses', value: stats.businesses, icon: Briefcase, gradient: 'from-emerald-500 to-teal-600', glowClass: 'shadow-glow-success' },
-    { title: 'Posts', value: stats.posts, icon: FileText, gradient: 'from-violet-500 to-fuchsia-600', glowClass: 'shadow-glow-primary' },
-    { title: 'Events', value: stats.events || 0, icon: Zap, gradient: 'from-amber-500 to-orange-500', glowClass: 'shadow-glow-success' },
-  ]
-
-  if (loading) {
+  if (loading && !data) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 w-56 bg-border/40 rounded-xl" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-card border border-border rounded-2xl" />)}
+      <div className="space-y-6 animate-pulse p-4">
+        <div className="h-8 w-48 bg-border/40 rounded-xl mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-card border border-border rounded-xl" />)}
         </div>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-card border border-border rounded-2xl" />)}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {[1, 2, 3].map(i => <div key={i} className="h-80 bg-card border border-border rounded-xl" />)}
         </div>
       </div>
     )
   }
 
+  if (!data) return <div className="p-8 text-center text-text-secondary">Failed to load dashboard</div>
+
+  const { kpis, charts, tables, recentActivity, atAGlance, activitySummaryTotals } = data
+
+  const statCards = [
+    { title: 'Total Members', value: kpis?.users?.total || 0, growth: kpis?.users?.growth || 0, icon: Users, gradientClass: 'from-violet-500 to-indigo-500' },
+    { title: 'Businesses', value: kpis?.businesses?.total || 0, growth: kpis?.businesses?.growth || 0, icon: Briefcase, gradientClass: 'from-emerald-400 to-teal-500' },
+    { title: 'Posts', value: kpis?.posts?.total || 0, growth: kpis?.posts?.growth || 0, icon: FileText, gradientClass: 'from-blue-400 to-blue-500' },
+    { title: 'Events', value: kpis?.events?.total || 0, growth: kpis?.events?.growth || 0, icon: Calendar, gradientClass: 'from-amber-400 to-orange-500' },
+  ]
+
+  const COLORS = ['#8b5cf6', '#f59e0b', '#10b981', '#3b82f6'];
+
   return (
-    <div className="space-y-7 animate-slide-up text-text">
+    <div className="space-y-6 animate-slide-up text-text max-w-[1600px] mx-auto pb-10">
 
       {/* ── Page Header ── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-1 h-7 rounded-full bg-gradient-to-b from-primary to-primary/40" />
-            <h2 className="text-2xl font-black text-text tracking-tight">Dashboard</h2>
-          </div>
-          <p className="text-sm text-text-secondary ml-4">Welcome back — here's your community at a glance.</p>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-1">Dashboard</h2>
+          <p className="text-sm text-text-secondary">Here's an overview of your community.</p>
         </div>
-        <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-secondary border border-border text-sm text-text font-medium shadow-sm">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-sm font-semibold shadow-sm text-emerald-600 dark:text-emerald-400">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <Clock className="w-3.5 h-3.5 text-text-secondary" />
-          <span className="text-text-secondary">Live</span>
+          Live
         </div>
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {statCards.map((card, i) => (
-          <StatCard key={i} {...card} delay={i * 60} />
+          <StatCard key={i} {...card} delay={i * 50} />
         ))}
       </div>
 
-      {/* ── Tables Section ── */}
-      <div className="space-y-5">
-        <div className="flex items-center gap-3">
-          <Activity className="w-4 h-4 text-primary" />
-          <h3 className="text-base font-bold text-text">Recent Records</h3>
-          <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          <TableCard title="Family Members" data={tableData.users} routePath="/admin/users" accent="from-blue-500 to-indigo-500" columns={[
-            { key: 'name', label: 'Name' },
-            { key: 'email', label: 'Email' },
-            { key: 'number', label: 'Number' },
-            { key: 'status', label: 'Status', render: v => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${Number(v) === 1 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'}`}>
-                {Number(v) === 1 ? 'Approved' : 'Pending'}
-              </span>
-            )},
-          ]} />
-
-          <TableCard title="Business Directory" data={tableData.businesses} routePath="/admin/businesses" accent="from-emerald-500 to-teal-500" columns={[
-            { key: 'image', label: 'Logo' },
-            { key: 'business_name', label: 'Name' },
-            { key: 'business_category_name', label: 'Category' },
-            { key: 'status', label: 'Status', render: v => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${Number(v) === 1 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'}`}>
-                {Number(v) === 1 ? 'Active' : 'Pending'}
-              </span>
-            )},
-          ]} />
-
-          <TableCard title="Posts" data={tableData.posts} routePath="/admin/posts" accent="from-violet-500 to-fuchsia-500" columns={[
-            { key: 'image', label: 'Image' },
-            { key: 'title', label: 'Title' },
-            { key: 'cdate', label: 'Date' },
-            { key: 'status', label: 'Status', render: v => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${Number(v) === 1 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'}`}>
-                {Number(v) === 1 ? 'Published' : 'Draft'}
-              </span>
-            )},
-          ]} />
-
-          <TableCard title="Family Heads" data={tableData.familyHeads} routePath="/admin/users" accent="from-amber-500 to-orange-500" columns={[
-            { key: 'name', label: 'Name', render: (v, row) => row.name || `${row.first_name || ''} ${row.last_name || ''}` },
-            { key: 'phone', label: 'Phone', render: (v, row) => row.phone || row.number || '-' },
-            { key: 'email', label: 'Email' },
-            { key: 'status', label: 'Status', render: v => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${Number(v) === 1 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-surface-secondary text-text-secondary'}`}>
-                {Number(v) === 1 ? 'Active' : 'Inactive'}
-              </span>
-            )},
-            { key: 'actions', label: 'Action', render: (v, row) => (
-              <button onClick={() => handleViewFamilyHead(row)} className="p-1.5 text-primary hover:text-white bg-primary/10 hover:bg-primary border border-primary/20 rounded-lg transition-all" title="View Family">
-                <Eye className="w-4 h-4" />
-              </button>
-            )}
-          ]} />
-        </div>
-      </div>
-
-      {/* ── Recent Activity ── */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-glass-md">
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-surface-secondary/20">
-          <div className="w-1.5 h-5 rounded-full bg-gradient-to-b from-primary to-primary/40" />
-          <h3 className="text-sm font-bold text-text">Recent Activity</h3>
-          <span className="text-xs text-text-secondary bg-surface-secondary border border-border px-2 py-0.5 rounded-full">Audit log</span>
-        </div>
-        <div className="p-6 space-y-4">
-          {recentActivities.length === 0 ? (
-            <div className="h-24 flex items-center justify-center text-sm text-text-secondary border border-dashed border-border rounded-xl">
-              No recent activity yet
-            </div>
-          ) : recentActivities.map((act, idx) => {
-            const Icon = act.icon
-            return (
-              <div key={act.id} className="flex items-start gap-4 group">
-                <div className={`p-2 rounded-xl ${act.color} flex-shrink-0 mt-0.5`}>
-                  <Icon className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-text leading-snug">{act.text}</p>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-text-secondary">
-                    <Clock className="w-3 h-3 flex-shrink-0" />
-                    <span>{act.time}</span>
-                    <span>·</span>
-                    <span className="truncate">{act.date}</span>
-                  </div>
-                </div>
-                {idx < recentActivities.length - 1 && (
-                  <div className="absolute left-[52px] mt-10 w-px h-4 bg-border" />
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      <Modal
-        isOpen={!!selectedFamilyHead}
-        title="Family Details"
-        onClose={() => {
-          setSelectedFamilyHead(null)
-          setFamilyMembers([])
-        }}
-        maxWidth="max-w-4xl"
-      >
-        {selectedFamilyHead && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 p-4 bg-surface-secondary rounded-xl border border-border">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl border-2 border-primary/20">
-                {selectedFamilyHead.name ? selectedFamilyHead.name.charAt(0).toUpperCase() : 'H'}
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-text">{selectedFamilyHead.name}</h3>
-                <p className="text-text-secondary font-medium flex items-center gap-1"><Crown className="w-4 h-4 text-amber-500" /> Head of Family</p>
-                <div className="flex gap-4 mt-2 text-sm text-text-secondary">
-                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {selectedFamilyHead.phone || selectedFamilyHead.number}</span>
-                  {selectedFamilyHead.email && <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {selectedFamilyHead.email}</span>}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-lg font-bold text-text mb-3">Family Members ({familyMembers.filter(m => m.id !== selectedFamilyHead.id).length})</h4>
-              {membersLoading ? (
-                <div className="py-8 text-center text-text-secondary animate-pulse">Loading members...</div>
-              ) : familyMembers.filter(m => m.id !== selectedFamilyHead.id).length > 0 ? (
-                <div className="overflow-x-auto bg-card border border-border rounded-xl">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-secondary text-text-secondary text-sm font-semibold border-b border-border">
-                        <th className="p-3">Name</th>
-                        <th className="p-3">Relation</th>
-                        <th className="p-3">Gender</th>
-                        <th className="p-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {familyMembers.filter(m => m.id !== selectedFamilyHead.id).map(member => (
-                        <tr key={member.id} className="hover:bg-surface-secondary/50 text-sm">
-                          <td className="p-3 font-medium text-text">{member.name}</td>
-                          <td className="p-3 text-text-secondary capitalize">{member.relation}</td>
-                          <td className="p-3 text-text-secondary">{member.gender || '-'}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${Number(member.status) === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary'}`}>
-                              {Number(member.status) === 1 ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-8 text-center text-text-secondary bg-surface-secondary rounded-xl border border-border">
-                  No members found for this family.
-                </div>
-              )}
+      {/* ── Charts Grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Members Overview */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[340px] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2 z-10">
+            <h4 className="text-sm font-bold text-text">Members Overview</h4>
+            <div className="relative w-[130px]">
+              <Select 
+                value={membersFilter}
+                onChange={setMembersFilter}
+                searchable={false}
+                options={[
+                  { value: 'last_1_month', label: 'Last 1 Month' },
+                  { value: 'last_3_months', label: 'Last 3 Months' },
+                  { value: 'last_6_months', label: 'Last 6 Months' },
+                  { value: 'this_year', label: 'This Year' }
+                ]}
+              />
             </div>
           </div>
-        )}
-      </Modal>
+          <div className="flex-1 -ml-6 z-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={charts?.members || []} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} ticks={[0, 6, 12, 18, 24]} domain={[0, 24]} />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', fontSize: '12px' }} />
+                <Line type="monotone" dataKey="members" stroke="#8b5cf6" strokeWidth={2.5} dot={{ r: 3, fill: '#fff', strokeWidth: 1.5, stroke: '#8b5cf6' }} activeDot={{ r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
+        {/* Businesses by Category */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[340px]">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-bold text-text">Businesses by Category</h4>
+            <div className="relative w-[130px]">
+              <Select 
+                value={businessFilter}
+                onChange={setBusinessFilter}
+                searchable={false}
+                options={[
+                  { value: 'this_month', label: 'This Month' },
+                  { value: 'last_1_month', label: 'Last 1 Month' },
+                  { value: 'last_3_months', label: 'Last 3 Months' },
+                  { value: 'last_6_months', label: 'Last 6 Months' },
+                  { value: 'this_year', label: 'This Year' }
+                ]}
+              />
+            </div>
+          </div>
+          <div className="h-[140px] flex items-center justify-center relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={charts?.businessCategories || []}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={65}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {(charts?.businessCategories || []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-1">
+              <span className="text-2xl font-bold text-text">{(charts?.businessCategories || []).reduce((a,b)=>a+b.value,0)}</span>
+              <span className="text-[10px] text-text-secondary font-medium -mt-1">Total</span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 mt-auto pt-2">
+            {(charts?.businessCategories || []).slice(0, 3).map((cat, i) => (
+               <div key={i} className="flex items-center justify-between text-[11px]">
+                 <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || COLORS[i % COLORS.length] }} />
+                   <span className="text-text font-medium truncate max-w-[140px]">{cat.name}</span>
+                 </div>
+                 <span className="text-text-secondary whitespace-nowrap">{cat.value} ({Math.round(cat.value/(charts?.businessCategories.reduce((a,b)=>a+b.value,0)||1)*100)}%)</span>
+               </div>
+            ))}
+            {(charts?.businessCategories || []).length > 3 && (
+               <div className="text-[11px] text-text-secondary font-bold  leading-none -mt-1">
+                  + {(charts?.businessCategories || []).length - 3} more categories
+               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Activity Summary */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[340px]">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-bold text-text">Activity Summary</h4>
+            <div className="relative w-[130px]">
+              <Select 
+                value={activityFilter}
+                onChange={setActivityFilter}
+                searchable={false}
+                options={[
+                  { value: 'last_1_month', label: 'Last 1 Month' },
+                  { value: 'last_3_months', label: 'Last 3 Months' },
+                  { value: 'last_6_months', label: 'Last 6 Months' },
+                  { value: 'this_year', label: 'This Year' }
+                ]}
+              />
+            </div>
+          </div>
+          <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-3">
+             {/* Mini Chart 1 - Total Posts (Purple) */}
+             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-white">
+                <div className="z-10">
+                  <p className="text-[11px] text-violet-500 font-medium mb-1">Total Posts</p>
+                  <p className="text-3xl font-semibold text-text">{activitySummaryTotals?.posts?.total || 0}</p>
+                  <div className={`flex items-center mt-1 text-[9px] font-bold ${activitySummaryTotals?.posts?.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 mr-0.5 ${activitySummaryTotals?.posts?.growth >= 0 ? '' : 'rotate-180'}`} /> 
+                    {activitySummaryTotals?.posts?.growth >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.posts?.growth || 0)}%
+                  </div>
+                </div>
+                <div className="absolute bottom-0 right-0 left-8 h-12 opacity-80 pointer-events-none z-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
+                        <defs>
+                          <linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                       <Area type="monotone" dataKey="posts" stroke="#8b5cf6" fill="url(#colorPosts)" strokeWidth={1.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+             </div>
+             
+             {/* Mini Chart 2 - Total Events (Orange) */}
+             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-white">
+                <div className="z-10">
+                  <p className="text-[11px] text-orange-500 font-medium mb-1">Total Events</p>
+                  <p className="text-3xl font-semibold text-text">{activitySummaryTotals?.events?.total || 0}</p>
+                  <div className={`flex items-center mt-1 text-[9px] font-bold ${activitySummaryTotals?.events?.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 mr-0.5 ${activitySummaryTotals?.events?.growth >= 0 ? '' : 'rotate-180'}`} /> 
+                    {activitySummaryTotals?.events?.growth >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.events?.growth || 0)}%
+                  </div>
+                </div>
+                <div className="absolute bottom-0 right-0 left-8 h-12 opacity-80 pointer-events-none z-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
+                        <defs>
+                          <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                       <Area type="monotone" dataKey="events" stroke="#f97316" fill="url(#colorEvents)" strokeWidth={1.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+             </div>
+
+             {/* Mini Chart 3 - New Members (Blue) */}
+             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-white">
+                <div className="z-10">
+                  <p className="text-[11px] text-blue-500 font-medium mb-1">New Members</p>
+                  <p className="text-3xl font-semibold text-text">{activitySummaryTotals?.members?.total || 0}</p>
+                  <div className={`flex items-center mt-1 text-[9px] font-bold ${activitySummaryTotals?.members?.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 mr-0.5 ${activitySummaryTotals?.members?.growth >= 0 ? '' : 'rotate-180'}`} /> 
+                    {activitySummaryTotals?.members?.growth >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.members?.growth || 0)}%
+                  </div>
+                </div>
+                <div className="absolute bottom-0 right-0 left-8 h-12 opacity-80 pointer-events-none z-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
+                        <defs>
+                          <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                       <Area type="monotone" dataKey="members" stroke="#3b82f6" fill="url(#colorMembers)" strokeWidth={1.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+             </div>
+
+             {/* Mini Chart 4 - Active Businesses (Green) */}
+             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-white">
+                <div className="z-10">
+                  <p className="text-[11px] text-emerald-600 font-medium mb-1">Active Businesses</p>
+                  <p className="text-3xl font-semibold text-text">{activitySummaryTotals?.businesses?.total || 0}</p>
+                  <div className={`flex items-center mt-1 text-[9px] font-bold ${activitySummaryTotals?.businesses?.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 mr-0.5 ${activitySummaryTotals?.businesses?.growth >= 0 ? '' : 'rotate-180'}`} /> 
+                    {activitySummaryTotals?.businesses?.growth >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.businesses?.growth || 0)}%
+                  </div>
+                </div>
+                <div className="absolute bottom-0 right-0 left-8 h-12 opacity-80 pointer-events-none z-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
+                        <defs>
+                          <linearGradient id="colorBiz" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                       <Area type="monotone" dataKey="businesses" stroke="#10b981" fill="url(#colorBiz)" strokeWidth={1.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tables Grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <TableCard title="Recent Members" data={tables?.recentMembers} routePath="/admin/users" columns={[
+          { key: 'name', label: 'Name', render: (v, r) => (
+            <div className="flex items-center gap-2">
+               {r.image ? <img src={r.image} className="w-6 h-6 rounded-full object-cover" /> : <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center text-[10px] font-bold"><Users className="w-3 h-3"/></div>}
+               <span className="font-semibold">{v}</span>
+            </div>
+          )},
+          { key: 'email', label: 'Email', render: (v) => <span className="text-xs truncate max-w-[100px] block">{v||'-'}</span> },
+          { key: 'status', label: 'Status', render: v => (
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{v}</span>
+          )},
+        ]} />
+
+        <TableCard title="Recent Events" data={tables?.recentEvents} routePath="/admin/events" columns={[
+          { key: 'title', label: 'Event Name', render: (v, r) => (
+            <div className="flex items-center gap-2">
+               {r.image ? <img src={r.image} className="w-8 h-6 rounded object-cover" /> : <div className="w-8 h-6 rounded bg-orange-100 text-orange-600 flex items-center justify-center"><Calendar className="w-3 h-3"/></div>}
+               <span className="font-semibold truncate max-w-[120px] block text-xs">{v}</span>
+            </div>
+          )},
+          { key: 'date', label: 'Date', render: (v) => <span className="text-xs truncate block max-w-[90px]">{v ? new Date(v).toISOString().split('T')[0] : '-'}</span> },
+          { key: 'status', label: 'Status', render: v => (
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>{v}</span>
+          )},
+        ]} />
+
+        <TableCard title="Recent Posts" data={tables?.recentPosts} routePath="/admin/posts" columns={[
+          { key: 'title', label: 'Title', render: (v, r) => (
+             <div className="flex items-center gap-2">
+               {r.image ? <img src={r.image} className="w-8 h-6 rounded object-cover" /> : <div className="w-8 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center"><FileText className="w-3 h-3"/></div>}
+               <span className="font-semibold truncate max-w-[110px] block text-xs">{v}</span>
+             </div>
+          )},
+          { key: 'date', label: 'Date', render: (v) => <span className="text-xs">{v ? new Date(v).toISOString().split('T')[0] : '-'}</span> },
+          { key: 'status', label: 'Status', render: v => (
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Published' ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary'}`}>{v}</span>
+          )},
+        ]} />
+      </div>
+
+      {/* ── Bottom Section Grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        {/* Recent Activity Timeline */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-96">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h4 className="text-sm font-bold text-text">Recent Activity</h4>
+            <span className="text-xs text-primary font-semibold cursor-pointer">View all</span>
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 pb-0">
+              <div className="relative pl-3 border-l-2 border-border/60 pb-5 space-y-6">
+                {(recentActivity || []).slice(0, 3).map((act, i) => (
+                   <div key={i} className="relative">
+                      <div className={`absolute -left-[22px] p-1.5 rounded-full border-[3px] border-card ${act.type === 'member' ? 'bg-violet-500' : act.type === 'business' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
+                         {act.type === 'member' ? <Users className="w-3 h-3 text-white"/> : act.type === 'business' ? <Briefcase className="w-3 h-3 text-white"/> : <FileText className="w-3 h-3 text-white"/>}
+                      </div>
+                      <div className="pl-4">
+                         <p className="text-sm text-text font-medium leading-snug max-w-xs">{act.title}</p>
+                         <p className="text-xs text-text-secondary mt-1 flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(act.time).toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</p>
+                      </div>
+                   </div>
+                ))}
+                {(recentActivity || []).length > 3 && (
+                   <div className="relative text-center mt-4 pt-4 border-t border-border/50">
+                      <span className="text-xs font-semibold text-primary cursor-pointer hover:underline">... View all recent activity</span>
+                   </div>
+                )}
+             </div>
+          </div>
+        </div>
+
+        {/* Quick Shortcuts */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-96">
+          <div className="flex items-center px-5 py-4 border-b border-border">
+            <h4 className="text-sm font-bold text-text">Quick Shortcuts</h4>
+          </div>
+          <div className="p-5 grid grid-cols-4 gap-4 flex-1 content-start">
+             <div onClick={()=>navigate('/admin/users')} className="flex flex-col items-center justify-center p-3 border border-violet-100 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+                <div className="p-2 rounded-lg text-violet-600 group-hover:scale-110 transition-transform"><UserPlus className="w-6 h-6"/></div>
+                <span className="text-[11px] font-bold text-violet-600 leading-tight">Add<br/>Member</span>
+             </div>
+             
+             <div onClick={()=>navigate('/admin/businesses')} className="flex flex-col items-center justify-center p-3 border border-emerald-100 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+                <div className="p-2 rounded-lg text-emerald-600 group-hover:scale-110 transition-transform"><Briefcase className="w-6 h-6"/></div>
+                <span className="text-[11px] font-bold text-emerald-600 leading-tight">Add<br/>Business</span>
+             </div>
+             
+             <div onClick={()=>navigate('/admin/posts')} className="flex flex-col items-center justify-center p-3 border border-blue-100 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+                <div className="p-2 rounded-lg text-blue-600 group-hover:scale-110 transition-transform"><FileEdit className="w-6 h-6"/></div>
+                <span className="text-[11px] font-bold text-blue-600 leading-tight">Create<br/>Post</span>
+             </div>
+             
+             <div onClick={()=>navigate('/admin/events')} className="flex flex-col items-center justify-center p-3 border border-orange-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+                <div className="p-2 rounded-lg text-orange-500 group-hover:scale-110 transition-transform"><Calendar className="w-6 h-6"/></div>
+                <span className="text-[11px] font-bold text-orange-500 leading-tight">Create<br/>Event</span>
+             </div>
+             
+             <div onClick={()=>navigate('/admin/roles')} className="flex flex-col items-center justify-center p-3 border border-violet-100 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+                <div className="p-2 rounded-lg text-violet-600 group-hover:scale-110 transition-transform"><Shield className="w-6 h-6"/></div>
+                <span className="text-[11px] font-bold text-violet-600 leading-tight">Manage<br/>Roles</span>
+             </div>
+             
+             <div onClick={()=>navigate('/admin/reports')} className="flex flex-col items-center justify-center p-3 border border-blue-100 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+                <div className="p-2 rounded-lg text-blue-600 group-hover:scale-110 transition-transform"><FileText className="w-6 h-6"/></div>
+                <span className="text-[11px] font-bold text-blue-600 leading-tight">View<br/>Reports</span>
+             </div>
+             
+             <div onClick={()=>navigate('/admin/users')} className="flex flex-col items-center justify-center p-3 border border-emerald-100 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+                <div className="p-2 rounded-lg text-emerald-600 group-hover:scale-110 transition-transform"><Users className="w-6 h-6"/></div>
+                <span className="text-[11px] font-bold text-emerald-600 leading-tight">Manage<br/>Users</span>
+             </div>
+             
+             <div onClick={()=>navigate('/admin/settings')} className="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+                <div className="p-2 rounded-lg text-slate-700 dark:text-slate-400 group-hover:scale-110 transition-transform"><Settings className="w-6 h-6"/></div>
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-400 leading-tight">Settings</span>
+             </div>
+          </div>
+        </div>
+
+        {/* At a Glance */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-96">
+          <div className="flex items-center px-5 py-4 border-b border-border">
+            <h4 className="text-sm font-bold text-text">At a Glance</h4>
+          </div>
+          <div className="p-5 flex flex-col gap-4">
+             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
+               <div className="flex items-center gap-3">
+                 <div className="p-2 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-600"><Users className="w-4 h-4"/></div>
+                 <div>
+                   <p className="text-sm font-bold text-text">Active Members</p>
+                   <p className="text-xs text-text-secondary">Last 30 days</p>
+                 </div>
+               </div>
+               <span className="text-lg font-black">{atAGlance?.activeMembers || 0}</span>
+             </div>
+             
+             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
+               <div className="flex items-center gap-3">
+                 <div className="p-2 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"><Briefcase className="w-4 h-4"/></div>
+                 <div>
+                   <p className="text-sm font-bold text-text">Active Businesses</p>
+                   <p className="text-xs text-text-secondary">Last 30 days</p>
+                 </div>
+               </div>
+               <span className="text-lg font-black">{atAGlance?.activeBusinesses || 0}</span>
+             </div>
+             
+             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
+               <div className="flex items-center gap-3">
+                 <div className="p-2 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600"><FileText className="w-4 h-4"/></div>
+                 <div>
+                   <p className="text-sm font-bold text-text">Posts This Month</p>
+                   <p className="text-xs text-text-secondary">This month</p>
+                 </div>
+               </div>
+               <span className="text-lg font-black">{atAGlance?.postsThisMonth || 0}</span>
+             </div>
+             
+             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
+               <div className="flex items-center gap-3">
+                 <div className="p-2 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600"><Calendar className="w-4 h-4"/></div>
+                 <div>
+                   <p className="text-sm font-bold text-text">Upcoming Events</p>
+                   <p className="text-xs text-text-secondary">Next 30 days</p>
+                 </div>
+               </div>
+               <span className="text-lg font-black">{atAGlance?.upcomingEvents || 0}</span>
+             </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 }
-

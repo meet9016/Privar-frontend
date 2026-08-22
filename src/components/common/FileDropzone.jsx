@@ -11,7 +11,8 @@ export default function FileDropzone({
   subLabel = "",
   name = "",
   error = "",
-  previews = [] 
+  previews = [],
+  className = ""
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState(null);
@@ -49,7 +50,7 @@ export default function FileDropzone({
   const hasPreviews = previews && previews.length > 0;
 
   return (
-    <div className="w-full">
+    <div className={`w-full ${className}`}>
       <div
         onClick={(e) => {
           if (e.target.closest('.preview-action-btn')) return;
@@ -58,7 +59,7 @@ export default function FileDropzone({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative w-full ${multiple ? 'min-h-[170px]' : 'h-44'} rounded-2xl border-2 border-dashed flex flex-col justify-center overflow-hidden cursor-pointer transition-all duration-300
+        className={`relative w-full h-full min-h-[170px] rounded-2xl border-2 border-dashed flex flex-col justify-center overflow-hidden cursor-pointer transition-all duration-300
           ${error ? 'border-red-500 bg-red-500/5' : isDragOver ? 'border-primary bg-primary/5 ring-4 ring-primary/10' : 'border-border bg-input-bg hover:border-primary/40 hover:bg-surface-secondary/20'}
           ${disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
         `}
