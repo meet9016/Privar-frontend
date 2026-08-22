@@ -142,7 +142,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     <form onSubmit={handleSubmit} className="space-y-4 text-text">
       {/* Row 1: Image (left) + First Name, Middle Name, Last Name (right) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 flex flex-col">
           <ImageUpload
             label="Image (300*300 px, Max 1MB)"
             value={formData.image}
@@ -152,9 +152,10 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             }}
             disabled={isLoading}
             error={errors.image}
+            heightClass="h-[188px]"
           />
         </div>
-        <div className="md:col-span-2 grid grid-cols-1 gap-3">
+        <div className="md:col-span-2 grid grid-cols-1 gap-2.5">
           <Input
             label="First Name"
             required

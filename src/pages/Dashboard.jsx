@@ -81,6 +81,194 @@ function StatCard({ title, value, growth, icon: Icon, colorClass, gradientClass,
   )
 }
 
+/* ─── Dashboard Skeleton ─────────────────────────────────── */
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse text-text max-w-[1600px] mx-auto pb-10">
+      {/* Header Skeleton */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="space-y-2">
+          <div className="h-7 w-44 bg-surface-secondary/70 rounded-lg" />
+          <div className="h-4 w-60 bg-surface-secondary/50 rounded-md" />
+        </div>
+        <div className="h-8 w-20 rounded-full bg-surface-secondary/60" />
+      </div>
+
+      {/* 4 Stat Cards Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white dark:bg-card border border-border rounded-xl p-5 shadow-sm flex items-start gap-4">
+            <div className="w-13 h-13 rounded-2xl bg-surface-secondary/70 shrink-0" />
+            <div className="flex-1 space-y-2.5">
+              <div className="h-3.5 w-24 bg-surface-secondary/60 rounded-md" />
+              <div className="h-7 w-16 bg-surface-secondary/80 rounded-lg" />
+              <div className="flex items-center gap-2">
+                <div className="h-3.5 w-12 bg-surface-secondary/60 rounded-md" />
+                <div className="h-3 w-20 bg-surface-secondary/40 rounded-md" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 3 Top Charts Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Members Overview Skeleton */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[365px]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="h-4 w-36 bg-surface-secondary/70 rounded-md" />
+            <div className="h-9 w-[148px] bg-surface-secondary/60 rounded-lg" />
+          </div>
+          <div className="flex-1 flex flex-col justify-between pt-4 pb-2">
+            <div className="space-y-6">
+              <div className="h-px w-full bg-surface-secondary/40 border-b border-dashed border-border" />
+              <div className="h-px w-full bg-surface-secondary/40 border-b border-dashed border-border" />
+              <div className="h-px w-full bg-surface-secondary/40 border-b border-dashed border-border" />
+              <div className="h-px w-full bg-surface-secondary/40 border-b border-dashed border-border" />
+            </div>
+            <div className="h-28 w-full bg-gradient-to-t from-violet-500/10 to-transparent rounded-lg" />
+            <div className="flex justify-between pt-2">
+              {[1, 2, 3, 4, 5, 6].map((k) => (
+                <div key={k} className="h-3 w-8 bg-surface-secondary/50 rounded-md" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Businesses by Category Skeleton */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[365px]">
+          <div className="flex items-center justify-between mb-2">
+            <div className="h-4 w-40 bg-surface-secondary/70 rounded-md" />
+            <div className="h-9 w-[148px] bg-surface-secondary/60 rounded-lg" />
+          </div>
+          {/* Donut skeleton */}
+          <div className="h-[160px] flex items-center justify-center my-1">
+            <div className="w-32 h-32 rounded-full border-8 border-surface-secondary/60 flex flex-col items-center justify-center">
+              <div className="h-5 w-8 bg-surface-secondary/80 rounded-md mb-1" />
+              <div className="h-2.5 w-10 bg-surface-secondary/50 rounded-md" />
+            </div>
+          </div>
+          {/* Legend skeleton */}
+          <div className="flex flex-col gap-2 mt-auto pt-2.5 border-t border-border/50">
+            {[1, 2, 3].map((k) => (
+              <div key={k} className="flex items-center justify-between py-0.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-surface-secondary/80" />
+                  <div className="h-3 w-28 bg-surface-secondary/60 rounded-md" />
+                </div>
+                <div className="h-3.5 w-12 bg-surface-secondary/50 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Activity Summary Skeleton */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[365px]">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-4 w-36 bg-surface-secondary/70 rounded-md" />
+            <div className="h-9 w-[148px] bg-surface-secondary/60 rounded-lg" />
+          </div>
+          <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-3">
+            {[1, 2, 3, 4].map((k) => (
+              <div key={k} className="border border-border rounded-xl p-3 flex flex-col justify-between bg-surface dark:bg-card">
+                <div className="space-y-1.5">
+                  <div className="h-3 w-20 bg-surface-secondary/60 rounded-md" />
+                  <div className="h-6 w-10 bg-surface-secondary/80 rounded-md" />
+                </div>
+                <div className="h-4 w-14 bg-surface-secondary/50 rounded-md mt-2" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 3 Tables Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {[1, 2, 3].map((t) => (
+          <div key={t} className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-[300px] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="h-4 w-28 bg-surface-secondary/70 rounded-md" />
+              <div className="h-3 w-14 bg-surface-secondary/50 rounded-md" />
+            </div>
+            <div className="p-4 space-y-3 flex-1">
+              {[1, 2, 3, 4].map((r) => (
+                <div key={r} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-surface-secondary/70 shrink-0" />
+                    <div className="space-y-1">
+                      <div className="h-3 w-24 bg-surface-secondary/70 rounded-md" />
+                      <div className="h-2.5 w-16 bg-surface-secondary/40 rounded-md" />
+                    </div>
+                  </div>
+                  <div className="h-4 w-14 rounded-full bg-surface-secondary/60" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom Section 3 Cards Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Recent Activity Timeline Skeleton */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-96">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <div className="h-4 w-28 bg-surface-secondary/70 rounded-md" />
+            <div className="h-3 w-12 bg-surface-secondary/50 rounded-md" />
+          </div>
+          <div className="p-5 space-y-6 flex-1">
+            {[1, 2, 3].map((a) => (
+              <div key={a} className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-surface-secondary/70 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-44 bg-surface-secondary/70 rounded-md" />
+                  <div className="h-2.5 w-24 bg-surface-secondary/40 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Shortcuts Skeleton */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-96">
+          <div className="flex items-center px-5 py-4 border-b border-border">
+            <div className="h-4 w-32 bg-surface-secondary/70 rounded-md" />
+          </div>
+          <div className="p-5 grid grid-cols-4 gap-4 flex-1 content-start">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+              <div key={s} className="flex flex-col items-center justify-center p-3 border border-border/60 rounded-xl gap-2 h-[110px]">
+                <div className="w-8 h-8 rounded-lg bg-surface-secondary/70" />
+                <div className="h-2.5 w-12 bg-surface-secondary/50 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* At a Glance Skeleton */}
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-96">
+          <div className="flex items-center px-5 py-4 border-b border-border">
+            <div className="h-4 w-28 bg-surface-secondary/70 rounded-md" />
+          </div>
+          <div className="p-5 flex flex-col gap-4">
+            {[1, 2, 3, 4].map((g) => (
+              <div key={g} className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-surface-secondary/70" />
+                  <div className="space-y-1.5">
+                    <div className="h-3.5 w-28 bg-surface-secondary/70 rounded-md" />
+                    <div className="h-2.5 w-16 bg-surface-secondary/40 rounded-md" />
+                  </div>
+                </div>
+                <div className="h-5 w-8 bg-surface-secondary/80 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Dashboard ──────────────────────────────────────────── */
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -111,17 +299,7 @@ export default function Dashboard() {
   }, [membersFilter, activityFilter, businessFilter])
 
   if (loading && !data) {
-    return (
-      <div className="space-y-6 animate-pulse p-4">
-        <div className="h-8 w-48 bg-border/40 rounded-xl mb-4" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-card border border-border rounded-xl" />)}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {[1, 2, 3].map(i => <div key={i} className="h-80 bg-card border border-border rounded-xl" />)}
-        </div>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   if (!data) return <div className="p-8 text-center text-text-secondary">Failed to load dashboard</div>
@@ -162,10 +340,10 @@ export default function Dashboard() {
       {/* ── Charts Grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Members Overview */}
-        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[340px] relative overflow-hidden">
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[365px] relative overflow-hidden">
           <div className="flex items-center justify-between mb-2 z-10">
             <h4 className="text-sm font-bold text-text">Members Overview</h4>
-            <div className="relative w-[130px]">
+            <div className="relative w-[148px]">
               <Select 
                 value={membersFilter}
                 onChange={setMembersFilter}
@@ -192,10 +370,10 @@ export default function Dashboard() {
         </div>
 
         {/* Businesses by Category */}
-        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[340px]">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[365px]">
+          <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-bold text-text">Businesses by Category</h4>
-            <div className="relative w-[130px]">
+            <div className="relative w-[148px]">
               <Select 
                 value={businessFilter}
                 onChange={setBusinessFilter}
@@ -210,7 +388,9 @@ export default function Dashboard() {
               />
             </div>
           </div>
-          <div className="h-[140px] flex items-center justify-center relative">
+
+          {/* Wider and thicker Donut Chart */}
+          <div className="h-[160px] flex items-center justify-center relative my-1">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -218,8 +398,8 @@ export default function Dashboard() {
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
-                  outerRadius={65}
-                  paddingAngle={5}
+                  outerRadius={74}
+                  paddingAngle={4}
                   dataKey="value"
                   stroke="none"
                 >
@@ -230,34 +410,45 @@ export default function Dashboard() {
                 <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-1">
-              <span className="text-2xl font-bold text-text">{(charts?.businessCategories || []).reduce((a,b)=>a+b.value,0)}</span>
-              <span className="text-[10px] text-text-secondary font-medium -mt-1">Total</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-black text-text leading-none">{(charts?.businessCategories || []).reduce((a,b)=>a+b.value,0)}</span>
+              <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mt-0.5">Total</span>
             </div>
           </div>
-          <div className="flex flex-col gap-3 mt-auto pt-2">
-            {(charts?.businessCategories || []).slice(0, 3).map((cat, i) => (
-               <div key={i} className="flex items-center justify-between text-[11px]">
-                 <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || COLORS[i % COLORS.length] }} />
-                   <span className="text-text font-medium truncate max-w-[140px]">{cat.name}</span>
-                 </div>
-                 <span className="text-text-secondary whitespace-nowrap">{cat.value} ({Math.round(cat.value/(charts?.businessCategories.reduce((a,b)=>a+b.value,0)||1)*100)}%)</span>
-               </div>
-            ))}
+
+          {/* Clean and spacious Category Legend */}
+          <div className="flex flex-col gap-2 mt-auto pt-2.5 border-t border-border/50">
+            {(charts?.businessCategories || []).slice(0, 3).map((cat, i) => {
+              const total = (charts?.businessCategories || []).reduce((a, b) => a + b.value, 0) || 1
+              const pct = Math.round((cat.value / total) * 100)
+              return (
+                <div key={i} className="flex items-center justify-between text-xs py-0.5">
+                  <div className="flex items-center gap-2 min-w-0 pr-2">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-2xs" style={{ backgroundColor: cat.color || COLORS[i % COLORS.length] }} />
+                    <span className="text-text font-medium truncate text-xs" title={cat.name}>{cat.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="font-semibold text-text text-xs">{cat.value}</span>
+                    <span className="text-[11px] text-text-secondary font-medium px-1.5 py-0.5 rounded bg-surface-secondary/70">
+                      {pct}%
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
             {(charts?.businessCategories || []).length > 3 && (
-               <div className="text-[11px] text-text-secondary font-bold  leading-none -mt-1">
-                  + {(charts?.businessCategories || []).length - 3} more categories
-               </div>
+              <div className="text-[11px] text-primary font-semibold leading-none pt-1 flex items-center justify-between">
+                <span>+ {(charts?.businessCategories || []).length - 3} more categories</span>
+              </div>
             )}
           </div>
         </div>
 
         {/* Activity Summary */}
-        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[340px]">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm p-5 flex flex-col h-[365px]">
+          <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-bold text-text">Activity Summary</h4>
-            <div className="relative w-[130px]">
+            <div className="relative w-[148px]">
               <Select 
                 value={activityFilter}
                 onChange={setActivityFilter}
@@ -273,21 +464,27 @@ export default function Dashboard() {
           </div>
           <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-3">
              {/* Mini Chart 1 - Total Posts (Purple) */}
-             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-white">
-                <div className="z-10">
-                  <p className="text-[11px] text-violet-500 font-medium mb-1">Total Posts</p>
-                  <p className="text-3xl font-semibold text-text">{activitySummaryTotals?.posts?.total || 0}</p>
-                  <div className={`flex items-center mt-1 text-[9px] font-bold ${activitySummaryTotals?.posts?.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 mr-0.5 ${activitySummaryTotals?.posts?.growth >= 0 ? '' : 'rotate-180'}`} /> 
-                    {activitySummaryTotals?.posts?.growth >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.posts?.growth || 0)}%
+             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-violet-500/30 transition-all">
+                <div className="z-10 flex flex-col">
+                  <p className="text-xs text-violet-600 dark:text-violet-400 font-semibold mb-0.5">Total Posts</p>
+                  <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.posts?.total || 0}</p>
+                </div>
+                <div className="z-10 mt-2">
+                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                    (activitySummaryTotals?.posts?.growth || 0) >= 0 
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  }`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.posts?.growth || 0) >= 0 ? '' : 'rotate-180'}`} /> 
+                    {(activitySummaryTotals?.posts?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.posts?.growth || 0)}%
                   </div>
                 </div>
-                <div className="absolute bottom-0 right-0 left-8 h-12 opacity-80 pointer-events-none z-0">
+                <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
                         <defs>
                           <linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2}/>
+                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
                             <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
@@ -298,21 +495,27 @@ export default function Dashboard() {
              </div>
              
              {/* Mini Chart 2 - Total Events (Orange) */}
-             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-white">
-                <div className="z-10">
-                  <p className="text-[11px] text-orange-500 font-medium mb-1">Total Events</p>
-                  <p className="text-3xl font-semibold text-text">{activitySummaryTotals?.events?.total || 0}</p>
-                  <div className={`flex items-center mt-1 text-[9px] font-bold ${activitySummaryTotals?.events?.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 mr-0.5 ${activitySummaryTotals?.events?.growth >= 0 ? '' : 'rotate-180'}`} /> 
-                    {activitySummaryTotals?.events?.growth >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.events?.growth || 0)}%
+             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-orange-500/30 transition-all">
+                <div className="z-10 flex flex-col">
+                  <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold mb-0.5">Total Events</p>
+                  <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.events?.total || 0}</p>
+                </div>
+                <div className="z-10 mt-2">
+                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                    (activitySummaryTotals?.events?.growth || 0) >= 0 
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  }`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.events?.growth || 0) >= 0 ? '' : 'rotate-180'}`} /> 
+                    {(activitySummaryTotals?.events?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.events?.growth || 0)}%
                   </div>
                 </div>
-                <div className="absolute bottom-0 right-0 left-8 h-12 opacity-80 pointer-events-none z-0">
+                <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
                         <defs>
                           <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.2}/>
+                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
                             <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
@@ -323,21 +526,27 @@ export default function Dashboard() {
              </div>
 
              {/* Mini Chart 3 - New Members (Blue) */}
-             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-white">
-                <div className="z-10">
-                  <p className="text-[11px] text-blue-500 font-medium mb-1">New Members</p>
-                  <p className="text-3xl font-semibold text-text">{activitySummaryTotals?.members?.total || 0}</p>
-                  <div className={`flex items-center mt-1 text-[9px] font-bold ${activitySummaryTotals?.members?.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 mr-0.5 ${activitySummaryTotals?.members?.growth >= 0 ? '' : 'rotate-180'}`} /> 
-                    {activitySummaryTotals?.members?.growth >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.members?.growth || 0)}%
+             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-blue-500/30 transition-all">
+                <div className="z-10 flex flex-col">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mb-0.5">New Members</p>
+                  <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.members?.total || 0}</p>
+                </div>
+                <div className="z-10 mt-2">
+                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                    (activitySummaryTotals?.members?.growth || 0) >= 0 
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  }`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.members?.growth || 0) >= 0 ? '' : 'rotate-180'}`} /> 
+                    {(activitySummaryTotals?.members?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.members?.growth || 0)}%
                   </div>
                 </div>
-                <div className="absolute bottom-0 right-0 left-8 h-12 opacity-80 pointer-events-none z-0">
+                <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
                         <defs>
                           <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
                             <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
@@ -348,21 +557,27 @@ export default function Dashboard() {
              </div>
 
              {/* Mini Chart 4 - Active Businesses (Green) */}
-             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-white">
-                <div className="z-10">
-                  <p className="text-[11px] text-emerald-600 font-medium mb-1">Active Businesses</p>
-                  <p className="text-3xl font-semibold text-text">{activitySummaryTotals?.businesses?.total || 0}</p>
-                  <div className={`flex items-center mt-1 text-[9px] font-bold ${activitySummaryTotals?.businesses?.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 mr-0.5 ${activitySummaryTotals?.businesses?.growth >= 0 ? '' : 'rotate-180'}`} /> 
-                    {activitySummaryTotals?.businesses?.growth >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.businesses?.growth || 0)}%
+             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-emerald-500/30 transition-all">
+                <div className="z-10 flex flex-col">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mb-0.5">Active Businesses</p>
+                  <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.businesses?.total || 0}</p>
+                </div>
+                <div className="z-10 mt-2">
+                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                    (activitySummaryTotals?.businesses?.growth || 0) >= 0 
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  }`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.businesses?.growth || 0) >= 0 ? '' : 'rotate-180'}`} /> 
+                    {(activitySummaryTotals?.businesses?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.businesses?.growth || 0)}%
                   </div>
                 </div>
-                <div className="absolute bottom-0 right-0 left-8 h-12 opacity-80 pointer-events-none z-0">
+                <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
                         <defs>
                           <linearGradient id="colorBiz" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
                             <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                           </linearGradient>
                         </defs>

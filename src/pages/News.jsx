@@ -418,7 +418,7 @@ export default function News() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
             <Input
               type="textarea"
-              rows={4}
+              rows={8}
               label="Description"
               required
               value={formData.description}
@@ -430,11 +430,12 @@ export default function News() {
               error={fieldErrors.description}
             />
 
-            <div className="flex flex-col">
+            <div className="flex flex-col h-full">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Image</label>
 
               <FileDropzone
                 accept="image/*"
+                className="flex-1 flex flex-col min-h-[175px]"
                 onFilesSelected={(files) => setFormData({ ...formData, image: files[0] || null, remove_image: false })}
                 disabled={saving}
                 label="Click or Drag News Image"

@@ -660,6 +660,7 @@ export default function Events() {
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Image</label>
               <FileDropzone
                 accept="image/*"
+                className="flex-1 flex flex-col min-h-[230px]"
                 onFilesSelected={(files) => setFormData({ ...formData, image: files[0] || '', remove_image: false })}
                 disabled={saving}
                 label="Click or Drag Event Image"

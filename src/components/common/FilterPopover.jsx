@@ -1,5 +1,5 @@
 import React from 'react'
-import { Filter, X, Check } from 'lucide-react'
+import { Filter, X, Check, RotateCcw } from 'lucide-react'
 
 export default function FilterPopover({
   isOpen,
@@ -7,6 +7,7 @@ export default function FilterPopover({
   onClose,
   title = 'Filter Options',
   activeCount = 0,
+  onClear,
   onApply,
   children,
   width = 'w-[300px]',
@@ -43,7 +44,7 @@ export default function FilterPopover({
 
           {/* Modern Sleek Filter Card */}
           <div
-            className={`absolute right-0 top-full mt-2 ${width} bg-surface border border-border rounded-lg shadow-xl z-50 animate-fade-in overflow-hidden`}
+            className={`absolute right-0 top-full mt-2 ${width} bg-surface border border-border rounded-xl shadow-xl z-50 animate-fade-in overflow-hidden`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">
@@ -55,14 +56,32 @@ export default function FilterPopover({
                   </span>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1 rounded-md text-text-secondary hover:text-text hover:bg-surface-secondary transition-colors cursor-pointer"
-                title="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                {onClear && activeCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      try {
+                        if (onClear) onClear(e)
+                      } catch (err) {
+                        console.error('Error clearing filters:', err)
+                      }
+                    }}
+                    className="text-[11px] font-medium text-text-secondary hover:text-error transition-colors px-1.5 py-0.5 rounded cursor-pointer"
+                    title="Clear All Filters"
+                  >
+                    Clear all
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1 rounded-md text-text-secondary hover:text-text hover:bg-surface-secondary transition-colors cursor-pointer"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Filter Content */}
@@ -70,8 +89,23 @@ export default function FilterPopover({
               {children}
             </div>
 
-            {/* Footer with Full Width Apply */}
-            <div className="px-4 py-3 bg-surface-secondary/40 border-t border-border">
+            {/* Footer with Clear & Apply */}
+            <div className="px-4 py-3 bg-surface-secondary/40 border-t border-border flex items-center gap-2">
+              {onClear && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    try {
+                      if (onClear) onClear(e)
+                    } catch (err) {
+                      console.error('Error clearing filters:', err)
+                    }
+                  }}
+                  className="flex-1 py-2 px-3 text-xs font-semibold rounded-lg bg-surface hover:bg-surface-secondary border border-border text-text-secondary hover:text-text transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.99]"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Clear
+                </button>
+              )}
               <button
                 type="button"
                 onClick={(e) => {
@@ -82,7 +116,7 @@ export default function FilterPopover({
                     console.error('Error applying filters:', err)
                   }
                 }}
-                className="w-full py-2 px-4 text-xs font-bold rounded-lg bg-primary hover:bg-primary-hover text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.99]"
+                className={`${onClear ? 'flex-1' : 'w-full'} py-2 px-4 text-xs font-bold rounded-lg bg-primary hover:bg-primary-hover text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]`}
               >
                 <Check className="w-3.5 h-3.5" /> Apply Filters
               </button>

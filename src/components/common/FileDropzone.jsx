@@ -59,7 +59,7 @@ export default function FileDropzone({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative w-full h-full min-h-[170px] rounded-2xl border-2 border-dashed flex flex-col justify-center overflow-hidden cursor-pointer transition-all duration-300
+        className={`relative w-full flex-1 h-full min-h-[170px] rounded-2xl border-2 border-dashed flex flex-col justify-center overflow-hidden cursor-pointer transition-all duration-300
           ${error ? 'border-red-500 bg-red-500/5' : isDragOver ? 'border-primary bg-primary/5 ring-4 ring-primary/10' : 'border-border bg-input-bg hover:border-primary/40 hover:bg-surface-secondary/20'}
           ${disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
         `}
@@ -106,8 +106,8 @@ export default function FileDropzone({
               </div>
             </div>
           ) : (
-            /* Single Image Preview: Fill the whole box beautifully! */
-            <div className="relative w-full h-full group/single overflow-hidden bg-surface-secondary/20">
+            /* Single Image Preview: Fill the whole box beautifully with fixed container bounds! */
+            <div className="relative w-full h-full min-h-[170px] group/single overflow-hidden bg-surface-secondary/20 flex items-center justify-center">
               {previews[0].url.endsWith('.pdf') ? (
                 <div className="w-full h-full flex flex-col items-center justify-center p-4 text-text">
                   <FileText className="w-12 h-12 text-primary mb-1" />
@@ -118,7 +118,7 @@ export default function FileDropzone({
                   src={previews[0].url}
                   alt="Preview"
                   draggable={false}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover/single:scale-105 select-none"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/single:scale-105 select-none cursor-zoom-in"
                   onContextMenu={(e) => e.preventDefault()}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -141,7 +141,7 @@ export default function FileDropzone({
               </button>
 
               {/* Bottom replace overlay on hover */}
-              <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-xs py-2 px-3 flex items-center justify-center gap-1.5 text-white text-xs font-semibold opacity-90 transition-opacity">
+              <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-xs py-2 px-3 flex items-center justify-center gap-1.5 text-white text-xs font-semibold opacity-90 transition-opacity pointer-events-none">
                 <UploadCloud className="w-4 h-4" />
                 <span>Click or drag to replace</span>
               </div>
@@ -149,15 +149,15 @@ export default function FileDropzone({
           )
         ) : (
           /* Empty state — centered upload prompt */
-          <div className="flex flex-col items-center justify-center py-6 px-4 text-center">
-            <div className={`p-3 rounded-2xl mb-2.5 transition-colors ${isDragOver ? 'bg-primary/20' : 'bg-surface shadow-sm border border-border'}`}>
-              <UploadCloud className={`w-6 h-6 ${isDragOver ? 'text-primary' : 'text-text-secondary'}`} />
+          <div className="flex flex-col items-center justify-center py-4 px-4 text-center">
+            <div className={`p-2.5 rounded-2xl mb-2 transition-colors ${isDragOver ? 'bg-primary/20' : 'bg-surface shadow-sm border border-border'}`}>
+              <UploadCloud className={`w-5 h-5 ${isDragOver ? 'text-primary' : 'text-text-secondary'}`} />
             </div>
-            <p className="text-sm font-semibold text-text mb-0.5">{label}</p>
+            <p className="text-xs font-semibold text-text mb-0.5">{label}</p>
             {subLabel ? (
-              <p className="text-xs text-text-secondary">{subLabel}</p>
+              <p className="text-[11px] text-text-secondary">{subLabel}</p>
             ) : (
-              <p className="text-xs text-text-secondary">Upload multiple images. Existing images stay unless removed below.</p>
+              <p className="text-[11px] text-text-secondary">Click or drag image</p>
             )}
           </div>
         )}
