@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Shield, Eye, EyeOff, Key } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { toast } from '../lib/toast'
-import { getCommunitySurname } from '../lib/api'
+import { getCommunitySurname, assetUrl } from '../lib/api'
 
 export default function Login() {
   const { login } = useContext(AuthContext)
@@ -70,12 +70,16 @@ export default function Login() {
           <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-glow-primary mb-3.5 animate-pulse-slow overflow-hidden">
             {webTheme.webLogo ? (
               <img
-                src={webTheme.webLogo}
+                src={assetUrl(webTheme.webLogo)}
                 alt={`${webTheme.name || 'Brand'} logo`}
                 className="h-full w-full object-contain"
               />
             ) : (
-              <Shield className="w-6 h-6 text-white" />
+              <img
+                src="/parivar.png"
+                alt="Parivar logo"
+                className="h-full w-full object-contain"
+              />
             )}
           </div>
           <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">

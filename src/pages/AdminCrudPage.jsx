@@ -19,7 +19,7 @@ import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ 
@@ -90,6 +90,16 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   useEffect(() => {
     setFormData(emptyForm)
   }, [emptyForm])
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      setFieldErrors({})
+      setFormError('')
+      setError('')
+      setImagePreview(null)
+      setRemovedImages({})
+    }
+  }, [isModalOpen])
 
   const openCreate = () => {
     setSelected(null)
@@ -362,18 +372,21 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               isOpen={showFilters}
               onToggle={() => {
                 setDraftFilterStatus(appliedFilterStatus)
+                if (onToggleFilters) onToggleFilters()
                 setShowFilters(!showFilters)
               }}
               onClose={() => setShowFilters(false)}
-              activeCount={appliedFilterStatus ? 1 : 0}
+              activeCount={(appliedFilterStatus ? 1 : 0) + (extraActiveFiltersCount || 0)}
               onClear={() => {
                 setDraftFilterStatus('')
                 setAppliedFilterStatus('')
+                if (onClearFilters) onClearFilters()
                 resetPage()
                 setShowFilters(false)
               }}
               onApply={() => {
                 setAppliedFilterStatus(draftFilterStatus)
+                if (onApplyFilters) onApplyFilters()
                 resetPage()
                 setShowFilters(false)
               }}

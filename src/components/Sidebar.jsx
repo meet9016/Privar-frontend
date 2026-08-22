@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext'
 import { configurationNavigation, coreNavigation, masterNavigation, mediaNavigation, engagementNavigation, activityNavigation, servicesNavigation } from '../config/navigation'
 import { hasPermission } from '../lib/permissions'
 import { getUserRoleLabel } from '../lib/roles'
-import { getCommunitySurname } from '../lib/api'
+import { getCommunitySurname, assetUrl } from '../lib/api'
 
 const LinkItem = ({ to, icon: Icon, label, end }) => {
   const location = useLocation()
@@ -18,7 +18,7 @@ const LinkItem = ({ to, icon: Icon, label, end }) => {
       end={end}
       className={({ isActive }) => {
         const active = isActive || isDashboardActive
-        return `group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${
+        return `group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] tra nsition-all duration-200 ${
           active
             ? 'text-white font-bold shadow-md border-transparent bg-primary'
             : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
@@ -142,7 +142,7 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col border-r border-border bg-surface p-5 shadow-glass-md backdrop-blur-xl">
       <div className="mb-6 w-full flex shrink-0 items-center justify-center pb-6 border-b border-border/60">
         <img 
-          src="/parivar.png" 
+          src={webTheme.webLogo ? assetUrl(webTheme.webLogo) : "/parivar.png"} 
           alt={webTheme.name || 'Parivar'} 
           className="h-12 w-auto max-w-full object-contain" 
           onError={(e) => {

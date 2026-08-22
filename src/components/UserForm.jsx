@@ -433,8 +433,13 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
               onChange={(val) => {
                 const headStatus = val === 'head';
                 setIsHead(headStatus);
-                if (headStatus && errors.relation) setErrors(prev => ({...prev, relation: null}));
-                if (!headStatus && errors.family_head_id) setErrors(prev => ({...prev, family_head_id: null}));
+                if (headStatus) {
+                  setFormData(prev => ({ ...prev, relation: 'Self', family_head_id: '' }));
+                  if (errors.relation) setErrors(prev => ({...prev, relation: null}));
+                } else {
+                  setFormData(prev => ({ ...prev, relation: '' }));
+                  if (errors.family_head_id) setErrors(prev => ({...prev, family_head_id: null}));
+                }
               }}
             />
           </div>

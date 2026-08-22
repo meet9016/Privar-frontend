@@ -19,6 +19,43 @@ import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
 
 
+const getRoleBadgeColor = (roleName) => {
+  if (!roleName) return 'bg-surface-secondary border-border text-text';
+  const name = roleName.toLowerCase().trim();
+  
+  if (name.includes('president') && !name.includes('vice')) {
+    return 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20';
+  }
+  if (name.includes('vice president')) {
+    return 'bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20';
+  }
+  if (name.includes('manager')) {
+    return 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20';
+  }
+  if (name.includes('admin')) {
+    return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+  }
+  if (name.includes('userrole') || name.includes('user')) {
+    return 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/20';
+  }
+  
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const colors = [
+    'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
+    'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/20',
+    'bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/20',
+    'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+    'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20'
+  ];
+  
+  return colors[Math.abs(hash) % colors.length];
+};
+
 export default function CommitteeMembers() {
   const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('committee')
@@ -264,11 +301,14 @@ export default function CommitteeMembers() {
           {
             header: 'Assigned Role',
             key: 'role',
-            render: (member) => (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-secondary border border-border text-text font-semibold text-xs">
-                {member.role_name || (roles.find(r => String(r.id || r._id) === String(member.role_id))?.name) || '-'}
-              </span>
-            )
+            render: (member) => {
+              const roleName = member.role_name || (roles.find(r => String(r.id || r._id) === String(member.role_id))?.name) || '-';
+              return (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-semibold text-xs ${getRoleBadgeColor(roleName)}`}>
+                  {roleName}
+                </span>
+              );
+            }
           },
           {
             header: 'Status',

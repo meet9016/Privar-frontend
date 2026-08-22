@@ -120,6 +120,7 @@ export default function GalleryPage() {
       setExistingImages([])
       setNewFiles([])
       setFilePreviews([])
+      setFieldErrors({})
     }
   }, [isModalOpen])
 
@@ -468,25 +469,25 @@ export default function GalleryPage() {
             <FileDropzone
               multiple
               accept="image/*"
+              error={fieldErrors.images}
               onFilesSelected={(files) => {
                 const fakeEvent = { target: { files } };
                 handleFileChange(fakeEvent);
               }}
-                disabled={saving}
-                label="Click or Drag Gallery Images"
-                subLabel="Upload multiple images. Existing images stay unless removed below."
-                previews={[
-                  ...existingImages.map((image, index) => ({
-                    url: assetUrl(image),
-                    onRemove: () => removeExistingImage(index)
-                  })),
-                  ...filePreviews.map((preview, index) => ({
-                    url: preview.url,
-                    onRemove: () => removeNewImage(index)
-                  }))
-                ]}
-              />
-              {fieldErrors.images && <p className="text-red-500 text-xs mt-1 font-semibold">{fieldErrors.images}</p>}
+              disabled={saving}
+              label="Click or Drag Gallery Images"
+              subLabel="Upload multiple images. Existing images stay unless removed below."
+              previews={[
+                ...existingImages.map((image, index) => ({
+                  url: assetUrl(image),
+                  onRemove: () => removeExistingImage(index)
+                })),
+                ...filePreviews.map((preview, index) => ({
+                  url: preview.url,
+                  onRemove: () => removeNewImage(index)
+                }))
+              ]}
+            />
           </div>
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>

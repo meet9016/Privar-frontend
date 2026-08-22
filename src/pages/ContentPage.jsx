@@ -1,8 +1,11 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
 import { formatDate } from '../lib/api'
 import usePermissions from '../hooks/usePermissions'
+import Input from '../components/common/Input'
+import Select from '../components/common/Select'
+import DatePicker from '../components/DatePicker'
 
 const definitions = {
   festivals: {
@@ -197,11 +200,26 @@ const definitions = {
     subtitle: 'View and manage member birthdays',
     endpoint: '/users?birthday',
     hideAdd: true,
-    hideFilter: true,
+    hideActions: true,
     fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date', required: true }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
     columns: [
       { key: 'name', label: 'Name' },
       { key: 'dob', label: 'Date of Birth', render: (row) => formatDate(row.dob) },
+      { 
+        key: 'age', 
+        label: 'Age', 
+        render: (row) => {
+          if (!row.dob) return '-'
+          const birthDate = new Date(row.dob)
+          const today = new Date()
+          let age = today.getFullYear() - birthDate.getFullYear()
+          const monthDiff = today.getMonth() - birthDate.getMonth()
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--
+          }
+          return `${age} Yrs`
+        }
+      },
       { key: 'anniversary', label: 'Anniversary', render: (row) => formatDate(row.anniversary) }
     ]
   },
@@ -259,7 +277,55 @@ const definitions = {
 
 export default function ContentPage({ type }) {
   const permissions = usePermissions(type === 'birthday' ? 'members' : type === 'donation' ? 'donations' : type)
-  
+
+  // Applied states
+  const [appliedMonth, setAppliedMonth] = useState('')
+  const [appliedYear, setAppliedYear] = useState('')
+  const [appliedStart, setAppliedStart] = useState('')
+  const [appliedEnd, setAppliedEnd] = useState('')
+
+  // Draft states
+  const [draftMonth, setDraftMonth] = useState('')
+  const [draftYear, setDraftYear] = useState('')
+  const [draftStart, setDraftStart] = useState('')
+  const [draftEnd, setDraftEnd] = useState('')
+
+  const handleApply = () => {
+    setAppliedMonth(draftMonth)
+    setAppliedYear(draftYear)
+    setAppliedStart(draftStart)
+    setAppliedEnd(draftEnd)
+  }
+
+  const handleClear = () => {
+    setDraftMonth('')
+    setDraftYear('')
+    setDraftStart('')
+    setDraftEnd('')
+    setAppliedMonth('')
+    setAppliedYear('')
+    setAppliedStart('')
+    setAppliedEnd('')
+  }
+
+  const handleToggle = () => {
+    setDraftMonth(appliedMonth)
+    setDraftYear(appliedYear)
+    setDraftStart(appliedStart)
+    setDraftEnd(appliedEnd)
+  }
+
+  const birthdayExtraParams = useMemo(() => {
+    const params = {}
+    if (appliedMonth) params.dob_month = appliedMonth
+    if (appliedYear) params.dob_year = appliedYear
+    if (appliedStart) params.dob_start = appliedStart
+    if (appliedEnd) params.dob_end = appliedEnd
+    return params
+  }, [appliedMonth, appliedYear, appliedStart, appliedEnd])
+
+  const extraCount = [appliedMonth, appliedYear, appliedStart, appliedEnd].filter(Boolean).length
+
   if (type === 'gallery') {
     return <GalleryPage />
   }
@@ -272,12 +338,66 @@ export default function ContentPage({ type }) {
     )
   }
 
-  return <AdminCrudPage 
-    {...definitions[type]} 
-    hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
-    hideEdit={definitions[type].hideEdit || (!permissions.canEdit && !permissions.isSuperAdmin)}
-    hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))} 
-    deleteAction={type === 'birthday' ? 'clear-dob' : undefined} 
-    getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} 
-  />
+  const customFilters = type === 'birthday' ? (
+    <div className="space-y-4 mb-4">
+      <Select
+        label="Birth Month"
+        value={draftMonth}
+        onChange={setDraftMonth}
+        options={[
+          { value: '', label: 'All Months' },
+          { value: '1', label: 'January' },
+          { value: '2', label: 'February' },
+          { value: '3', label: 'March' },
+          { value: '4', label: 'April' },
+          { value: '5', label: 'May' },
+          { value: '6', label: 'June' },
+          { value: '7', label: 'July' },
+          { value: '8', label: 'August' },
+          { value: '9', label: 'September' },
+          { value: '10', label: 'October' },
+          { value: '11', label: 'November' },
+          { value: '12', label: 'December' }
+        ]}
+      />
+      <Input
+        label="Birth Year"
+        type="number"
+        placeholder="e.g. 1995"
+        value={draftYear}
+        onChange={(e) => setDraftYear(e.target.value.replace(/\D/g, ''))}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <DatePicker
+          label="From DOB"
+          placeholder="Start Date"
+          value={draftStart}
+          onChange={setDraftStart}
+        />
+        <DatePicker
+          label="To DOB"
+          placeholder="End Date"
+          value={draftEnd}
+          onChange={setDraftEnd}
+        />
+      </div>
+    </div>
+  ) : null
+
+  return (
+    <AdminCrudPage 
+      {...definitions[type]} 
+      hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
+      hideEdit={definitions[type].hideEdit || (!permissions.canEdit && !permissions.isSuperAdmin)}
+      hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))} 
+      deleteAction={type === 'birthday' ? 'clear-dob' : undefined} 
+      getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} 
+      extraParams={type === 'birthday' ? birthdayExtraParams : undefined}
+      customFilters={customFilters}
+      onClearFilters={type === 'birthday' ? handleClear : undefined}
+      onApplyFilters={type === 'birthday' ? handleApply : undefined}
+      onToggleFilters={type === 'birthday' ? handleToggle : undefined}
+      extraActiveFiltersCount={type === 'birthday' ? extraCount : 0}
+    />
+  )
 }

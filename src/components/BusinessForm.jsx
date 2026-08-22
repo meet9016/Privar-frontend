@@ -158,7 +158,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       youtube: business?.youtube || '',
       image: business?.image || '',
       gallery_images: business?.gallery_images || [],
-      status: Number(business?.status ?? 0)
+      status: Number(business?.status ?? 1)
     })
     // Auto-enable social platforms that have values in this business record
     const activeSocials = ALL_SOCIAL_PLATFORMS

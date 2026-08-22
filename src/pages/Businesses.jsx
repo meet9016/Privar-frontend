@@ -49,7 +49,12 @@ export default function Businesses() {
       const res = await getBusinessesList(getParams({ search: debouncedSearch }))
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
-      setBusinesses(Array.isArray(rows) ? rows : [])
+      setBusinesses(
+        (Array.isArray(rows) ? rows : []).map(b => ({
+          ...b,
+          id: b.id || b._id
+        }))
+      )
       setPaginationData(pg)
     } catch (err) {
       setBusinesses([])
@@ -88,7 +93,7 @@ export default function Businesses() {
         ...biz,
         status: newStatus
       });
-      setBusinesses(prev => prev.map(b => (b._id === biz._id || b.id === biz.id) ? { ...b, status: newStatus } : b));
+      setBusinesses(prev => prev.map(b => b.id === (biz.id || biz._id) ? { ...b, status: newStatus } : b));
       toast.success(`Business status updated to ${newStatus === 1 ? 'Active' : 'Inactive'}`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update status');

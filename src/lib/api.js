@@ -14,7 +14,14 @@ export const assetUrl = (path) => {
  * e.g. 'vala.parivar.com' -> 'Vala', 'test.parivar.com' -> 'Test', 'patel.parivar.com' -> 'Patel'
  */
 export const getCommunitySurname = () => {
-  // 1. Check live link / domain / subdomain first (e.g. test.parivar.in, vala.parivar.com, etc.)
+  // 1. Check saved app name in localStorage / Theme Config first
+  const webName = localStorage.getItem('web_name') || ''
+  const cleaned = webName.replace(/parivar/gi, '').trim()
+  if (cleaned) {
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+  }
+
+  // 2. Check live link / domain / subdomain first (e.g. test.parivar.in, vala.parivar.com, etc.)
   const hostname = window.location.hostname
   const hostParts = hostname.split('.')
   if (hostParts.length > 1 && !['localhost', '127.0.0.1'].includes(hostname)) {
@@ -25,13 +32,6 @@ export const getCommunitySurname = () => {
         return cleanFirst.charAt(0).toUpperCase() + cleanFirst.slice(1)
       }
     }
-  }
-
-  // 2. Check saved app name in localStorage / Theme Config
-  const webName = localStorage.getItem('web_name') || ''
-  const cleaned = webName.replace(/parivar/gi, '').trim()
-  if (cleaned) {
-    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
   }
 
   return 'Vala'

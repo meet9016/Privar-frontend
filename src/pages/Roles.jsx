@@ -267,7 +267,7 @@ export default function Roles() {
                       try {
                         await api.put(`/roles/${role.id || role._id}`, { status: newStatus, name: role.name, permissions: role.permissions });
                         toast.success('Status updated successfully');
-                        fetchRoles();
+                        fetchAll();
                       } catch (err) {
                         console.error('Status update failed:', err);
                       }
