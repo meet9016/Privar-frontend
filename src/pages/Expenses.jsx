@@ -91,8 +91,8 @@ export default function Expenses() {
   const fetchDropdownData = async () => {
     try {
       const [membersRes, categoriesRes] = await Promise.all([
-        getCommitteeMembersList({ limit: 1000 }),
-        api.get('/masters/expense-category', { params: { limit: 1000 } })
+        getCommitteeMembersList({ limit: 1500 }),
+        api.get('/masters/expense-category', { params: { limit: 1500 } })
       ])
       
       setCommitteeMembers(membersRes.data?.data || membersRes.data || [])

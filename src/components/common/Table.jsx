@@ -16,7 +16,7 @@ function RowsSelector({ limit, onLimitChange }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const options = [10, 15, 25, 50, 100];
+  const options = [15, 25, 50, 100];
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
@@ -25,7 +25,7 @@ function RowsSelector({ limit, onLimitChange }) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 bg-card border border-border text-text font-semibold text-xs rounded-lg px-2.5 py-1.5 hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all shadow-sm cursor-pointer"
       >
-        <span>{limit || 10}</span>
+        <span>{limit || 15}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
@@ -40,7 +40,7 @@ function RowsSelector({ limit, onLimitChange }) {
                 onLimitChange(opt);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-3 py-1.5 text-xs font-semibold transition-colors ${(limit || 10) === opt
+              className={`w-full text-left px-3 py-1.5 text-xs font-semibold transition-colors ${(limit || 15) === opt
                   ? 'bg-primary/10 text-primary font-bold'
                   : 'text-text hover:bg-surface-secondary'
                 }`}
@@ -218,8 +218,8 @@ export default function Table({
     return getPageNumbers(pagination.currentPage || 1, pagination.totalPages || 1);
   }, [pagination?.currentPage, pagination?.totalPages]);
   const totalRecords = pagination ? (pagination.total || 0) : data.length;
-  const showingFrom = pagination ? (totalRecords === 0 ? 0 : ((pagination.currentPage - 1) * (pagination.limit || 10)) + 1) : (data.length === 0 ? 0 : 1);
-  const showingTo = pagination ? Math.min(showingFrom + (pagination.limit || 10) - 1, totalRecords) : data.length;
+  const showingFrom = pagination ? (totalRecords === 0 ? 0 : ((pagination.currentPage - 1) * (pagination.limit || 15)) + 1) : (data.length === 0 ? 0 : 1);
+  const showingTo = pagination ? Math.min(showingFrom + (pagination.limit || 15) - 1, totalRecords) : data.length;
 
   return (
     <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col ${className}`}>
@@ -239,7 +239,7 @@ export default function Table({
               })}
             </tr>
           </thead>
-          <tbody className={`divide-y divide-border bg-white transition-opacity duration-200 ${loading && data.length > 0 ? 'opacity-65 pointer-events-none' : 'opacity-100'}`}>
+          <tbody className="divide-y divide-border bg-white transition-opacity duration-200 opacity-100">
             {loading && data.length === 0 ? (
               showSkeleton ? (
                 skeletonRows.map((n) => <SkeletonRow key={n} columns={finalColumns} />)

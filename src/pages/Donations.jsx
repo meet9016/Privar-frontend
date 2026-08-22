@@ -76,7 +76,7 @@ export default function Donations() {
   useEffect(() => {
     const fetchBankDetails = async () => {
       try {
-        const res = await getBankDetailsList({ limit: 100 })
+        const res = await getBankDetailsList({ limit: 150 })
         setBankDetails(res.data?.data || res.data || [])
       } catch (err) {
         console.error('Failed to load bank details', err)

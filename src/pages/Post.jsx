@@ -20,8 +20,8 @@ import Tooltip from '../components/common/Tooltip'
 export default function Post() {
   const permissions = usePermissions('posts')
   const [posts, setPosts] = useState([])
-  const [limit, setLimit] = useState(10)
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
+  const [limit, setLimit] = useState(15)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 15 })
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearchValue] = useState('')

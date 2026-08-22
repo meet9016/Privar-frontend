@@ -11,8 +11,8 @@ import useDebounce from '../hooks/useDebounce'
 
 export default function EventRegistrations({ eventIdProp }) {
     const [rows, setRows] = useState([])
-    const [limit, setLimit] = useState(10)
-    const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 })
+    const [limit, setLimit] = useState(15)
+    const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 15 })
     const [loading, setLoading] = useState(false)
     const [page, setPage] = useState(1)
     const [search, setSearchValue] = useState('')
@@ -44,7 +44,7 @@ export default function EventRegistrations({ eventIdProp }) {
 
     const fetchEvents = useCallback(async () => {
         try {
-            const res = await getEventsList({ limit: 100 })
+            const res = await getEventsList({ limit: 150 })
             setEvents(res.data?.data || res.data || [])
         } catch { setEvents([]) }
     }, [])
