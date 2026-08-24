@@ -67,11 +67,11 @@ export default function Login() {
         
         {/* Glowing Head Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-glow-primary mb-3.5 animate-pulse-slow overflow-hidden">
+          <div className="w-22 h-12 rounded-2xl  flex items-center justify-center mb-3.5 animate-pulse-slow overflow-hidden">
             {webTheme.webLogo ? (
               <img
-                src={assetUrl(webTheme.webLogo)}
-                alt={`${webTheme.name || 'Brand'} logo`}
+                src="parivar.png"
+                alt={`${webTheme.name} logo`}
                 className="h-full w-full object-contain"
               />
             ) : (
