@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useLayoutEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
-const MAX_VISIBLE_TABS = 5
+const MAX_VISIBLE_TABS = 8
 
 export default function TabbedPage({ title, tabs, storageKey }) {
   const [searchParams, setSearchParams] = useSearchParams()
