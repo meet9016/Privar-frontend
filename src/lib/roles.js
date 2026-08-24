@@ -84,12 +84,52 @@ export const buildPermissionGroups = (config = {}) => {
 
   const actions = Array.from(actionsByKey.values())
   const actionIndex = new Map(actions.map((action, index) => [action.key, index]))
-  const modules = Array.from(modulesByKey.values()).map((module) => ({
+  const rawModules = Array.from(modulesByKey.values()).map((module) => ({
     ...module,
     permissions: module.permissions
       .filter((permission) => permission.key)
       .sort((a, b) => (actionIndex.get(a.action) ?? 99) - (actionIndex.get(b.action) ?? 99))
   }))
 
-  return { actions, modules }
+  const masterModules = ['blood_groups', 'countries', 'states', 'cities', 'degrees', 'occupations', 'categories', 'master', 'gallery_categories', 'event_categories', 'expense_categories']
+  
+  let finalModules = []
+  let masterGroup = {
+    key: 'master',
+    label: 'Master',
+    permissions: []
+  }
+
+  const masterActionsMap = new Map()
+
+  rawModules.forEach(m => {
+    const k = m.key.toLowerCase()
+    
+    // Capitalize module label if not present properly
+    if (!m.label || m.label === m.key) {
+      m.label = m.key.charAt(0).toUpperCase() + m.key.slice(1).replace(/_/g, ' ')
+    }
+
+    if (masterModules.includes(k)) {
+      m.permissions.forEach(p => {
+        if (!masterActionsMap.has(p.action)) {
+          masterActionsMap.set(p.action, {
+            key: [],
+            label: p.label || p.action.charAt(0).toUpperCase() + p.action.slice(1),
+            action: p.action
+          })
+        }
+        masterActionsMap.get(p.action).key.push(p.key)
+      })
+    } else {
+      finalModules.push(m)
+    }
+  })
+
+  if (masterActionsMap.size > 0) {
+    masterGroup.permissions = Array.from(masterActionsMap.values()).sort((a, b) => (actionIndex.get(a.action) ?? 99) - (actionIndex.get(b.action) ?? 99))
+    finalModules.push(masterGroup)
+  }
+
+  return { actions, modules: finalModules }
 }

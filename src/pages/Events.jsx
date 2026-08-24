@@ -41,7 +41,7 @@ const defaultForm = {
 }
 
 
-export default function Events() {
+export default function Events({ headerLeftContent }) {
   const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('events')
   const [rows, setRows] = useState([])
@@ -396,8 +396,10 @@ export default function Events() {
   return (
     <div className="space-y-6 text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-text">Events</h2>
+        <div className="flex-1 overflow-x-auto hide-scrollbar">
+          {headerLeftContent ? headerLeftContent : (
+            <h2 className="text-xl font-semibold text-text">Events</h2>
+          )}
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <SearchInput

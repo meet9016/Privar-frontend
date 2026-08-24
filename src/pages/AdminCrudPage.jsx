@@ -19,7 +19,7 @@ import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ 
@@ -229,15 +229,24 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         Array.isArray(formData[field.name])
       ))
 
-      const payload = hasFiles ? new FormData() : { ...formData }
+      const rawPayload = hasFiles ? new FormData() : { ...formData }
+      
+      let payload = rawPayload;
       if (!hasFiles) {
+        payload = {}
+        Object.entries(rawPayload).forEach(([key, val]) => {
+          payload[key] = (val && typeof val === 'object' && val.value !== undefined) ? val.value : val
+        })
+        
         Object.entries(removedImages).forEach(([fieldName, removed]) => {
           if (removed) payload[`remove_${fieldName}`] = 'true'
         })
       }
       if (hasFiles) {
         fields.forEach((field) => {
-          const value = formData[field.name]
+          const rawVal = formData[field.name]
+          const value = (rawVal && typeof rawVal === 'object' && rawVal.value !== undefined) ? rawVal.value : rawVal
+          
           if (field.type === 'file') {
             const files = value instanceof FileList ? Array.from(value) : Array.isArray(value) ? value : value ? [value] : []
             files.forEach((file) => payload.append(field.name, file))
@@ -276,7 +285,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     try {
       const cleanEndpoint = endpoint.split('?')[0];
       if (deleteAction === 'clear-dob') {
-        // Birthday: clear DOB only, not delete user
         await api.put(`${cleanEndpoint}/${row._id || row.id}`, { dob: null, anniversary: null })
       } else {
         await api.delete(`${cleanEndpoint}/${row._id || row.id}`)
@@ -293,7 +301,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     if (!id) return
     const newStatus = Number(row.status) === 1 ? 0 : 1
 
-    // Optimistic UI update
     setRows(prevRows => prevRows.map(r => {
       if ((r._id || r.id) === id) {
         return { ...r, status: newStatus }
@@ -306,7 +313,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       await api.put(`${cleanEndpoint}/${id}`, { status: newStatus })
       toast.success('Status updated')
     } catch (err) {
-      // Revert on error
       setRows(prevRows => prevRows.map(r => {
         if ((r._id || r.id) === id) {
           return { ...r, status: Number(row.status) === 1 ? 1 : 0 }
@@ -343,8 +349,13 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   return (
     <div className="space-y-6 text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-text">{title}</h2>
+        <div className="flex-1 overflow-x-auto hide-scrollbar">
+          {headerLeftContent ? headerLeftContent : (
+            <>
+              <h2 className="text-xl font-semibold text-text">{title}</h2>
+              {subtitle && <p className="text-sm text-text-secondary mt-1">{subtitle}</p>}
+            </>
+          )}
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           {supportIsOwn && (
@@ -539,7 +550,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
           onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
         }}
       />
-
       <Modal isOpen={isModalOpen} maxWidth={fields.length > 10 ? 'max-w-7xl' : fields.length > 5 ? 'max-w-5xl' : 'max-w-3xl'} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-3.5 text-text" noValidate>
           <div className={`grid grid-cols-1 ${gridCols || (fields.some(f => f.className) ? 'md:grid-cols-2' : fields.length > 10 ? 'sm:grid-cols-2 md:grid-cols-4' : fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2')} gap-3.5`} style={{ overflow: 'visible' }}>
@@ -548,7 +558,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               const colSpanClass = field.className || (isFullRow 
                 ? (gridCols ? 'md:col-span-2' : fields.length > 10 ? 'sm:col-span-2 md:col-span-4' : fields.length > 4 ? 'sm:col-span-2 md:col-span-3' : 'md:col-span-2')
                 : '');
-              
               return (
               <div key={field.name} className={colSpanClass} style={{ zIndex: fields.length - fieldIdx, position: 'relative' }}>
                 {field.type === 'textarea' ? (

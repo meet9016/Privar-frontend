@@ -15,7 +15,7 @@ import useDebounce from '../hooks/useDebounce'
 import { AuthContext } from '../context/AuthContext'
 import usePermissions from '../hooks/usePermissions'
 
-export default function Businesses() {
+export default function Businesses({ headerLeftContent }) {
   const navigate = useNavigate()
   const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('businesses')
@@ -188,8 +188,10 @@ export default function Businesses() {
   <div className="space-y-6 text-text">
     {/* Header bar */}
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h2 className="text-xl font-semibold text-text">Business Directory</h2>
+      <div className="flex-1 overflow-x-auto hide-scrollbar">
+        {headerLeftContent ? headerLeftContent : (
+          <h2 className="text-xl font-semibold text-text">Business Directory</h2>
+        )}
       </div>
       <div className="flex items-center gap-3 w-full sm:w-auto">
         <SearchInput

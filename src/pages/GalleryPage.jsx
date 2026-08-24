@@ -18,7 +18,7 @@ const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-borde
 
 const createPreviewUrl = (file) => URL.createObjectURL(file)
 
-export default function GalleryPage() {
+export default function GalleryPage({ headerLeftContent }) {
   const [rows, setRows] = useState([])
   const [limit, setLimit] = useState(15)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 15 })
@@ -309,9 +309,10 @@ export default function GalleryPage() {
   return (
     <div className="space-y-6 animate-slide-up text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-text">Gallery</h2>
-
+        <div className="flex-1 overflow-x-auto hide-scrollbar">
+          {headerLeftContent ? headerLeftContent : (
+            <h2 className="text-xl font-semibold text-text">Gallery</h2>
+          )}
         </div>
         <div className="flex flex-wrap items-center sm:justify-end gap-3 w-full sm:w-auto">
           <SearchInput

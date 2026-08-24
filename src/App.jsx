@@ -24,6 +24,7 @@ import { hasPermission } from './lib/permissions'
 import Posts from './pages/Post'
 import { activeTheme, applyTheme } from './theme/theme'
 import { ThemeProvider } from './context/ThemeContext'
+import { ActivitiesPage, ServicesPage, MediaPage, EngagementsPage, MastersPage } from './pages/TabbedCategoryPages'
 
 import Home from './pages/websitePages/Home'
 import AboutPage from './pages/websitePages/AboutPage'
@@ -91,27 +92,32 @@ export default function App() {
           <Route path="committee" element={<PermissionRoute permission="committee.list"><CommitteeMembers /></PermissionRoute>} />
           <Route path="roles" element={<PermissionRoute permission="roles.list"><Roles /></PermissionRoute>} />
           <Route path="users" element={<PermissionRoute permission="members.list"><Users /></PermissionRoute>} />
-          <Route path="festivals" element={<PermissionRoute permission="festivals.list"><ContentPage type="festivals" /></PermissionRoute>} />
-          <Route path="events" element={<PermissionRoute permission="events.list"><Events /></PermissionRoute>} />
-        <Route path="event-registrations" element={<PermissionRoute permission="events.list"><EventRegistrations /></PermissionRoute>} />
+          <Route path="activities" element={<ActivitiesPage />} />
+          <Route path="services" element={<ServicesPage />} />
+          <Route path="media" element={<MediaPage />} />
+          <Route path="engagements" element={<EngagementsPage />} />
+          <Route path="masters" element={<MastersPage />} />
 
-          <Route path="gallery" element={<PermissionRoute permission="gallery.list"><ContentPage type="gallery" /></PermissionRoute>} />
-          {/* <Route path="banners" element={<PermissionRoute permission="banners.list"><ContentPage type="banners" /></PermissionRoute>} /> */}
-          <Route path="matrimonies" element={<PermissionRoute permission="matrimonies.list"><ContentPage type="matrimonies" /></PermissionRoute>} />
-          <Route path="businesses" element={<PermissionRoute permission="businesses.list"><Businesses /></PermissionRoute>} />
-          <Route path="students" element={<PermissionRoute permission="students.list"><Students /></PermissionRoute>} />
-          <Route path="donations" element={<PermissionRoute permission="donations.list"><Donations /></PermissionRoute>} />
-          <Route path="expenses" element={<PermissionRoute permission="expenses.list"><Expenses /></PermissionRoute>} />
-          <Route path="posts" element={<PermissionRoute permission="posts.list"><Posts /></PermissionRoute>} />
-          <Route path="news" element={<PermissionRoute permission="news.list"><News /></PermissionRoute>} />
+          {/* Legacy redirects for old URLs to new tabbed URLs */}
+          <Route path="gallery" element={<Navigate to="/admin/activities?tab=gallery" replace />} />
+          <Route path="events" element={<Navigate to="/admin/activities?tab=events" replace />} />
+          <Route path="birthday" element={<Navigate to="/admin/activities?tab=birthday" replace />} />
+          <Route path="job-vacancy" element={<Navigate to="/admin/activities?tab=job-vacancy" replace />} />
+          <Route path="businesses" element={<Navigate to="/admin/services?tab=businesses" replace />} />
+          <Route path="students" element={<Navigate to="/admin/services?tab=students" replace />} />
+          <Route path="expenses" element={<Navigate to="/admin/services?tab=expenses" replace />} />
+          <Route path="matrimonies" element={<Navigate to="/admin/services?tab=matrimonies" replace />} />
+          <Route path="posts" element={<Navigate to="/admin/media?tab=posts" replace />} />
+          <Route path="news" element={<Navigate to="/admin/media?tab=news" replace />} />
+          <Route path="feedback" element={<Navigate to="/admin/media?tab=feedback" replace />} />
+          <Route path="festivals" element={<Navigate to="/admin/engagements?tab=festivals" replace />} />
+          <Route path="donations" element={<Navigate to="/admin/engagements?tab=donations" replace />} />
+          <Route path="masters/:type" element={<Navigate to="/admin/masters" replace />} />
+          <Route path="bank-details" element={<Navigate to="/admin/masters?tab=bank-details" replace />} />
 
+          {/* Other standalone routes */}
           <Route path="contact-inquiries" element={<PermissionRoute permission="contact-inquiries.list"><ContentPage type="inquiries" /></PermissionRoute>} />
-          <Route path="feedback" element={<PermissionRoute permission="feedback.list"><ContentPage type="feedback" /></PermissionRoute>} />
-          <Route path="birthday" element={<PermissionRoute permission="birthday.list"><ContentPage type="birthday" /></PermissionRoute>} />
-          <Route path="job-vacancy" element={<PermissionRoute permission="job-vacancy.list"><ContentPage type="job-vacancy" /></PermissionRoute>} />
-          <Route path="bank-details" element={<PermissionRoute permission="bank-details.list"><ContentPage type="bank-details" /></PermissionRoute>} />
-
-          <Route path="masters/:type" element={<MasterRoute />} />
+          <Route path="event-registrations" element={<PermissionRoute permission="events.list"><EventRegistrations /></PermissionRoute>} />
           <Route path="settings" element={<PermissionRoute permission="settings.edit"><Settings /></PermissionRoute>} />
 
 

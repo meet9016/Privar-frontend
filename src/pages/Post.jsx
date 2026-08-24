@@ -17,7 +17,7 @@ import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
 import Tooltip from '../components/common/Tooltip'
 
-export default function Post() {
+export default function Post({ headerLeftContent }) {
   const permissions = usePermissions('posts')
   const [posts, setPosts] = useState([])
   const [limit, setLimit] = useState(15)
@@ -213,8 +213,10 @@ export default function Post() {
     <div className="space-y-6 animate-slide-up text-text">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-text">Post Moderator</h2>
+        <div className="flex-1 overflow-x-auto hide-scrollbar">
+          {headerLeftContent ? headerLeftContent : (
+            <h2 className="text-xl font-semibold text-text">Post Moderator</h2>
+          )}
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <SearchInput

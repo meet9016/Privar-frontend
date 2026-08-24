@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter, X } from 'lucide-react'
-import api, { getCommitteeMembersList } from '../lib/api'
+import api, { getCommitteeMembersList, getCommunitySurname } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import { normalizeRoles, unwrapApiData } from '../lib/roles'
 import { hasPermission } from '../lib/permissions'
@@ -283,7 +283,7 @@ export default function CommitteeMembers() {
                   <div className="h-9 w-9 rounded-lg bg-surface-secondary flex items-center justify-center text-sm font-semibold text-text-secondary">{member.first_name?.slice(0, 1) || 'CM'}</div>
                 )}
                 <div>
-                  <div className="font-semibold text-text">{member.first_name} {member.middle_name} {member.last_name}</div>
+                  <div className="font-semibold text-text">{member.first_name} {member.middle_name} {getCommunitySurname()}</div>
                 </div>
               </div>
             )

@@ -32,7 +32,6 @@ export const activityNavigation = [
 export const servicesNavigation = [
   { to: '/admin/businesses', label: 'Businesses', icon: Briefcase, title: 'Business Index', permission: 'businesses.list' },
   { to: '/admin/students', label: 'Students', icon: GraduationCap, title: 'Students', permission: 'students.list' },
-  { to: '/admin/expenses', label: 'Expenses', icon: IndianRupee, title: 'Expenses', permission: 'expenses.list' },
   { to: '/admin/matrimonies', label: 'Matrimonies', icon: Users, title: 'Matrimony Profiles', permission: 'matrimonies.list' },
 ]
 
@@ -43,21 +42,21 @@ export const mediaNavigation = [
 ]
 
 export const engagementNavigation = [
-  { to: '/admin/festivals', label: 'Festivals', icon: CalendarDays, title: 'Festivals', permission: 'festivals.list' },
+  { to: '/admin/expenses', label: 'Expenses', icon: IndianRupee, title: 'Expenses', permission: 'expenses.list' },
   { to: '/admin/donations', label: 'Donations', icon: HeartHandshake, title: 'Donations', permission: 'donations.list' },
 ]
 
 export const masterNavigation = [
   { type: 'business', label: 'Business', permission: 'businesses.list' },
-  { type: 'bank-details', label: 'Bank Details', permission: 'bank-details.list', to: '/admin/bank-details' },
-  { type: 'country', label: 'Country', permission: 'country.list' },
-  { type: 'state', label: 'State', permission: 'state.list' },
-  { type: 'city', label: 'City', permission: 'city.list' },
-  { type: 'village', label: 'Village', permission: 'village.list' },
-  { type: 'blood-group', label: 'Blood Group', permission: 'blood-group.list' },
-  { type: 'event-category', label: 'Event Category', permission: 'event-category.list' },
-  { type: 'gallery-category', label: 'Gallery Category', permission: 'gallery-category.list' },
-  { type: 'expense-category', label: 'Expense Category', permission: 'expense-category.list' }
+  { type: 'bank-details', label: 'Bank Details', permission: 'masters.list', to: '/admin/bank-details' },
+  { type: 'country', label: 'Country', permission: 'masters.list' },
+  { type: 'state', label: 'State', permission: 'masters.list' },
+  { type: 'city', label: 'City', permission: 'masters.list' },
+  { type: 'village', label: 'Village', permission: 'masters.list' },
+  { type: 'blood-group', label: 'Blood Group', permission: 'masters.list' },
+  { type: 'event-category', label: 'Event Category', permission: 'masters.list' },
+  { type: 'gallery-category', label: 'Gallery Category', permission: 'masters.list' },
+  { type: 'expense-category', label: 'Expense Category', permission: 'masters.list' }
 ]
 
 export const configurationNavigation = [

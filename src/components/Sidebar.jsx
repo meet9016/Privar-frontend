@@ -163,63 +163,42 @@ export default function Sidebar() {
         </div>
 
         {visibleActivityNavigation.length > 0 && (
-          <CollapsibleMenu label="Activities" icon={CalendarDays} items={visibleActivityNavigation}>
-            {visibleActivityNavigation.map((item) => (
-              <LinkItem key={item.to} {...item} />
-            ))}
-          </CollapsibleMenu>
+          <div className="space-y-1">
+            <LinkItem to="/admin/activities" label="Activities" icon={CalendarDays} />
+          </div>
         )}
 
         {visibleServicesNavigation.length > 0 && (
-          <CollapsibleMenu label="Services" icon={Briefcase} items={visibleServicesNavigation}>
-            {visibleServicesNavigation.map((item) => (
-              <LinkItem key={item.to} {...item} />
-            ))}
-          </CollapsibleMenu>
+          <div className="space-y-1">
+            <LinkItem to="/admin/services" label="Services" icon={Briefcase} />
+          </div>
         )}
 
         {visibleMediaNavigation.length > 0 && (
-          <CollapsibleMenu label="Media & Content" icon={Layers} items={visibleMediaNavigation}>
-            {visibleMediaNavigation.map((item) => (
-              <LinkItem key={item.to} {...item} />
-            ))}
-          </CollapsibleMenu>
+          <div className="space-y-1">
+            <LinkItem to="/admin/media" label="Media & Content" icon={Layers} />
+          </div>
         )}
 
         {visibleEngagementNavigation.length > 0 && (
-          <CollapsibleMenu label="Engagements" icon={Activity} items={visibleEngagementNavigation}>
-            {visibleEngagementNavigation.map((item) => (
-              <LinkItem key={item.to} {...item} />
-            ))}
-          </CollapsibleMenu>
+          <div className="space-y-1">
+            <LinkItem to="/admin/engagements" label="Engagements" icon={Activity} />
+          </div>
         )}
 
         {visibleMasterNavigation.length > 0 && (
-          <CollapsibleMenu label="Masters" icon={Database} basePath="/admin/masters" items={visibleMasterNavigation}>
-            {visibleMasterNavigation.map((item) => (
-              <NavLink
-                key={item.type}
-                to={item.to || `/admin/masters/${item.type}`}
-                end
-                className={({ isActive }) =>
-                  `block min-h-8 w-full rounded-lg px-3 py-2 text-[13px] transition-all duration-200 ${
-                    isActive ? 'text-white font-bold shadow-sm bg-primary' : 'text-text-secondary/90 font-medium hover:text-text hover:bg-surface-secondary'
-                  }`
-                }
-                title={`${item.label} Master`}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </CollapsibleMenu>
+          <div className="space-y-1">
+            <LinkItem to="/admin/masters" label="Masters" icon={Database} />
+          </div>
         )}
 
         {visibleConfigurationNavigation.length > 0 && (
-          <CollapsibleMenu label="Configuration" icon={Shield} items={visibleConfigurationNavigation}>
+          <div className="space-y-1">
+            {/* The old config items usually didn't have a category page. I'll just map the visible items directly */}
             {visibleConfigurationNavigation.map((item) => (
               <LinkItem key={item.to} {...item} />
             ))}
-          </CollapsibleMenu>
+          </div>
         )}
       </nav>
 

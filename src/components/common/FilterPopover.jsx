@@ -19,16 +19,16 @@ export default function FilterPopover({
       <button
         type="button"
         onClick={onToggle}
-        className={`relative flex items-center justify-center h-10 px-3 rounded-lg border transition-all duration-200 cursor-pointer select-none ${
+        className={`relative flex items-center justify-center h-10 px-3 rounded-lg border transition-all duration-200 cursor-pointer select-none bg-primary text-white border-primary shadow-sm hover:bg-primary-dark ${
           isOpen || activeCount > 0
-            ? 'bg-primary/10 border-primary/30 text-primary shadow-xs'
-            : 'bg-surface hover:bg-surface-secondary border-border text-text-secondary hover:text-text shadow-2xs'
+            ? 'ring-2 ring-primary/20'
+            : ''
         }`}
         title="Filter Records"
       >
         <Filter className="w-4 h-4" />
         {activeCount > 0 && (
-          <span className="ml-1.5 flex items-center justify-center min-w-[17px] h-[17px] px-1 text-[10px] font-bold rounded-full bg-primary text-white ring-2 ring-surface">
+          <span className="ml-1.5 flex items-center justify-center min-w-[17px] h-[17px] px-1 text-[10px] font-bold rounded-full bg-white text-primary ring-2 ring-primary">
             {activeCount}
           </span>
         )}

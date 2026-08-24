@@ -8,17 +8,19 @@ import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
+import SearchInput from '../components/common/SearchInput'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
-import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import Checkbox from '../components/common/Checkbox'
 import useDebounce from '../hooks/useDebounce'
+import usePermissions from '../hooks/usePermissions'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 const emptyRoleForm = { name: '', description: '', status: 1, permissions: [] }
 export default function Roles() {
   const { user: currentUser } = useContext(AuthContext)
+  const permissions = usePermissions('roles')
   const isSuperAdmin = currentUser?.committee_role === 'President' || currentUser?.role === 'superadmin'
   const [roles, setRoles] = useState([])
   const [limit, setLimit] = useState(15)
@@ -100,24 +102,27 @@ export default function Roles() {
     setIsModalOpen(true)
   }
 
-  const togglePermission = (key) => {
+  const togglePermission = (keyOrKeys) => {
     setFormData((current) => {
-      const exists = current.permissions.includes(key)
+      const keys = Array.isArray(keyOrKeys) ? keyOrKeys : [keyOrKeys]
+      const exists = keys.every(k => current.permissions.includes(k))
       let nextPermissions = exists
-        ? current.permissions.filter((item) => item !== key)
-        : [...current.permissions, key]
+        ? current.permissions.filter((item) => !keys.includes(item))
+        : [...current.permissions, ...keys]
 
       // Auto-select List/View when Add, Edit, or Delete is selected
       if (!exists) {
-        const parts = key.split('.')
-        const moduleKey = parts[0]
-        const action = parts[1]
-        if (['add', 'edit', 'delete', 'create'].includes(action)) {
-          const listKey = `${moduleKey}.list`
-          const viewKey = `${moduleKey}.view`
-          if (!nextPermissions.includes(listKey)) nextPermissions.push(listKey)
-          if (!nextPermissions.includes(viewKey)) nextPermissions.push(viewKey)
-        }
+        keys.forEach(k => {
+          const parts = k.split('.')
+          const moduleKey = parts[0]
+          const action = parts[1]
+          if (['add', 'edit', 'delete', 'create'].includes(action)) {
+            const listKey = `${moduleKey}.list`
+            const viewKey = `${moduleKey}.view`
+            if (!nextPermissions.includes(listKey)) nextPermissions.push(listKey)
+            if (!nextPermissions.includes(viewKey)) nextPermissions.push(viewKey)
+          }
+        })
       }
 
       return {
@@ -128,7 +133,7 @@ export default function Roles() {
   }
 
   const toggleModule = (module) => {
-    const keys = module.permissions.map((permission) => permission.key)
+    const keys = module.permissions.flatMap((permission) => permission.key)
     const hasAll = keys.every((key) => formData.permissions.includes(key))
     setFormData((current) => ({
       ...current,
@@ -141,7 +146,7 @@ export default function Roles() {
   const selectablePermissions = useMemo(() => {
     return permissionConfig.modules
       .filter((m) => !['committee', 'roles'].includes(m.key))
-      .flatMap((m) => m.permissions.map((p) => p.key))
+      .flatMap((m) => m.permissions.flatMap((p) => p.key))
   }, [permissionConfig.modules])
 
   const isAllSelected = selectablePermissions.length > 0 && selectablePermissions.every((key) => formData.permissions.includes(key))
@@ -213,20 +218,30 @@ export default function Roles() {
 
   return (
     <div className="space-y-6 text-text">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-text">Roles</h2>
+          <h1 className="text-2xl font-bold tracking-tight text-text flex items-center gap-2">
+            Roles & Permissions
+          </h1>
+          <p className="text-sm font-medium text-text-secondary mt-1 tracking-tight">
+            Manage system access and privileges
+          </p>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+
+        <div className="flex items-center gap-3">
           <SearchInput
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClear={() => setSearch('')}
+            onChange={(e) => handleSearch(e.target.value)}
+            onClear={() => handleSearch('')}
             placeholder="Search roles..."
+            wrapperClassName="relative w-[240px]"
           />
-          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
-            Add Role
-          </Button>
+          <Button onClick={fetchAll} variant="outline" icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />} className="h-10 px-3" />
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
+              Add Role
+            </Button>
+          )}
         </div>
       </div>
 
@@ -286,12 +301,16 @@ export default function Roles() {
               const isSystemRole = role.name === 'admin' || role.name === 'UserRole';
               return (
               <div className="flex items-center justify-start gap-2">
-                <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => handleDelete(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-error-text bg-error-bg hover:bg-error/20 border-error-border'}`} title="Delete">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleDelete(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-error-text bg-error-bg hover:bg-error/20 border-error-border'}`} title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
               );
             }
@@ -376,8 +395,9 @@ export default function Roles() {
             </div>
             <div className="divide-y divide-border">
               {permissionConfig.modules.map((module) => {
-                const allChecked = module.permissions.every((p) => formData.permissions.includes(p.key))
-                const someChecked = module.permissions.some((p) => formData.permissions.includes(p.key))
+                const moduleKeys = module.permissions.flatMap((p) => p.key)
+                const allChecked = moduleKeys.length > 0 && moduleKeys.every((k) => formData.permissions.includes(k))
+                const someChecked = moduleKeys.some((k) => formData.permissions.includes(k))
                 const isRestrictedModule = ['committee', 'roles'].includes(module.key)
                 const isModuleDisabled = saving || isRestrictedModule
 
@@ -392,17 +412,21 @@ export default function Roles() {
                     />
                     {permissionConfig.actions.map((action) => {
                       const permission = module.permissions.find((item) => item.action === action.key)
-                      return permission ? (
-                        <div key={permission.key} className="flex justify-center">
-                          <Checkbox
-                            checked={!isRestrictedModule && formData.permissions.includes(permission.key)}
-                            disabled={isModuleDisabled}
-                            onChange={() => !isModuleDisabled && togglePermission(permission.key)}
-                          />
-                        </div>
-                      ) : (
-                        <div key={`${module.key}-${action.key}`} />
-                      )
+                      if (permission) {
+                        const permKeys = Array.isArray(permission.key) ? permission.key : [permission.key]
+                        const isPermChecked = permKeys.every(k => formData.permissions.includes(k))
+                        return (
+                          <div key={permKeys.join(',')} className="flex justify-center">
+                            <Checkbox
+                              checked={!isRestrictedModule && isPermChecked}
+                              disabled={isModuleDisabled}
+                              onChange={() => !isModuleDisabled && togglePermission(permission.key)}
+                            />
+                          </div>
+                        )
+                      } else {
+                        return <div key={`${module.key}-${action.key}`} />
+                      }
                     })}
                   </div>
                 )

@@ -51,6 +51,7 @@ const definitions = {
     subtitle: 'Create and manage matrimony profiles',
     endpoint: '/matrimonies',
     supportIsOwn: true,
+    hideFilter: true,
     fields: [
       { name: 'full_name', label: 'Full Name', required: true },
       { name: 'middle_name', label: 'Middle Name', required: true },
@@ -205,22 +206,83 @@ const definitions = {
     columns: [
       { key: 'name', label: 'Name' },
       { key: 'dob', label: 'Date of Birth', render: (row) => formatDate(row.dob) },
-      { 
-        key: 'age', 
-        label: 'Age', 
+      {
+        key: 'age',
+        label: 'Age',
         render: (row) => {
           if (!row.dob) return '-'
-          const birthDate = new Date(row.dob)
+          const birth = new Date(row.dob)
           const today = new Date()
-          let age = today.getFullYear() - birthDate.getFullYear()
-          const monthDiff = today.getMonth() - birthDate.getMonth()
-          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--
+          let years = today.getFullYear() - birth.getFullYear()
+          let months = today.getMonth() - birth.getMonth()
+          let days = today.getDate() - birth.getDate()
+          if (days < 0) {
+            months--
+            days += new Date(today.getFullYear(), today.getMonth(), 0).getDate()
           }
-          return `${age} Yrs`
+          if (months < 0) { years--; months += 12 }
+          
+          const parts = []
+          if (years > 0) parts.push({ label: 'Yrs', value: String(years).padStart(2, '0') })
+          if (months > 0) parts.push({ label: 'Mon', value: String(months).padStart(2, '0') })
+          if (days > 0) parts.push({ label: 'Days', value: String(days).padStart(2, '0') })
+          if (parts.length === 0) parts.push({ label: 'Days', value: '00' })
+
+          return (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {parts.map((p, i) => (
+                <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/15 border border-primary/20 text-xs font-bold text-primary-dark whitespace-nowrap shadow-sm">
+                  <span>{p.value}</span>
+                  <span className="text-[10px] uppercase opacity-75 font-semibold">{p.label}</span>
+                </span>
+              ))}
+            </div>
+          )
         }
       },
-      { key: 'anniversary', label: 'Anniversary', render: (row) => formatDate(row.anniversary) }
+      {
+        key: 'anniversary',
+        label: 'Anniversary Date',
+        render: (row) => formatDate(row.anniversary)
+      },
+      {
+        key: 'married_for',
+        label: 'Time Married',
+        render: (row) => {
+          if (!row.anniversary) return '-'
+          const ann = new Date(row.anniversary)
+          const today = new Date()
+          let years = today.getFullYear() - ann.getFullYear()
+          let months = today.getMonth() - ann.getMonth()
+          let days = today.getDate() - ann.getDate()
+          if (days < 0) {
+            months--
+            days += new Date(today.getFullYear(), today.getMonth(), 0).getDate()
+          }
+          if (months < 0) { years--; months += 12 }
+          if (years < 0) return '-'
+          
+          const parts = []
+          if (years > 0) parts.push({ label: 'Yrs', value: String(years).padStart(2, '0') })
+          if (months > 0) parts.push({ label: 'Mon', value: String(months).padStart(2, '0') })
+          if (days > 0) parts.push({ label: 'Days', value: String(days).padStart(2, '0') })
+          
+          if (parts.length === 0) {
+            return <span className="inline-block px-2.5 py-1 rounded-md bg-success/15 border border-success/20 text-xs font-bold text-success shadow-sm">Today!</span>
+          }
+
+          return (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {parts.map((p, i) => (
+                <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/15 border border-primary/20 text-xs font-bold text-primary-dark whitespace-nowrap shadow-sm">
+                  <span>{p.value}</span>
+                  <span className="text-[10px] uppercase opacity-75 font-semibold">{p.label}</span>
+                </span>
+              ))}
+            </div>
+          )
+        }
+      }
     ]
   },
   'job-vacancy': {
@@ -275,7 +337,7 @@ const definitions = {
   }
 }
 
-export default function ContentPage({ type }) {
+export default function ContentPage({ type, headerLeftContent }) {
   const permissions = usePermissions(type === 'birthday' ? 'members' : type === 'donation' ? 'donations' : type)
 
   // Applied states
@@ -327,7 +389,7 @@ export default function ContentPage({ type }) {
   const extraCount = [appliedMonth, appliedYear, appliedStart, appliedEnd].filter(Boolean).length
 
   if (type === 'gallery') {
-    return <GalleryPage />
+    return <GalleryPage headerLeftContent={headerLeftContent} />
   }
 
   if (!definitions[type]) {
@@ -387,6 +449,7 @@ export default function ContentPage({ type }) {
   return (
     <AdminCrudPage 
       {...definitions[type]} 
+      headerLeftContent={headerLeftContent}
       hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
       hideEdit={definitions[type].hideEdit || (!permissions.canEdit && !permissions.isSuperAdmin)}
       hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))} 

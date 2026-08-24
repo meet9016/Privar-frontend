@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Award, GraduationCap, Medal, Star, Trophy } from 'lucide-react'
-import { memberApi } from '../../lib/api'
+import { memberApi, getCommunitySurname } from '../../lib/api'
 
 
 const rankLabel = (index) => {
@@ -17,7 +17,7 @@ const normalizePercentage = (value) => {
 }
 
 const normalizeStudent = (student, index) => ({
-  name: [student.student_name, student.surname].filter(Boolean).join(' ') || 'Student',
+  name: [student.student_name, getCommunitySurname()].filter(Boolean).join(' ') || 'Student',
   rank: rankLabel(index),
   standard: student.standard || 'Standard',
   score: student.percentage ? `${String(student.percentage).replace('%', '')}%` : '0%',

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter, X } from 'lucide-react'
 import api, { assetUrl, getStudentsList, getCommunitySurname } from '../lib/api'
 import { confirm } from '../lib/confirm'
@@ -15,7 +15,12 @@ import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
-export default function Students() {
+import { AuthContext } from '../context/AuthContext'
+import usePermissions from '../hooks/usePermissions'
+
+export default function Students({ headerLeftContent }) {
+  const { user: currentUser } = useContext(AuthContext)
+  const permissions = usePermissions('students')
   const [students, setStudents] = useState([])
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
@@ -293,8 +298,10 @@ export default function Students() {
     <div className="space-y-6 text-text">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-text">Students</h2>
+        <div className="flex-1 overflow-x-auto hide-scrollbar">
+          {headerLeftContent ? headerLeftContent : (
+            <h2 className="text-xl font-semibold text-text">Students</h2>
+          )}
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <SearchInput
@@ -342,13 +349,13 @@ export default function Students() {
               />
             </div>
           </FilterPopover>
-          <Button onClick={handleCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
-            Add Student
-          </Button>
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <Button onClick={handleCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
+              Add Student
+            </Button>
+          )}
         </div>
       </div>
-
-      {/* Standard Filter Pills/Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
         {stdTabs.map((tab) => {
           const isActive = selectedStdTab === tab.value
@@ -371,9 +378,6 @@ export default function Students() {
           )
         })}
       </div>
-
-
-      {/* Main Table */}
       <Table
         columns={[
           {
@@ -389,7 +393,7 @@ export default function Students() {
                     <GraduationCap className="w-4 h-4 text-text-secondary" />
                   </div>
                 )}
-                <span className="font-semibold text-text">{student.surname} {student.student_name}</span>
+                <span className="font-semibold text-text">{defaultSurname} {student.student_name}</span>
               </div>
             )
           },
@@ -426,14 +430,18 @@ export default function Students() {
             header: 'Actions',
             align: 'left',
             render: student => ( <div className="flex items-center justify-start gap-2">
-                <button onClick={() => handleEdit(student)}
-                  className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => handleDelete(student.id)}
-                  className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleEdit(student)}
+                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleDelete(student.id)}
+                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )
           }
@@ -467,10 +475,11 @@ export default function Students() {
         <form key={selectedStudent?._id || selectedStudent?.id || 'new'} onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-              <input type="hidden" name="surname" value={selectedStudent ? (selectedStudent.surname || '') : defaultSurname} />
+              <input type="hidden" name="surname" value={defaultSurname} />
               <Input
                 label="Surname"
-                defaultValue={selectedStudent ? (selectedStudent.surname || '') : defaultSurname}
+                value={defaultSurname}
+                readOnly={true}
                 disabled={true}
                 className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
               />

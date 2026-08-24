@@ -23,7 +23,7 @@ export default function SearchInput({
 
   return (
     <div className={`relative ${wrapperClassName.replace('relative', '').trim()}`}>
-      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-text-secondary/60">
+      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-primary">
         <Search className="w-4 h-4" />
       </span>
       <input
@@ -33,7 +33,7 @@ export default function SearchInput({
         placeholder={placeholder}
         autoFocus={autoFocus}
         disabled={disabled}
-        className={`w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-border focus:border-primary/50 rounded-xl pl-10 ${hasValue ? 'pr-9' : 'pr-4'} text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all ${className}`}
+        className={`w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-primary focus:border-primary-dark rounded-xl pl-10 ${hasValue ? 'pr-9' : 'pr-4'} text-sm outline-none focus:ring-4 focus:ring-primary/20 transition-all ${className}`}
       />
       {hasValue && (
         <button

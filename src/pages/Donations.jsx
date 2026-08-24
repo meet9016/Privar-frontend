@@ -27,8 +27,10 @@ import SearchInput from '../components/common/SearchInput'
 import { Download } from 'lucide-react'
 import useDebounce from '../hooks/useDebounce'
 import { toast } from '../lib/toast'
+import usePermissions from '../hooks/usePermissions'
 
-export default function Donations() {
+export default function Donations({ headerLeftContent }) {
+  const permissions = usePermissions('donations')
   const [donations, setDonations] = useState([])
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
@@ -199,8 +201,10 @@ export default function Donations() {
     <div className="space-y-6 animate-slide-up text-text">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-text">Donations</h2>
+        <div className="flex-1 overflow-x-auto hide-scrollbar">
+          {headerLeftContent ? headerLeftContent : (
+            <h2 className="text-xl font-semibold text-text">Donations</h2>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <SearchInput
@@ -217,12 +221,14 @@ export default function Donations() {
           >
             <Download className="w-4 h-4" /> Export
           </button>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Add Donation
-          </button>
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Add Donation
+            </button>
+          )}
         </div>
       </div>
 
@@ -382,20 +388,24 @@ export default function Donations() {
             key: 'actions',
             align: 'left',
             render: donation => ( <div className="flex items-center justify-start gap-2">
-                <button
-                  onClick={() => handleEdit(donation)}
-                  className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
-                  title="Edit Donation"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(donation.id || donation._id)}
-                  className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
-                  title="Delete Donation"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                  <button
+                    onClick={() => handleEdit(donation)}
+                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
+                    title="Edit Donation"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                  <button
+                    onClick={() => handleDelete(donation.id || donation._id)}
+                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
+                    title="Delete Donation"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )
           }

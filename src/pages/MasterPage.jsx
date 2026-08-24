@@ -12,10 +12,10 @@ const parentFieldsConfig = {
   village: { source: '/masters/city', label: 'City', key: 'name' }
 }
 
-export default function MasterPage({ type }) {
+export default function MasterPage({ type, headerLeftContent }) {
   const label = masterLabels[type]
   const parentConfig = parentFieldsConfig[type]
-  const permissions = usePermissions(type)
+  const permissions = usePermissions('masters')
   
   const [filterValue, setFilterValue] = useState('')
   const [showFilters, setShowFilters] = useState(false)
@@ -78,9 +78,14 @@ export default function MasterPage({ type }) {
       endpoint={`/masters/${type}`}
       fields={fields}
       columns={columns}
+      headerLeftContent={headerLeftContent}
       getRowTitle={(row) => row.name}
       customFilters={customFilters}
       extraParams={extraParams}
+      onApplyFilters={() => {}}
+      onClearFilters={() => setFilterValue('')}
+      onToggleFilters={() => setShowFilters(s => !s)}
+      extraActiveFiltersCount={filterValue ? 1 : 0}
       hideFilter={type === 'country'}
       hideAdd={!permissions.canAdd && !permissions.isSuperAdmin}
       hideEdit={!permissions.canEdit && !permissions.isSuperAdmin}

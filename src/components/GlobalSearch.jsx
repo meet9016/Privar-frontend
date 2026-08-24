@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, User, Briefcase, UserCog, Loader2, X } from 'lucide-react';
-import { getUsersList, getBusinessesList, getCommitteeMembersList } from '../lib/api';
+import { getUsersList, getBusinessesList, getCommitteeMembersList, getCommunitySurname } from '../lib/api';
 
 export default function GlobalSearch() {
   const [query, setQuery] = useState('');
@@ -68,7 +68,7 @@ export default function GlobalSearch() {
 
   return (
     <div className="relative group hidden md:block" ref={dropdownRef}>
-      <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-text-secondary/60 group-focus-within:text-primary transition-colors">
+      <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-primary transition-colors">
         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
       </span>
       <input
@@ -79,7 +79,7 @@ export default function GlobalSearch() {
         onFocus={() => {
           if (query.trim() && totalResults > 0) setIsOpen(true);
         }}
-        className={`w-80 md:w-[480px] lg:w-[600px] bg-surface-secondary text-text placeholder-text-secondary/50 border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl py-2 pl-10 ${query ? 'pr-9' : 'pr-4'} text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:shadow-glow-primary transition-all duration-300`}
+        className={`w-80 md:w-[480px] lg:w-[600px] bg-input-bg text-text placeholder-text-secondary/50 border border-primary focus:border-primary-dark rounded-xl py-2 pl-10 ${query ? 'pr-9' : 'pr-4'} text-sm outline-none focus:ring-4 focus:ring-primary/20 focus:shadow-glow-primary transition-all duration-300`}
       />
       {query && (
         <button
@@ -114,7 +114,7 @@ export default function GlobalSearch() {
                         {u.image ? <img src={u.image} className="w-full h-full rounded-full object-cover" /> : <User className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-text truncate">{u.first_name} {u.last_name}</div>
+                        <div className="text-sm font-medium text-text truncate">{u.first_name} {getCommunitySurname()}</div>
                         <div className="text-xs text-text-secondary truncate">{u.number}</div>
                       </div>
                     </div>
@@ -131,7 +131,7 @@ export default function GlobalSearch() {
                         {c.image ? <img src={c.image} className="w-full h-full rounded-full object-cover" /> : <UserCog className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-text truncate">{c.first_name} {c.last_name}</div>
+                        <div className="text-sm font-medium text-text truncate">{c.first_name} {getCommunitySurname()}</div>
                         <div className="text-xs text-text-secondary truncate">{c.designation || 'Member'}</div>
                       </div>
                     </div>

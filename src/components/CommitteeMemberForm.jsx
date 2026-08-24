@@ -30,7 +30,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     setFormData({
       first_name: member?.first_name || '',
       middle_name: member?.middle_name || '',
-      last_name: member ? (member.last_name || '') : defaultCommunityName,
+      last_name: getCommunitySurname(),
       number: member?.number || '',
       email: member?.email || '',
       password: '',
@@ -176,6 +176,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             label="Last Name"
             placeholder="Enter Last Name"
             value={formData.last_name}
+            readOnly={true}
             disabled={true}
             className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
           />

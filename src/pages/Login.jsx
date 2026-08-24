@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Shield, Eye, EyeOff, Key } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { toast } from '../lib/toast'
-import { getCommunitySurname, assetUrl } from '../lib/api'
+import { getCommunitySurname, getCommunityFullName, assetUrl } from '../lib/api'
 
 export default function Login() {
-  const { login } = useContext(AuthContext)
+  const { login, token } = useContext(AuthContext)
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -14,6 +14,12 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [webTheme, setWebTheme] = useState({ webLogo: '', name: '' })
+
+  useEffect(() => {
+    if (token) {
+      navigate('/admin/dashboard', { replace: true })
+    }
+  }, [token, navigate])
 
   useEffect(() => {
     const loadWebTheme = () => {
@@ -68,22 +74,22 @@ export default function Login() {
         {/* Glowing Head Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-22 h-12 rounded-2xl  flex items-center justify-center mb-3.5 animate-pulse-slow overflow-hidden">
-            {webTheme.webLogo ? (
+          {webTheme.webLogo ? (
               <img
-                src="parivar.png"
-                alt={`${webTheme.name} logo`}
+                src={assetUrl(webTheme.webLogo)}
+                alt={`${webTheme.name || 'Brand'} logo`}
                 className="h-full w-full object-contain"
               />
             ) : (
               <img
                 src="/parivar.png"
-                alt="Parivar logo"
+                alt=""
                 className="h-full w-full object-contain"
               />
             )}
           </div>
           <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
-            {webTheme.name || `${getCommunitySurname()} Parivar`}
+            {getCommunityFullName()}
           </h1>
         </div>
 

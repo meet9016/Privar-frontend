@@ -16,7 +16,7 @@ import useDebounce from '../hooks/useDebounce'
 import Tooltip from '../components/common/Tooltip'
 import usePermissions from '../hooks/usePermissions'
 
-export default function News() {
+export default function News({ headerLeftContent }) {
   const permissions = usePermissions('news')
   const [rows, setRows] = useState([])
   const [limit, setLimit] = useState(15)
@@ -223,9 +223,10 @@ export default function News() {
     <div className="space-y-6 animate-slide-up text-text">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-text">News Feed</h2>
-
+        <div className="flex-1 overflow-x-auto hide-scrollbar">
+          {headerLeftContent ? headerLeftContent : (
+            <h2 className="text-xl font-semibold text-text">News Feed</h2>
+          )}
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <SearchInput

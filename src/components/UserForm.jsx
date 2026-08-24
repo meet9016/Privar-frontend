@@ -115,7 +115,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
       setFormData({
         first_name: user.first_name || '',
         middle_name: user.middle_name || '',
-        last_name: user.last_name || '',
+        last_name: getCommunitySurname(),
         email: user.email || '',
         number: user.number || '',
         gender: user.gender || 'Male',
@@ -279,6 +279,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         <Input
           label="Last Name"
           value={formData.last_name}
+          readOnly={true}
           disabled={true}
           className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
         />
