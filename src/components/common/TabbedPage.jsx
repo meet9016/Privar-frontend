@@ -87,7 +87,6 @@ export default function TabbedPage({ title, tabs, storageKey }) {
 
   return (
     <div className="w-full flex flex-col gap-0 animate-fade-in">
-      {/* Content: all tabs mounted, only active visible via CSS */}
       <div className="w-full relative">
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab
@@ -105,8 +104,7 @@ export default function TabbedPage({ title, tabs, storageKey }) {
                 visibility: isActive ? 'visible' : 'hidden',
               }}
             >
-              {/* Active tab gets the tab bar; inactive gets null (no duplicate bars) */}
-              {tab.component({ headerLeftContent: isActive ? tabsJSX : null })}
+               {tab.component({ headerLeftContent: isActive ? tabsJSX : null })}
             </div>
           )
         })}

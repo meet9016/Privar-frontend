@@ -125,12 +125,20 @@ export default function Events({ headerLeftContent }) {
       const res = await api.get('/masters/country')
       const list = res.data?.data || res.data || []
       setCountryList(list)
+      // Find India and store its ID for default selection
+      const india = list.find(c => /india/i.test(c.name))
+      if (india) {
+        const indiaId = india.id || india._id
+        setFormData(prev => ({ ...prev, country_id: prev.country_id || indiaId }))
+        // store india id on defaultForm reference
+        defaultForm.country_id = indiaId
+      }
       return list
     } catch (err) {
       console.error('Failed to load country list:', err)
       return []
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStateList = useCallback(async () => {
     try {

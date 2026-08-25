@@ -50,7 +50,6 @@ const definitions = {
     title: 'Matrimonies',
     subtitle: 'Create and manage matrimony profiles',
     endpoint: '/matrimonies',
-    supportIsOwn: true,
     hideFilter: true,
     fields: [
       { name: 'full_name', label: 'Full Name', required: true },

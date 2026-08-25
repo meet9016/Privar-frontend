@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import ReactDOM from 'react-dom'
 import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 export default function DateTimePicker({
@@ -15,8 +16,9 @@ export default function DateTimePicker({
   placement = 'auto'
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [dropUp, setDropUp] = useState(false)
+  const [popoverStyle, setPopoverStyle] = useState({})
   const containerRef = useRef(null)
+  const popoverRef = useRef(null)
 
   // Parse current value
   const parsedDate = value ? new Date(value) : null
@@ -42,7 +44,10 @@ export default function DateTimePicker({
   // Click outside listener
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current && !containerRef.current.contains(e.target) &&
+        popoverRef.current && !popoverRef.current.contains(e.target)
+      ) {
         setIsOpen(false)
       }
     }
@@ -50,19 +55,38 @@ export default function DateTimePicker({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Reposition on scroll/resize
+  useEffect(() => {
+    if (!isOpen) return
+    const update = () => setPopoverStyle(calcPopoverStyle())
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const calcPopoverStyle = () => {
+    if (!containerRef.current) return {}
+    const rect = containerRef.current.getBoundingClientRect()
+    const popoverWidth = 370
+    const popoverHeight = 340
+    const spaceBelow = window.innerHeight - rect.bottom
+    let left = rect.left
+    if (left + popoverWidth > window.innerWidth - 10) {
+      left = Math.max(10, window.innerWidth - popoverWidth - 10)
+    }
+    if (spaceBelow < popoverHeight && rect.top > popoverHeight) {
+      return { position: 'fixed', bottom: `${window.innerHeight - rect.top + 4}px`, left: `${left}px`, width: `${popoverWidth}px`, zIndex: 99999 }
+    }
+    return { position: 'fixed', top: `${rect.bottom + 4}px`, left: `${left}px`, width: `${popoverWidth}px`, zIndex: 99999 }
+  }
+
   const toggleOpen = () => {
     if (disabled) return
-    if (!isOpen && containerRef.current) {
-      if (placement === 'down') {
-        setDropUp(false)
-      } else if (placement === 'up') {
-        setDropUp(true)
-      } else {
-        const rect = containerRef.current.getBoundingClientRect()
-        const spaceBelow = window.innerHeight - rect.bottom
-        const spaceAbove = rect.top
-        setDropUp(spaceBelow < 340 && spaceAbove > spaceBelow)
-      }
+    if (!isOpen) {
+      setPopoverStyle(calcPopoverStyle())
       if (isValidDate) {
         setViewDate(parsedDate)
         setSelectedHours(parsedDate.getHours())
@@ -193,12 +217,12 @@ export default function DateTimePicker({
         </div>
       </div>
 
-      {/* Custom Theme Dropdown Picker */}
-      {isOpen && (
+      {/* Custom Theme Dropdown Picker — rendered via portal so it's never clipped by modal overflow */}
+      {isOpen && typeof document !== 'undefined' && ReactDOM.createPortal(
         <div
-          className={`absolute z-[9999] w-[330px] sm:w-[360px] ${
-            dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-          } bg-surface border border-border rounded-2xl shadow-glass-xl overflow-hidden p-4 animate-scale-in text-text`}
+          ref={popoverRef}
+          style={popoverStyle}
+          className="bg-surface border border-border rounded-2xl shadow-glass-xl overflow-hidden p-4 animate-scale-in text-text"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex gap-4">
@@ -364,7 +388,8 @@ export default function DateTimePicker({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {error && <p className="text-red-500 text-xs mt-1 font-semibold">{error}</p>}

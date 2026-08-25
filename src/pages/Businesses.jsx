@@ -244,7 +244,7 @@ export default function Businesses({ headerLeftContent }) {
           {
             header: 'Phone',
             key: 'phone',
-            render: (biz) => <span className="font-mono text-text-secondary text-xs">{biz.number}</span>
+            render: (biz) => <span className="text-text-secondary text-xs">{biz.number}</span>
           },
           {
             header: 'Address',
@@ -256,7 +256,7 @@ export default function Businesses({ headerLeftContent }) {
             key: 'website',
             render: (biz) => (
               biz.website ? (
-                <a href={biz.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono text-xs truncate max-w-[120px] inline-block">
+                <a href={biz.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs truncate max-w-[120px] inline-block">
                   {biz.website.replace(/^https?:\/\//i, '')}
                 </a>
               ) : <span className="text-text-secondary text-xs">—</span> 
