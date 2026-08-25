@@ -33,7 +33,7 @@ const LinkItem = ({ to, icon: Icon, label, end }) => {
             <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-white font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />
             <span className="truncate tracking-tight">{label}</span>
             {active && (
-              <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-white animate-pulse shadow-sm"></span>
+              <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-white shadow-sm"></span>
             )}
           </>
         )

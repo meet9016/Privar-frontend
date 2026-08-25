@@ -12,7 +12,8 @@ import {
   Users,
   GraduationCap,
   HeartHandshake,
-  IndianRupee
+  IndianRupee,
+  BookOpen
 } from 'lucide-react'
 
 export const coreNavigation = [
@@ -60,7 +61,8 @@ export const masterNavigation = [
 ]
 
 export const configurationNavigation = [
-  { to: '/admin/settings', label: 'Theme Config', icon: Settings, title: 'Theme Customizer', permission: 'settings.edit' }
+  { to: '/admin/settings', label: 'Theme Config', icon: Settings, title: 'Theme Customizer', permission: 'settings.edit' },
+  { to: '/admin/documentation', label: 'Documentation', icon: BookOpen, title: 'System Documentation' }
 ]
 
 export const routeTitles = [

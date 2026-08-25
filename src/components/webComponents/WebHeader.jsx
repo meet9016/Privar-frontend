@@ -164,7 +164,7 @@ export default function WebHeader() {
       <header
         className="sticky top-10 z-30 shadow-md border-b transition-colors duration-300"
         style={{
-          backgroundColor: theme.backgroundColor || '#F5FFF7',
+          backgroundColor: theme.backgroundColor || '#F5FFF7',  
           borderColor: theme.borderColor || '#D7EFD9'
         }}
       >

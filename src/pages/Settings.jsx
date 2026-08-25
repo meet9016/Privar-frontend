@@ -323,8 +323,10 @@ export default function SettingsPage() {
       // New banner files
       newBannerFiles.forEach(file => payload.append('bannerImages', file))
 
-      await api.put('/update_app_theme', payload)
-      persistWebThemeToLocalStorage(config)
+      const updateRes = await api.put('/update_app_theme', payload)
+      const updatedTheme = updateRes.data?.data || updateRes.data || config
+      persistWebThemeToLocalStorage(updatedTheme)
+      window.dispatchEvent(new Event('web-theme-updated'))
       window.dispatchEvent(new Event('storage'))
       toast.success('Platform configuration updated successfully!')
       fetchConfig()

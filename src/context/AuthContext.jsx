@@ -82,10 +82,30 @@ export function AuthProvider({ children }) {
   })
 
   const refreshTheme = useCallback(() => {
+    const rawFavicon = localStorage.getItem('web_favicon') || ''
+    const webLogo = localStorage.getItem('web_webLogo') || ''
+    const name = localStorage.getItem('web_name') || ''
+
     setWebTheme({
-      webLogo: localStorage.getItem('web_webLogo') || '',
-      name: localStorage.getItem('web_name') || ''
+      webLogo,
+      name,
+      favicon: rawFavicon
     })
+
+    // Dynamically update document favicon in browser tab
+    if (rawFavicon) {
+      const fullFaviconUrl = /^https?:\/\//i.test(rawFavicon)
+        ? rawFavicon
+        : `${import.meta.env.VITE_API_BASE || 'http://localhost:5000'}${rawFavicon.startsWith('/') ? rawFavicon : `/${rawFavicon}`}`
+
+      let link = document.querySelector("link[rel~='icon']")
+      if (!link) {
+        link = document.createElement('link')
+        link.rel = 'icon'
+        document.head.appendChild(link)
+      }
+      link.href = fullFaviconUrl
+    }
   }, [])
 
   // Initialize from localStorage and fetch theme
