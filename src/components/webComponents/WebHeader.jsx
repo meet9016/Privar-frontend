@@ -175,11 +175,11 @@ export default function WebHeader() {
               {theme?.webLogo ? (
                 <img src={assetUrl(theme.webLogo)} alt={`${theme.name} logo`} className="h-12 object-contain" />
               ) : null}
-              <div className="hidden sm:block">
+              {/* <div className="hidden sm:block">
                 <h1 className="text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.textColor || '#123524' }}>
                   {theme?.name || getCommunityFullName()}
                 </h1>
-              </div>
+              </div> */}
             </div>
 
             {/* Desktop Navigation */}
