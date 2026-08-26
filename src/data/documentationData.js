@@ -109,7 +109,7 @@ export const docTranslations = {
         ]
       },
       members: {
-        title: "4. Family Registry & Member Directory",
+        title: "3. Family Registry & Member Directory",
         badge: "Core Directory",
         image: "/documention/member.png",
         imageCaption: "Family Registry: Comprehensive member listings with family head hierarchy tags, search, and action controls.",
@@ -123,7 +123,7 @@ export const docTranslations = {
         ]
       },
       committee: {
-        title: "5. Committee Leadership & Governance",
+        title: "4. Committee Leadership & Governance",
         badge: "Administration",
         modalImage: "/documention/committeememberadd.png",
         modalCaption: "Add Committee Member Dialog: Photo upload (max 1MB), contact info, custom designation, and Role selection.",
@@ -134,7 +134,7 @@ export const docTranslations = {
         ]
       },
       roles: {
-        title: "6. Roles & Granular Permission Matrix",
+        title: "5. Roles & Granular Permission Matrix",
         badge: "Access Governance",
         image: "/documention/role.png",
         imageCaption: "Role Management Index: List of defined privilege packages with active status toggles.",
@@ -147,7 +147,7 @@ export const docTranslations = {
         ]
       },
       activities: {
-        title: "7. Activities Module (4-in-1 Unified Tab System)",
+        title: "6. Activities Module (4-in-1 Unified Tab System)",
         badge: "Activities Tab",
         image: "/documention/activitytab.png",
         imageCaption: "Activities Hub: Gallery, Birthdays, Job Vacancies, and Events consolidated into a single unified tab layout.",
@@ -159,7 +159,7 @@ export const docTranslations = {
         ]
       },
       services: {
-        title: "8. Services Module (3-in-1 Unified Tab System)",
+        title: "7. Services Module (3-in-1 Unified Tab System)",
         badge: "Services Tab",
         image: "/documention/servicestab.png",
         imageCaption: "Services Hub: Businesses, Students, and Matrimonial registries conveniently accessible from one screen.",
@@ -170,7 +170,7 @@ export const docTranslations = {
         ]
       },
       media: {
-        title: "9. Media & Content Moderation (3-in-1 Tab System)",
+        title: "8. Media & Content Moderation (3-in-1 Tab System)",
         badge: "Media Hub",
         image: "/documention/mediatab.png",
         imageCaption: "Media Hub: Community Posts, News Releases, and Member Feedback with instant moderation controls.",
@@ -181,7 +181,7 @@ export const docTranslations = {
         ]
       },
       engagements: {
-        title: "10. Engagements & Financial Records (2-in-1 Tab System)",
+        title: "9. Engagements & Financial Records (2-in-1 Tab System)",
         badge: "Financial Records",
         image: "/documention/engagementtab.png",
         imageCaption: "Engagements Hub: Audited Expense Vouchers and Philanthropic Donations ledger with CSV export capabilities.",
@@ -191,7 +191,7 @@ export const docTranslations = {
         ]
       },
       masters: {
-        title: "11. Master Data Configuration",
+        title: "10. Master Data Configuration",
         badge: "Masters Hub",
         image: "/documention/mastertab.png",
         imageCaption: "Masters Hub: Global reference tables for Countries, States, Cities, Villages, Blood Groups, and Categories.",
@@ -202,7 +202,7 @@ export const docTranslations = {
         ]
       },
       settings: {
-        title: "12. Appearance & Dynamic Brand Customizer",
+        title: "11. Appearance & Dynamic Brand Customizer",
         badge: "Theme Customizer",
         points: [
           "Live Color Picker: Dynamic variables engine for primary, hover, border, and glow accents.",

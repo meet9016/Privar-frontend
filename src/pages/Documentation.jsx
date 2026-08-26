@@ -108,12 +108,8 @@ export default function Documentation() {
     if (manualScrollTimer.current) clearTimeout(manualScrollTimer.current)
 
     const element = document.getElementById(id)
-    if (element && contentContainerRef.current) {
-      const topOffset = element.offsetTop - 16
-      contentContainerRef.current.scrollTo({
-        top: topOffset,
-        behavior: 'smooth'
-      })
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
     // Release lock after smooth scroll completes (approx 450ms)
@@ -211,7 +207,7 @@ export default function Documentation() {
   )
 
   return (
-    <div className="w-full h-full flex flex-col gap-2.5 relative select-none font-sans antialiased">
+    <div className="w-full h-[calc(100vh-7rem)] flex flex-col gap-2.5 relative select-none font-sans antialiased">
 
       {/* ─── Reading Progress Bar ────────────────────────────────────────── */}
       <div className="w-full h-1 bg-surface-secondary/60 rounded-full overflow-hidden shrink-0">
@@ -277,7 +273,7 @@ export default function Documentation() {
       </motion.div>
 
       {/* ─── Two-Column Viewport: Left Sidebar (260px-300px) + Right Content ─────────────────────────────────── */}
-      <div className="flex gap-3 flex-1 h-[calc(100vh-90px)] min-h-[500px] overflow-hidden">
+      <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
 
         {/* ── Clean Left Sidebar (Pure TOC Navigation + Bottom Help Box) ── */}
         <motion.div
