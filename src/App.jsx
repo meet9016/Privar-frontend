@@ -73,6 +73,8 @@ export default function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         </Route>
 
+        <Route path="/documentation" element={<Documentation />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/businesses/:id" element={<BusinessProfile />} />
 

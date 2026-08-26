@@ -27,7 +27,16 @@ export const getCommunitySurname = () => {
     }
   }
 
-  // 2. Check saved app name in localStorage / Theme Config
+  // 2. Check logged-in tenant code in localStorage
+  const tenantCode = localStorage.getItem('tenant_code') || ''
+  if (tenantCode) {
+    const cleanedTenant = tenantCode.replace(/parivar/gi, '').trim()
+    if (cleanedTenant) {
+      return cleanedTenant.charAt(0).toUpperCase() + cleanedTenant.slice(1)
+    }
+  }
+
+  // 3. Check saved app name in localStorage / Theme Config
   const webName = localStorage.getItem('web_name') || ''
   const cleaned = webName.replace(/parivar/gi, '').trim()
   if (cleaned) {
@@ -71,8 +80,12 @@ const setupInterceptors = (axiosInstance) => {
   axiosInstance.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('auth_token')
+      const tenantCode = localStorage.getItem('tenant_code')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
+      }
+      if (tenantCode) {
+        config.headers['x-tenant-id'] = tenantCode
       }
       if (config.data instanceof FormData) {
         delete config.headers['Content-Type']

@@ -66,6 +66,7 @@ export default function WebFooter() {
     { label: 'Donors', href: '/donors' },
     { label: 'Matrimonial', href: '/matrimonial' },
     { label: 'Job Vacancies', href: '/jobs' },
+    { label: 'Documentation', href: '/documentation' },
   ]
 
   const socialLinks = [

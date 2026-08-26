@@ -24,7 +24,7 @@ export default function Login() {
   useEffect(() => {
     const loadWebTheme = () => {
       setWebTheme({
-        webLogo: localStorage.getItem('web_webLogo') || '',
+        webLogo: localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || '',
         name: localStorage.getItem('web_name') || ''
       })
     }
@@ -42,7 +42,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!email || !password) {
-      const message = 'Please provide all credentials.'
+      const message = 'Please provide both email and password.'
       setError(message)
       toast.error(message)
       return
@@ -73,7 +73,7 @@ export default function Login() {
         
         {/* Glowing Head Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-22 h-12 rounded-2xl  flex items-center justify-center mb-3.5 animate-pulse-slow overflow-hidden">
+          <div className="w-22 h-12 rounded-2xl flex items-center justify-center mb-3.5 animate-pulse-slow overflow-hidden">
           {webTheme.webLogo ? (
               <img
                 src={assetUrl(webTheme.webLogo)}

@@ -136,11 +136,17 @@ export function AuthProvider({ children }) {
     }
   }, [refreshTheme])
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, tenantCode = '') => {
     const apiBase = API_BASE
+    
+    const headers = { 'Content-Type': 'application/json' }
+    if (tenantCode) {
+      headers['x-tenant-id'] = tenantCode
+    }
+    
     const res = await fetch(`${apiBase}/api/admin_login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ email, password })
     })
 
@@ -162,6 +168,14 @@ export function AuthProvider({ children }) {
     setUser(receivedUser)
     localStorage.setItem('auth_token', receivedToken)
     localStorage.setItem('auth_user', JSON.stringify(receivedUser))
+    
+    const detectedTenant = tenantCode || payload.tenant_code || receivedUser.tenant_code || ''
+    if (detectedTenant) {
+      localStorage.setItem('tenant_code', detectedTenant)
+    } else {
+      localStorage.removeItem('tenant_code')
+    }
+    
     return { token: receivedToken, user: receivedUser }
   }, [])
 

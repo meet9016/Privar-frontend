@@ -228,14 +228,21 @@ export default function Documentation() {
         className="bg-surface/90 backdrop-blur-xl border border-border/80 rounded-2xl px-6 py-3.5 min-h-[60px] shadow-glass-md flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 mb-4"
       >
         <div className="flex items-center gap-4">
-          {/* Back to Panel Button */}
+          {/* Back Button (Smart Route) */}
           <button
-            onClick={() => navigate('/admin/dashboard')}
+            onClick={() => {
+              const token = localStorage.getItem('auth_token')
+              if (token) {
+                navigate('/admin/dashboard')
+              } else {
+                navigate('/')
+              }
+            }}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary-hover shadow-md shadow-primary/20 transition-all cursor-pointer group shrink-0"
-            title="Back to Admin Dashboard"
+            title="Back"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="hidden sm:inline">Back to Panel</span>
+            <span className="hidden sm:inline">Back</span>
           </button>
 
           <div className="h-6 w-px bg-border hidden sm:block"></div>
