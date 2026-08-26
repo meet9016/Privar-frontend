@@ -25,7 +25,6 @@ export const docTranslations = {
       overview: {
         welcomeTitle: "Welcome to Parivar Portal!",
         welcomeSubtitle: "Complete community & family organizational management system.",
-        welcomeDesc: "Parivar Portal empowers community associations, family trusts, and organizations to centralize member records, leadership governance, event coordination, welfare services, and financial transparency in one unified platform.",
         whyTitle: "Why Parivar Platform?",
         whyPoints: [
           { title: "Centralized Family Tree & Member Directory", desc: "Head-of-family mapping, relationship trees, member profiles, and emergency blood group registry." },
@@ -36,9 +35,9 @@ export const docTranslations = {
           { title: "Multilingual & Instant Notifications", desc: "Seamless support for English, Hindi, and Gujarati with real-time push alerts." }
         ],
         supportTitle: "Contact & Support",
-        website: "https://parivar.org",
+        website: "https://parivar.me",
         email: "support@parivar.org",
-        phone: "+91 98765 43210",
+        phone: "+91 88667 79008",
         setupProgressTitle: "Quick Setup Guide",
         setupSteps: [
           {
@@ -206,7 +205,7 @@ export const docTranslations = {
         title: "12. Appearance & Dynamic Brand Customizer",
         badge: "Theme Customizer",
         points: [
-          "Live Color Picker: Dynamic CSS variables engine for primary, hover, border, and glow accents.",
+          "Live Color Picker: Dynamic variables engine for primary, hover, border, and glow accents.",
           "Public Website Branding: Controls logos, favicon, contact telephone, email, and social media handles (Facebook, WhatsApp, Instagram, YouTube).",
           "Dark / Light Mode: Intelligent theme switching with persistent localStorage cache."
         ]
@@ -241,7 +240,6 @@ export const docTranslations = {
       overview: {
         welcomeTitle: "परिवार पोर्टल में आपका स्वागत है!",
         welcomeSubtitle: "सम्पूर्ण समाज एवं पारिवारिक संगठन प्रबंधन प्रणाली।",
-        welcomeDesc: "परिवार पोर्टल सामाजिक संगठनों, ट्रस्टों और परिवार संघों को अपने सभी सदस्य रिकॉर्ड, समिति नेतृत्व, कार्यक्रम, सामाजिक सेवाएं और वित्तीय पारदर्शिता को एक ही स्थान पर प्रबंधित करने में सक्षम बनाता है।",
         whyTitle: "परिवार प्लेटफ़ॉर्म क्यों?",
         whyPoints: [
           { title: "केंद्रीकृत वंशावली व सदस्य निर्देशिका", desc: "परिवार के मुखिया, पारिवारिक संबंध, रक्त समूह इंडेक्स और सदस्य प्रोफाइल का पूर्ण प्रबंधन।" },
@@ -252,9 +250,9 @@ export const docTranslations = {
           { title: "त्रिभाषी व रियल-टाइम नोटिफिकेशन", desc: "हिंदी, गुजराती और अंग्रेजी में तत्काल सूचनाएं व सहज संचालन।" }
         ],
         supportTitle: "संपर्क व सहायता",
-        website: "https://parivar.org",
+        website: "https://parivar.me",
         email: "support@parivar.org",
-        phone: "+91 98765 43210",
+        phone: "+91 88667 79008",
         setupProgressTitle: "त्वरित शुरुआत गाइड",
         setupSteps: [
           {
@@ -477,7 +475,6 @@ export const docTranslations = {
       overview: {
         welcomeTitle: "પરિવાર પોર્ટલમાં આપનું સ્વાગત છે!",
         welcomeSubtitle: "સંપૂર્ણ સમાજ અને પારિવારિક સંગઠન વ્યવસ્થાપન સિસ્ટમ.",
-        welcomeDesc: "પરિવાર પોર્ટલ સામાજિક સંગઠનો, ટ્રસ્ટો અને પારિવારિક મંડળોને તેમના તમામ સભ્ય રેકોર્ડ, કારોબારી સમિતિ, કાર્યક્રમો, સામાજિક સેવાઓ અને પારદર્શક નાણાકીય હિસાબો એક જ સ્થળે સંચાલિત કરવાની સુવિધા આપે છે.",
         whyTitle: "પરિવાર પ્લેટફોર્મ શા માટે?",
         whyPoints: [
           { title: "કેન્દ્રીકૃત વંશવેલો અને સભ્ય ડિરેક્ટરી", desc: "પરિવારના મોભી, પારિવારિક સંબંધો, બ્લડ ગ્રૂપ ઇન્ડેક્સ અને સભ્ય પ્રોફાઇલનું સંપૂર્ણ સંચાલન." },
@@ -488,9 +485,9 @@ export const docTranslations = {
           { title: "ત્રિ-ભાષી અને ત્વરિત નોટિફિકેશન", desc: "ગુજરાતી, હિન્દી અને અંગ્રેજી ભાષામાં રીયલ-ટાઇમ એલર્ટ્સ અને સરળ ઉપયોગ." }
         ],
         supportTitle: "સંપર્ક અને સહાય",
-        website: "https://parivar.org",
+        website: "https://parivar.me",
         email: "support@parivar.org",
-        phone: "+91 98765 43210",
+        phone: "+91 88667 79008",
         setupProgressTitle: "ઝડપી શરૂઆત માર્ગદર્શિકા",
         setupSteps: [
           {
@@ -658,7 +655,7 @@ export const docTranslations = {
         title: "૧૨. થીમ અને બ્રાન્ડ કસ્ટમાઇઝેશન (Settings)",
         badge: "થીમ કસ્ટમાઇઝર",
         points: [
-          "લાઇવ કલર પીકર: પ્રાથમિક, હોવર, બોર્ડર અને ગ્લો રંગો માટે ડાયનેમિક CSS વેરીએબલ્સ.",
+          "લાઇવ કલર પીકર: પ્રાથમિક, હોવર, બોર્ડર અને ગ્લો રંગો માટે ડાયનેમિક વેરીએબલ્સ.",
           "જાહેર વેબસાઇટ બ્રાન્ડિંગ: લોગો, ફેવિકોન, ફોન, ઈમેઈલ અને સોશિયલ મીડિયા લિંક્સ (Facebook, WhatsApp, Instagram, YouTube) નું નિયંત્રણ.",
           "ડાર્ક / લાઇટ મોડ: લોકલ સ્ટોરેજમાં સચવાઈ રહેતું સ્માર્ટ થીમ સ્વિચિંગ."
         ]
