@@ -41,7 +41,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!email || !password) {
+    if (!email || !password || !email.trim() || !password.trim()) {
       const message = 'Please provide both email and password.'
       setError(message)
       toast.error(message)
