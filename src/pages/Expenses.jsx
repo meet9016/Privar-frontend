@@ -273,7 +273,7 @@ export default function Expenses({ headerLeftContent }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex-1 overflow-x-auto hide-scrollbar">
           {headerLeftContent ? headerLeftContent : (
-            <h2 className="text-xl font-semibold text-text">Expenses</h2>
+            <h2 className="text-2xl font-bold text-text tracking-tight">Expenses</h2>
           )}
         </div>
         <div className="flex flex-wrap items-center sm:justify-end gap-3 flex-1">

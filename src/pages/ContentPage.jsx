@@ -222,17 +222,17 @@ const definitions = {
           if (months < 0) { years--; months += 12 }
           
           const parts = []
-          if (years > 0) parts.push({ label: 'Yrs', value: String(years).padStart(2, '0') })
-          if (months > 0) parts.push({ label: 'Mon', value: String(months).padStart(2, '0') })
-          if (days > 0) parts.push({ label: 'Days', value: String(days).padStart(2, '0') })
+          if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
+          if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
+          if (days > 0) parts.push({ label: days === 1 ? 'Day' : 'Days', value: String(days).padStart(2, '0') })
           if (parts.length === 0) parts.push({ label: 'Days', value: '00' })
 
           return (
             <div className="flex items-center gap-1.5 flex-wrap">
               {parts.map((p, i) => (
-                <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/15 border border-primary/20 text-xs font-bold text-primary-dark whitespace-nowrap shadow-sm">
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/15 border border-primary/20 text-xs font-bold text-primary-dark whitespace-nowrap shadow-sm">
                   <span>{p.value}</span>
-                  <span className="text-[10px] uppercase opacity-75 font-semibold">{p.label}</span>
+                  <span className="text-[10px] opacity-75 font-semibold">{p.label}</span>
                 </span>
               ))}
             </div>
@@ -262,20 +262,20 @@ const definitions = {
           if (years < 0) return '-'
           
           const parts = []
-          if (years > 0) parts.push({ label: 'Yrs', value: String(years).padStart(2, '0') })
-          if (months > 0) parts.push({ label: 'Mon', value: String(months).padStart(2, '0') })
-          if (days > 0) parts.push({ label: 'Days', value: String(days).padStart(2, '0') })
+          if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
+          if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
+          if (days > 0) parts.push({ label: days === 1 ? 'Day' : 'Days', value: String(days).padStart(2, '0') })
           
           if (parts.length === 0) {
-            return <span className="inline-block px-2.5 py-1 rounded-md bg-success/15 border border-success/20 text-xs font-bold text-success shadow-sm">Today!</span>
+            return <span className="inline-block px-2 py-0.5 rounded-md bg-success/15 border border-success/20 text-xs font-bold text-success shadow-sm">Today!</span>
           }
 
           return (
             <div className="flex items-center gap-1.5 flex-wrap">
               {parts.map((p, i) => (
-                <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/15 border border-primary/20 text-xs font-bold text-primary-dark whitespace-nowrap shadow-sm">
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/15 border border-primary/20 text-xs font-bold text-primary-dark whitespace-nowrap shadow-sm">
                   <span>{p.value}</span>
-                  <span className="text-[10px] uppercase opacity-75 font-semibold">{p.label}</span>
+                  <span className="text-[10px] opacity-75 font-semibold">{p.label}</span>
                 </span>
               ))}
             </div>

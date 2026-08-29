@@ -207,7 +207,7 @@ export default function Sidebar() {
           <h2 className="font-bold text-sm tracking-tight text-text truncate">
             {`${getCommunitySurname()} Admin`}
           </h2>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary/70 block mt-0.5">Management Panel</span>
+          <span className="text-[11px] font-medium text-text-secondary block mt-0.5">Management Panel</span>
         </div>
       </div>
     </aside>

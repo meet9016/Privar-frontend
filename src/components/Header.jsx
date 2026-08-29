@@ -128,8 +128,8 @@ export default function Header() {
                   <span>{user?.name || 'Administrator'}</span>
                   <ChevronDown className={`w-3.5 h-3.5 text-text-secondary transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </div>
-                <div className="text-[11px] text-primary font-semibold tracking-wide flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-primary/80" />
+                <div className="text-xs text-primary font-bold flex items-center gap-1 mt-0.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary/80" />
                   <span>{roleLabel || 'Admin'}</span>
                 </div>
               </div>

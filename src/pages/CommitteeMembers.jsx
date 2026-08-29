@@ -207,7 +207,7 @@ export default function CommitteeMembers() {
     <div className="space-y-6 text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-text">Committee Members</h2>
+          <h2 className="text-2xl font-bold text-text tracking-tight">Committee Members</h2>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <SearchInput

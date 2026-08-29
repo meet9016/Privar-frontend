@@ -190,7 +190,7 @@ export default function Businesses({ headerLeftContent }) {
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div className="flex-1 overflow-x-auto hide-scrollbar">
         {headerLeftContent ? headerLeftContent : (
-          <h2 className="text-xl font-semibold text-text">Business Directory</h2>
+          <h2 className="text-2xl font-bold text-text tracking-tight">Business Directory</h2>
         )}
       </div>
       <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -384,12 +384,12 @@ export default function Businesses({ headerLeftContent }) {
             <div className="md:col-span-2 space-y-4">
               {/* Contact Information Grid */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-primary" /> Contact Information
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
-                    <span className="text-[10px] font-medium text-text-secondary uppercase tracking-wider block">Primary Phone</span>
+                    <span className="text-[11px] font-medium text-text-secondary block">Primary Phone</span>
                     {viewBusiness.number ? (
                       <a href={`tel:${viewBusiness.number}`} className="font-semibold text-text text-xs hover:text-primary transition-colors flex items-center gap-1.5 mt-0.5">
                         <Phone className="w-3 h-3 text-text-secondary shrink-0" />
@@ -401,7 +401,7 @@ export default function Businesses({ headerLeftContent }) {
                   </div>
 
                   <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
-                    <span className="text-[10px] font-medium text-text-secondary uppercase tracking-wider block">WhatsApp</span>
+                    <span className="text-[11px] font-medium text-text-secondary block">WhatsApp</span>
                     {viewBusiness.whatsapp_number ? (
                       <a
                         href={`https://wa.me/${String(viewBusiness.whatsapp_number).replace(/[^0-9]/g, '')}`}
@@ -418,7 +418,7 @@ export default function Businesses({ headerLeftContent }) {
                   </div>
 
                   <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
-                    <span className="text-[10px] font-medium text-text-secondary uppercase tracking-wider block">Email Address</span>
+                    <span className="text-[11px] font-medium text-text-secondary block">Email Address</span>
                     {viewBusiness.email ? (
                       <a href={`mailto:${viewBusiness.email}`} className="font-semibold text-text text-xs hover:text-primary transition-colors flex items-center gap-1.5 mt-0.5 truncate" title={viewBusiness.email}>
                         <Mail className="w-3 h-3 text-text-secondary shrink-0" />
@@ -433,25 +433,25 @@ export default function Businesses({ headerLeftContent }) {
 
               {/* Location & Address */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-primary" /> Location & Address Details
                 </h4>
                 <div className="bg-surface border border-border/80 rounded-xl p-3.5 space-y-2.5 shadow-xs">
                   <div className="flex items-start gap-2.5">
                     <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     <div className="flex-1 space-y-1">
-                      <p className="text-text font-medium text-xs sm:text-sm leading-relaxed">{viewBusiness.address || 'No street address specified'}</p>
+                       <p className="text-text font-medium text-xs sm:text-sm leading-relaxed">{viewBusiness.address || 'No street address specified'}</p>
                       <div className="grid grid-cols-3 gap-2 pt-1 text-xs">
                         <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
-                          <span className="text-[9px] text-text-secondary uppercase block font-semibold">City</span>
+                          <span className="text-[10px] text-text-secondary block font-medium">City</span>
                           <span className="font-medium text-text text-xs">{viewBusiness.city_name || viewBusiness.city_id?.name || viewBusiness.city || '—'}</span>
                         </div>
                         <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
-                          <span className="text-[9px] text-text-secondary uppercase block font-semibold">State</span>
+                          <span className="text-[10px] text-text-secondary block font-medium">State</span>
                           <span className="font-medium text-text text-xs">{viewBusiness.state_name || viewBusiness.state_id?.name || viewBusiness.state || '—'}</span>
                         </div>
                         <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
-                          <span className="text-[9px] text-text-secondary uppercase block font-semibold">Country</span>
+                          <span className="text-[10px] text-text-secondary block font-medium">Country</span>
                           <span className="font-medium text-text text-xs">{viewBusiness.country_name || viewBusiness.country_id?.name || viewBusiness.country || '—'}</span>
                         </div>
                       </div>
@@ -475,7 +475,7 @@ export default function Businesses({ headerLeftContent }) {
               {/* About Us */}
               {viewBusiness.about_us && (
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-1.5">About the Business</h4>
+                  <h4 className="text-xs font-bold text-text-secondary mb-1.5">About the Business</h4>
                   <div className="bg-surface border border-border/80 rounded-xl p-3 text-text/90 leading-relaxed whitespace-pre-wrap text-xs max-h-24 overflow-y-auto custom-scrollbar shadow-xs">
                     {viewBusiness.about_us}
                   </div>
@@ -487,7 +487,7 @@ export default function Businesses({ headerLeftContent }) {
             <div className="space-y-4">
               {/* Registered Member / Owner Card */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
                   <Briefcase className="w-3.5 h-3.5 text-primary" /> Listed By Member
                 </h4>
                 <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs space-y-2">
@@ -525,7 +525,7 @@ export default function Businesses({ headerLeftContent }) {
 
               {/* Online & Social Media Links */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5 text-primary" /> Social & Web Links
                 </h4>
                 <div className="grid grid-cols-2 gap-2">

@@ -236,7 +236,6 @@ export default function Roles() {
             placeholder="Search roles..."
             wrapperClassName="relative w-[240px]"
           />
-          <Button onClick={fetchAll} variant="outline" icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />} className="h-10 px-3" />
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
               Add Role

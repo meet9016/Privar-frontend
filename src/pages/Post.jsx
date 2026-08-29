@@ -215,7 +215,7 @@ export default function Post({ headerLeftContent }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex-1 overflow-x-auto hide-scrollbar">
           {headerLeftContent ? headerLeftContent : (
-            <h2 className="text-xl font-semibold text-text">Post Moderator</h2>
+            <h2 className="text-2xl font-bold text-text tracking-tight">Post Moderator</h2>
           )}
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
