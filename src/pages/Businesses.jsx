@@ -24,6 +24,7 @@ export default function Businesses({ headerLeftContent }) {
   const [loading, setLoading] = useState(false)
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
+  const [isOwn, setIsOwn] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -46,7 +47,9 @@ export default function Businesses({ headerLeftContent }) {
   const fetchBusinesses = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getBusinessesList(getParams({ search: debouncedSearch }))
+      const params = getParams({ search: debouncedSearch })
+      if (isOwn) params.is_own = true
+      const res = await getBusinessesList(params)
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       setBusinesses(
@@ -63,7 +66,7 @@ export default function Businesses({ headerLeftContent }) {
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, getParams, setPaginationData])
+  }, [page, debouncedSearch, isOwn, getParams, setPaginationData])
 
   useEffect(() => {
     fetchBusinesses()
@@ -194,6 +197,18 @@ export default function Businesses({ headerLeftContent }) {
         )}
       </div>
       <div className="flex items-center gap-3 w-full sm:w-auto">
+        <label className="flex items-center gap-2 cursor-pointer bg-surface border border-border px-4 py-2.5 rounded-xl">
+          <input
+            type="checkbox"
+            checked={isOwn}
+            onChange={(e) => {
+              setIsOwn(e.target.checked)
+              resetPage()
+            }}
+            className="rounded text-primary focus:ring-primary/20 bg-input-bg border-border accent-primary"
+          />
+          <span className="text-sm font-medium text-text-secondary">My Records</span>
+        </label>
         <SearchInput
           placeholder="Search listings..."
           value={search}
@@ -288,15 +303,19 @@ export default function Businesses({ headerLeftContent }) {
                 <button onClick={() => handleView(biz)} className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all" title="View">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleEdit(biz)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
+                {(!permissions.canEdit && !permissions.isSuperAdmin) ? null : (
+                  (permissions.isSuperAdmin || biz.is_own) ? (
+                    <button onClick={() => handleEdit(biz)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  ) : null
                 )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(biz.id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                {(!permissions.canDelete && !permissions.isSuperAdmin) ? null : (
+                  (permissions.isSuperAdmin || biz.is_own) ? (
+                    <button onClick={() => handleDelete(biz.id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  ) : null
                 )}
               </div>
             )

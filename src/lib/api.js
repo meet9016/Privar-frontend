@@ -5,8 +5,10 @@ export const API_BASE = import.meta.env.VITE_API_BASE || `http://${window.locati
 
 export const assetUrl = (path) => {
   if (!path) return ''
-  if (/^https?:\/\//i.test(path)) return path
-  return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`
+  const cleanPath = Array.isArray(path) ? path[0] : path
+  if (!cleanPath || typeof cleanPath !== 'string') return ''
+  if (/^https?:\/\//i.test(cleanPath)) return cleanPath
+  return `${API_BASE}${cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`}`
 }
 
 /**

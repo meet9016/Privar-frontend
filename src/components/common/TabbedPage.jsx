@@ -9,22 +9,18 @@ export default function TabbedPage({ title, tabs, storageKey }) {
   const tabRefs = useRef({})
   const [maxWidth, setMaxWidth] = useState(null)
 
-  // Initialize active tab from URL -> localStorage -> first available tab
+  // Initialize active tab from URL -> first available tab
   const [activeTab, setActiveTab] = useState(() => {
     const urlTab = searchParams.get('tab')
     if (urlTab && tabs.some(t => t.id === urlTab)) return urlTab
 
-    const savedTab = localStorage.getItem(`tabbed_page_${storageKey}`)
-    if (savedTab && tabs.some(t => t.id === savedTab)) return savedTab
-
     return tabs[0]?.id || ''
   })
 
-  // Update URL and storage when tab changes
+  // Update URL when tab changes
   const handleTabChange = (tabId) => {
     setActiveTab(tabId)
     setSearchParams({ tab: tabId }, { replace: true })
-    localStorage.setItem(`tabbed_page_${storageKey}`, tabId)
   }
 
   // Sync URL on mount only
@@ -90,21 +86,13 @@ export default function TabbedPage({ title, tabs, storageKey }) {
       <div className="w-full relative">
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab
+          if (!isActive) return null
           return (
             <div
               key={tab.id}
-              style={{
-                opacity: isActive ? 1 : 0,
-                pointerEvents: isActive ? 'auto' : 'none',
-                position: isActive ? 'relative' : 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transition: 'opacity 0.2s ease',
-                visibility: isActive ? 'visible' : 'hidden',
-              }}
+              className="w-full relative"
             >
-               {tab.component({ headerLeftContent: isActive ? tabsJSX : null })}
+               {tab.component({ headerLeftContent: tabsJSX })}
             </div>
           )
         })}

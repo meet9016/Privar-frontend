@@ -11,6 +11,7 @@ import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
+import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
@@ -39,9 +40,13 @@ export default function GalleryPage({ headerLeftContent }) {
   const [categoryName, setCategoryName] = useState('')
   const [year, setYear] = useState('')
   const [month, setMonth] = useState('')
-  const [filterYear, setFilterYear] = useState('')
-  const [filterMonth, setFilterMonth] = useState('')
-  const [filterCategoryId, setFilterCategoryId] = useState('')
+
+  const [appliedYear, setAppliedYear] = useState('')
+  const [appliedMonth, setAppliedMonth] = useState('')
+
+  const [draftYear, setDraftYear] = useState('')
+  const [draftMonth, setDraftMonth] = useState('')
+
   const [existingImages, setExistingImages] = useState([])
   const [newFiles, setNewFiles] = useState([])
   const [filePreviews, setFilePreviews] = useState([])
@@ -64,9 +69,8 @@ export default function GalleryPage({ headerLeftContent }) {
     setLoading(true)
     try {
       const params = { page, limit, search: debouncedSearch }
-      if (filterYear) params.year = filterYear
-      if (filterMonth) params.month = filterMonth
-      if (filterCategoryId) params.gallery_category_id = filterCategoryId
+      if (appliedYear) params.year = appliedYear
+      if (appliedMonth) params.month = appliedMonth
       const res = await getGalleryList(params)
       const data = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
@@ -84,7 +88,7 @@ export default function GalleryPage({ headerLeftContent }) {
     } finally {
       setLoading(false)
     }
-  }, [page, limit, debouncedSearch, filterYear, filterMonth, filterCategoryId])
+  }, [page, limit, debouncedSearch, appliedYear, appliedMonth])
 
   useEffect(() => {
     fetchGallery()
@@ -96,18 +100,6 @@ export default function GalleryPage({ headerLeftContent }) {
 
   const setSearch = (value) => {
     setSearchValue(value)
-    setPage(1)
-  }
-
-  const handleFilterYear = (value) => {
-    setFilterYear(value)
-    setFilterCategoryId('')
-    setPage(1)
-    fetchFilteredCategories(value)
-  }
-
-  const handleFilterCategory = (e) => {
-    setFilterCategoryId(e.target.value)
     setPage(1)
   }
 
@@ -137,30 +129,50 @@ export default function GalleryPage({ headerLeftContent }) {
       setCategories(list)
       setFilterCategories(list)
     } catch (err) {
-      // ignore category load failure for now
     }
   }
 
   const fetchFilteredCategories = async (year) => {
     try {
       if (!year) {
-        // No year selected — show all categories in filter
         setFilterCategories(categories)
         return
       }
-      // Reuse existing gallery API with year filter to find which categories have data
       const res = await getGalleryList({ year, limit: 999 })
       const data = res.data?.data || []
-      // Extract distinct category IDs that have gallery entries for this year
       const categoryIdSet = new Set(
         data.map((item) => item.gallery_category_id).filter((id) => id && id !== '')
       )
-      // Filter full categories list to only those with data
       setFilterCategories(categories.filter((cat) => categoryIdSet.has(cat.id)))
     } catch (err) {
-      // fallback to full list
       setFilterCategories(categories)
     }
+  }
+
+  useEffect(() => {
+    fetchFilteredCategories(draftYear)
+  }, [draftYear, categories])
+
+  const handleClearFilters = () => {
+    setDraftYear('')
+    setDraftMonth('')
+    setAppliedYear('')
+    setAppliedMonth('')
+    setPage(1)
+    setShowFilters(false)
+  }
+
+  const handleApplyFilters = () => {
+    setAppliedYear(draftYear)
+    setAppliedMonth(draftMonth)
+    setPage(1)
+    setShowFilters(false)
+  }
+
+  const handleToggleFilters = () => {
+    setDraftYear(appliedYear)
+    setDraftMonth(appliedMonth)
+    setShowFilters(!showFilters)
   }
 
   const openCreate = () => {
@@ -271,8 +283,6 @@ export default function GalleryPage({ headerLeftContent }) {
     const id = row.id || row._id
     if (!id) return
     const newStatus = Number(row.status) === 1 ? 0 : 1
-
-    // Optimistic UI update
     setRows(prevRows => prevRows.map(r => {
       if ((r.id || r._id) === id) {
         return { ...r, status: newStatus }
@@ -284,7 +294,6 @@ export default function GalleryPage({ headerLeftContent }) {
       await api.put(`/gallery/${id}`, { status: newStatus })
       toast.success('Status updated')
     } catch (err) {
-      // Revert on failure
       setRows(prevRows => prevRows.map(r => {
         if ((r.id || r._id) === id) {
           return { ...r, status: Number(row.status) === 1 ? 1 : 0 }
@@ -321,6 +330,43 @@ export default function GalleryPage({ headerLeftContent }) {
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
           />
+          <FilterPopover
+            isOpen={showFilters}
+            onToggle={handleToggleFilters}
+            onClose={() => setShowFilters(false)}
+            activeCount={[appliedYear, appliedMonth].filter(Boolean).length}
+            onClear={handleClearFilters}
+            onApply={handleApplyFilters}
+          >
+            <Input
+              label="Year"
+              type="number"
+              placeholder="e.g. 2026"
+              value={draftYear}
+              onChange={(e) => setDraftYear(e.target.value.replace(/\D/g, ''))}
+            />
+            <Select
+              label="Month"
+              value={draftMonth}
+              onChange={setDraftMonth}
+              placeholder="All Months"
+              options={[
+                { value: '', label: 'All Months' },
+                { value: 'Jan', label: 'January' },
+                { value: 'Feb', label: 'February' },
+                { value: 'Mar', label: 'March' },
+                { value: 'Apr', label: 'April' },
+                { value: 'May', label: 'May' },
+                { value: 'Jun', label: 'June' },
+                { value: 'Jul', label: 'July' },
+                { value: 'Aug', label: 'August' },
+                { value: 'Sep', label: 'September' },
+                { value: 'Oct', label: 'October' },
+                { value: 'Nov', label: 'November' },
+                { value: 'Dec', label: 'December' }
+              ]}
+            />
+          </FilterPopover>
           <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
             Add Images
           </Button>

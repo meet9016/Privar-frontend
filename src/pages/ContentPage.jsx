@@ -107,7 +107,7 @@ const definitions = {
       },
       { name: 'about', label: 'About', type: 'textarea' },
       { name: 'biodata', label: 'Biodata (PDF/Image)', type: 'file', accept: 'image/*,application/pdf', className: 'md:col-span-1' },
-      { name: 'person_image', label: 'Person Image', type: 'file', multiple: true, className: 'md:col-span-1' }
+      { name: 'person_image', label: 'Person Image', type: 'file', className: 'md:col-span-1' }
     ],
     columns: [
       { key: 'person_image', label: 'Photo', type: 'image' },
