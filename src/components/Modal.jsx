@@ -1,10 +1,11 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 import { X } from 'lucide-react'
 
 export default function Modal({ isOpen, title, children, onClose, maxWidth = 'max-w-4xl' }) {
   if (!isOpen) return null
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div 
@@ -30,6 +31,7 @@ export default function Modal({ isOpen, title, children, onClose, maxWidth = 'ma
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
