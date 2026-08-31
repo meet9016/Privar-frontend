@@ -50,7 +50,14 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     loggedInUser.id,
     loggedInUser.member_id
   ].some((current) => current && String(current) === String(value))))
-  const canManageRoleFields = loggedInUser?.role === 'admin'
+  const canManageRoleFields = Boolean(
+    loggedInUser?.role === 'admin' ||
+    loggedInUser?.role === 'superadmin' ||
+    loggedInUser?.committee_role === 'President' ||
+    loggedInUser?.committee_role === 'Admin' ||
+    loggedInUser?.is_super_admin ||
+    Boolean(loggedInUser?.role_id)
+  )
 
   const validateImage = (file) => new Promise((resolve) => {
     if (!file || !(file instanceof File)) return resolve('')

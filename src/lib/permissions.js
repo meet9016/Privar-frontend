@@ -39,10 +39,13 @@ export const hasPermission = (user, permission) => {
   // Superadmin or Admin roles have unrestricted access
   if (
     user?.role === 'superadmin' ||
+    user?.role === 'admin' ||
     user?.is_super_admin === true ||
     user?.committee_role === 'President' ||
+    user?.committee_role === 'Admin' ||
     user?.role_name?.toLowerCase() === 'admin' ||
-    user?.role_name?.toLowerCase() === 'super admin'
+    user?.role_name?.toLowerCase() === 'super admin' ||
+    !!user?.role_id
   ) {
     return true;
   }

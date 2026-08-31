@@ -197,18 +197,6 @@ export default function Businesses({ headerLeftContent }) {
         )}
       </div>
       <div className="flex items-center gap-3 w-full sm:w-auto">
-        <label className="flex items-center gap-2 cursor-pointer bg-surface border border-border px-4 py-2.5 rounded-xl">
-          <input
-            type="checkbox"
-            checked={isOwn}
-            onChange={(e) => {
-              setIsOwn(e.target.checked)
-              resetPage()
-            }}
-            className="rounded text-primary focus:ring-primary/20 bg-input-bg border-border accent-primary"
-          />
-          <span className="text-sm font-medium text-text-secondary">My Records</span>
-        </label>
         <SearchInput
           placeholder="Search listings..."
           value={search}

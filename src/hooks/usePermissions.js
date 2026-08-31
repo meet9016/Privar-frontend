@@ -5,7 +5,15 @@ export default function usePermissions(moduleKey) {
   const { user } = useContext(AuthContext);
 
   const permissions = useMemo(() => {
-    const isSuperAdmin = user?.role === 'superadmin' || user?.is_super_admin === true || user?.committee_role === 'President' || user?.committee_role === 'Admin';
+    const isSuperAdmin = 
+      user?.role === 'superadmin' || 
+      user?.role === 'admin' || 
+      user?.is_super_admin === true || 
+      user?.committee_role === 'President' || 
+      user?.committee_role === 'Admin' ||
+      user?.role_name?.toLowerCase() === 'admin' ||
+      user?.role_name?.toLowerCase() === 'super admin' ||
+      !!user?.role_id;
     
     if (isSuperAdmin) {
       return { 

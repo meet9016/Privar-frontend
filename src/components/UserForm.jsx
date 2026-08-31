@@ -115,7 +115,6 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
       setFormData({
         first_name: user.first_name || '',
         middle_name: user.middle_name || '',
-        // Ensure default last name is ONLY used if we are in a Parivar context
         last_name: user.last_name !== undefined ? user.last_name : (getCommunitySurname() || ''),
         email: user.email || '',
         number: user.number || '',
@@ -178,7 +177,14 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     loggedInUser.id,
     loggedInUser.member_id
   ].some((current) => current && String(current) === String(value))))
-  const canManageRoleFields = loggedInUser?.role === 'admin'
+  const canManageRoleFields = Boolean(
+    loggedInUser?.role === 'admin' ||
+    loggedInUser?.role === 'superadmin' ||
+    loggedInUser?.committee_role === 'President' ||
+    loggedInUser?.committee_role === 'Admin' ||
+    loggedInUser?.is_super_admin ||
+    Boolean(loggedInUser?.role_id)
+  )
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -258,6 +264,10 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     { label: 'Male', value: 'Male' },
     { label: 'Female', value: 'Female' },
     { label: 'Other', value: 'Other' },
+  ]
+  const roleOptions = [
+    { label: 'Select Assigned Role (Optional)', value: '' },
+    ...activeRoles.map(r => ({ label: r.name, value: r.id || String(r._id) }))
   ]
 
   return (
@@ -471,6 +481,21 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           )}
         </div>
       </div>
+
+      {/* Row 5.5: Assign Role (if admin) */}
+      {canManageRoleFields && (
+        <div>
+          <Select
+            label="Assign Role"
+            value={formData.role_id}
+            onChange={(val) => handleChange('role_id', val)}
+            options={roleOptions}
+            placeholder="Select Assigned Role (Optional)"
+            disabled={isLoading}
+            searchable={true}
+          />
+        </div>
+      )}
 
       {/* Row 6: Address Field (Textarea) */}
       <div>

@@ -53,7 +53,7 @@ export default function Roles() {
   }, [page, debouncedSearch, limit])
 
   const fetchAll = async () => {
-    setLoading(true)
+    setLoading(true)/job-vacancy
     try {
       const [rolesRes, permissionsRes] = await Promise.all([
         api.get('/roles', { params: { page, limit, search: debouncedSearch } }),
