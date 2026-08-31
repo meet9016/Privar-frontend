@@ -160,15 +160,17 @@ export default function Businesses({ headerLeftContent }) {
         payload.append('existing_images', img)
       })
 
+      const token = localStorage.getItem('auth_token')
+      const headers = { 'Content-Type': 'multipart/form-data' }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       let res;
       if (selectedBusiness) {
-        res = await api.put(`/businesses/${selectedBusiness.id}`, payload, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
+        res = await api.put(`/businesses/${selectedBusiness.id}`, payload, { headers })
       } else {
-        res = await api.post('/businesses', payload, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
+        res = await api.post('/businesses', payload, { headers })
       }
 
       const savedData = res.data?.data || res.data;

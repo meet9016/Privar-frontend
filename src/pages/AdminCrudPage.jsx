@@ -273,10 +273,16 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
 
 
       const cleanEndpoint = endpoint.split('?')[0];
+      const token = localStorage.getItem('auth_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       if (selected) {
-        await api.put(`${cleanEndpoint}/${selected._id || selected.id}`, payload)
+        await api.put(`${cleanEndpoint}/${selected._id || selected.id}`, payload, { headers })
       } else {
-        await api.post(cleanEndpoint, payload)
+        await api.post(cleanEndpoint, payload, { headers })
       }
       await fetchRows()
       toast.success(`${title} saved successfully`)
