@@ -205,9 +205,9 @@ export default function Sidebar() {
       <div className="mt-5 flex shrink-0 items-center justify-center p-3 border-t border-border/50">
         <div className="text-center">
           <h2 className="font-bold text-sm tracking-tight text-text truncate">
-            {`${getCommunitySurname()} Admin`}
+            {webTheme.name || `${getCommunitySurname()} Parivar`}
           </h2>
-          <span className="text-[11px] font-medium text-text-secondary block mt-0.5">Management Panel</span>
+          <span className="text-[11px] font-medium text-text-secondary block mt-0.5">Admin Panel</span>
         </div>
       </div>
     </aside>

@@ -33,7 +33,7 @@ export default function SearchInput({
         placeholder={placeholder}
         autoFocus={autoFocus}
         disabled={disabled}
-        className={`w-full h-10 bg-input-bg text-text placeholder-text-secondary/50 border border-primary focus:border-primary-dark rounded-xl pl-10 ${hasValue ? 'pr-9' : 'pr-4'} text-sm outline-none focus:ring-4 focus:ring-primary/20 transition-all ${className}`}
+        className={`w-full py-2.5 bg-input-bg text-text placeholder-text-secondary/50 border border-primary focus:border-primary-dark rounded-xl pl-10 ${hasValue ? 'pr-9' : 'pr-4'} text-sm leading-tight outline-none focus:ring-4 focus:ring-primary/20 transition-all ${className}`}
       />
       {hasValue && (
         <button

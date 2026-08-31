@@ -15,7 +15,7 @@ import {
   Filter,
   X
 } from 'lucide-react'
-import api, { getExpensesList, exportExpensesExcel, getCommitteeMembersList, assetUrl, formatDate, getCommunitySurname } from '../lib/api'
+import api, { getExpensesList, getCommitteeMembersList, assetUrl, formatDate, getCommunitySurname } from '../lib/api'
 import usePagination from '../hooks/usePagination'
 import usePermissions from '../hooks/usePermissions'
 import Modal from '../components/Modal'
@@ -177,7 +177,7 @@ export default function Expenses({ headerLeftContent }) {
       }
       if (name === 'committee_member_id') {
         const member = committeeMembers.find(m => String(m.id || m._id) === String(value))
-        updated.committee_member_name = member ? `${member.first_name || ''} ${member.middle_name || ''} ${getCommunitySurname()}`.trim() : ''
+        updated.committee_member_name = member ? `${member.first_name || ''} ${member.middle_name || ''} ${member.last_name || ''}`.trim() : ''
       }
       
       return updated
@@ -236,25 +236,7 @@ export default function Expenses({ headerLeftContent }) {
     }
   }
 
-  const handleExport = async () => {
-    try {
-      const params = {}
-      if (debouncedSearch) params.search = debouncedSearch
-      if (filters.month) params.month = filters.month
-      if (filters.category) params.category = filters.category
-      
-      const response = await exportExpensesExcel(params)
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `expenses_${new Date().toISOString().slice(0, 10)}.csv`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-    } catch (error) {
-      setError('Failed to export expenses')
-    }
-  }
+
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value)
@@ -329,13 +311,7 @@ export default function Expenses({ headerLeftContent }) {
               />
             </div>
           </FilterPopover>
-          <Button
-            onClick={handleExport}
-            variant="secondary"
-            icon={<Download className="w-4 h-4" />}
-          >
-            Export CSV
-          </Button>
+
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button
               onClick={handleCreate}

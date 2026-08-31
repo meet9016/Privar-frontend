@@ -79,7 +79,7 @@ export default function GlobalSearch() {
         onFocus={() => {
           if (query.trim() && totalResults > 0) setIsOpen(true);
         }}
-        className={`w-80 md:w-[480px] lg:w-[600px] bg-input-bg text-text placeholder-text-secondary/50 border border-primary focus:border-primary-dark rounded-xl py-2 pl-10 ${query ? 'pr-9' : 'pr-4'} text-sm outline-none focus:ring-4 focus:ring-primary/20 focus:shadow-glow-primary transition-all duration-300`}
+        className={`w-80 md:w-[480px] lg:w-[600px] bg-input-bg text-text placeholder-text-secondary/50 border border-primary focus:border-primary-dark rounded-xl py-2.5 pl-10 ${query ? 'pr-9' : 'pr-4'} text-sm leading-tight outline-none focus:ring-4 focus:ring-primary/20 focus:shadow-glow-primary transition-all duration-300`}
       />
       {query && (
         <button

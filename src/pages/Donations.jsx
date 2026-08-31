@@ -24,7 +24,6 @@ import Table from '../components/common/Table'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import SearchInput from '../components/common/SearchInput'
-import { Download } from 'lucide-react'
 import useDebounce from '../hooks/useDebounce'
 import { toast } from '../lib/toast'
 import usePermissions from '../hooks/usePermissions'
@@ -180,23 +179,7 @@ export default function Donations({ headerLeftContent }) {
 
   const totalAmount = donations.reduce((sum, d) => sum + Number(d.donate_amount || 0), 0)
 
-  const handleExport = async () => {
-    try {
-      const res = await exportDonationsExcel(debouncedSearch || search || '')
-      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `donations-${new Date().toISOString().slice(0, 10)}.csv`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-      toast.success('Donations exported successfully')
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to export donations')
-    }
-  }
+
   return (
     <div className="space-y-6 animate-slide-up text-text">
       {/* Header */}
@@ -214,13 +197,7 @@ export default function Donations({ headerLeftContent }) {
             placeholder="Search donator or purpose..."
             wrapperClassName="w-64 sm:w-72"
           />
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 bg-surface-secondary hover:bg-surface border border-border text-text px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
-            title="Export to CSV"
-          >
-            <Download className="w-4 h-4" /> Export
-          </button>
+
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <button
               onClick={handleCreate}

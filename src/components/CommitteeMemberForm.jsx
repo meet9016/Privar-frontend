@@ -30,7 +30,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     setFormData({
       first_name: member?.first_name || '',
       middle_name: member?.middle_name || '',
-      last_name: getCommunitySurname(),
+      last_name: member?.last_name !== undefined ? member.last_name : (getCommunitySurname() || ''),
       number: member?.number || '',
       email: member?.email || '',
       password: '',
@@ -173,12 +173,13 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             disabled={isLoading}
           />
           <Input
-            label="Last Name"
+            label="Last Name / Surname"
+            required
             placeholder="Enter Last Name"
             value={formData.last_name}
-            readOnly={true}
-            disabled={true}
-            className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
+            onChange={(e) => handleFieldChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+            disabled={isLoading}
+            error={errors.last_name}
           />
         </div>
       </div>

@@ -235,6 +235,13 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       if (!hasFiles) {
         payload = {}
         Object.entries(rawPayload).forEach(([key, val]) => {
+          const fieldDef = fields.find(f => f.name === key)
+          if (fieldDef && fieldDef.type === 'file' && !val) {
+            if (removedImages[key]) {
+              payload[key] = ''
+            }
+            return
+          }
           payload[key] = (val && typeof val === 'object' && val.value !== undefined) ? val.value : val
         })
         
@@ -249,7 +256,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
           
           if (field.type === 'file') {
             const files = value instanceof FileList ? Array.from(value) : Array.isArray(value) ? value : value ? [value] : []
-            files.forEach((file) => payload.append(field.name, file))
+            if (files.length > 0) {
+              files.forEach((file) => payload.append(field.name, file))
+            } else if (removedImages[field.name]) {
+              payload.append(field.name, '')
+            }
           } else {
             payload.append(field.name, value ?? '')
           }

@@ -16,42 +16,34 @@ export const assetUrl = (path) => {
  * e.g. 'vala.parivar.com' -> 'Vala', 'test.parivar.com' -> 'Test', 'patel.parivar.com' -> 'Patel'
  */
 export const getCommunitySurname = () => {
-  // 1. Check live link / domain / subdomain first (e.g. test.parivar.in, vala.parivar.com, etc.)
-  const hostname = window.location.hostname
-  const hostParts = hostname.split('.')
-  if (hostParts.length > 1 && !['localhost', '127.0.0.1'].includes(hostname)) {
-    const firstPart = hostParts[0].toLowerCase()
-    if (firstPart !== 'www' && firstPart !== 'admin' && firstPart !== 'api') {
-      const cleanFirst = firstPart.replace(/parivar/gi, '').trim()
-      if (cleanFirst) {
-        return cleanFirst.charAt(0).toUpperCase() + cleanFirst.slice(1)
+  // 1. Most reliable indicator: The actual display name
+  const webName = localStorage.getItem('web_name') || ''
+  if (webName) {
+    // If the web_name explicitly contains "parivar" (e.g., "Sojitra Parivar")
+    if (webName.toLowerCase().includes('parivar')) {
+      const cleaned = webName.replace(/parivar|_|-/gi, '').trim()
+      if (cleaned) {
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
       }
     }
+    // If it has a web_name but NO "parivar" (e.g. "Vala Admin" or "Village"), do NOT autofill
+    return ''
   }
+  // We rely entirely on the explicitly saved web_name. 
+  // Guessing from the URL can lead to false positives for Villages (e.g. vala.parivar.me -> Vala)
+  return ''
 
-  // 2. Check logged-in tenant code in localStorage
-  const tenantCode = localStorage.getItem('tenant_code') || ''
-  if (tenantCode) {
-    const cleanedTenant = tenantCode.replace(/parivar/gi, '').trim()
-    if (cleanedTenant) {
-      return cleanedTenant.charAt(0).toUpperCase() + cleanedTenant.slice(1)
-    }
-  }
-
-  // 3. Check saved app name in localStorage / Theme Config
-  const webName = localStorage.getItem('web_name') || ''
-  const cleaned = webName.replace(/parivar/gi, '').trim()
-  if (cleaned) {
-    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-  }
-
-  // Default fallback if no domain/subdomain and no web_name
+  // Default fallback
   return ''
 }
 
 export const getCommunityFullName = () => {
+  const webName = localStorage.getItem('web_name')
+  if (webName) return webName
+
+  // Fallback if not logged in / missing
   const surname = getCommunitySurname()
-  return `${surname} Parivar`
+  return surname ? `${surname} Parivar` : ''
 }
 
 const api = axios.create({

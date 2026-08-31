@@ -13,7 +13,7 @@ export default function TermsAndConditions() {
     setTheme(loadedTheme)
   }, [])
 
-  const orgName = theme?.name || 'Vala'
+  const orgName = theme?.name || ''
   const jurisdiction = theme?.orgJurisdiction || '[Insert Jurisdiction/Country]'
 
   return (

@@ -115,7 +115,8 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
       setFormData({
         first_name: user.first_name || '',
         middle_name: user.middle_name || '',
-        last_name: getCommunitySurname(),
+        // Ensure default last name is ONLY used if we are in a Parivar context
+        last_name: user.last_name !== undefined ? user.last_name : (getCommunitySurname() || ''),
         email: user.email || '',
         number: user.number || '',
         gender: user.gender || 'Male',
@@ -138,7 +139,10 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     } else {
       setIsHead(true)
       const india = countries.find(c => /india/i.test(c.name))
-      const defaultCommunityName = getCommunitySurname()
+      
+      // Get the default surname ONLY if it's a Parivar (getCommunitySurname handles this)
+      const defaultCommunityName = getCommunitySurname() || ''
+      
       setFormData({
         first_name: '',
         middle_name: '',
@@ -277,11 +281,12 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           error={errors.middle_name}
         />
         <Input
-          label="Last Name"
+          label="Last Name / Surname"
           value={formData.last_name}
-          readOnly={true}
-          disabled={true}
-          className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
+          onChange={(e) => handleChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+          disabled={isLoading}
+          required={true}
+          error={errors.last_name}
         />
       </div>
 
