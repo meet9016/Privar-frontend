@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
-export default function Input({ 
-  label, 
-  error, 
-  required, 
+export default function Input({
+  label,
+  error,
+  required,
   className = '',
   icon,
   type = 'text',
@@ -12,7 +12,7 @@ export default function Input({
   value,
   onlyNumbers,
   maxLength,
-  ...props 
+  ...props
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
@@ -66,9 +66,8 @@ export default function Input({
           {...props}
           value={value}
           onChange={onChange}
-          className={`w-full px-3 py-2 bg-input-bg text-text border ${
-            error ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary/50'
-          } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}
+          className={`w-full px-3 py-2 bg-input-bg text-text border ${error ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary/50'
+            } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}
         />
       ) : (
         <div className="relative">
@@ -85,9 +84,8 @@ export default function Input({
             maxLength={maxLen}
             onKeyDown={handleKeyDown}
             onChange={handleChange}
-            className={`w-full ${icon ? 'pl-10' : 'px-3'} ${isPassword ? 'pr-10' : 'pr-3'} py-2 bg-input-bg text-text border ${
-              error ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary/50'
-            } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}
+            className={`w-full ${icon ? 'pl-10' : 'px-3'} ${isPassword ? 'pr-10' : 'pr-3'} py-2 bg-input-bg text-text border ${error ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary/50'
+              } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}
           />
           {isPassword && (
             <button

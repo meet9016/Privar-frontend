@@ -4,6 +4,7 @@ import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter, X, Download } fr
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import api, { getCommitteeMembersList, getCommunitySurname } from '../lib/api'
+import { COMMITTEE_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import { normalizeRoles, unwrapApiData } from '../lib/roles'
 import { hasPermission } from '../lib/permissions'
@@ -24,7 +25,7 @@ import usePermissions from '../hooks/usePermissions'
 const getRoleBadgeColor = (roleName) => {
   if (!roleName) return 'bg-surface-secondary border-border text-text';
   const name = roleName.toLowerCase().trim();
-  
+
   if (name.includes('president') && !name.includes('vice')) {
     return 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20';
   }
@@ -40,12 +41,12 @@ const getRoleBadgeColor = (roleName) => {
   if (name.includes('userrole') || name.includes('user')) {
     return 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/20';
   }
-  
+
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   const colors = [
     'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20',
     'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
@@ -54,7 +55,7 @@ const getRoleBadgeColor = (roleName) => {
     'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
     'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20'
   ];
-  
+
   return colors[Math.abs(hash) % colors.length];
 };
 
@@ -123,7 +124,7 @@ export default function CommitteeMembers() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await api.get('/roles', { params: { limit: 150 } })
+        const res = await api.get(COMMITTEE_ENDPOINTS.GET_ROLES, { params: { limit: 150 } })
         setRoles(normalizeRoles(unwrapApiData(res)))
       } catch (err) {
         console.warn('Could not load roles list:', err.message)
@@ -139,9 +140,9 @@ export default function CommitteeMembers() {
     setSaving(true)
     try {
       if (selected) {
-        await api.put(`/committee-members/${selected.id}`, formData)
+        await api.put(COMMITTEE_ENDPOINTS.UPDATE_MEMBER(selected.id), formData)
       } else {
-        await api.post('/committee-members', formData)
+        await api.post(COMMITTEE_ENDPOINTS.CREATE_MEMBER, formData)
       }
       await fetchCommitteeMembers()
       setSelected(null)
@@ -159,7 +160,7 @@ export default function CommitteeMembers() {
     }
     setSaving(true)
     try {
-      await api.delete(`/committee-members/${id}`)
+      await api.delete(COMMITTEE_ENDPOINTS.DELETE_MEMBER(id))
       await fetchCommitteeMembers()
       toast.success('Committee member deleted successfully')
     } catch (err) {
@@ -183,7 +184,7 @@ export default function CommitteeMembers() {
   const handleBulkStatus = async (selectedIds, newStatus) => {
     if (!selectedIds.length) return;
     try {
-      await Promise.all(selectedIds.map(id => api.put(`/committee-members/${id}`, { status: newStatus })));
+      await Promise.all(selectedIds.map(id => api.put(COMMITTEE_ENDPOINTS.UPDATE_MEMBER(id), { status: newStatus })));
       toast.success(`Selected members marked as ${newStatus === 1 ? 'Active' : 'Inactive'}`);
       await fetchCommitteeMembers();
     } catch (err) {
@@ -196,7 +197,7 @@ export default function CommitteeMembers() {
     if (!selectedIds.length) return;
     if (!await confirm(`Are you sure you want to delete ${selectedIds.length} selected members?`)) return;
     try {
-      await Promise.all(selectedIds.map(id => api.delete(`/committee-members/${id}`)));
+      await Promise.all(selectedIds.map(id => api.delete(COMMITTEE_ENDPOINTS.DELETE_MEMBER(id))));
       toast.success(`${selectedIds.length} members deleted successfully`);
       await fetchCommitteeMembers();
     } catch (err) {
@@ -247,13 +248,13 @@ export default function CommitteeMembers() {
       const getExcelRoleStyle = (roleName) => {
         if (!roleName || roleName === '-') return { bg: 'FFF1F5F9', text: 'FF475569' };
         const name = roleName.toLowerCase().trim();
-        
+
         if (name.includes('president') && !name.includes('vice')) return { bg: 'FFFFE4E6', text: 'FFE11D48' }; // rose
         if (name.includes('vice president')) return { bg: 'FFF5F3FF', text: 'FF7C3AED' }; // violet
         if (name.includes('manager')) return { bg: 'FFDBEAFE', text: 'FF2563EB' }; // blue
         if (name.includes('admin')) return { bg: 'FFD1FAE5', text: 'FF059669' }; // emerald
         if (name.includes('userrole') || name.includes('user')) return { bg: 'FFF1F5F9', text: 'FF475569' }; // slate
-        
+
         let hash = 0;
         for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
         const styles = [
@@ -287,12 +288,12 @@ export default function CommitteeMembers() {
             bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
             right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
           };
-          
+
           // Default alignment for data rows
           if (colNumber > 1) {
-             cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
           } else {
-             cell.alignment = { vertical: 'middle', horizontal: 'left' };
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
           }
         });
 
@@ -448,7 +449,7 @@ export default function CommitteeMembers() {
                     onChange={async () => {
                       const newStatus = Number(member.status ?? 1) === 1 ? 0 : 1;
                       try {
-                        await api.put(`/committee-members/${member.id}`, { status: newStatus });
+                        await api.put(COMMITTEE_ENDPOINTS.UPDATE_MEMBER(member.id), { status: newStatus });
                         toast.success('Status updated successfully');
                         fetchCommitteeMembers();
                       } catch (err) {
@@ -465,21 +466,21 @@ export default function CommitteeMembers() {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: member=> ( <div className="flex items-center justify-start gap-2">
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => openEdit(member)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button
-                    onClick={() => handleDelete(member.id)}
-                    className="p-2 text-error bg-error/10 hover:bg-error/20 border border-error/20 rounded-xl transition-all" title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+            render: member => (<div className="flex items-center justify-start gap-2">
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => openEdit(member)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button
+                  onClick={() => handleDelete(member.id)}
+                  className="p-2 text-error bg-error/10 hover:bg-error/20 border border-error/20 rounded-xl transition-all" title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             )
           }
         ]}

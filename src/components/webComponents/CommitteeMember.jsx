@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Users } from 'lucide-react'
 import { memberApi } from '../../lib/api'
+import { COMMITTEE_ENDPOINTS } from '../../utils/endpoints'
 
 
 
@@ -69,7 +70,7 @@ export default function Members() {
     const fetchCommitteeMembers = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/committee-members?status=1')
+        const response = await memberApi.get(`${COMMITTEE_ENDPOINTS.GET_MEMBERS}?status=1`)
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active')
         setMembers(activeRows.map(normalizeCommitteeMember))

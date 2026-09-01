@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
+import { GALLERY_ENDPOINTS, BIRTHDAY_ENDPOINTS, JOB_VACANCY_ENDPOINTS } from '../utils/endpoints'
 import { formatDate } from '../lib/api'
 import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
@@ -130,7 +131,7 @@ const definitions = {
   gallery: {
     title: 'Gallery',
     subtitle: 'Maintain gallery images and categories',
-    endpoint: '/gallery',
+    endpoint: GALLERY_ENDPOINTS.GET_GALLERY,
     fields: [
       { name: 'category', label: 'Category' },
       { name: 'year', label: 'Year' },
@@ -199,7 +200,7 @@ const definitions = {
   birthday: {
     title: 'Birthdays',
     subtitle: 'View and manage member birthdays',
-    endpoint: '/users?birthday',
+    endpoint: BIRTHDAY_ENDPOINTS.GET_BIRTHDAYS,
     hideAdd: true,
     hideActions: true,
     fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date', required: true }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
@@ -288,7 +289,7 @@ const definitions = {
   'job-vacancy': {
     title: 'Job Vacancy',
     subtitle: 'Post and manage job vacancy listings',
-    endpoint: '/job-vacancy',
+    endpoint: JOB_VACANCY_ENDPOINTS.GET_VACANCIES,
     gridCols: 'md:grid-cols-2',
     fields: [
       { name: 'title', label: 'Title', required: true, className: 'md:col-span-1' },

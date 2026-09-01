@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Edit2, Filter, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, X, ImageOff } from 'lucide-react'
 import api, { assetUrl, getGalleryList } from '../lib/api'
+import { GALLERY_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import FileDropzone from '../components/common/FileDropzone'
@@ -18,6 +19,26 @@ import useDebounce from '../hooks/useDebounce'
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
 const createPreviewUrl = (file) => URL.createObjectURL(file)
+
+const getMonthNumber = (m) => {
+  if (!m) return ''
+  const str = String(m).trim().toLowerCase()
+  const map = {
+    'jan': '01', 'january': '01', '1': '01', '01': '01',
+    'feb': '02', 'february': '02', '2': '02', '02': '02',
+    'mar': '03', 'march': '03', '3': '03', '03': '03',
+    'apr': '04', 'april': '04', '4': '04', '04': '04',
+    'may': '05', '05': '05', '5': '05',
+    'jun': '06', 'june': '06', '6': '06', '06': '06',
+    'jul': '07', 'july': '07', '7': '07', '07': '07',
+    'aug': '08', 'august': '08', '8': '08', '08': '08',
+    'sep': '09', 'september': '09', '9': '09', '09': '09',
+    'oct': '10', 'october': '10', '10': '10',
+    'nov': '11', 'november': '11', '11': '11',
+    'dec': '12', 'december': '12', '12': '12'
+  }
+  return map[str] || (parseInt(str, 10) > 0 ? String(parseInt(str, 10)).padStart(2, '0') : '')
+}
 
 export default function GalleryPage({ headerLeftContent }) {
   const [rows, setRows] = useState([])
@@ -40,6 +61,7 @@ export default function GalleryPage({ headerLeftContent }) {
   const [categoryName, setCategoryName] = useState('')
   const [year, setYear] = useState('')
   const [month, setMonth] = useState('')
+  const [date, setDate] = useState('')
 
   const [appliedYear, setAppliedYear] = useState('')
   const [appliedMonth, setAppliedMonth] = useState('')
@@ -109,6 +131,7 @@ export default function GalleryPage({ headerLeftContent }) {
       setCategoryName('')
       setYear('')
       setMonth('')
+      setDate('')
       setExistingImages([])
       setNewFiles([])
       setFilePreviews([])
@@ -124,7 +147,7 @@ export default function GalleryPage({ headerLeftContent }) {
 
   const fetchCategories = async () => {
     try {
-      const categoryRes = await api.get('/gallery-categories')
+      const categoryRes = await api.get(GALLERY_ENDPOINTS.GET_CATEGORIES)
       const list = categoryRes.data?.data || []
       setCategories(list)
       setFilterCategories(list)
@@ -181,6 +204,7 @@ export default function GalleryPage({ headerLeftContent }) {
     setCategoryName('')
     setYear('')
     setMonth('')
+    setDate('')
     setExistingImages([])
     setNewFiles([])
     setFilePreviews([])
@@ -191,8 +215,26 @@ export default function GalleryPage({ headerLeftContent }) {
     setSelected(row)
     setCategoryId(row.gallery_category_id || '')
     setCategoryName(row.category || '')
-    setYear(row.year || '')
-    setMonth(row.month || '')
+
+    let y = row.year ? String(row.year) : ''
+    let m = row.month ? String(row.month) : ''
+    let d = row.date || ''
+
+    if (!d) {
+      if (y.includes('-')) {
+        d = y
+        const p = y.split('-')
+        y = p[0]
+        if (!m && p[1]) m = p[1]
+      } else if (y) {
+        const mNum = getMonthNumber(m) || '01'
+        d = `${y}-${mNum}-01`
+      }
+    }
+
+    setYear(y)
+    setMonth(getMonthNumber(m) || m)
+    setDate(d)
     setExistingImages(Array.isArray(row.images) ? row.images : [])
     setNewFiles([])
     setFilePreviews([])
@@ -253,19 +295,28 @@ export default function GalleryPage({ headerLeftContent }) {
         return
       }
 
+      let yearToSave = year
+      let monthToSave = month
+      if (date && date.includes('-')) {
+        const parts = date.split('-')
+        yearToSave = parts[0]
+        monthToSave = parts[1] || month
+      }
+
       const payload = new FormData()
       payload.append('category', titleCategory)
       if (categoryIdToSave) payload.append('gallery_category_id', categoryIdToSave)
-      payload.append('year', year || '')
-      payload.append('month', month || '')
+      payload.append('year', yearToSave || '')
+      payload.append('month', monthToSave || '')
+      if (date) payload.append('date', date)
 
       existingImages.forEach((image) => payload.append('existing_images', image))
       newFiles.forEach((file) => payload.append('images', file))
 
       if (selected) {
-        await api.put(`/gallery/${selected.id}`, payload)
+        await api.put(GALLERY_ENDPOINTS.UPDATE_GALLERY(selected.id), payload)
       } else {
-        await api.post('/gallery', payload)
+        await api.post(GALLERY_ENDPOINTS.CREATE_GALLERY, payload)
       }
 
       toast.success('Gallery saved successfully')
@@ -291,7 +342,8 @@ export default function GalleryPage({ headerLeftContent }) {
     }))
 
     try {
-      await api.put(`/gallery/${id}`, { status: newStatus })
+      await api.put(GALLERY_ENDPOINTS.UPDATE_GALLERY(id), { status: newStatus })
+      await fetchGallery()
       toast.success('Status updated')
     } catch (err) {
       setRows(prevRows => prevRows.map(r => {
@@ -307,7 +359,7 @@ export default function GalleryPage({ headerLeftContent }) {
   const handleDelete = async (row) => {
     if (!await confirm('Delete gallery item?')) return
     try {
-      await api.delete(`/gallery/${row.id || row._id}`)
+      await api.delete(GALLERY_ENDPOINTS.DELETE_GALLERY(row.id || row._id))
       await fetchGallery()
       toast.success('Gallery deleted successfully')
     } catch (err) {
@@ -442,14 +494,14 @@ export default function GalleryPage({ headerLeftContent }) {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
-                <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
+            render: row => (<div className="flex items-center justify-start gap-2">
+              <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
             )
           }
         ]}
@@ -494,14 +546,15 @@ export default function GalleryPage({ headerLeftContent }) {
                 name="date"
                 mode="date"
                 placeholder="Select date"
-                value={year && month ? `${year}-${month.padStart(2, '0')}` : (year || '')}
+                value={date}
                 onChange={(val) => {
+                  setDate(val || '')
                   if (val && val.includes('-')) {
                     const parts = val.split('-')
                     setYear(parts[0])
                     setMonth(parts[1] || '')
                   } else {
-                    setYear(val || '')
+                    setYear('')
                     setMonth('')
                   }
                 }}

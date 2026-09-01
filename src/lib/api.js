@@ -121,16 +121,18 @@ const setupInterceptors = (axiosInstance) => {
 setupInterceptors(api)
 setupInterceptors(memberApi)
 
-export const getEventsList = (params = {}) => api.get('/events', { params })
-export const getUsersList = (params = {}) => api.get('/users', { params })
+import { COMMITTEE_ENDPOINTS, MEMBER_ENDPOINTS, EVENT_ENDPOINTS, GALLERY_ENDPOINTS } from '../utils/endpoints'
+
+export const getEventsList = (params = {}) => api.get(EVENT_ENDPOINTS.GET_EVENTS, { params })
+export const getUsersList = (params = {}) => api.get(MEMBER_ENDPOINTS.GET_MEMBERS, { params })
 export const getStudentsList = (params = {}) => api.get('/students', { params })
 export const getBusinessesList = (params = {}) => api.get('/businesses', { params })
 export const getPostsList = (params = {}) => api.get('/posts', { params })
 export const getNewsList = (params = {}) => api.get('/news', { params })
 export const getDonationsList = (params = {}) => api.get('/donations', { params })
 export const getBankDetailsList = (params = {}) => api.get('/bank-details', { params })
-export const getCommitteeMembersList = (params = {}) => api.get('/committee-members', { params })
-export const getGalleryList = (params = {}) => api.get('/gallery', { params })
+export const getCommitteeMembersList = (params = {}) => api.get(COMMITTEE_ENDPOINTS.GET_MEMBERS, { params })
+export const getGalleryList = (params = {}) => api.get(GALLERY_ENDPOINTS.GET_GALLERY, { params })
 export const getExpensesList = (params = {}) => api.get('/expenses', { params })
 
 export const exportExpensesExcel = (params = {}) =>

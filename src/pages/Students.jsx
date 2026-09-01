@@ -393,7 +393,7 @@ export default function Students({ headerLeftContent }) {
                     <GraduationCap className="w-4 h-4 text-text-secondary" />
                   </div>
                 )}
-                <span className="font-semibold text-text">{defaultSurname} {student.student_name}</span>
+                <span className="font-semibold text-text">{student.surname} {student.student_name}</span>
               </div>
             )
           },
@@ -474,16 +474,17 @@ export default function Students({ headerLeftContent }) {
       >
         <form key={selectedStudent?._id || selectedStudent?.id || 'new'} onSubmit={handleSubmit} className="space-y-4 text-text" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
-              <input type="hidden" name="surname" value={defaultSurname} />
-              <Input
-                label="Surname"
-                value={defaultSurname}
-                readOnly={true}
-                disabled={true}
-                className="opacity-80 cursor-not-allowed bg-surface-secondary/60"
-              />
-            </div>
+            <Input
+              label="Surname"
+              name="surname"
+              defaultValue={selectedStudent?.surname || defaultSurname}
+              required
+              error={fieldErrors.surname ? 'Surname is required' : undefined}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                if (fieldErrors.surname) setFieldErrors(prev => ({ ...prev, surname: null }))
+              }}
+            />
             <Input
               label="Student Name"
               name="student_name"

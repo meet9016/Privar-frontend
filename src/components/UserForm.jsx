@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { normalizeRoleId } from '../lib/roles'
 import api, { getCommunitySurname } from '../lib/api'
+import { MEMBER_ENDPOINTS } from '../utils/endpoints'
 import Input from './common/Input'
 import Select from './common/Select'
 import Button from './common/Button'
@@ -27,11 +28,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
       
       if (!mastersPromise) {
         mastersPromise = Promise.all([
-          api.get('/masters/country'),
-          api.get('/masters/state'),
-          api.get('/masters/city'),
-          api.get('/masters/village').catch(() => ({ data: { data: [] } })),
-          api.get('/users?familyHead=true&limit=1000')
+          api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY),
+          api.get(MEMBER_ENDPOINTS.MASTERS_STATE),
+          api.get(MEMBER_ENDPOINTS.MASTERS_CITY),
+          api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } })),
+          api.get(`${MEMBER_ENDPOINTS.GET_MEMBERS}?familyHead=true&limit=1000`)
         ])
       }
       

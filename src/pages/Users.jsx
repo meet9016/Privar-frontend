@@ -3,6 +3,7 @@ import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, E
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import api, { getUsersList, formatDate } from '../lib/api'
+import { MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
 import { hasPermission } from '../lib/permissions'
@@ -169,7 +170,7 @@ export default function Users() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await api.get('/roles', { params: { limit: 150 } })
+        const res = await api.get(MEMBER_ENDPOINTS.GET_ROLES, { params: { limit: 150 } })
         setRoles(normalizeRoles(unwrapApiData(res)))
       } catch (err) {
         console.error(err)
@@ -196,12 +197,12 @@ export default function Users() {
     try {
       if (selectedUser) {
         // Edit
-        await api.put(`/users/${selectedUser.id}`, formData)
+        await api.put(MEMBER_ENDPOINTS.UPDATE_MEMBER(selectedUser.id), formData)
         toast.success('Member updated successfully')
         fetchUsers() // Refresh list
       } else {
         // Create
-        const res = await api.post('/users', formData)
+        const res = await api.post(MEMBER_ENDPOINTS.CREATE_MEMBER, formData)
         const created = res.data?.data || res.data || {}
         toast.success('Member created successfully')
         fetchUsers() // Refresh list
@@ -219,7 +220,7 @@ export default function Users() {
   const handleDelete = async (userId) => {
     if (!await confirm('Are you sure you want to delete this family member? This action is permanent.')) return
     try {
-      await api.delete(`/users/${userId}`)
+      await api.delete(MEMBER_ENDPOINTS.DELETE_MEMBER(userId))
       await fetchUsers()
       toast.success('Member deleted successfully')
     } catch (err) {
@@ -267,7 +268,7 @@ export default function Users() {
     
     setFormLoading(true)
     try {
-      await api.put('/users/bulk-update', { userIds: selectedUsers, status }, { headers: { 'Content-Type': 'application/json' } })
+      await api.put(MEMBER_ENDPOINTS.BULK_UPDATE_STATUS, { userIds: selectedUsers, status }, { headers: { 'Content-Type': 'application/json' } })
       toast.success(`Members ${actionName}d successfully`)
       setSelectedUsers([])
       fetchUsers()
@@ -285,7 +286,7 @@ export default function Users() {
     setMembersLoading(true)
     try {
       const headId = user.family_head?.id || user.id
-      const res = await api.get(`/users/family/${headId}`)
+      const res = await api.get(MEMBER_ENDPOINTS.GET_FAMILY_MEMBERS(headId))
       setFamilyMembers(res.data?.data || res.data || [])
     } catch (err) {
       console.error('Failed to fetch family members', err)
@@ -617,7 +618,7 @@ export default function Users() {
                       const newStatus = e.target.checked ? 1 : 0;
                       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
                       try {
-                        await api.put(`/users/${user.id}`, { status: newStatus }, { headers: { 'Content-Type': 'application/json' } });
+                        await api.put(MEMBER_ENDPOINTS.UPDATE_MEMBER(user.id), { status: newStatus }, { headers: { 'Content-Type': 'application/json' } });
                       } catch (err) {
                         console.error("Failed to update status", err);
                         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: user.status } : u));

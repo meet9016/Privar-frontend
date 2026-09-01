@@ -1,6 +1,7 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter, X } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
+import { EVENT_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
@@ -78,7 +79,7 @@ export default function Events({ headerLeftContent }) {
     setEventRegistrations([])
     try {
       const eventId = eventRow.id || eventRow._id
-      const res = await api.get(`/event-registrations?event_id=${eventId}&limit=1000`)
+      const res = await api.get(`${EVENT_ENDPOINTS.GET_REGISTRATIONS}?event_id=${eventId}&limit=1000`)
       const list = res.data?.data || res.data || []
       setEventRegistrations(Array.isArray(list) ? list : [])
     } catch (err) {
@@ -122,7 +123,7 @@ export default function Events({ headerLeftContent }) {
 
   const fetchCountryList = useCallback(async () => {
     try {
-      const res = await api.get('/masters/country')
+      const res = await api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY)
       const list = res.data?.data || res.data || []
       setCountryList(list)
       // Find India and store its ID for default selection
@@ -142,7 +143,7 @@ export default function Events({ headerLeftContent }) {
 
   const fetchStateList = useCallback(async () => {
     try {
-      const res = await api.get('/masters/state')
+      const res = await api.get(MEMBER_ENDPOINTS.MASTERS_STATE)
       const list = res.data?.data || res.data || []
       setStateList(list)
       return list
@@ -154,7 +155,7 @@ export default function Events({ headerLeftContent }) {
 
   const fetchCityList = useCallback(async () => {
     try {
-      const res = await api.get('/masters/city')
+      const res = await api.get(MEMBER_ENDPOINTS.MASTERS_CITY)
       const list = res.data?.data || res.data || []
       setCityList(list)
       return list
@@ -185,7 +186,7 @@ export default function Events({ headerLeftContent }) {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get('/masters/event-category')
+      const res = await api.get(EVENT_ENDPOINTS.GET_CATEGORIES)
       setCategories(res.data?.data || res.data || [])
     } catch (err) {
       console.error('Failed to load event categories:', err)
@@ -237,7 +238,7 @@ export default function Events({ headerLeftContent }) {
     if (!id) return
     const newStatus = Number(row.status) === 1 ? 0 : 1
     try {
-      await api.put(`${endpoint}/${id}`, { status: newStatus })
+      await api.put(EVENT_ENDPOINTS.UPDATE_EVENT(id), { status: newStatus })
       await fetchEvents()
       toast.success('Status updated')
     } catch (err) {
@@ -248,7 +249,7 @@ export default function Events({ headerLeftContent }) {
   const handleBulkStatus = async (selectedIds, newStatus) => {
     if (!selectedIds.length) return;
     try {
-      await api.put(`${endpoint}/bulk/status`, { eventIds: selectedIds, status: newStatus });
+      await api.put(EVENT_ENDPOINTS.BULK_STATUS, { eventIds: selectedIds, status: newStatus });
       toast.success(`Selected events marked as ${newStatus === 1 ? 'Approved' : 'Inactive'}`);
       await fetchEvents();
     } catch (err) {
@@ -260,7 +261,7 @@ export default function Events({ headerLeftContent }) {
     if (!selectedIds.length) return;
     if (!await confirm(`Are you sure you want to delete ${selectedIds.length} selected events?`)) return;
     try {
-      await api.delete(`${endpoint}/bulk`, { data: { eventIds: selectedIds } });
+      await api.delete(EVENT_ENDPOINTS.BULK_DELETE, { data: { eventIds: selectedIds } });
       toast.success(`${selectedIds.length} events deleted successfully`);
       await fetchEvents();
     } catch (err) {
@@ -372,9 +373,9 @@ export default function Events({ headerLeftContent }) {
       }
 
       if (selectedId) {
-        await api.put(`${endpoint}/${selectedId}`, payload)
+        await api.put(EVENT_ENDPOINTS.UPDATE_EVENT(selectedId), payload)
       } else {
-        await api.post(endpoint, payload)
+        await api.post(EVENT_ENDPOINTS.CREATE_EVENT, payload)
       }
 
       await fetchEvents()
@@ -393,7 +394,7 @@ export default function Events({ headerLeftContent }) {
     if (!id) return
     if (!await confirm(`Delete ${row.title || 'this event'}?`)) return
     try {
-      await api.delete(`${endpoint}/${id}`)
+      await api.delete(EVENT_ENDPOINTS.DELETE_EVENT(id))
       await fetchEvents()
       toast.success('Event deleted successfully')
     } catch (err) {

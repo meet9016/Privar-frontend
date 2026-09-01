@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { Edit2, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from 'lucide-react'
 import api from '../lib/api'
+import { ROLES_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import { buildPermissionGroups, normalizeRoles, unwrapApiData } from '../lib/roles'
 import { AuthContext } from '../context/AuthContext'
@@ -56,8 +57,8 @@ export default function Roles() {
     setLoading(true)
     try {
       const [rolesRes, permissionsRes] = await Promise.all([
-        api.get('/roles', { params: { page, limit, search: debouncedSearch } }),
-        api.get('/permissions')
+        api.get(ROLES_ENDPOINTS.GET_ROLES, { params: { page, limit, search: debouncedSearch } }),
+        api.get(ROLES_ENDPOINTS.GET_PERMISSIONS)
       ])
       const data = rolesRes.data?.data || rolesRes.data || []
       const pg = rolesRes.data?.pagination || {}
@@ -178,9 +179,9 @@ export default function Roles() {
     setError('')
     try {
       if (selected) {
-        await api.put(`/roles/${selected.id}`, formData)
+        await api.put(ROLES_ENDPOINTS.UPDATE_ROLE(selected.id), formData)
       } else {
-        await api.post('/roles', formData)
+        await api.post(ROLES_ENDPOINTS.CREATE_ROLE, formData)
       }
       await fetchAll()
       toast.success('Role saved successfully')
@@ -196,7 +197,7 @@ export default function Roles() {
   const handleDelete = async (role) => {
     if (!await confirm(`Delete ${role.name}?`)) return
     try {
-      await api.delete(`/roles/${role.id}`)
+      await api.delete(ROLES_ENDPOINTS.DELETE_ROLE(role.id))
       setRoles(roles.filter((item) => item.id !== role.id))
       toast.success('Role deleted successfully')
     } catch (err) {
@@ -279,7 +280,7 @@ export default function Roles() {
                     onChange={async () => {
                       const newStatus = Number(role.status ?? 1) === 1 ? 0 : 1;
                       try {
-                        await api.put(`/roles/${role.id || role._id}`, { status: newStatus, name: role.name, permissions: role.permissions });
+                        await api.put(ROLES_ENDPOINTS.UPDATE_ROLE(role.id || role._id), { status: newStatus, name: role.name, permissions: role.permissions });
                         toast.success('Status updated successfully');
                         fetchAll();
                       } catch (err) {

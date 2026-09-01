@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Eye, RefreshCw, Search, Download, Ticket } from 'lucide-react'
 import api, { getEventsList } from '../lib/api'
+import { EVENT_ENDPOINTS } from '../utils/endpoints'
 import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
 import Table from '../components/common/Table'
@@ -55,7 +56,7 @@ export default function EventRegistrations({ eventIdProp }) {
         try {
             const params = { page, limit, search: debouncedSearch }
             if (filterEventId) params.event_id = filterEventId
-            const res = await api.get('/event-registrations', { params })
+            const res = await api.get(EVENT_ENDPOINTS.GET_REGISTRATIONS, { params })
             const data = res.data?.data || []
             const pg = res.data?.pagination || {}
             setRows(Array.isArray(data) ? data : [])
@@ -84,7 +85,7 @@ const handleDownload = async () => {
   try {
     const params = new URLSearchParams({ search })
     if (filterEventId) params.append('event_id', filterEventId)
-    const res = await api.get(`/event-registrations/download?${params.toString()}`, { responseType: 'blob' })
+    const res = await api.get(EVENT_ENDPOINTS.DOWNLOAD_REGISTRATIONS(params.toString()), { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([res.data]))
     const a = document.createElement('a')
     a.href = url
