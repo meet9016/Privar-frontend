@@ -389,16 +389,23 @@ export default function Events({ headerLeftContent }) {
     }
   }
 
-  const handleDelete = async (row) => {
-    const id = row.id || row._id || ''
+  const handleDelete = async (rowOrId) => {
+    const id = typeof rowOrId === 'object' ? (rowOrId?.id || rowOrId?._id || '') : (rowOrId || '')
     if (!id) return
-    if (!await confirm(`Delete ${row.title || 'this event'}?`)) return
+    const title = typeof rowOrId === 'object' && rowOrId?.title ? rowOrId.title : 'this event'
+    if (!await confirm(`Delete ${title}?`)) return
     try {
       await api.delete(EVENT_ENDPOINTS.DELETE_EVENT(id))
       await fetchEvents()
       toast.success('Event deleted successfully')
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete event')
+      try {
+        await api.delete(EVENT_ENDPOINTS.BULK_DELETE, { data: { eventIds: [id] } })
+        await fetchEvents()
+        toast.success('Event deleted successfully')
+      } catch (bulkErr) {
+        toast.error(err.response?.data?.message || bulkErr.response?.data?.message || 'Failed to delete event')
+      }
     }
   }
 
@@ -582,7 +589,7 @@ export default function Events({ headerLeftContent }) {
                 )}
                 {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
                   <button
-                    onClick={() => handleDelete(row.id)}
+                    onClick={() => handleDelete(row)}
                     className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
                     title="Delete Event"
                   >

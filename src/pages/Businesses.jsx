@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { Briefcase, MapPin, Phone, Globe, Trash2, Search, Edit2, RefreshCw, Plus, Eye, Mail, Instagram, Youtube, Facebook, Share2 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api, { assetUrl, formatDate, getBusinessesList } from '../lib/api'
+import { BUSINESS_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
@@ -80,7 +81,7 @@ export default function Businesses({ headerLeftContent }) {
   const handleDelete = async (id) => {
     if (!await confirm('Are you sure you want to delete this business listing?')) return
     try {
-      await api.delete(`/businesses/${id}`)
+      await api.delete(BUSINESS_ENDPOINTS.DELETE_BUSINESS(id))
       await fetchBusinesses()
       toast.success('Business listing deleted successfully')
     } catch (err) {
@@ -92,7 +93,7 @@ export default function Businesses({ headerLeftContent }) {
     const currentStatus = Number(biz.status ?? 1);
     const newStatus = currentStatus === 1 ? 0 : 1;
     try {
-      await api.put(`/businesses/${biz._id || biz.id}`, {
+      await api.put(BUSINESS_ENDPOINTS.UPDATE_BUSINESS(biz._id || biz.id), {
         ...biz,
         status: newStatus
       });
@@ -168,9 +169,9 @@ export default function Businesses({ headerLeftContent }) {
 
       let res;
       if (selectedBusiness) {
-        res = await api.put(`/businesses/${selectedBusiness.id}`, payload, { headers })
+        res = await api.put(BUSINESS_ENDPOINTS.UPDATE_BUSINESS(selectedBusiness.id), payload, { headers })
       } else {
-        res = await api.post('/businesses', payload, { headers })
+        res = await api.post(BUSINESS_ENDPOINTS.CREATE_BUSINESS, payload, { headers })
       }
 
       const savedData = res.data?.data || res.data;

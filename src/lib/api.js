@@ -121,22 +121,22 @@ const setupInterceptors = (axiosInstance) => {
 setupInterceptors(api)
 setupInterceptors(memberApi)
 
-import { COMMITTEE_ENDPOINTS, MEMBER_ENDPOINTS, EVENT_ENDPOINTS, GALLERY_ENDPOINTS } from '../utils/endpoints'
+import { COMMITTEE_ENDPOINTS, MEMBER_ENDPOINTS, EVENT_ENDPOINTS, GALLERY_ENDPOINTS, STUDENT_ENDPOINTS, BUSINESS_ENDPOINTS, POST_ENDPOINTS, NEWS_ENDPOINTS, EXPENSE_ENDPOINTS, DONATION_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
 
 export const getEventsList = (params = {}) => api.get(EVENT_ENDPOINTS.GET_EVENTS, { params })
 export const getUsersList = (params = {}) => api.get(MEMBER_ENDPOINTS.GET_MEMBERS, { params })
-export const getStudentsList = (params = {}) => api.get('/students', { params })
-export const getBusinessesList = (params = {}) => api.get('/businesses', { params })
-export const getPostsList = (params = {}) => api.get('/posts', { params })
-export const getNewsList = (params = {}) => api.get('/news', { params })
-export const getDonationsList = (params = {}) => api.get('/donations', { params })
-export const getBankDetailsList = (params = {}) => api.get('/bank-details', { params })
+export const getStudentsList = (params = {}) => api.get(STUDENT_ENDPOINTS.GET_STUDENTS, { params })
+export const getBusinessesList = (params = {}) => api.get(BUSINESS_ENDPOINTS.GET_BUSINESSES, { params })
+export const getPostsList = (params = {}) => api.get(POST_ENDPOINTS.GET_POSTS, { params })
+export const getNewsList = (params = {}) => api.get(NEWS_ENDPOINTS.GET_NEWS, { params })
+export const getDonationsList = (params = {}) => api.get(DONATION_ENDPOINTS.GET_DONATIONS, { params })
+export const getBankDetailsList = (params = {}) => api.get(MASTER_ENDPOINTS.BANK_DETAILS, { params })
 export const getCommitteeMembersList = (params = {}) => api.get(COMMITTEE_ENDPOINTS.GET_MEMBERS, { params })
 export const getGalleryList = (params = {}) => api.get(GALLERY_ENDPOINTS.GET_GALLERY, { params })
-export const getExpensesList = (params = {}) => api.get('/expenses', { params })
+export const getExpensesList = (params = {}) => api.get(EXPENSE_ENDPOINTS.GET_EXPENSES, { params })
 
 export const exportExpensesExcel = (params = {}) =>
-  api.get('/expenses/export', { params, responseType: 'blob' })
+  api.get(EXPENSE_ENDPOINTS.EXPORT_EXCEL, { params, responseType: 'blob' })
 
 // Standard Universal Date Formatter: DD/MM/YYYY
 export const formatDate = (val) => {

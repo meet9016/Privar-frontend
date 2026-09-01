@@ -15,6 +15,7 @@ import {
   FileDown
 } from 'lucide-react'
 import api, { getDonationsList, getBankDetailsList, exportDonationsExcel, formatDate } from '../lib/api'
+import { DONATION_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import Modal from '../components/Modal'
@@ -89,7 +90,7 @@ export default function Donations({ headerLeftContent }) {
   const handleDelete = async (id) => {
     if (!await confirm('Are you sure you want to delete this donation?')) return
     try {
-      await api.delete(`/donations/${id}`)
+      await api.delete(DONATION_ENDPOINTS.DELETE_DONATION(id))
       await fetchDonations()
       setSuccess('Donation deleted successfully')
       setTimeout(() => setSuccess(''), 3000)
@@ -145,10 +146,10 @@ export default function Donations({ headerLeftContent }) {
     try {
       if (selectedDonation) {
 
-        await api.put(`/donations/${selectedDonation.id}`, formData)
+        await api.put(DONATION_ENDPOINTS.UPDATE_DONATION(selectedDonation.id), formData)
       } else {
 
-        await api.post('/donations', formData)
+        await api.post(DONATION_ENDPOINTS.CREATE_DONATION, formData)
       }
       await fetchDonations()
       setSuccess(`Donation ${selectedDonation ? 'updated' : 'created'} successfully`)

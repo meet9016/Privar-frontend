@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
-import { GALLERY_ENDPOINTS, BIRTHDAY_ENDPOINTS, JOB_VACANCY_ENDPOINTS } from '../utils/endpoints'
+import { GALLERY_ENDPOINTS, BIRTHDAY_ENDPOINTS, JOB_VACANCY_ENDPOINTS, MATRIMONY_ENDPOINTS, FEEDBACK_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
 import { formatDate } from '../lib/api'
 import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
@@ -50,7 +50,7 @@ const definitions = {
   matrimonies: {
     title: 'Matrimonies',
     subtitle: 'Create and manage matrimony profiles',
-    endpoint: '/matrimonies',
+    endpoint: MATRIMONY_ENDPOINTS.GET_MATRIMONIES,
     hideFilter: true,
     fields: [
       { name: 'full_name', label: 'Full Name', required: true },
@@ -183,7 +183,7 @@ const definitions = {
   feedback: {
     title: 'Feedback',
     subtitle: 'Manage user feedback and suggestions',
-    endpoint: '/feedback',
+    endpoint: FEEDBACK_ENDPOINTS.GET_FEEDBACK,
     hideAdd: true,
     hideActions: true,
     fields: [
@@ -318,7 +318,7 @@ const definitions = {
   'bank-details': {
     title: 'Bank Details',
     subtitle: 'Manage bank accounts for donations',
-    endpoint: '/bank-details',
+    endpoint: MASTER_ENDPOINTS.BANK_DETAILS,
     fields: [
       { name: 'bank_name', label: 'Bank Name', required: true },
       { name: 'account_name', label: 'Account Name', required: true },

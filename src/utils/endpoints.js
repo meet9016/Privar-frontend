@@ -66,6 +66,86 @@ export const EVENT_ENDPOINTS = {
   DOWNLOAD_REGISTRATIONS: (params) => `/event-registrations/download?${params}`
 }
 
+// Businesses Module API Endpoints
+export const BUSINESS_ENDPOINTS = {
+  GET_BUSINESSES: '/businesses',
+  CREATE_BUSINESS: '/businesses',
+  UPDATE_BUSINESS: (id) => `/businesses/${id}`,
+  DELETE_BUSINESS: (id) => `/businesses/${id}`,
+  GET_CATEGORIES: '/business-categories'
+}
+
+// Students Module API Endpoints
+export const STUDENT_ENDPOINTS = {
+  GET_STUDENTS: '/students',
+  CREATE_STUDENT: '/students',
+  UPDATE_STUDENT: (id) => `/students/${id}`,
+  DELETE_STUDENT: (id) => `/students/${id}`
+}
+
+// Matrimonies Module API Endpoints
+export const MATRIMONY_ENDPOINTS = {
+  GET_MATRIMONIES: '/matrimonies',
+  CREATE_MATRIMONY: '/matrimonies',
+  UPDATE_MATRIMONY: (id) => `/matrimonies/${id}`,
+  DELETE_MATRIMONY: (id) => `/matrimonies/${id}`
+}
+
+// Posts Module API Endpoints
+export const POST_ENDPOINTS = {
+  GET_POSTS: '/posts',
+  CREATE_POST: '/posts',
+  UPDATE_POST: (id) => `/posts/${id}`,
+  DELETE_POST: (id) => `/posts/${id}`
+}
+
+// News Module API Endpoints
+export const NEWS_ENDPOINTS = {
+  GET_NEWS: '/news',
+  CREATE_NEWS: '/news',
+  UPDATE_NEWS: (id) => `/news/${id}`,
+  DELETE_NEWS: (id) => `/news/${id}`
+}
+
+// Feedback Module API Endpoints
+export const FEEDBACK_ENDPOINTS = {
+  GET_FEEDBACK: '/feedback'
+}
+
+// Expenses Module API Endpoints
+export const EXPENSE_ENDPOINTS = {
+  GET_EXPENSES: '/expenses',
+  CREATE_EXPENSE: '/expenses',
+  UPDATE_EXPENSE: (id) => `/expenses/${id}`,
+  DELETE_EXPENSE: (id) => `/expenses/${id}`,
+  EXPORT_EXCEL: '/expenses/export',
+  GET_CATEGORIES: '/masters/expense-category'
+}
+
+// Donations Module API Endpoints
+export const DONATION_ENDPOINTS = {
+  GET_DONATIONS: '/donations',
+  CREATE_DONATION: '/donations',
+  UPDATE_DONATION: (id) => `/donations/${id}`,
+  DELETE_DONATION: (id) => `/donations/${id}`,
+  EXPORT_EXCEL: '/donations/export'
+}
+
+// Masters Module API Endpoints
+export const MASTER_ENDPOINTS = {
+  BUSINESS_CATEGORY: '/masters/business',
+  BANK_DETAILS: '/bank-details',
+  COUNTRY: '/masters/country',
+  STATE: '/masters/state',
+  CITY: '/masters/city',
+  VILLAGE: '/masters/village',
+  BLOOD_GROUP: '/masters/blood-group',
+  EVENT_CATEGORY: '/masters/event-category',
+  GALLERY_CATEGORY: '/masters/gallery-category',
+  EXPENSE_CATEGORY: '/masters/expense-category',
+  GET_MASTER: (type) => type === 'bank-details' ? '/bank-details' : `/masters/${type}`
+}
+
 export default {
   COMMITTEE: COMMITTEE_ENDPOINTS,
   ROLES: ROLES_ENDPOINTS,
@@ -73,5 +153,14 @@ export default {
   GALLERY: GALLERY_ENDPOINTS,
   BIRTHDAY: BIRTHDAY_ENDPOINTS,
   JOB_VACANCY: JOB_VACANCY_ENDPOINTS,
-  EVENT: EVENT_ENDPOINTS
+  EVENT: EVENT_ENDPOINTS,
+  BUSINESS: BUSINESS_ENDPOINTS,
+  STUDENT: STUDENT_ENDPOINTS,
+  MATRIMONY: MATRIMONY_ENDPOINTS,
+  POST: POST_ENDPOINTS,
+  NEWS: NEWS_ENDPOINTS,
+  FEEDBACK: FEEDBACK_ENDPOINTS,
+  EXPENSE: EXPENSE_ENDPOINTS,
+  DONATION: DONATION_ENDPOINTS,
+  MASTER: MASTER_ENDPOINTS
 }

@@ -4,12 +4,13 @@ import { masterLabels } from '../config/navigation'
 import { Filter } from 'lucide-react'
 import Select from '../components/common/Select'
 import api from '../lib/api'
+import { MASTER_ENDPOINTS } from '../utils/endpoints'
 import usePermissions from '../hooks/usePermissions'
 
 const parentFieldsConfig = {
-  state: { source: '/masters/country', label: 'Country', key: 'name' },
-  city: { source: '/masters/state', label: 'State', key: 'name' },
-  village: { source: '/masters/city', label: 'City', key: 'name' }
+  state: { source: MASTER_ENDPOINTS.COUNTRY, label: 'Country', key: 'name' },
+  city: { source: MASTER_ENDPOINTS.STATE, label: 'State', key: 'name' },
+  village: { source: MASTER_ENDPOINTS.CITY, label: 'City', key: 'name' }
 }
 
 export default function MasterPage({ type, headerLeftContent }) {
@@ -75,7 +76,7 @@ export default function MasterPage({ type, headerLeftContent }) {
     <AdminCrudPage
       title={`${label} Master`}
       subtitle={`Manage ${label.toLowerCase()} master records`}
-      endpoint={`/masters/${type}`}
+      endpoint={MASTER_ENDPOINTS.GET_MASTER(type)}
       fields={fields}
       columns={columns}
       headerLeftContent={headerLeftContent}

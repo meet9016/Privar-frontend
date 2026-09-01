@@ -1,6 +1,7 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter, X } from 'lucide-react'
 import api, { assetUrl, getStudentsList, getCommunitySurname } from '../lib/api'
+import { STUDENT_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import usePagination from '../hooks/usePagination'
@@ -110,7 +111,7 @@ export default function Students({ headerLeftContent }) {
   const handleDelete = async (id) => {
     if (!await confirm('Are you sure you want to delete this student?')) return
     try {
-      await api.delete(`/students/${id}`)
+      await api.delete(STUDENT_ENDPOINTS.DELETE_STUDENT(id))
       await fetchStudents()
       toast.success('Student deleted successfully')
     } catch (err) {
@@ -279,10 +280,10 @@ export default function Students({ headerLeftContent }) {
 
     try {
       if (selectedStudent) {
-        await api.put(`/students/${selectedStudent.id || selectedStudent._id}`, payload)
+        await api.put(STUDENT_ENDPOINTS.UPDATE_STUDENT(selectedStudent.id || selectedStudent._id), payload)
         toast.success('Student updated successfully')
       } else {
-        await api.post('/students', payload)
+        await api.post(STUDENT_ENDPOINTS.CREATE_STUDENT, payload)
         toast.success('Student added successfully')
       }
       handleCloseModal()

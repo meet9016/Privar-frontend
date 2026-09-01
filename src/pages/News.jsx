@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter, X } from 'lucide-react'
 import api, { assetUrl, getNewsList, formatDate } from '../lib/api'
+import { NEWS_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Loader from '../components/common/Loader'
 import Modal from '../components/Modal'
@@ -86,7 +87,7 @@ export default function News({ headerLeftContent }) {
     if (!id) return
     if (!await confirm('Are you sure you want to delete this news announcement?')) return
     try {
-      await api.delete(`/news/${id}`)
+      await api.delete(NEWS_ENDPOINTS.DELETE_NEWS(id))
       await fetchNews()
       toast.success('News deleted successfully')
     } catch (err) {
@@ -149,9 +150,9 @@ export default function News({ headerLeftContent }) {
         payload.append('remove_image', 'true')
       }
       if (selectedId) {
-        await api.put(`/news/${selectedId}`, payload)
+        await api.put(NEWS_ENDPOINTS.UPDATE_NEWS(selectedId), payload)
       } else {
-        await api.post('/news', payload)
+        await api.post(NEWS_ENDPOINTS.CREATE_NEWS, payload)
       }
       await fetchNews()
       toast.success('Feed News saved successfully')
@@ -179,7 +180,7 @@ export default function News({ headerLeftContent }) {
     }))
 
     try {
-      await api.put(`/news/${id}`, { status: newStatus })
+      await api.put(NEWS_ENDPOINTS.UPDATE_NEWS(id), { status: newStatus })
       toast.success('Status updated')
     } catch (err) {
       // Revert on error

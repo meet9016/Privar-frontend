@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Plus, Trash2, Globe, Facebook, Instagram, Youtube, Share2 } from 'lucide-react'
 import api from '../lib/api'
+import { BUSINESS_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import Input from './common/Input'
 import Select from './common/Select'
 import Button from './common/Button'
@@ -83,7 +84,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
 
   const fetchBusinessCategories = async () => {
     try {
-      const res = await api.get('/business-categories')
+      const res = await api.get(BUSINESS_ENDPOINTS.GET_CATEGORIES)
       const data = res.data?.data || res.data || []
       setBusinessCategories(data)
       setError('')
@@ -97,7 +98,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
 
   const fetchCountries = async () => {
     try {
-      const res = await api.get('/masters/country')
+      const res = await api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY)
       const data = res.data?.data || res.data || []
       setCountries(data)
       setError('')
@@ -111,7 +112,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
 
   const fetchStates = async () => {
     try {
-      const res = await api.get('/masters/state')
+      const res = await api.get(MEMBER_ENDPOINTS.MASTERS_STATE)
       const data = res.data?.data || res.data || []
       setStates(data)
       setError('')
@@ -125,7 +126,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
 
   const fetchCities = async () => {
     try {
-      const res = await api.get('/masters/city')
+      const res = await api.get(MEMBER_ENDPOINTS.MASTERS_CITY)
       const data = res.data?.data || res.data || []
       setCities(data)
       setError('')

@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react'
 import api, { getExpensesList, getCommitteeMembersList, assetUrl, formatDate, getCommunitySurname } from '../lib/api'
+import { EXPENSE_ENDPOINTS } from '../utils/endpoints'
 import usePagination from '../hooks/usePagination'
 import usePermissions from '../hooks/usePermissions'
 import Modal from '../components/Modal'
@@ -93,7 +94,7 @@ export default function Expenses({ headerLeftContent }) {
     try {
       const [membersRes, categoriesRes] = await Promise.all([
         getCommitteeMembersList({ limit: 1500 }),
-        api.get('/masters/expense-category', { params: { limit: 1500 } })
+        api.get(EXPENSE_ENDPOINTS.GET_CATEGORIES, { params: { limit: 1500 } })
       ])
       
       setCommitteeMembers(membersRes.data?.data || membersRes.data || [])
@@ -114,7 +115,7 @@ export default function Expenses({ headerLeftContent }) {
   const handleDelete = async (id) => {
     if (!await confirm('Are you sure you want to delete this expense record?')) return
     try {
-      await api.delete(`/expenses/${id}`)
+      await api.delete(EXPENSE_ENDPOINTS.DELETE_EXPENSE(id))
       await fetchExpenses()
       toast.success('Expense deleted successfully')
     } catch (err) {
@@ -221,10 +222,10 @@ export default function Expenses({ headerLeftContent }) {
       }
       
       if (selectedExpense) {
-        await api.put(`/expenses/${selectedExpense.id}`, payload)
+        await api.put(EXPENSE_ENDPOINTS.UPDATE_EXPENSE(selectedExpense.id), payload)
         toast.success('Expense updated successfully')
       } else {
-        await api.post('/expenses', payload)
+        await api.post(EXPENSE_ENDPOINTS.CREATE_EXPENSE, payload)
         toast.success('Expense added successfully')
       }
       handleCloseModal()

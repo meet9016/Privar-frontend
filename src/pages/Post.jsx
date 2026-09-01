@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter, X } from 'lucide-react'
 import api, { assetUrl, getPostsList, formatDate } from '../lib/api'
+import { POST_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Loader from '../components/common/Loader'
 import Modal from '../components/Modal'
@@ -79,7 +80,7 @@ export default function Post({ headerLeftContent }) {
   const handleDelete = async (id) => {
     if (!await confirm('Are you sure you want to delete this post from the community board?')) return
     try {
-      await api.delete(`/posts/${id}`)
+      await api.delete(POST_ENDPOINTS.DELETE_POST(id))
       await fetchPosts()
       toast.success('Post deleted and moderated successfully')
     } catch (err) {
@@ -138,9 +139,9 @@ export default function Post({ headerLeftContent }) {
       if (formData.image instanceof File) payload.append('image', formData.image)
       if (formData.remove_image) payload.append('remove_image', 'true')
       if (selectedId) {
-        await api.put(`/posts/${selectedId}`, payload)
+        await api.put(POST_ENDPOINTS.UPDATE_POST(selectedId), payload)
       } else {
-        await api.post('/posts', payload)
+        await api.post(POST_ENDPOINTS.CREATE_POST, payload)
       }
       await fetchPosts()
       toast.success('Post saved successfully')
@@ -169,7 +170,7 @@ export default function Post({ headerLeftContent }) {
     }))
 
     try {
-      await api.put(`/posts/${id}`, { status: newStatus })
+      await api.put(POST_ENDPOINTS.UPDATE_POST(id), { status: newStatus })
       toast.success('Status updated')
     } catch (err) {
       // Revert on error
