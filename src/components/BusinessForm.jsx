@@ -178,36 +178,38 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     setFormData(prev => ({ ...prev, [field]: value }))
     setErrors(prev => {
       const updated = { ...prev }
-      if (field === 'business_name' && value.trim()) delete updated.business_name
-      if (field === 'business_category_id' && value) delete updated.business_category_id
-      if (field === 'number' && value.trim().length === 10) delete updated.number
+      const strVal = value !== undefined && value !== null ? String(value).trim() : ''
+
+      if (field === 'business_name' && strVal) delete updated.business_name
+      if (field === 'business_category_id' && strVal) delete updated.business_category_id
+      if (field === 'number' && strVal.length === 10) delete updated.number
       if (field === 'email') {
-        if (!value.trim()) updated.email = 'Email is required'
-        else if (!isValidEmail(value)) updated.email = 'Please enter a valid email (e.g. user@gmail.com)'
+        if (!strVal) updated.email = 'Email is required'
+        else if (!isValidEmail(strVal)) updated.email = 'Please enter a valid email (e.g. user@gmail.com)'
         else delete updated.email
       }
-      if (field === 'country_id' && value) delete updated.country_id
-      if (field === 'state_id' && value) delete updated.state_id
-      if (field === 'city_id' && value) delete updated.city_id
-      if (field === 'address' && value.trim()) delete updated.address
-      if (field === 'location_link' && value.trim()) delete updated.location_link
+      if (field === 'country_id' && strVal) delete updated.country_id
+      if (field === 'state_id' && strVal) delete updated.state_id
+      if (field === 'city_id' && strVal) delete updated.city_id
+      if (field === 'address' && strVal) delete updated.address
+      if (field === 'location_link' && strVal) delete updated.location_link
       return updated
     })
   }
 
   const validate = () => {
     const nextErrors = {}
-    if (!formData.business_name.trim()) nextErrors.business_name = 'Business name is required'
-    if (!formData.business_category_id.trim()) nextErrors.business_category_id = 'Business category is required'
-    if (!formData.number.trim()) nextErrors.number = 'Primary phone is required'
-    else if (formData.number.trim().length < 10) nextErrors.number = 'Phone number must be 10 digits'
-    if (!formData.email.trim()) nextErrors.email = 'Email is required'
-    else if (!isValidEmail(formData.email)) nextErrors.email = 'Please enter a valid email (e.g. user@gmail.com)'
-    if (!formData.country_id.trim()) nextErrors.country_id = 'Country is required'
-    if (!formData.state_id.trim()) nextErrors.state_id = 'State is required'
-    if (!formData.city_id.trim()) nextErrors.city_id = 'City is required'
-    if (!formData.address.trim()) nextErrors.address = 'Address is required'
-    if (!formData.location_link.trim()) nextErrors.location_link = 'Location link is required'
+    if (!formData.business_name || !String(formData.business_name).trim()) nextErrors.business_name = 'Business name is required'
+    if (!formData.business_category_id || !String(formData.business_category_id).trim()) nextErrors.business_category_id = 'Business category is required'
+    if (!formData.number || !String(formData.number).trim()) nextErrors.number = 'Primary phone is required'
+    else if (String(formData.number).trim().length < 10) nextErrors.number = 'Phone number must be 10 digits'
+    if (!formData.email || !String(formData.email).trim()) nextErrors.email = 'Email is required'
+    else if (!isValidEmail(String(formData.email).trim())) nextErrors.email = 'Please enter a valid email (e.g. user@gmail.com)'
+    if (!formData.country_id || !String(formData.country_id).trim()) nextErrors.country_id = 'Country is required'
+    if (!formData.state_id || !String(formData.state_id).trim()) nextErrors.state_id = 'State is required'
+    if (!formData.city_id || !String(formData.city_id).trim()) nextErrors.city_id = 'City is required'
+    if (!formData.address || !String(formData.address).trim()) nextErrors.address = 'Address is required'
+    if (!formData.location_link || !String(formData.location_link).trim()) nextErrors.location_link = 'Location link is required'
 
     return nextErrors
   }
@@ -267,21 +269,21 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           value={formData.whatsapp_number}
           onChange={(e) => {
             const val = e.target.value.replace(/\D/g, '').slice(0, 10)
-            setFormData({ ...formData, whatsapp_number: val })
+            setFormData(prev => ({ ...prev, whatsapp_number: val }))
           }}
           disabled={isLoading}
         />
         <Input
           label="GST Number"
           value={formData.GST_number}
-          onChange={(e) => setFormData({ ...formData, GST_number: e.target.value })}
+          onChange={(e) => setFormData(prev => ({ ...prev, GST_number: e.target.value }))}
           disabled={isLoading}
         />
         <Select
           label="Country"
           required
           value={formData.country_id}
-          onChange={(val) => setFormData({ ...formData, country_id: val })}
+          onChange={(val) => handleFieldChange('country_id', val)}
           disabled={isLoading}
           options={countries.map(c => ({ label: c.name, value: c._id || c.id }))}
           error={errors.country_id}
@@ -290,7 +292,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           label="State"
           required
           value={formData.state_id}
-          onChange={(val) => setFormData({ ...formData, state_id: val })}
+          onChange={(val) => handleFieldChange('state_id', val)}
           disabled={isLoading}
           options={states.map(s => ({ label: s.name, value: s._id || s.id }))}
           error={errors.state_id}
@@ -299,7 +301,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           label="City"
           required
           value={formData.city_id}
-          onChange={(val) => setFormData({ ...formData, city_id: val })}
+          onChange={(val) => handleFieldChange('city_id', val)}
           disabled={isLoading}
           options={cities.map(c => ({ label: c.name, value: c._id || c.id }))}
           error={errors.city_id}
@@ -310,7 +312,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
             required
             placeholder="https://maps.google.com/..."
             value={formData.location_link}
-            onChange={(e) => setFormData({ ...formData, location_link: e.target.value })}
+            onChange={(e) => handleFieldChange('location_link', e.target.value)}
             disabled={isLoading}
             error={errors.location_link}
           />
@@ -325,7 +327,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           label="Address"
           required
           value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          onChange={(e) => handleFieldChange('address', e.target.value)}
           disabled={isLoading}
           error={errors.address}
         />
@@ -335,7 +337,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           rows={3}
           label="About Business"
           value={formData.about_us}
-          onChange={(e) => setFormData({ ...formData, about_us: e.target.value })}
+          onChange={(e) => setFormData(prev => ({ ...prev, about_us: e.target.value }))}
           disabled={isLoading}
         />
       </div>

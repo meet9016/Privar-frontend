@@ -89,7 +89,7 @@ export default function Login() {
             )}
           </div>
           <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
-            {getCommunityFullName()}
+            {webTheme.name || getCommunityFullName()}
           </h1>
         </div>
 

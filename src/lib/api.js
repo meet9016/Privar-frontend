@@ -12,38 +12,78 @@ export const assetUrl = (path) => {
 }
 
 /**
+ * Extracts the tenant slug from the subdomain (e.g. 'chovatiya.parivar.me' -> 'chovatiya')
+ */
+export const getSubdomainTenant = () => {
+  if (typeof window === 'undefined') return ''
+  const hostname = window.location.hostname
+  if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
+    return localStorage.getItem('tenant_code') || ''
+  }
+
+  const parts = hostname.split('.')
+  // Check if first part is a tenant subdomain
+  if (parts.length >= 2) {
+    const sub = parts[0].toLowerCase()
+    const nonTenantSubdomains = ['www', 'admin', 'api', 'app', 'superadmin', 'parivar', 'mail', 'service']
+    if (!nonTenantSubdomains.includes(sub)) {
+      return sub
+    }
+  }
+  return localStorage.getItem('tenant_code') || ''
+}
+
+/**
  * Extracts the clean community surname/name without 'Parivar' suffix
- * e.g. 'vala.parivar.com' -> 'Vala', 'test.parivar.com' -> 'Test', 'patel.parivar.com' -> 'Patel'
+ * e.g. 'chovatiya.parivar.me' -> 'Chovatiya', 'vala.parivar.me' -> 'Vala'
  */
 export const getCommunitySurname = () => {
-  // 1. Most reliable indicator: The actual display name
+  const currentSubdomain = getSubdomainTenant()
   const webName = localStorage.getItem('web_name') || ''
+
   if (webName) {
-    // If the web_name explicitly contains "parivar" (e.g., "Sojitra Parivar")
+    // If the subdomain is explicitly something else (e.g. chovatiya) and webName contains old/different name (e.g. Vala)
+    if (currentSubdomain && !webName.toLowerCase().includes(currentSubdomain)) {
+      return currentSubdomain.charAt(0).toUpperCase() + currentSubdomain.slice(1)
+    }
+
     if (webName.toLowerCase().includes('parivar')) {
       const cleaned = webName.replace(/parivar|_|-/gi, '').trim()
       if (cleaned) {
         return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
       }
+    } else {
+      return webName.trim()
     }
-    // If it has a web_name but NO "parivar" (e.g. "Vala Admin" or "Village"), do NOT autofill
-    return ''
   }
-  // We rely entirely on the explicitly saved web_name. 
-  // Guessing from the URL can lead to false positives for Villages (e.g. vala.parivar.me -> Vala)
-  return ''
 
-  // Default fallback
+  if (currentSubdomain) {
+    return currentSubdomain.charAt(0).toUpperCase() + currentSubdomain.slice(1)
+  }
+
   return ''
 }
 
 export const getCommunityFullName = () => {
+  const currentSubdomain = getSubdomainTenant()
   const webName = localStorage.getItem('web_name')
-  if (webName) return webName
+
+  // If on a specific tenant subdomain (e.g. chovatiya.parivar.me)
+  if (currentSubdomain) {
+    const formatted = currentSubdomain.charAt(0).toUpperCase() + currentSubdomain.slice(1)
+    if (webName && webName.toLowerCase().includes(currentSubdomain.toLowerCase())) {
+      return webName
+    }
+    return `${formatted} Parivar`
+  }
+
+  if (webName) {
+    return webName
+  }
 
   // Fallback if not logged in / missing
   const surname = getCommunitySurname()
-  return surname ? `${surname} Parivar` : ''
+  return surname ? `${surname} Parivar` : 'Parivar'
 }
 
 const api = axios.create({
@@ -67,14 +107,12 @@ export const memberApi = axios.create({
   }
 })
 
-
-
-// Add token to all requests
+// Add token and tenant to all requests
 const setupInterceptors = (axiosInstance) => {
   axiosInstance.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('auth_token')
-      const tenantCode = localStorage.getItem('tenant_code')
+      const tenantCode = getSubdomainTenant() || localStorage.getItem('tenant_code')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }

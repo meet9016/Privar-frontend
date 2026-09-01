@@ -1,5 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react'
-import { API_BASE } from '../lib/api'
+import { API_BASE, getSubdomainTenant } from '../lib/api'
 
 export const AuthContext = createContext()
 
@@ -54,7 +54,13 @@ const storeWebTheme = (themeData) => {
 const fetchWebTheme = async () => {
   try {
     const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
-    const response = await fetch(`${apiBase}/api/get_app_theme`)
+    const tenantCode = getSubdomainTenant() || localStorage.getItem('tenant_code') || ''
+    const headers = {}
+    if (tenantCode) {
+      headers['x-tenant-id'] = tenantCode
+    }
+
+    const response = await fetch(`${apiBase}/api/get_app_theme`, { headers })
     if (!response.ok) {
       throw new Error(`Theme fetch failed with status ${response.status}`)
     }
@@ -111,6 +117,17 @@ export function AuthProvider({ children }) {
   // Initialize from localStorage and fetch theme
   useEffect(() => {
     const init = async () => {
+      // Sync tenant if subdomain is present
+      const currentSubdomain = getSubdomainTenant()
+      const storedTenant = localStorage.getItem('tenant_code')
+      if (currentSubdomain && currentSubdomain !== storedTenant) {
+        localStorage.setItem('tenant_code', currentSubdomain)
+        // Clear cached web theme of previous tenant to prevent showing wrong parivar name
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith('web_'))
+          .forEach((k) => localStorage.removeItem(k))
+      }
+
       // Restore auth state
       const stored = localStorage.getItem('auth_token')
       const storedUser = localStorage.getItem('auth_user')
@@ -120,7 +137,6 @@ export function AuthProvider({ children }) {
       }
 
       // Fetch website theme colors (separate from admin dashboard theme)
-      // Stored as web_* localStorage keys to prevent conflicts
       await fetchWebTheme()
       refreshTheme()
 
@@ -138,10 +154,11 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password, tenantCode = '') => {
     const apiBase = API_BASE
+    const effectiveTenant = tenantCode || getSubdomainTenant() || localStorage.getItem('tenant_code') || ''
     
     const headers = { 'Content-Type': 'application/json' }
-    if (tenantCode) {
-      headers['x-tenant-id'] = tenantCode
+    if (effectiveTenant) {
+      headers['x-tenant-id'] = effectiveTenant
     }
     
     const res = await fetch(`${apiBase}/api/admin_login`, {
@@ -169,15 +186,19 @@ export function AuthProvider({ children }) {
     localStorage.setItem('auth_token', receivedToken)
     localStorage.setItem('auth_user', JSON.stringify(receivedUser))
     
-    const detectedTenant = tenantCode || payload.tenant_code || receivedUser.tenant_code || ''
+    const detectedTenant = effectiveTenant || payload.tenant_code || receivedUser.tenant_code || ''
     if (detectedTenant) {
       localStorage.setItem('tenant_code', detectedTenant)
     } else {
       localStorage.removeItem('tenant_code')
     }
     
+    // Refresh theme after login to get tenant-specific theme immediately
+    await fetchWebTheme()
+    refreshTheme()
+
     return { token: receivedToken, user: receivedUser }
-  }, [])
+  }, [refreshTheme])
 
   const logout = useCallback(() => {
     setUser(null)

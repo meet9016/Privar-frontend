@@ -5,7 +5,7 @@ import {
   Image as ImageIcon, Mail, Phone,
   Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2
 } from 'lucide-react'
-import api, { assetUrl } from '../lib/api'
+import api, { assetUrl, getSubdomainTenant } from '../lib/api'
 import Loader from '../components/common/Loader'
 import { toast } from '../lib/toast'
 import { AuthContext } from '../context/AuthContext'
@@ -28,7 +28,7 @@ const DEFAULT_CONFIG = {
   appLogo: '',
   webLogo: '',
   favicon: '',
-  name: '',
+  name: typeof window !== 'undefined' && getSubdomainTenant() ? getSubdomainTenant().charAt(0).toUpperCase() + getSubdomainTenant().slice(1) : '',
   email: '',
   phone: '',
   facebook: '',
@@ -193,17 +193,20 @@ const ColorInput = ({ label, value, keyName, desc, onChange }) => (
 )
 
 // ─── Text Input ───────────────────────────────────────────────────────────────
-const TextInput = ({ label, icon: Icon, value, keyName, placeholder, type = 'text', onChange }) => (
+const TextInput = ({ label, icon: Icon, value, keyName, placeholder, type = 'text', disabled = false, onChange }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-xs font-semibold  tracking-wide text-text-secondary flex items-center gap-1.5">
+    <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
       {Icon && <Icon className="w-3.5 h-3.5" />} {label}
     </label>
     <input
       type={type}
       value={value}
       placeholder={placeholder}
-      onChange={(e) => onChange(keyName, e.target.value)}
-      className="bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-primary transition-colors w-full"
+      disabled={disabled}
+      onChange={(e) => onChange && onChange(keyName, e.target.value)}
+      className={`bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-primary transition-colors w-full ${
+        disabled ? 'opacity-70 cursor-not-allowed bg-surface-secondary/60 font-semibold text-text' : ''
+      }`}
     />
   </div>
 )
@@ -238,6 +241,16 @@ export default function SettingsPage() {
     try {
       const res = await api.get('/get_app_theme')
       const data = res.data?.data || res.data || {}
+      
+      const currentSubdomain = getSubdomainTenant()
+      let platformName = data.name || ''
+      if (currentSubdomain) {
+        const formattedSubdomain = currentSubdomain.charAt(0).toUpperCase() + currentSubdomain.slice(1)
+        if (!platformName || !platformName.toLowerCase().includes(currentSubdomain.toLowerCase())) {
+          platformName = formattedSubdomain
+        }
+      }
+
       setConfig({
         primaryColor: data.primaryColor || DEFAULT_COLORS.primaryColor,
         secondaryColor: data.secondaryColor || DEFAULT_COLORS.secondaryColor,
@@ -251,7 +264,7 @@ export default function SettingsPage() {
         appLogo: data.appLogo || '',
         webLogo: data.webLogo || '',
         favicon: data.favicon || '',
-        name: data.name || '',
+        name: platformName,
         email: data.email || '',
         phone: data.phone || '',
         facebook: data.facebook || '',
@@ -425,7 +438,14 @@ export default function SettingsPage() {
             <div className="bg-card border border-border rounded-2xl p-6 shadow-glass-sm space-y-4">
               <SectionHeader icon={Building2} title="Platform Info" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <TextInput label="Platform Name" icon={Building2} keyName="name" value={config.name} placeholder="e.g. Parivar Community" onChange={handleConfigChange} />
+                <TextInput
+                  label="Platform Name"
+                  icon={Building2}
+                  keyName="name"
+                  value={config.name}
+                  placeholder="e.g. Parivar Community"
+                  onChange={handleConfigChange}
+                />
                 <TextInput label="Contact Email" icon={Mail} keyName="email" value={config.email} placeholder="contact@example.com" type="email" onChange={handleConfigChange} />
                 <TextInput label="Phone Number" icon={Phone} keyName="phone" value={config.phone} placeholder="+91 99999 99999" onChange={handleConfigChange} />
                 <TextInput label="WhatsApp" icon={MessageCircle} keyName="whatsapp" value={config.whatsapp} placeholder="+91 99999 99999" onChange={handleConfigChange} />
