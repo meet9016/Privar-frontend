@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Shield, Eye, EyeOff, Key } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { toast } from '../lib/toast'
-import { getCommunitySurname, getCommunityFullName, assetUrl } from '../lib/api'
+import { getCommunitySurname, getCommunityFullName, getDomainCommunityName, getSubdomainTenant, assetUrl } from '../lib/api'
 
 export default function Login() {
   const { login, token } = useContext(AuthContext)
@@ -23,9 +23,16 @@ export default function Login() {
 
   useEffect(() => {
     const loadWebTheme = () => {
+      const currentSubdomain = getSubdomainTenant()
+      let name = localStorage.getItem('web_name') || ''
+      if (currentSubdomain && name && !name.toLowerCase().includes(currentSubdomain.toLowerCase())) {
+        name = `${currentSubdomain.charAt(0).toUpperCase() + currentSubdomain.slice(1)} Parivar`
+        localStorage.setItem('web_name', name)
+      }
+
       setWebTheme({
         webLogo: localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || '',
-        name: localStorage.getItem('web_name') || ''
+        name: getDomainCommunityName() || getCommunityFullName()
       })
     }
 
@@ -62,6 +69,8 @@ export default function Login() {
     }
   }
 
+  const domainName = getDomainCommunityName()
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-text relative overflow-hidden font-sans">
       
@@ -71,26 +80,12 @@ export default function Login() {
 
       <div className="w-full max-w-md p-8 bg-surface border border-border rounded-3xl shadow-glass-lg relative z-10 animate-slide-up">
         
-        {/* Glowing Head Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-22 h-12 rounded-2xl flex items-center justify-center mb-3.5 animate-pulse-slow overflow-hidden">
-          {webTheme.webLogo ? (
-              <img
-                src={assetUrl(webTheme.webLogo)}
-                alt={`${webTheme.name || 'Brand'} logo`}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <img
-                src="/parivar.png"
-                alt=""
-                className="h-full w-full object-contain"
-              />
-            )}
-          </div>
-          <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
-            {webTheme.name || getCommunityFullName()}
+        {/* Header Title */}
+        <div className="flex flex-col items-center mb-8 text-center">
+          <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
+            {getDomainCommunityName()}
           </h1>
+          <p className="text-xs font-medium text-text-secondary mt-1">Admin Panel Login</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">

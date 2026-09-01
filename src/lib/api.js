@@ -34,6 +34,26 @@ export const getSubdomainTenant = () => {
 }
 
 /**
+ * Returns the exact community name from domain subdomain (e.g. 'chovatiya.parivar.me' -> 'Chovatiya')
+ * If not on a tenant subdomain, falls back to stored surname or 'Parivar'
+ */
+export const getDomainCommunityName = () => {
+  const currentSubdomain = getSubdomainTenant()
+  if (currentSubdomain) {
+    return currentSubdomain.charAt(0).toUpperCase() + currentSubdomain.slice(1)
+  }
+  const surname = getCommunitySurname()
+  if (surname) {
+    return surname
+  }
+  const webName = localStorage.getItem('web_name')
+  if (webName) {
+    return webName
+  }
+  return 'Parivar'
+}
+
+/**
  * Extracts the clean community surname/name without 'Parivar' suffix
  * e.g. 'chovatiya.parivar.me' -> 'Chovatiya', 'vala.parivar.me' -> 'Vala'
  */
@@ -131,7 +151,6 @@ const setupInterceptors = (axiosInstance) => {
   axiosInstance.interceptors.response.use(
     (response) => {
       const method = response.config?.method?.toLowerCase()
-      // Success toasts are handled by individual components to avoid duplicates
       return response
     },
     (error) => {
