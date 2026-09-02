@@ -50,14 +50,14 @@ export default function WebFooter() {
     <footer className="bg-gray-900 text-white mt-auto pt-16 pb-8 border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-12">
-          
+
           {/* Brand & Description */}
           <div className="space-y-6">
             <Link to="/" className="inline-block">
               {theme?.webLogo ? (
-                <img 
-                  src={assetUrl(theme.webLogo)} 
-                  alt={theme.name || 'Logo'} 
+                <img
+                  src={assetUrl(theme.webLogo)}
+                  alt={theme.name || 'Logo'}
                   className="h-16 w-auto object-contain bg-white rounded p-1"
                 />
               ) : (
@@ -96,12 +96,18 @@ export default function WebFooter() {
             <ul className="grid grid-cols-2 gap-y-3 gap-x-4">
               {navigationLinks.map((link) => (
                 <li key={link.label}>
-                  <Link 
+                  <Link
                     to={link.href}
-                    className="text-gray-400 hover:text-white transition-colors text-sm flex items-center group truncate"
+                    className={`transition-colors text-sm flex items-center group truncate ${
+                      link.highlight
+                        ? 'text-amber-400 font-bold hover:text-amber-300'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
                     title={link.label}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-600 mr-2 flex-shrink-0 group-hover:bg-green-500 transition-colors"></span>
+                    <span className={`w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0 transition-colors ${
+                      link.highlight ? 'bg-amber-400 animate-pulse' : 'bg-gray-600 group-hover:bg-green-500'
+                    }`}></span>
                     <span className="truncate">{link.label}</span>
                   </Link>
                 </li>

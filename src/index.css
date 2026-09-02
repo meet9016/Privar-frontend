@@ -87,7 +87,10 @@
   --color-error-glow: rgba(239, 68, 68, 0.35);
 }
 
-html, body, #root, * {
+html,
+body,
+#root,
+* {
   font-family: 'Noto Sans', 'Noto Sans Gujarati', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -106,22 +109,28 @@ body {
   width: 6px;
   height: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 9999px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary);
 }
 
 /* Hide scrollbar completely but keep functionality */
 .hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -132,27 +141,36 @@ body {
   scrollbar-color: var(--color-primary) transparent;
   scrollbar-gutter: stable;
 }
+
 .tab-scrollbar::-webkit-scrollbar {
   height: 2px;
   width: 2px;
 }
+
 .tab-scrollbar::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 9999px;
 }
+
 .tab-scrollbar::-webkit-scrollbar-thumb {
   background: var(--color-primary);
   border-radius: 9999px;
   opacity: 0.7;
 }
+
 .tab-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary-hover, var(--color-primary));
   opacity: 1;
 }
 
 @keyframes scroll-left {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }   
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .request-middleware-icon,
