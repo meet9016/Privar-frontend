@@ -99,7 +99,7 @@ export default function App() {
           <Route path="services" element={<ServicesPage />} />
           <Route path="media" element={<MediaPage />} />
           <Route path="engagements" element={<EngagementsPage />} />
-          <Route path="masters" element={<MastersPage />} />
+          <Route path="masters" element={<Navigate to="/admin/masters/business" replace />} />
 
           {/* Legacy redirects for old URLs to new tabbed URLs */}
           <Route path="gallery" element={<Navigate to="/admin/activities?tab=gallery" replace />} />
@@ -115,8 +115,8 @@ export default function App() {
           <Route path="feedback" element={<Navigate to="/admin/media?tab=feedback" replace />} />
           <Route path="festivals" element={<Navigate to="/admin/engagements?tab=festivals" replace />} />
           <Route path="donations" element={<Navigate to="/admin/engagements?tab=donations" replace />} />
-          <Route path="masters/:type" element={<Navigate to="/admin/masters" replace />} />
-          <Route path="bank-details" element={<Navigate to="/admin/masters?tab=bank-details" replace />} />
+          <Route path="masters/:type" element={<MasterRoute />} />
+          <Route path="bank-details" element={<PermissionRoute permission="masters.list"><ContentPage type="bank-details" /></PermissionRoute>} />
 
           {/* Other standalone routes */}
           <Route path="contact-inquiries" element={<PermissionRoute permission="contact-inquiries.list"><ContentPage type="inquiries" /></PermissionRoute>} />
@@ -137,8 +137,7 @@ export default function App() {
 
 function MasterRoute() {
   const { type } = useParams()
-  const permission = `${type === 'business' ? 'businesses' : type}.list`
-  return <PermissionRoute permission={permission}><MasterPage type={type} /></PermissionRoute>
+  return <PermissionRoute permission="masters.list"><MasterPage type={type} /></PermissionRoute>
 }
 
 function PermissionRoute({ permission, children }) {

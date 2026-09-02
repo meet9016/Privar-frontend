@@ -41,6 +41,64 @@ const LinkItem = ({ to, icon: Icon, label, end }) => {
   )
 }
 
+const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
+  const location = useLocation()
+  const isChildActive = items.some(item => {
+    const itemPath = item.to || `${parentPath}/${item.type}`
+    return location.pathname === itemPath || location.pathname.startsWith(`${itemPath}/`)
+  })
+  const [isOpen, setIsOpen] = useState(isChildActive)
+
+  useEffect(() => {
+    if (isChildActive) setIsOpen(true)
+  }, [isChildActive])
+
+  return (
+    <div className="space-y-1">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${
+          isChildActive && !isOpen
+            ? 'text-white font-bold shadow-md border-transparent bg-primary'
+            : isOpen 
+            ? 'text-primary font-bold bg-primary/10 border-transparent'
+            : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
+        }`}
+      >
+        <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 ${isChildActive || isOpen ? 'text-primary font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />
+        <span className="truncate tracking-tight flex-1 text-left">{label}</span>
+        <svg 
+          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      
+      {isOpen && (
+        <div className="pl-11 pr-2 py-1.5 space-y-1.5">
+          {items.map(item => {
+            const itemPath = item.to || `${parentPath}/${item.type}`
+            return (
+              <NavLink
+                key={item.type || item.to}
+                to={itemPath}
+                className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-[13px] transition-colors ${
+                  isActive || location.pathname === itemPath
+                    ? 'bg-primary text-white font-semibold shadow-sm' 
+                    : 'text-text-secondary hover:text-text hover:bg-surface-secondary font-medium'
+                }`}
+              >
+                {item.label}
+              </NavLink>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Sidebar() {
   const { user } = useContext(AuthContext)
   const [webTheme, setWebTheme] = useState({ webLogo: '', name: '' })
@@ -128,9 +186,12 @@ export default function Sidebar() {
         )}
 
         {visibleMasterNavigation.length > 0 && (
-          <div className="space-y-1">
-            <LinkItem to="/admin/masters" label="Masters" icon={Database} />
-          </div>
+          <CollapsibleFolder 
+            icon={Database} 
+            label="Masters" 
+            items={visibleMasterNavigation} 
+            parentPath="/admin/masters" 
+          />
         )}
 
         {visibleConfigurationNavigation.length > 0 && (

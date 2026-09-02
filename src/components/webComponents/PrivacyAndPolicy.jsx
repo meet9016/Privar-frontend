@@ -1,253 +1,231 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 
-export default function PrivacyPolicy() {
-  const [theme, setTheme] = useState({})
-
-  useEffect(() => {
-    const colorKeys = ['name', 'email', 'phone', 'address', 'lastUpdatedPrivacy', 'orgJurisdiction']
-    const loadedTheme = {}
-    colorKeys.forEach((key) => {
-      const value = localStorage.getItem(`web_${key}`)
-      if (value) loadedTheme[key] = value
-    })
-    setTheme(loadedTheme)
-  }, [])
-
-  const orgName = theme?.name || ''
-
+export default function PrivacyAndPolicy() {
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-gray-800">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-gray-800 space-y-6">
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
-      <p className="text-sm text-gray-500 mb-8">
-        Last Updated: {theme?.lastUpdatedPrivacy || '[Insert Date]'}
+      <p className="text-sm text-gray-500 mb-8">Effective Date: 2 September 2026</p>
+      
+      <p className="leading-relaxed">
+        Welcome to Parivar (“we”, “our”, “us”). Parivar is a digital platform designed to help users create and manage their personal and family profiles and access family, community, matrimonial, event, donation and other related services offered through the platform.
+      </p>
+      <p className="leading-relaxed">
+        This Privacy Policy explains what information we collect, why we collect it, how we use it, how we protect it, and what choices are available to you. By using the Parivar application or website, you agree to the practices described in this Privacy Policy.
       </p>
 
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">1. Introduction</h2>
-        <p className="leading-relaxed">
-          Welcome to {orgName} ("we," "us," "our," or the "Association"). We are
-          committed to protecting the privacy and security of personal information belonging to our
-          members, donors, students, and website visitors (collectively, "you" or "users").
-        </p>
-        <p className="leading-relaxed mt-2">
-          This Privacy Policy explains how we collect, use, store, share, and protect your personal
-          information when you visit our website, register for an account, make donations, or
-          otherwise interact with our services.
-        </p>
-        <p className="leading-relaxed mt-2">
-          By accessing or using our website, you agree to the terms of this Privacy Policy. If you do
-          not agree, please discontinue use of our website and services.
-        </p>
-      </section>
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">1. Information We Collect</h2>
+        <p className="leading-relaxed">We collect only the information that is reasonably required to provide and improve our services.</p>
+        
+        <h3 className="text-lg font-medium mt-4">A. Account Information</h3>
+        <p className="leading-relaxed">When you create an account, we may collect:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Full Name</li>
+          <li>Mobile Number</li>
+          <li>Email Address, where applicable</li>
+          <li>Password or authentication-related information</li>
+          <li>OTP verification information</li>
+          <li>Account and login information</li>
+        </ul>
+        <p className="leading-relaxed">Some of these fields may be mandatory for creating and securing your account.</p>
 
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">2. Information We Collect</h2>
-        <h3 className="font-medium mt-3 mb-1">2.1 Information You Provide Directly</h3>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li>
-            <strong>Account/Registration Information</strong>: Name, email address, phone number,
-            password, date of birth, gender, address, and profile photograph.
-          </li>
-          <li>
-            <strong>Member/Family Details</strong>: Information about family members, relationships,
-            and community affiliation as required for membership records.
-          </li>
-          <li>
-            <strong>Donor Information</strong>: Name, contact details, payment information, donation
-            history, and PAN/tax-related details (where applicable for tax receipts).
-          </li>
-          <li>
-            <strong>Student Information</strong>: Academic details, institution name, course of
-            study, and related information for scholarship or sponsorship programs.
-          </li>
-          <li>
-            <strong>Communications</strong>: Information you provide when contacting us via forms,
-            email, or messaging features.
-          </li>
+        <h3 className="text-lg font-medium mt-4">B. Personal and Profile Information</h3>
+        <p className="leading-relaxed">Depending on the services you choose to use, you may provide information such as:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Date of Birth</li>
+          <li>Gender</li>
+          <li>Profile Photo</li>
+          <li>Address or Location</li>
+          <li>City, State and Country</li>
+          <li>Education</li>
+          <li>Occupation</li>
+          <li>Marital Status</li>
+          <li>Contact information</li>
+          <li>Personal preferences</li>
+          <li>Other profile-related information</li>
         </ul>
 
-        <h3 className="font-medium mt-3 mb-1">2.2 Information Collected Automatically</h3>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li>
-            <strong>Device and Usage Data</strong>: IP address, browser type, device type, operating
-            system, pages visited, and time spent on the website.
-          </li>
-          <li>
-            <strong>Cookies and Tracking Technologies</strong>: We use cookies and similar
-            technologies to enhance user experience, remember preferences, and analyze website
-            traffic.
-          </li>
+        <h3 className="text-lg font-medium mt-4">C. Family Information</h3>
+        <p className="leading-relaxed">If you choose to create a family profile or add family members, you may provide information such as:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Family Member Name</li>
+          <li>Relationship</li>
+          <li>Parents’ information</li>
+          <li>Spouse information</li>
+          <li>Children’s information</li>
+          <li>Family contact information</li>
+          <li>Family background</li>
+          <li>Other information voluntarily added by you</li>
         </ul>
+        <p className="leading-relaxed">You should only provide information about another person where you are authorized or have appropriate permission to do so.</p>
 
-        <h3 className="font-medium mt-3 mb-1">2.3 Information from Third Parties</h3>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li>Information from social media platforms if you choose to log in or link your account.</li>
-          <li>
-            Payment confirmation details from payment gateway providers when you make donations or
-            payments.
-          </li>
+        <h3 className="text-lg font-medium mt-4">D. Matrimonial/Profile Information</h3>
+        <p className="leading-relaxed">If you use matrimonial or profile-related features, you may voluntarily provide additional information such as:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Height and Weight</li>
+          <li>Education</li>
+          <li>Occupation</li>
+          <li>Marital Status</li>
+          <li>Family Details</li>
+          <li>Partner Preferences</li>
+          <li>Lifestyle or personal preferences</li>
+          <li>Profile photographs</li>
+          <li>Other information that you choose to publish on your profile</li>
         </ul>
-      </section>
+        <p className="leading-relaxed">Only information necessary for the selected feature or information voluntarily provided by you will be processed.</p>
 
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">3. How We Use Your Information</h2>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li>To create and manage your account and provide access to member-only features.</li>
-          <li>To process donations, issue receipts, and maintain donor records.</li>
-          <li>
-            To communicate with you regarding events, announcements, newsletters, and community
-            updates.
-          </li>
-          <li>
-            To verify eligibility for student scholarships, sponsorships, or other support programs.
-          </li>
-          <li>To improve our website, services, and user experience.</li>
-          <li>To send notifications related to your account activity.</li>
-          <li>To comply with applicable legal, regulatory, and tax obligations.</li>
-          <li>To prevent fraud, unauthorized access, and ensure the security of our platform.</li>
+        <h3 className="text-lg font-medium mt-4">E. Events, Donations and Community Activities</h3>
+        <p className="leading-relaxed">If you use event, donation or community-related features, we may collect information necessary to:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Register you for an event</li>
+          <li>Manage participation</li>
+          <li>Maintain donation records</li>
+          <li>Generate receipts where applicable</li>
+          <li>Maintain transaction records</li>
+          <li>Communicate event or donation-related information</li>
         </ul>
-      </section>
+        <p className="leading-relaxed">Payment information may be processed through authorized payment service providers. We do not intend to store complete card, CVV or banking credentials on our servers unless specifically required and lawfully permitted.</p>
 
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">4. Legal Basis for Processing</h2>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li><strong>Consent</strong>: When you register, provide information, or opt in to communications.</li>
-          <li><strong>Legitimate Interest</strong>: To operate and improve our services and maintain community records.</li>
-          <li><strong>Legal Obligation</strong>: To comply with applicable laws, including tax and financial reporting requirements for donations.</li>
+        <h3 className="text-lg font-medium mt-4">F. Technical Information</h3>
+        <p className="leading-relaxed">When you use Parivar, certain technical information may automatically be collected, such as:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>IP address</li>
+          <li>Browser/device information</li>
+          <li>Operating system</li>
+          <li>Login/session information</li>
+          <li>Application usage information</li>
+          <li>Error and diagnostic information</li>
+          <li>Security and authentication logs</li>
         </ul>
+        <p className="leading-relaxed">This information may be used to maintain security, prevent misuse and improve the platform.</p>
       </section>
 
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">5. How We Share Your Information</h2>
-        <p className="leading-relaxed mb-2">
-          We do not sell, rent, or trade your personal information to third parties for marketing
-          purposes. We may share your information in the following limited circumstances:
-        </p>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li>
-            <strong>Service Providers</strong>: With trusted third-party vendors who assist us in
-            operating the website, processing payments, or sending communications (e.g., payment
-            gateways, email service providers).
-          </li>
-          <li>
-            <strong>Legal Requirements</strong>: When required by law, regulation, court order, or
-            governmental request.
-          </li>
-          <li>
-            <strong>Organizational Operations</strong>: With authorized committee members or
-            administrators for managing membership, donations, and community activities.
-          </li>
-          <li>
-            <strong>Business Transfers</strong>: In the event of a merger, restructuring, or transfer
-            of assets, your information may be transferred as part of that transaction, subject to
-            confidentiality obligations.
-          </li>
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">2. Required and Optional Information</h2>
+        <p className="leading-relaxed">Parivar follows a minimum necessary information approach.</p>
+        <p className="leading-relaxed">Fields marked as <strong>Required (*)</strong> are necessary for creating an account, verifying identity, providing a particular service, or completing a specific transaction or process.</p>
+        <p className="leading-relaxed">Fields that are not marked as required are generally optional and are provided at the user’s discretion. You are not required to provide optional information merely to maintain your account, unless that information becomes necessary for a particular feature that you choose to use.</p>
+        <p className="leading-relaxed">Providing additional optional information may help create a more complete profile and may improve your experience with certain Parivar features.</p>
+        <p className="leading-relaxed">If you do not provide a required field, certain services or features may not be available to you.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">3. Why We Collect Your Information</h2>
+        <p className="leading-relaxed">We may use collected information for the following purposes:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Creating and managing your account</li>
+          <li>Verifying your mobile number or email</li>
+          <li>Providing Parivar services</li>
+          <li>Creating and managing family profiles</li>
+          <li>Managing matrimonial profiles where applicable</li>
+          <li>Enabling event participation</li>
+          <li>Managing donations and related records</li>
+          <li>Providing customer support</li>
+          <li>Sending important service notifications</li>
+          <li>Improving application functionality</li>
+          <li>Preventing fraud, misuse and unauthorized access</li>
+          <li>Maintaining platform security</li>
+          <li>Troubleshooting technical issues</li>
+          <li>Complying with applicable laws and legal obligations</li>
         </ul>
+        <p className="leading-relaxed">We do not collect personal information merely for unrelated purposes.</p>
       </section>
 
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">6. Data Storage and Security</h2>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li>
-            We implement reasonable administrative, technical, and physical security measures to
-            protect your personal information from unauthorized access, alteration, disclosure, or
-            destruction.
-          </li>
-          <li>Passwords are stored in encrypted/hashed form and are never visible to administrators.</li>
-          <li>
-            Despite our efforts, no method of transmission over the internet or electronic storage is
-            100% secure. We cannot guarantee absolute security.
-          </li>
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">4. Consent and User Choice</h2>
+        <p className="leading-relaxed">Where consent is required, Parivar will seek appropriate consent before processing personal information. You may choose whether to provide optional information.</p>
+        <p className="leading-relaxed">You may also have rights available under applicable data protection laws regarding your personal information, subject to applicable legal requirements and limitations.</p>
+        <p className="leading-relaxed">The Digital Personal Data Protection Act, 2023 requires appropriate notice regarding personal data and the purpose for which it is processed.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">5. Data Security</h2>
+        <p className="leading-relaxed">We take reasonable and appropriate technical and organizational measures to protect your information against: Unauthorized access, Unauthorized disclosure, Data alteration, Data loss, Misuse, Unauthorized destruction.</p>
+        <p className="leading-relaxed">Depending on the nature of the information and the system component involved, security measures may include:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Encryption of data during transmission</li>
+          <li>Encryption or other appropriate protection for stored sensitive information</li>
+          <li>Secure authentication mechanisms</li>
+          <li>Access control</li>
+          <li>Role-based access</li>
+          <li>Secure server infrastructure</li>
+          <li>Security monitoring and logging</li>
+          <li>Regular software and security updates</li>
+          <li>Backup and recovery mechanisms</li>
+          <li>Restricted administrative access</li>
         </ul>
+        <p className="leading-relaxed">Access to personal information is limited to authorized persons and systems that require such access for legitimate business or service purposes.</p>
+        <p className="leading-relaxed">However, no internet-based system can guarantee absolute security. We therefore cannot guarantee that information will always be completely immune from every possible security threat.</p>
       </section>
 
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">7. Data Retention</h2>
-        <p className="leading-relaxed mb-2">
-          We retain your personal information for as long as necessary to fulfill the purposes
-          outlined in this Privacy Policy, including:
-        </p>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li>Maintaining active membership and account records.</li>
-          <li>
-            Complying with legal, accounting, or tax reporting obligations (especially for donation
-            records).
-          </li>
-          <li>Resolving disputes and enforcing agreements.</li>
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">6. Data Sharing</h2>
+        <p className="leading-relaxed">We do not sell your personal information as a commercial product. Your information may be shared only where reasonably necessary for providing services, operating the platform, maintaining security, processing transactions, complying with law, or with your consent.</p>
+        <p className="leading-relaxed">Information may be shared with:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Authorized service providers</li>
+          <li>Hosting and infrastructure providers</li>
+          <li>Authentication/service providers</li>
+          <li>Payment service providers, where applicable</li>
+          <li>Technical and security service providers</li>
+          <li>Government or law-enforcement authorities where legally required</li>
         </ul>
-        <p className="leading-relaxed mt-2">
-          You may request deletion of your account and associated data, subject to our legal
-          retention obligations, by contacting us using the details provided in Section 11.
-        </p>
+        <p className="leading-relaxed">Third-party service providers are expected to handle information only for legitimate purposes and in accordance with applicable requirements.</p>
       </section>
 
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">8. Your Rights</h2>
-        <p className="leading-relaxed mb-2">Depending on applicable law, you may have the right to:</p>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li><strong>Access</strong> the personal information we hold about you.</li>
-          <li><strong>Correct</strong> inaccurate or incomplete information.</li>
-          <li><strong>Request Deletion</strong> of your personal data, subject to legal retention requirements.</li>
-          <li><strong>Withdraw Consent</strong> for processing based on consent, including unsubscribing from communications.</li>
-          <li><strong>Object</strong> to certain types of processing.</li>
-          <li><strong>Request Data Portability</strong> in a structured, commonly used format.</li>
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">7. Profile Visibility</h2>
+        <p className="leading-relaxed">Certain information that you voluntarily add to your profile may be visible to other authorized Parivar users depending on the feature and privacy settings available on the platform.</p>
+        <p className="leading-relaxed">Users should carefully review the information they choose to publish. You should not publish highly sensitive, confidential or unnecessary information in publicly visible profile fields.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">8. Data Retention</h2>
+        <p className="leading-relaxed">We retain personal information only for as long as reasonably necessary to: Provide the requested services, Maintain your account, Fulfil legitimate business purposes, Maintain required records, Resolve disputes, Prevent fraud or misuse, Comply with applicable legal obligations.</p>
+        <p className="leading-relaxed">When information is no longer required, it may be deleted, anonymized or securely disposed of, subject to applicable legal and operational requirements.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">9. Your Rights</h2>
+        <p className="leading-relaxed">Subject to applicable law, you may have rights to: Request information about your personal data, Correct inaccurate or incomplete information, Update your profile information, Request deletion of personal information where legally permissible, Withdraw consent where applicable, Raise a privacy-related complaint or grievance.</p>
+        <p className="leading-relaxed">Certain information may need to be retained where required by law or necessary for legitimate legal purposes.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">10. Account Deletion</h2>
+        <p className="leading-relaxed">If you wish to delete your Parivar account, you may contact us through the support/contact mechanism provided by the platform. After receiving a valid deletion request, we will process the request in accordance with applicable law and our data retention requirements.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">11. Cookies and Similar Technologies</h2>
+        <p className="leading-relaxed">Parivar may use cookies, local storage, session technologies or similar technologies where required for: Login and authentication, Maintaining sessions, Security, Preferences, Application functionality, Analytics and performance.</p>
+        <p className="leading-relaxed">You may be able to control certain cookies through your browser or device settings.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">12. Children’s Privacy</h2>
+        <p className="leading-relaxed">Parivar is not intended to knowingly collect personal information from children in violation of applicable law. Where information relating to a minor is added by a parent, guardian or authorized family member, that person is responsible for ensuring that the information is provided lawfully and appropriately.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">13. Third-Party Services</h2>
+        <p className="leading-relaxed">Parivar may use third-party services for hosting, authentication, analytics, communication, payments, notifications or other technical requirements. Such third parties may process limited information necessary to provide their respective services. Their processing may also be governed by their own privacy policies and applicable laws.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">14. Changes to this Privacy Policy</h2>
+        <p className="leading-relaxed">We may update this Privacy Policy from time to time to reflect changes in our services, technology, security practices or applicable laws. Any updated version will be made available through the Parivar platform. Your continued use of the platform after an update may be subject to the updated Privacy Policy where permitted by applicable law.</p>
+      </section>
+
+      <section className="mb-6 space-y-3">
+        <h2 className="text-xl font-semibold">15. Contact and Grievance</h2>
+        <p className="leading-relaxed">If you have any questions, concerns, requests or complaints regarding your personal information or this Privacy Policy, please contact Parivar through the contact details provided on the platform.</p>
+        <ul className="list-none space-y-1">
+          <li><strong>Platform:</strong> Parivar</li>
+          <li><strong>Website:</strong> chovatiya.parivar.me</li>
+          <li><strong>Privacy/Support Contact:</strong> [Add official email address]</li>
+          <li><strong>Grievance Contact:</strong> [Add official grievance email/address]</li>
         </ul>
-        <p className="leading-relaxed mt-2">
-          To exercise any of these rights, please contact us using the details in Section 11.
-        </p>
-      </section>
-
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">9. Cookies Policy</h2>
-        <p className="leading-relaxed mb-2">Our website uses cookies to:</p>
-        <ul className="list-disc pl-6 space-y-1 leading-relaxed">
-          <li>Remember your login session and preferences.</li>
-          <li>Analyze website traffic and usage patterns.</li>
-          <li>Improve overall website functionality.</li>
-        </ul>
-        <p className="leading-relaxed mt-2">
-          You can control or disable cookies through your browser settings. Please note that
-          disabling cookies may affect the functionality of certain features, including login and
-          personalized content.
-        </p>
-      </section>
-
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">10. Children's Privacy</h2>
-        <p className="leading-relaxed mb-2">
-          Our services, particularly student sponsorship and scholarship programs, may involve
-          information about minors provided by their parents, guardians, or educational
-          institutions. We handle such information with additional care and only collect what is
-          necessary for the stated purpose, with appropriate consent from a parent or guardian.
-        </p>
-        <p className="leading-relaxed">
-          We do not knowingly allow minors to independently create accounts or provide personal
-          information without parental/guardian consent.
-        </p>
-      </section>
-
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">11. Contact Us</h2>
-        <p className="leading-relaxed mb-2">
-          If you have any questions, concerns, or requests regarding this Privacy Policy or your
-          personal information, please contact us at:
-        </p>
-        <p className="leading-relaxed">
-          <strong>{orgName}</strong><br />
-          Email: {theme?.email || '[Insert Email Address]'}<br />
-          Phone: {theme?.phone || '[Insert Phone Number]'}<br />
-
-        </p>
-      </section>
-
-      <section>
-        <h2 className="text-xl font-semibold mb-2">12. Changes to This Privacy Policy</h2>
-        <p className="leading-relaxed">
-          We may update this Privacy Policy from time to time to reflect changes in our practices,
-          legal requirements, or services. We will notify users of significant changes by posting the
-          updated policy on our website with a revised "Last Updated" date. Continued use of our
-          website after such changes constitutes your acceptance of the updated policy.
-        </p>
       </section>
     </div>
   )

@@ -132,16 +132,16 @@ export default function Login() {
           </div>
 
           {/* Terms Checkbox */}
-          <div className="flex items-start gap-2.5 mt-2">
+          <div className="flex items-center gap-2.5 mt-2">
             <input 
               type="checkbox" 
               id="agree" 
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
-              className="mt-1 shrink-0 w-4 h-4 rounded border border-border text-primary focus:ring-primary/50 bg-input-bg cursor-pointer"
+              className="shrink-0 w-4 h-4 rounded border border-border text-primary focus:ring-primary/50 bg-input-bg cursor-pointer"
             />
             <label htmlFor="agree" className="text-xs text-text-secondary leading-snug cursor-pointer select-none">
-              I agree to the <a href="#" onClick={e => e.preventDefault()} className="text-primary hover:underline">Privacy Policy</a> and <a href="#" onClick={e => e.preventDefault()} className="text-primary hover:underline">Terms & Conditions</a>
+              I agree to the <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Privacy Policy</a> and <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Terms & Conditions</a>
             </label>
           </div>
 

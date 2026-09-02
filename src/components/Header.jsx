@@ -98,7 +98,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex items-center justify-between px-8 py-5 bg-surface border-b border-border shadow-glass-md backdrop-blur-xl">
+      <header className="sticky top-0 z-50 flex items-center justify-between px-8 h-[85px] bg-surface border-b border-border shadow-glass-md backdrop-blur-xl">
         {/* Title block */}
         <div className="flex items-center gap-3">
           <GlobalSearch />
