@@ -196,8 +196,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
       if (field === 'last_name' && value.trim()) delete updated.last_name
       if (field === 'number' && value.trim().length === 10) delete updated.number
       if (field === 'email') {
-        if (!value.trim()) updated.email = 'Email is required'
-        else if (!isValidEmail(value)) updated.email = 'Please enter a valid email (e.g. user@gmail.com)'
+        if (value.trim() && !isValidEmail(value)) updated.email = 'Please enter a valid email (e.g. user@gmail.com)'
         else delete updated.email
       }
       if (field === 'country_id' && value) delete updated.country_id
@@ -218,13 +217,11 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     if (!formData.last_name.trim()) newErrors.last_name = 'Last name is required'
     if (!formData.number.trim()) newErrors.number = 'Mobile number is required'
     else if (formData.number.trim().length < 10) newErrors.number = 'Mobile number must be 10 digits'
-    if (!formData.email.trim()) newErrors.email = 'Email is required'
-    else if (!isValidEmail(formData.email)) newErrors.email = 'Please enter a valid email (e.g. user@gmail.com)'
+    if (formData.email.trim() && !isValidEmail(formData.email)) newErrors.email = 'Please enter a valid email (e.g. user@gmail.com)'
     
     if (!formData.country_id) newErrors.country_id = 'Country is required'
     if (!formData.state_id) newErrors.state_id = 'State is required'
     if (!formData.city_id) newErrors.city_id = 'City is required'
-    if (!formData.address.trim()) newErrors.address = 'Address is required'
     if (!formData.dob) newErrors.dob = 'Date of Birth is required'
     if (!isHead && !formData.family_head_id) newErrors.family_head_id = 'Family head is required'
     if (!isHead && formData.relation === 'Self') newErrors.relation = 'Under Head cannot be "Self"'
@@ -309,7 +306,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           value={formData.email}
           onChange={(e) => handleChange('email', e.target.value)}
           disabled={isLoading}
-          required={true}
+          required={false}
           error={errors.email}
         />
         <Input
@@ -322,16 +319,30 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           required={true}
           error={errors.number}
         />
-        <Select
-          label="Relationship"
-          value={formData.relation}
-          onChange={(val) => handleChange('relation', val)}
-          options={relationOptions}
-          disabled={isHead || isLoading}
-          required={true}
-          searchable={true}
-          error={errors.relation}
-        />
+        <div>
+          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Hierarchy</label>
+          <div className="flex items-center h-[38px] px-3 bg-input-bg border border-border rounded-xl">
+            <RadioGroup
+              name="hierarchy"
+              options={[
+                { label: 'Head', value: 'head' },
+                { label: 'Under Head', value: 'under_head' }
+              ]}
+              value={isHead ? 'head' : 'under_head'}
+              onChange={(val) => {
+                const headStatus = val === 'head';
+                setIsHead(headStatus);
+                if (headStatus) {
+                  setFormData(prev => ({ ...prev, relation: 'Self', family_head_id: '' }));
+                  if (errors.relation) setErrors(prev => ({...prev, relation: null}));
+                } else {
+                  setFormData(prev => ({ ...prev, relation: '' }));
+                  if (errors.family_head_id) setErrors(prev => ({...prev, family_head_id: null}));
+                }
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Row 3: Bio Metrics (3 inputs) */}
@@ -438,28 +449,16 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-text-secondary mb-1.5">Hierarchy</label>
-          <div className="flex items-center h-[38px] px-3 bg-input-bg border border-border rounded-xl">
-            <RadioGroup
-              name="hierarchy"
-              options={[
-                { label: 'Head', value: 'head' },
-                { label: 'Under Head', value: 'under_head' }
-              ]}
-              value={isHead ? 'head' : 'under_head'}
-              onChange={(val) => {
-                const headStatus = val === 'head';
-                setIsHead(headStatus);
-                if (headStatus) {
-                  setFormData(prev => ({ ...prev, relation: 'Self', family_head_id: '' }));
-                  if (errors.relation) setErrors(prev => ({...prev, relation: null}));
-                } else {
-                  setFormData(prev => ({ ...prev, relation: '' }));
-                  if (errors.family_head_id) setErrors(prev => ({...prev, family_head_id: null}));
-                }
-              }}
-            />
-          </div>
+          <Select
+            label="Relationship"
+            value={formData.relation}
+            onChange={(val) => handleChange('relation', val)}
+            options={relationOptions}
+            disabled={isHead || isLoading}
+            required={true}
+            searchable={true}
+            error={errors.relation}
+          />
         </div>
 
         <div>
@@ -504,7 +503,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
           label="Address"
           type="textarea"
           rows={2}
-          required={true}
+          required={false}
           value={formData.address}
           onChange={(e) => handleChange('address', e.target.value)}
           disabled={isLoading}

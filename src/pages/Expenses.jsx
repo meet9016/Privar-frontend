@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import api, { getExpensesList, getCommitteeMembersList, assetUrl, formatDate, getCommunitySurname } from '../lib/api'
 import { EXPENSE_ENDPOINTS } from '../utils/endpoints'
+import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import usePermissions from '../hooks/usePermissions'
 import Modal from '../components/Modal'

@@ -67,7 +67,7 @@ export default function Input({
           value={value}
           onChange={onChange}
           className={`w-full px-3 py-2 bg-input-bg text-text border ${error ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary/50'
-            } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}
+            } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all ${type !== 'email' && type !== 'password' && type !== 'url' ? 'capitalize' : ''}`}
         />
       ) : (
         <div className="relative">
@@ -85,7 +85,7 @@ export default function Input({
             onKeyDown={handleKeyDown}
             onChange={handleChange}
             className={`w-full ${icon ? 'pl-10' : 'px-3'} ${isPassword ? 'pr-10' : 'pr-3'} py-2 bg-input-bg text-text border ${error ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary/50'
-              } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all`}
+              } rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all ${type !== 'email' && type !== 'password' && type !== 'url' && !isTel ? 'capitalize' : ''}`}
           />
           {isPassword && (
             <button

@@ -256,8 +256,7 @@ export default function Donations({ headerLeftContent }) {
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(bank.account_number)
-                            setSuccess('A/c Number copied!')
-                            setTimeout(() => setSuccess(''), 3000)
+                            toast.success('A/c Number copied!')
                           }}
                           className="p-1 hover:bg-surface-secondary rounded text-text-secondary hover:text-primary transition-colors"
                           title="Copy A/c Number"
@@ -279,8 +278,7 @@ export default function Donations({ headerLeftContent }) {
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(bank.upi_link)
-                            setSuccess('UPI ID copied!')
-                            setTimeout(() => setSuccess(''), 3000)
+                            toast.success('UPI ID copied!')
                           }}
                           className="p-1 hover:bg-surface-secondary rounded text-primary transition-colors ml-auto"
                           title="Copy UPI ID"
@@ -330,11 +328,6 @@ export default function Donations({ headerLeftContent }) {
             )
           },
           {
-            header: 'Event',
-            key: 'event',
-            render: (donation) => <span className="text-text-secondary text-sm">{donation.event_name || '-'}</span>
-          },
-          {
             header: 'Payment Mode',
             key: 'payment_mode',
             render: (donation) => (
@@ -342,11 +335,6 @@ export default function Donations({ headerLeftContent }) {
                 {donation.payment_mode || 'Cash'}
               </span>
             )
-          },
-          {
-            header: 'Trust / Organization',
-            key: 'trust',
-            render: (donation) => <span className="text-text-secondary text-sm">{donation.trust_name || '-'}</span>
           },
           {
             header: 'Status',
@@ -468,6 +456,19 @@ export default function Donations({ headerLeftContent }) {
                 error={fieldErrors.date}
               />
               {fieldErrors.date && <p className="text-red-500 text-xs mt-1 font-semibold">Date is required</p>}
+            </div>
+
+            <div>
+              <label className="text-sm text-text-secondary mb-1.5 block font-semibold">Payment Mode <span className="text-red-500">*</span></label>
+              <select
+                name="payment_mode"
+                defaultValue={selectedDonation?.payment_mode || 'Cash'}
+                className="w-full px-3 py-2.5 bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+              >
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+                <option value="Transfer">Transfer</option>
+              </select>
             </div>
 
           </div>

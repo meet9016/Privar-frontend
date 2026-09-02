@@ -447,9 +447,15 @@ export default function GalleryPage({ headerLeftContent }) {
             render: (row) => <span className="font-medium max-w-xs line-clamp-1">{row.category || 'General'}</span>
           },
           {
-            header: 'Month/Year',
+            header: 'Date',
             key: 'month_year',
             render: (row) => {
+              if (row.date) {
+                const d = new Date(row.date);
+                if (!isNaN(d.getTime())) {
+                  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
+                }
+              }
               const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
               let mText = ''
               if (row.month) {

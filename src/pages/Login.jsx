@@ -15,6 +15,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [webTheme, setWebTheme] = useState({ webLogo: '', name: '' })
 
+  const [agree, setAgree] = useState(false)
+
   useEffect(() => {
     if (token) {
       navigate('/admin/dashboard', { replace: true })
@@ -54,6 +56,12 @@ export default function Login() {
       toast.error(message)
       return
     }
+    if (!agree) {
+      const message = 'You must agree to the Privacy Policy and Terms & Conditions.'
+      setError(message)
+      toast.error(message)
+      return
+    }
     setError('')
     setLoading(true)
     try {
@@ -83,9 +91,8 @@ export default function Login() {
         {/* Header Title */}
         <div className="flex flex-col items-center mb-8 text-center">
           <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
-            {getDomainCommunityName()}
+            {domainName.toLowerCase().includes('parivar') ? domainName : `${domainName} Parivar`}
           </h1>
-          <p className="text-xs font-medium text-text-secondary mt-1">Admin Panel Login</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -122,6 +129,20 @@ export default function Login() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+          </div>
+
+          {/* Terms Checkbox */}
+          <div className="flex items-start gap-2.5 mt-2">
+            <input 
+              type="checkbox" 
+              id="agree" 
+              checked={agree}
+              onChange={(e) => setAgree(e.target.checked)}
+              className="mt-1 shrink-0 w-4 h-4 rounded border border-border text-primary focus:ring-primary/50 bg-input-bg cursor-pointer"
+            />
+            <label htmlFor="agree" className="text-xs text-text-secondary leading-snug cursor-pointer select-none">
+              I agree to the <a href="#" onClick={e => e.preventDefault()} className="text-primary hover:underline">Privacy Policy</a> and <a href="#" onClick={e => e.preventDefault()} className="text-primary hover:underline">Terms & Conditions</a>
+            </label>
           </div>
 
           {/* Submit */}

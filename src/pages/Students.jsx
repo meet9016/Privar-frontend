@@ -38,6 +38,7 @@ export default function Students({ headerLeftContent }) {
   const [draftFilters, setDraftFilters] = useState({ status: '', year: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [selectedStdTab, setSelectedStdTab] = useState('all')
+  const [selectedStreamTab, setSelectedStreamTab] = useState('')
 
   const [existingStudentImage, setExistingStudentImage] = useState('')
   const [existingResultImage, setExistingResultImage] = useState('')
@@ -88,7 +89,19 @@ export default function Students({ headerLeftContent }) {
     try {
       const params = getParams({ search: debouncedSearch, ...filters })
       if (selectedStdTab && selectedStdTab !== 'all') {
-        params.standard = selectedStdTab
+        if ((selectedStdTab === '11' || selectedStdTab === '12') && selectedStreamTab) {
+          params.standard = `Std ${selectedStdTab} (${selectedStreamTab})`
+        } else if (selectedStdTab === '11' || selectedStdTab === '12') {
+          // If no stream is selected, maybe we pass something that won't match anything 
+          // or we don't pass standard so it shows all (but we want only 11/12). 
+          // Since backend uses exact match, passing '11' won't match 'Std 11 (Commerce)'. 
+          // We can just pass standard = selectedStdTab, and let search handle it, 
+          // or we can pass a special flag. For now, if no stream is selected, 
+          // let's pass `Std ${selectedStdTab}` which won't match, requiring user to click a stream.
+          params.standard = `Std ${selectedStdTab}`
+        } else {
+          params.standard = selectedStdTab
+        }
       }
       const res = await getStudentsList(params)
       const rows = res.data?.data || res.data || []
@@ -102,7 +115,7 @@ export default function Students({ headerLeftContent }) {
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, page, selectedStdTab, getParams, setPaginationData, filters])
+  }, [debouncedSearch, page, selectedStdTab, selectedStreamTab, getParams, setPaginationData, filters])
 
   useEffect(() => {
     fetchStudents()
@@ -366,6 +379,7 @@ export default function Students({ headerLeftContent }) {
               type="button"
               onClick={() => {
                 setSelectedStdTab(tab.value)
+                setSelectedStreamTab('') // Reset stream on tab change
                 setPage(1)
               }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors duration-150 cursor-pointer ${
@@ -379,6 +393,30 @@ export default function Students({ headerLeftContent }) {
           )
         })}
       </div>
+      
+      {/* Stream Selector for Std 11 & Std 12 */}
+      {(selectedStdTab === '11' || selectedStdTab === '12') && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 animate-in fade-in slide-in-from-top-2 custom-scrollbar -mt-2">
+          {streamOptions.map((stream) => (
+            <button
+              key={stream.value}
+              type="button"
+              onClick={() => {
+                setSelectedStreamTab(stream.value)
+                setPage(1)
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+                selectedStreamTab === stream.value
+                  ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
+                  : 'bg-surface border-border text-text-secondary hover:bg-surface-secondary hover:text-text'
+              }`}
+            >
+              {stream.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <Table
         columns={[
           {
