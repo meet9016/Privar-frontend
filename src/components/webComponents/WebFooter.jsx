@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle } from 'lucide-react';
+import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart } from 'lucide-react';
 import { assetUrl } from '../../lib/api';
 
 const getStoredWebTheme = () => {
@@ -46,31 +46,44 @@ export default function WebFooter() {
     { icon: MessageCircle, href: theme?.whatsapp, label: 'WhatsApp' },
   ].filter(link => link.href); // Only show social links that are provided
 
+  const primaryBg = theme?.primaryColor || '#0a2342';
+
   return (
-    <footer className="bg-gray-900 text-white mt-auto pt-16 pb-8 border-t border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-12">
+    <footer
+      className="text-white mt-auto pt-16 pb-8 relative overflow-hidden border-t border-white/10"
+      style={{ backgroundColor: '#061527' }}
+    >
+      {/* Decorative Background Accent Glows */}
+      <div
+        className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[140px] pointer-events-none opacity-20"
+        style={{ backgroundColor: primaryBg }}
+      />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 mb-12">
 
           {/* Brand & Description */}
-          <div className="space-y-6">
-            <Link to="/" className="inline-block">
+          <div className="space-y-5">
+            <Link to="/" className="inline-block group">
               {theme?.webLogo ? (
-                <img
-                  src={assetUrl(theme.webLogo)}
-                  alt={theme.name || 'Logo'}
-                  className="h-16 w-auto object-contain bg-white rounded p-1"
-                />
+                <div className="p-2 bg-white/95 rounded-xl shadow-lg border border-white/40 transition-transform group-hover:scale-105">
+                  <img
+                    src={assetUrl(theme.webLogo)}
+                    alt={theme.name || 'Logo'}
+                    className="h-14 w-auto object-contain"
+                  />
+                </div>
               ) : (
-                <span className="text-2xl font-bold text-white tracking-wider">
+                <span className="text-2xl sm:text-3xl font-black text-white tracking-wider">
                   {theme?.name || 'PARIVAR'}
                 </span>
               )}
             </Link>
-            <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
+            <p className="text-gray-300 text-sm sm:text-base leading-relaxed max-w-xs font-normal">
               Connecting families, celebrating traditions, and building a stronger community together. Stay updated with our latest events and news.
             </p>
-            {socialLinks.length > 0 && (
-              <div className="flex gap-4">
+            {/* {socialLinks.length > 0 && (
+              <div className="flex items-center gap-3 pt-2">
                 {socialLinks.map((social) => {
                   const Icon = social.icon;
                   return (
@@ -79,7 +92,7 @@ export default function WebFooter() {
                       href={social.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-gray-400 hover:text-white transition-colors p-2 bg-gray-800 rounded-full hover:bg-gray-700"
+                      className="text-gray-300 hover:text-white transition-all duration-300 p-2.5 bg-white/5 rounded-xl border border-white/10 hover:border-white/40 hover:-translate-y-1 shadow-sm"
                       aria-label={social.label}
                     >
                       <Icon size={18} />
@@ -87,27 +100,24 @@ export default function WebFooter() {
                   );
                 })}
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 text-white uppercase tracking-wider text-sm">Quick Links</h3>
+            <h3 className="text-sm sm:text-base font-extrabold mb-5 text-white uppercase tracking-wider border-b border-white/10 pb-2.5 inline-block">
+              Quick Links
+            </h3>
             <ul className="grid grid-cols-2 gap-y-3 gap-x-4">
               {navigationLinks.map((link) => (
                 <li key={link.label}>
                   <Link
                     to={link.href}
-                    className={`transition-colors text-sm flex items-center group truncate ${
-                      link.highlight
-                        ? 'text-amber-400 font-bold hover:text-amber-300'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="text-gray-300 hover:text-white transition-all duration-200 text-sm font-semibold flex items-center group truncate"
                     title={link.label}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0 transition-colors ${
-                      link.highlight ? 'bg-amber-400 animate-pulse' : 'bg-gray-600 group-hover:bg-green-500'
-                    }`}></span>
+                    <ChevronRight size={15} className="mr-1 text-amber-400 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
                     <span className="truncate">{link.label}</span>
                   </Link>
                 </li>
@@ -117,40 +127,46 @@ export default function WebFooter() {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 text-white uppercase tracking-wider text-sm">Contact Us</h3>
+            <h3 className="text-sm sm:text-base font-extrabold mb-5 text-white uppercase tracking-wider border-b border-white/10 pb-2.5 inline-block">
+              Contact Us
+            </h3>
             <ul className="space-y-4">
               {theme?.phone && (
                 <li>
-                  <a href={`tel:${theme.phone}`} className="flex items-start text-gray-400 hover:text-white transition-colors text-sm group">
-                    <Phone size={18} className="mr-3 mt-0.5 text-gray-500 group-hover:text-green-400" />
+                  <a href={`tel:${theme.phone}`} className="flex items-center text-gray-300 hover:text-white transition-colors text-sm font-semibold group">
+                    <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mr-3 shrink-0 group-hover:bg-amber-400 group-hover:text-gray-900 transition-colors">
+                      <Phone size={16} className="text-gray-300 group-hover:text-gray-900" />
+                    </div>
                     <span>{theme.phone}</span>
                   </a>
                 </li>
               )}
               {theme?.email && (
                 <li>
-                  <a href={`mailto:${theme.email}`} className="flex items-start text-gray-400 hover:text-white transition-colors text-sm group">
-                    <Mail size={18} className="mr-3 mt-0.5 text-gray-500 group-hover:text-green-400" />
-                    <span>{theme.email}</span>
+                  <a href={`mailto:${theme.email}`} className="flex items-center text-gray-300 hover:text-white transition-colors text-sm font-semibold group">
+                    <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mr-3 shrink-0 group-hover:bg-amber-400 group-hover:text-gray-900 transition-colors">
+                      <Mail size={16} className="text-gray-300 group-hover:text-gray-900" />
+                    </div>
+                    <span className="truncate">{theme.email}</span>
                   </a>
                 </li>
               )}
             </ul>
           </div>
 
-          {/* Value/Quote */}
+          {/* Our Values */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 text-white uppercase tracking-wider text-sm">Our Values</h3>
-            <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
-              <p className="text-gray-400 text-sm italic mb-4">
-                "Family is not an important thing, it's everything. We bring community closer through shared values and traditions."
+            <h3 className="text-sm sm:text-base font-extrabold mb-5 text-white uppercase tracking-wider border-b border-white/10 pb-2.5 inline-block">
+              Our Commitment
+            </h3>
+            <div className="bg-white/5 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-lg">
+              <p className="text-gray-300 text-sm italic mb-4 leading-relaxed font-medium">
+                "Bringing families closer, preserving traditions, and fostering community support for generations to come."
               </p>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-white text-sm">
-                  {(theme?.name || 'P')[0]}
-                </div>
-                <div className="text-sm font-semibold text-gray-300">
-                  {theme?.name || 'Parivar'}
+              <div className="flex items-center gap-3 pt-3 border-t border-white/10">
+              
+                <div className="text-sm font-bold text-gray-200">
+                  {theme?.name || 'Parivar Community'}
                 </div>
               </div>
             </div>
@@ -158,14 +174,14 @@ export default function WebFooter() {
 
         </div>
 
-        {/* Footer Bottom */}
-        <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-500 text-sm">
+        {/* Footer Bottom Bar */}
+        <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
+          <p className="text-gray-300 font-medium">
             &copy; {new Date().getFullYear()} {theme?.name || 'Parivar'}. All rights reserved.
           </p>
-          <div className="flex gap-6 text-sm">
-            <Link to="/privacy-policy" className="text-gray-500 hover:text-white transition-colors">Privacy Policy</Link>
-            <Link to="/terms-and-conditions" className="text-gray-500 hover:text-white transition-colors">Terms &amp; Conditions</Link>
+          <div className="flex gap-6 text-sm font-semibold">
+            <Link to="/privacy-policy" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</Link>
+            <Link to="/terms-and-conditions" className="text-gray-300 hover:text-white transition-colors">Terms &amp; Conditions</Link>
           </div>
         </div>
       </div>

@@ -147,7 +147,7 @@ export default function Memories() {
       style={{ backgroundColor: theme.backgroundColor }}
     >
       <div className="max-w-[1600px] mx-auto">
-        <div className="text-center mb-10 relative">
+        <div className="text-center mb-4 relative">
 
 
           <div className="relative z-10 flex flex-col items-center text-center">
@@ -174,7 +174,7 @@ export default function Memories() {
         </div>
 
         {/* Segmented Glass Category Filter Tabs */}
-        <div className="flex justify-center mb-12">
+        <div className="flex justify-center mb-5">
           <div className="inline-flex flex-wrap items-center justify-center gap-1.5 p-1.5 rounded-full bg-gray-100/90 border border-gray-200/80 backdrop-blur-md shadow-inner">
             {visibleTabs.map((tab) => {
               const isActive = activeTab === tab.id

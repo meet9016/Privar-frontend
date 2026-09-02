@@ -87,6 +87,11 @@
   --color-error-glow: rgba(239, 68, 68, 0.35);
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 130px;
+}
+
 html,
 body,
 #root,

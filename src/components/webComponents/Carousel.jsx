@@ -187,12 +187,7 @@ const Carousel = ({
         )}
       </div>
 
-      {/* Floating Counter Badge */}
-      {images.length > 1 && (
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 px-3.5 py-1.5 rounded-full backdrop-blur-md bg-black/40 border border-white/20 text-white text-xs font-extrabold tracking-widest uppercase shadow-lg pointer-events-none">
-          {String(currentIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
-        </div>
-      )}
+
 
       {/* Left Arrow */}
       {showArrows && images.length > 1 && (

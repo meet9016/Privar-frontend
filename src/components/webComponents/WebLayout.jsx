@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { ArrowUp, BookOpen, Sparkles } from 'lucide-react'
 import WebHeader from './WebHeader'
 import WebFooter from './WebFooter'
@@ -7,7 +7,13 @@ import { useWebTheme } from '../../hooks/useWebTheme'
 
 export default function WebLayout() {
   useWebTheme()
+  const location = useLocation()
   const [showScrollTop, setShowScrollTop] = useState(false)
+
+  // Scroll to top automatically when navigating between pages/routes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [location.pathname, location.search])
 
   useEffect(() => {
     const handleScroll = () => {

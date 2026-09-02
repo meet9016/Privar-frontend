@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Calendar, CheckCircle, Clock, MapPin, Users, X } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, MapPin, Users, X } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { memberApi } from '../../lib/api'
-
-
 
 const formatEventDate = (value) => {
   if (!value) return ''
@@ -49,7 +48,6 @@ const normalizeEvent = (event, index) => ({
   image: event.image || `/${(index % 4) + 1}.png`,
 })
 
-
 const getStoredWebTheme = () => {
   const colorKeys = [
     'backgroundColor',
@@ -82,10 +80,15 @@ const shadeColor = (color, percent) => {
 }
 
 export default function Events() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [theme, setTheme] = useState(getStoredWebTheme())
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState(null)
+
+  const isEventsPage = location?.pathname === '/events'
+  const visibleEvents = isEventsPage ? events : events.slice(0, 4)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -168,10 +171,6 @@ export default function Events() {
     }
   }
 
-  const visibleEvents = events.length > 0 ? events : []
-
-
-
   return (
     <section
       id="events"
@@ -179,11 +178,8 @@ export default function Events() {
       style={{ backgroundColor: '#FFFFFF' }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10 sm:mb-14 relative">
-          {/* Faint Background Text */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-full text-[5rem] sm:text-[8rem] md:text-[10rem] font-black opacity-[0.02] pointer-events-none tracking-tighter uppercase whitespace-nowrap select-none" style={{ color: theme.primaryColor }}>
-            Events
-          </div>
+        <div className="text-center mb-8 sm:mb-4 relative">
+        
 
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
@@ -225,94 +221,117 @@ export default function Events() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {Array(4).fill(0).map((_, i) => (
-              <div key={`skeleton-${i}`} className="bg-white rounded-tl-[36px] rounded-br-[36px] rounded-tr-xl rounded-bl-xl border border-gray-100 p-3.5 flex flex-col shadow-sm animate-pulse">
-                <div className="w-full h-38 bg-gray-200 rounded-tl-[28px] rounded-br-[28px] mb-3" />
+              <div key={`skeleton-${i}`} className="bg-white rounded-tl-[36px] rounded-br-[36px] rounded-tr-xl rounded-bl-xl border border-gray-100 p-4 flex flex-col shadow-sm animate-pulse min-h-[360px]">
+                <div className="w-full h-48 sm:h-52 bg-gray-200 rounded-tl-[28px] rounded-br-[28px] mb-3.5" />
                 <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
-                <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                <div className="h-4 w-1/2 bg-gray-200 rounded mt-auto" />
               </div>
             ))}
           </div>
         ) : (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
-            style={{
-              animation: 'sectionSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            }}
-          >
-            {visibleEvents.map((event, index) => (
-              <article
-                key={event._id || event.title || index}
-                className="group relative flex flex-col overflow-hidden rounded-tl-[36px] rounded-br-[36px] rounded-tr-xl rounded-bl-xl bg-white border shadow-md transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 p-3.5"
-                style={{
-                  borderColor: `${theme.primaryColor || '#0a2342'}20`,
-                }}
-              >
-                {/* Asymmetric Photo Stage */}
-                <div className="relative h-40 w-full overflow-hidden rounded-tl-[28px] rounded-br-[28px] rounded-tr-lg rounded-bl-lg bg-gray-900 mb-3">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-112 group-hover:rotate-1"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
+          <>
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+              style={{
+                animation: 'sectionSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              }}
+            >
+              {visibleEvents.map((event, index) => (
+                <article
+                  key={event._id || event.title || index}
+                  className="group relative flex flex-col overflow-hidden rounded-tl-[36px] rounded-br-[36px] rounded-tr-xl rounded-bl-xl bg-white border shadow-md transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 p-4 min-h-[360px]"
+                  style={{
+                    borderColor: `${theme.primaryColor || '#0a2342'}20`,
+                  }}
+                >
+                  {/* Asymmetric Photo Stage */}
+                  <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-tl-[28px] rounded-br-[28px] rounded-tr-lg rounded-bl-lg bg-gray-900 mb-3.5">
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-112 group-hover:rotate-1"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Top-Left Floating Date Capsule */}
-                  <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-md rounded-full px-3 py-1 flex items-center gap-1.5 shadow-md border border-white/50">
-                    <span className="text-sm font-black leading-none" style={{ color: theme.primaryColor || '#0a2342' }}>{event.day}</span>
-                    <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: theme.primaryColor || '#0a2342' }}>{event.month}</span>
-                  </div>
+                    {/* Top-Left Floating Date Capsule */}
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md rounded-full px-3 py-1 flex items-center gap-1.5 shadow-md border border-white/50">
+                      <span className="text-sm font-black leading-none" style={{ color: theme.primaryColor || '#0a2342' }}>{event.day}</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: theme.primaryColor || '#0a2342' }}>{event.month}</span>
+                    </div>
 
-                  {/* Floating Category Pill */}
-                  <div className="absolute bottom-2.5 left-2.5 z-10">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase text-white shadow-md backdrop-blur-md bg-black/50 border border-white/30 truncate max-w-[130px]">
-                      {event.category}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Content Body */}
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-sm sm:text-base font-extrabold leading-snug mb-2 line-clamp-1" style={{ color: theme.textColor || theme.primaryColor || '#0a2342' }}>
-                      {event.title}
-                    </h4>
-
-                    <div className="flex items-center gap-3 text-[12px] font-medium text-gray-500 mb-3">
-                      <div className="flex items-center gap-1 min-w-0 truncate">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primaryColor || '#0a2342' }} />
-                        <span className="truncate">{event.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1 min-w-0 shrink-0">
-                        <Clock className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primaryColor || '#0a2342' }} />
-                        <span>{event.time}</span>
-                      </div>
+                    {/* Floating Category Pill */}
+                    <div className="absolute bottom-3 left-3 z-10">
+                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase text-white shadow-md backdrop-blur-md bg-black/50 border border-white/30 truncate max-w-[140px]">
+                        {event.category}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Footer Bar */}
-                  <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2 mt-auto">
-                    <div className="text-[12px] font-bold text-gray-400">
-                      Entry: <strong style={{ color: theme.primaryColor || '#0a2342' }}>{event.entry}</strong>
+                  {/* Content Body */}
+                  <div className="flex-1 flex flex-col justify-between pt-1">
+                    <div>
+                      <h4 className="text-base font-extrabold leading-snug mb-2 line-clamp-2" style={{ color: theme.textColor || theme.primaryColor || '#0a2342' }}>
+                        {event.title}
+                      </h4>
+
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-gray-500 mb-3">
+                        <div className="flex items-center gap-1 min-w-0 truncate">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primaryColor || '#0a2342' }} />
+                          <span className="truncate">{event.location}</span>
+                        </div>
+                        <div className="flex items-center gap-1 min-w-0 shrink-0">
+                          <Clock className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primaryColor || '#0a2342' }} />
+                          <span>{event.time}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => openRegisterDialog(event)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-extrabold text-white transition-all duration-300 shadow-md hover:shadow-lg overflow-hidden shrink-0"
-                      style={{
-                        backgroundColor: theme.buttonColor || theme.primaryColor || '#0a2342',
-                        color: theme.fontColor || '#FFFFFF',
-                      }}
-                    >
-                      <CheckCircle className="h-3.5 w-3.5" />
-                      <span>Register Now</span>
-                    </button>
+                    {/* Footer Bar */}
+                    <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2 mt-auto">
+                      <div className="text-xs font-bold text-gray-400">
+                        Entry: <strong style={{ color: theme.primaryColor || '#0a2342' }}>{event.entry}</strong>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => openRegisterDialog(event)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-extrabold text-white transition-all duration-300 shadow-md hover:shadow-lg overflow-hidden shrink-0"
+                        style={{
+                          backgroundColor: theme.buttonColor || theme.primaryColor || '#0a2342',
+                          color: theme.fontColor || '#FFFFFF',
+                        }}
+                      >
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        <span>Register Now</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+
+            {/* View All Events Button */}
+            {!isEventsPage && events.length > 4 && (
+              <div className="mt-5 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/events')
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-extrabold text-white transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
+                  style={{
+                    backgroundColor: theme.buttonColor || theme.primaryColor || '#0a2342',
+                    color: theme.fontColor || '#FFFFFF',
+                  }}
+                >
+                  <span>View All Events ({events.length})</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

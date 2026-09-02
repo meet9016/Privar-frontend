@@ -101,12 +101,8 @@ export default function TopStudents() {
       style={{ backgroundColor: theme.backgroundColor }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10 sm:mb-14 relative">
-          {/* Faint Background Text */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-full text-[4rem] sm:text-[6rem] md:text-[9rem] font-black opacity-[0.02] pointer-events-none tracking-tighter uppercase whitespace-nowrap select-none" style={{ color: theme.primaryColor }}>
-            Achievers
-          </div>
-
+        <div className="text-center mb-8 sm:mb-4 relative">
+         
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
             <div

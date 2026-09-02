@@ -92,7 +92,7 @@ export default function Members() {
   return (
     <section
       id="members"
-      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8  relative overflow-hidden"
       style={{
         backgroundColor: '#FFFFFF', // User requested strictly white background
       }}
@@ -102,11 +102,8 @@ export default function Members() {
       <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-[0.03] blur-3xl pointer-events-none" style={{ backgroundColor: theme.secondaryColor }} />
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-8 sm:mb-12 relative">
-          {/* Faint Background Text */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-full text-[5rem] sm:text-[8rem] md:text-[10rem] font-black opacity-[0.02] pointer-events-none tracking-tighter uppercase whitespace-nowrap select-none" style={{ color: theme.primaryColor }}>
-            Committee
-          </div>
+        <div className="text-center mb-8 sm:mb-4 relative">
+       
 
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
@@ -159,7 +156,7 @@ export default function Members() {
                 gap: '24px',
                 width: 'max-content',
                 padding: '10px 12px', // 12px + 12px = 24px (equals gap) to make the -50% scroll mathematically seamless
-                animation: 'scroll-left 90s linear infinite', // Slowed down slightly for smoother readability
+                animation: 'scroll-left 160s linear infinite', // Slowed down for smooth readability
               }}
               onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
               onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
