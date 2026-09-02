@@ -91,7 +91,7 @@ export default function Memories() {
 
         const galleryRows = Array.isArray(galleryResponse.data?.data) ? galleryResponse.data.data : []
         const categories = Array.isArray(categoryResponse.data?.data) ? categoryResponse.data.data : []
-        
+
         const normalized = normalizeGalleryMemories(galleryRows, categories)
         setMemories(normalized)
 
@@ -134,7 +134,7 @@ export default function Memories() {
     if (activeTab === 'all') {
       return visibleMemories
     }
-    return visibleMemories.filter((memory) => 
+    return visibleMemories.filter((memory) =>
       String(memory.category).toLowerCase().trim() === String(activeTab).toLowerCase().trim() ||
       String(memory.categoryId) === String(activeTab)
     )
@@ -195,51 +195,46 @@ export default function Memories() {
           })}
         </div>
 
-        {loading && (
-          <div
-            className="mb-6 rounded-lg border px-4 py-3 text-center text-sm font-semibold"
-            style={{
-              borderColor: theme.borderColor,
-              backgroundColor: shadeColor(theme.backgroundColor, 2),
-              color: theme.textColor,
-            }}
-          >
-            Loading gallery...
+        {loading ? (
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6 w-full">
+            {[64, 48, 80, 56, 72, 64, 96, 48].map((h, i) => (
+              <div key={`skeleton-${i}`} className={`w-full rounded-3xl bg-gray-200 animate-pulse break-inside-avoid h-${h}`} />
+            ))}
+          </div>
+        ) : (
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6 w-full">
+            {filteredMemories.map((memory, index) => (
+              <article
+                key={`${memory.src}-${memory.category}-${index}`}
+                className="group relative overflow-hidden rounded-3xl bg-white transition-all duration-500 hover:-translate-y-2 break-inside-avoid"
+                style={{
+                  boxShadow: `0 10px 30px -10px ${theme.borderColor}80`
+                }}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = `0 20px 40px -10px ${theme.primaryColor}50`}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = `0 10px 30px -10px ${theme.borderColor}80`}
+              >
+                <div className="relative w-full">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                  <img
+                    src={memory.src}
+                    alt={memory.alt}
+                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+                    loading={index < 4 ? 'eager' : 'lazy'}
+                    onError={(event) => {
+                      if (event.currentTarget.src.endsWith(memory.fallback)) return
+                      event.currentTarget.src = memory.fallback
+                    }}
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 z-20 pointer-events-none flex flex-col justify-end">
+                    <span className="inline-block self-start px-4 py-1.5 rounded-full text-[11px] sm:text-[12px] font-black tracking-widest uppercase text-white shadow-lg backdrop-blur-md bg-white/20 border border-white/30">
+                      {memory.category}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
         )}
-
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6 w-full">
-          {filteredMemories.map((memory, index) => (
-            <article
-              key={`${memory.src}-${memory.category}-${index}`}
-              className="group relative overflow-hidden rounded-3xl bg-white transition-all duration-500 hover:-translate-y-2 break-inside-avoid"
-              style={{
-                boxShadow: `0 10px 30px -10px ${theme.borderColor}80`
-              }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = `0 20px 40px -10px ${theme.primaryColor}50`}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = `0 10px 30px -10px ${theme.borderColor}80`}
-            >
-              <div className="relative w-full">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
-                <img
-                  src={memory.src}
-                  alt={memory.alt}
-                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.05]"
-                  loading={index < 4 ? 'eager' : 'lazy'}
-                  onError={(event) => {
-                    if (event.currentTarget.src.endsWith(memory.fallback)) return
-                    event.currentTarget.src = memory.fallback
-                  }}
-                />
-                <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 z-20 pointer-events-none flex flex-col justify-end">
-                  <span className="inline-block self-start px-4 py-1.5 rounded-full text-[11px] sm:text-[12px] font-black tracking-widest uppercase text-white shadow-lg backdrop-blur-md bg-white/20 border border-white/30">
-                    {memory.category}
-                  </span>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
 
         {!loading && filteredMemories.length === 0 && (
           <div

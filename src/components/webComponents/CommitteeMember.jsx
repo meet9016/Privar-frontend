@@ -108,31 +108,6 @@ export default function Members() {
             Committee
           </div>
 
-          {/* <div className="relative z-10 flex flex-col items-center">
-            <span
-              className="inline-flex items-center justify-center px-5 py-1.5 mb-6 text-sm sm:text-base font-bold tracking-[0.2em] uppercase rounded-full bg-white/50 backdrop-blur-sm shadow-sm border"
-              style={{ color: theme.primaryColor, borderColor: `${theme.primaryColor}30` }}
-            >
-              <span className="w-2 h-2 rounded-full mr-3 animate-pulse" style={{ backgroundColor: theme.primaryColor }}></span>
-              Leadership
-            </span>
-            <h2
-              className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-2"
-              style={{ color: theme.textColor }}
-            >
-              Meet Our{' '}
-              <span
-                style={{
-                  backgroundImage: `linear-gradient(to right, ${theme.primaryColor}, ${theme.secondaryColor || theme.primaryColor})`,
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                }}
-              >
-                Committee Members
-              </span>
-            </h2>
-          </div> */}
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
             <div
@@ -148,7 +123,7 @@ export default function Members() {
 
             {/* Heading */}
             <h2
-              className="text-3xl sm:text-4xl lg:text-4xl font-bold tracking-tight mb-3"
+              className="text-3xl sm:text-4xl lg:text-4xl font-bold tracking-tight"
               style={{ color: theme.textColor }}
             >
               Meet Our Committee Members
@@ -157,82 +132,87 @@ export default function Members() {
 
         </div>
 
-        {loading && (
-          <div
-            className="mb-6 rounded-lg border px-4 py-3 text-center text-sm font-semibold"
-            style={{
-              borderColor: theme.borderColor,
-              backgroundColor: shadeColor(theme.backgroundColor, 3),
-              color: theme.textColor,
-            }}
-          >
-            Loading committee members...
-          </div>
-        )}
-        <div style={{
-          overflow: 'hidden', position: 'relative',
-          maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-        }}>
-          <div
-            style={{
-              display: 'flex',
-              gap: '24px',
-              width: 'max-content',
-              padding: '10px 12px', // 12px + 12px = 24px (equals gap) to make the -50% scroll mathematically seamless
-              animation: 'scroll-left 90s linear infinite', // Slowed down slightly for smoother readability
-            }}
-            onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
-            onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
-          >
-            {doubled.map((member, i) => (
-              <article
-                key={`${member.id}-${i}`}
-                className="group relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden transition-all duration-500 bg-white border"
-                style={{
-                  borderColor: `${theme.borderColor}50`,
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateY(-5px)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0px)'
-                }}
+        {loading ? (
+          <div className="flex gap-[24px] justify-center overflow-hidden px-4 py-2">
+            {Array(5).fill(0).map((_, i) => (
+              <div
+                key={`skeleton-${i}`}
+                className="relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden bg-white border border-gray-100 shadow-sm"
               >
-                {/* Flat Square Image (Edge-to-Edge) */}
-                <div className="relative w-full aspect-square bg-gray-50 overflow-hidden">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    draggable={false}
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                <div className="w-full aspect-square bg-gray-200 animate-pulse" />
+                <div className="px-4 pt-3 pb-4 flex flex-col items-center bg-white">
+                  <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-3" />
+                  <div className="h-4 w-1/2 bg-gray-200 rounded-full animate-pulse" />
                 </div>
-
-                {/* Text Content */}
-                <div className="px-4 pt-3 pb-4 text-center relative z-20 bg-white flex flex-col items-center">
-                  <h3
-                    className="text-base sm:text-[17px] font-bold mb-1.5 w-full truncate transition-colors duration-300"
-                    style={{ color: theme.primaryColor }}
-                  >
-                    {member.name}
-                  </h3>
-                  <div
-                    className="inline-flex items-center justify-center text-[11px] sm:text-[12px] font-medium tracking-wide px-3 py-0.5 rounded-full border bg-white"
-                    style={{
-                      color: theme.primaryColor,
-                      borderColor: theme.primaryColor,
-                    }}
-                  >
-                    {member.role}
-                  </div>
-                </div>
-              </article>
+              </div>
             ))}
           </div>
-        </div>
+        ) : (
+          <div style={{
+            overflow: 'hidden', position: 'relative',
+            maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+          }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: '24px',
+                width: 'max-content',
+                padding: '10px 12px', // 12px + 12px = 24px (equals gap) to make the -50% scroll mathematically seamless
+                animation: 'scroll-left 90s linear infinite', // Slowed down slightly for smoother readability
+              }}
+              onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
+              onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
+            >
+              {doubled.map((member, i) => (
+                <article
+                  key={`${member.id}-${i}`}
+                  className="group relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden transition-all duration-500 bg-white border"
+                  style={{
+                    borderColor: `${theme.borderColor}50`,
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-5px)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0px)'
+                  }}
+                >
+                  {/* Flat Square Image (Edge-to-Edge) */}
+                  <div className="relative w-full aspect-square bg-gray-50 overflow-hidden">
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      draggable={false}
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                  </div>
+
+                  {/* Text Content */}
+                  <div className="px-4 pt-3 pb-4 text-center relative z-20 bg-white flex flex-col items-center">
+                    <h3
+                      className="text-base sm:text-[17px] font-bold mb-1.5 w-full truncate transition-colors duration-300"
+                      style={{ color: theme.primaryColor }}
+                    >
+                      {member.name}
+                    </h3>
+                    <div
+                      className="inline-flex items-center justify-center text-[11px] sm:text-[12px] font-medium tracking-wide px-3 py-0.5 rounded-full border bg-white"
+                      style={{
+                        color: theme.primaryColor,
+                        borderColor: theme.primaryColor,
+                      }}
+                    >
+                      {member.role}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </section>
