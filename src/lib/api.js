@@ -109,7 +109,7 @@ export const getCommunityFullName = () => {
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: { 'Content-Type': 'multipart/form-data' },
-  timeout: 12000,
+  timeout: 120000, 
   transitional: {
     clarifyTimeoutError: true
   }
@@ -121,7 +121,7 @@ export const exportDonationsExcel = (search = '') =>
 export const memberApi = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 12000,
+  timeout: 120000, 
   transitional: {
     clarifyTimeoutError: true
   }
