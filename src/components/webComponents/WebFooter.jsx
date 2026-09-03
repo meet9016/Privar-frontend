@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart } from 'lucide-react';
+import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart, Apple, Play } from 'lucide-react';
 import { assetUrl } from '../../lib/api';
 
 const getStoredWebTheme = () => {
@@ -82,6 +82,37 @@ export default function WebFooter() {
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed max-w-xs font-normal">
               Connecting families, celebrating traditions, and building a stronger community together. Stay updated with our latest events and news.
             </p>
+
+            {/* App Download Buttons */}
+            <div className="flex flex-col gap-2 pt-4">
+              <p className="text-sm font-bold text-white uppercase tracking-wider mb-1">Download Our App</p>
+              <div className="flex flex-row flex-nowrap items-center gap-3">
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.digitalks.parivar"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-transform hover:scale-105 shrink-0"
+                >
+                  <img
+                    src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                    alt="Get it on Google Play"
+                    className="h-12 w-auto object-contain"
+                  />
+                </a>
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-transform hover:scale-105 shrink-0"
+                >
+                  <img
+                    src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+                    alt="Download on the App Store"
+                    className="h-8 w-auto object-contain"
+                  />
+                </a>
+              </div>
+            </div>
             {/* {socialLinks.length > 0 && (
               <div className="flex items-center gap-3 pt-2">
                 {socialLinks.map((social) => {
@@ -164,7 +195,7 @@ export default function WebFooter() {
                 "Bringing families closer, preserving traditions, and fostering community support for generations to come."
               </p>
               <div className="flex items-center gap-3 pt-3 border-t border-white/10">
-              
+
                 <div className="text-sm font-bold text-gray-200">
                   {theme?.name || 'Parivar Community'}
                 </div>

@@ -86,9 +86,6 @@ export default function Members() {
 
   const visibleMembers = members.length > 0 ? members : []
 
-  // Duplicate items heavily to ensure they fill wide screens and prevent white space.
-  // Using an even number of duplications ensures translateX(-50%) works perfectly.
-  const doubled = Array(12).fill(visibleMembers).flat()
   return (
     <section
       id="members"
@@ -103,7 +100,7 @@ export default function Members() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-8 sm:mb-4 relative">
-       
+
 
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
@@ -130,13 +127,13 @@ export default function Members() {
         </div>
 
         {loading ? (
-          <div className="flex gap-[24px] justify-center overflow-hidden px-4 py-2">
-            {Array(5).fill(0).map((_, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 px-4 py-2">
+            {Array(10).fill(0).map((_, i) => (
               <div
                 key={`skeleton-${i}`}
-                className="relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden bg-white border border-gray-100 shadow-sm"
+                className="relative w-full rounded-lg overflow-hidden bg-white border border-gray-100 shadow-sm"
               >
-                <div className="w-full aspect-square bg-gray-200 animate-pulse" />
+                <div className="w-full aspect-[4/4.8] bg-gray-200 animate-pulse" />
                 <div className="px-4 pt-3 pb-4 flex flex-col items-center bg-white">
                   <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-3" />
                   <div className="h-4 w-1/2 bg-gray-200 rounded-full animate-pulse" />
@@ -145,63 +142,47 @@ export default function Members() {
             ))}
           </div>
         ) : (
-          <div style={{
-            overflow: 'hidden', position: 'relative',
-            maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-          }}>
-            <div
-              style={{
-                display: 'flex',
-                gap: '24px',
-                width: 'max-content',
-                padding: '10px 12px', // 12px + 12px = 24px (equals gap) to make the -50% scroll mathematically seamless
-                animation: 'scroll-left 160s linear infinite', // Slowed down for smooth readability
-              }}
-              onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
-              onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
-            >
-              {doubled.map((member, i) => (
-                <article
-                  key={`${member.id}-${i}`}
-                  className="group relative flex-shrink-0 w-[210px] sm:w-[230px] rounded-t-[36px] rounded-b-2xl overflow-hidden transition-all duration-500 bg-white border shadow-sm hover:shadow-2xl hover:-translate-y-2 flex flex-col"
-                  style={{
-                    borderColor: `${theme.primaryColor || '#0a2342'}20`,
-                  }}
-                >
-                  {/* Capsule Portrait Container */}
-                  <div className="relative w-full aspect-[4/4.8] bg-gray-100 overflow-hidden">
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      draggable={false}
-                      loading="lazy"
-                    />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 px-4 py-2">
+            {visibleMembers.map((member, i) => (
+              <article
+                key={`${member.id}-${i}`}
+                className="group relative w-full rounded-t-[36px] rounded-b-2xl overflow-hidden transition-all duration-500 bg-white border shadow-sm hover:shadow-2xl hover:-translate-y-2 flex flex-col"
+                style={{
+                  borderColor: `${theme.primaryColor || '#0a2342'}20`,
+                }}
+              >
+                {/* Capsule Portrait Container */}
+                <div className="relative w-full aspect-[4/4.8] bg-gray-100 overflow-hidden">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    draggable={false}
+                    loading="lazy"
+                  />
 
-                    {/* Gradient Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent z-10 pointer-events-none" />
+                  {/* Gradient Overlay for Text Readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent z-10 pointer-events-none" />
 
-                    {/* Top-Right Floating Role Badge */}
-                    <div className="absolute top-3 right-3 z-20 pointer-events-none">
-                      <span
-                        className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-black tracking-wider uppercase shadow-md backdrop-blur-md bg-white/95 text-gray-900 border border-white/40 truncate"
-                        style={{ color: theme.primaryColor || '#0a2342' }}
-                      >
-                        {member.role}
-                      </span>
-                    </div>
-
-                    {/* Bottom Overlay Name Label */}
-                    <div className="absolute bottom-3 left-3 right-3 z-20 pointer-events-none text-left">
-                      <h3 className="text-white text-sm sm:text-base font-extrabold leading-snug drop-shadow-md truncate">
-                        {member.name}
-                      </h3>
-                    </div>
+                  {/* Top-Right Floating Role Badge */}
+                  <div className="absolute top-3 right-3 z-20 pointer-events-none">
+                    <span
+                      className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-black tracking-wider uppercase shadow-md backdrop-blur-md bg-white/95 text-gray-900 border border-white/40 truncate"
+                      style={{ color: theme.primaryColor || '#0a2342' }}
+                    >
+                      {member.role}
+                    </span>
                   </div>
-                </article>
-              ))}
-            </div>
+
+                  {/* Bottom Overlay Name Label */}
+                  <div className="absolute bottom-3 left-3 right-3 z-20 pointer-events-none text-left">
+                    <h3 className="text-white text-sm sm:text-base font-extrabold leading-snug drop-shadow-md truncate">
+                      {member.name}
+                    </h3>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
         )}
 

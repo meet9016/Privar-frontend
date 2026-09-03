@@ -173,7 +173,9 @@ export default function WebHeader() {
             {/* Logo & Title */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {theme?.webLogo ? (
-                <img src={assetUrl(theme.webLogo)} alt={`${theme.name} logo`} className="h-12 object-contain" />
+                <Link to="/">
+                  <img src={assetUrl(theme.webLogo)} alt={`${theme.name} logo`} className="h-12 object-contain" />
+                </Link>
               ) : null}
               {/* <div className="hidden sm:block">
                 <h1 className="text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.textColor || '#123524' }}>
@@ -213,13 +215,6 @@ export default function WebHeader() {
 
             {/* Right Side */}
             <div className="flex items-center gap-2 sm:gap-3">
-
-              {/* Notification Bell - uses socket + DB */}
-              <NotificationDropdown
-                variant="light"
-                iconColor={theme.textColor || '#123524'}
-                badgeColor={theme.primaryColor || '#ef4444'}
-              />
 
               {/* Login Button */}
               <a

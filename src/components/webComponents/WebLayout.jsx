@@ -56,7 +56,7 @@ export default function WebLayout() {
       `}</style>
 
       {/* Expandable Left Center Floating Tutorial & Guide Dock Badge (Icon-Only Default, Text on Hover) */}
-      <Link
+      {/* <Link
         to="/documentation"
         className="fixed top-1/2 left-3 z-50 group flex items-center p-2 rounded-full text-white shadow-2xl transition-all duration-500 ease-out hover:scale-108 hover:translate-x-1 border-2 border-white/80 overflow-hidden"
         style={{
@@ -68,14 +68,12 @@ export default function WebLayout() {
         <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shrink-0 shadow-md group-hover:rotate-12 group-hover:scale-105 transition-all duration-300">
           <BookOpen className="w-5 h-5" style={{ color: localStorage.getItem('web_primaryColor') || '#0a2342' }} />
         </div>
-
-        {/* Text appears ONLY on Hover */}
         <div className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-500 ease-out overflow-hidden whitespace-nowrap">
           <span className="text-xs sm:text-sm font-black text-white tracking-wide pl-3 pr-3">
             ✨ Tutorial & Guide
           </span>
         </div>
-      </Link>
+      </Link> */}
 
       {/* Floating Scroll to Top Arrow Button (Right Side Bottom) */}
       {showScrollTop && (
