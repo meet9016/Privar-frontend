@@ -84,9 +84,9 @@ export default function WebFooter() {
             </p>
 
             {/* App Download Buttons */}
-            <div className="flex flex-col gap-2 pt-4">
-              <p className="text-sm font-bold text-white uppercase tracking-wider mb-1">Download Our App</p>
-              <div className="flex flex-row flex-nowrap items-center gap-3">
+            <div className="flex flex-col gap-1 pt-4">
+              <p className="text-sm font-bold text-white uppercase tracking-wider mb-0">Download Our App</p>
+              <div className="flex flex-row flex-nowrap items-center gap-1 -ml-2">
                 <a
                   href="https://play.google.com/store/apps/details?id=com.digitalks.parivar"
                   target="_blank"
@@ -96,19 +96,19 @@ export default function WebFooter() {
                   <img
                     src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
                     alt="Get it on Google Play"
-                    className="h-12 w-auto object-contain"
+                    className="h-[83px] w-auto object-contain"
                   />
                 </a>
                 <a
                   href="#"
                   target="_blank"
                   rel="noreferrer"
-                  className="transition-transform hover:scale-105 shrink-0"
+                  className="transition-transform hover:scale-105 shrink-0 ml-1"
                 >
                   <img
                     src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
                     alt="Download on the App Store"
-                    className="h-8 w-auto object-contain"
+                    className="h-[58px] w-auto object-contain"
                   />
                 </a>
               </div>
