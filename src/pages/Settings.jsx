@@ -331,12 +331,18 @@ export default function SettingsPage() {
 
       // Existing banner URLs (minus deleted)
       const remainingBanners = config.bannerImages.filter(u => !deletedBannerUrls.includes(u))
-      remainingBanners.forEach(url => payload.append('bannerImages', url))
+      if (remainingBanners.length === 0 && newBannerFiles.length === 0) {
+        // Explicitly send empty string so backend knows to clear all banners
+        payload.append('bannerImages', '')
+      } else {
+        remainingBanners.forEach(url => payload.append('bannerImages', url))
+        // New banner files
+        newBannerFiles.forEach(file => payload.append('bannerImages', file))
+      }
 
-      // New banner files
-      newBannerFiles.forEach(file => payload.append('bannerImages', file))
-
-      const updateRes = await api.put('/update_app_theme', payload)
+      const updateRes = await api.put('/update_app_theme', payload, {
+        timeout: 300000 // 5 minutes for uploading banner images and logos
+      })
       const updatedTheme = updateRes.data?.data || updateRes.data || config
       persistWebThemeToLocalStorage(updatedTheme)
       window.dispatchEvent(new Event('web-theme-updated'))
@@ -344,7 +350,8 @@ export default function SettingsPage() {
       toast.success('Platform configuration updated successfully!')
       fetchConfig()
     } catch (err) {
-      toast.error('Failed to save configuration settings')
+      console.error('Update config error:', err)
+      toast.error(err.response?.data?.message || err.message || 'Failed to save configuration settings')
     } finally {
       setSaveLoading(false)
     }
