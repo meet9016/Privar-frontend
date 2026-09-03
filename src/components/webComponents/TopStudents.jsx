@@ -101,12 +101,8 @@ export default function TopStudents() {
       style={{ backgroundColor: theme.backgroundColor }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10 sm:mb-14 relative">
-          {/* Faint Background Text */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-full text-[4rem] sm:text-[6rem] md:text-[9rem] font-black opacity-[0.02] pointer-events-none tracking-tighter uppercase whitespace-nowrap select-none" style={{ color: theme.primaryColor }}>
-            Achievers
-          </div>
-
+        <div className="text-center mb-8 sm:mb-4 relative">
+         
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
             <div
@@ -130,93 +126,97 @@ export default function TopStudents() {
           </div>
         </div>
 
+        {/* Custom Keyframes for One-by-One Bottom-to-Top Reveal */}
+        <style>{`
+          @keyframes studentCascadeUp {
+            0% {
+              opacity: 0;
+              transform: translateY(55px) scale(0.95);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0px) scale(1);
+            }
+          }
+        `}</style>
+
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 mt-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 mt-8">
             {Array(4).fill(0).map((_, i) => (
-              <div key={`skeleton-${i}`} className="bg-white rounded-lg border border-gray-100 flex flex-col overflow-hidden shadow-sm">
-                <div className="w-full aspect-[4/3] bg-gray-200 animate-pulse" />
-                <div className="p-4 sm:p-5 flex flex-col flex-1">
-                  <div className="mb-3">
-                    <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2" />
-                    <div className="h-3 w-1/3 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                  <div className="flex items-start gap-2 mb-5 flex-1">
-                    <div className="w-3.5 h-3.5 bg-gray-200 rounded-full animate-pulse shrink-0 mt-0.5" />
-                    <div className="space-y-2 w-full">
-                      <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
-                      <div className="h-3 w-5/6 bg-gray-200 rounded animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-dashed border-gray-200">
-                    <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                </div>
+              <div key={`skeleton-${i}`} className="bg-white rounded-[32px] border border-gray-100 p-4 flex flex-col shadow-sm animate-pulse">
+                <div className="w-full aspect-[4/3] bg-gray-200 rounded-[24px] mb-4" />
+                <div className="h-5 w-3/4 bg-gray-200 rounded-full mb-2" />
+                <div className="h-4 w-1/2 bg-gray-200 rounded-full" />
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 mt-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 mt-8">
             {visibleStudents.map((student, index) => (
               <article
-                key={student.name}
-                className="group flex flex-col overflow-hidden bg-white rounded-lg border shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+                key={student.name || index}
+                className="group relative flex flex-col overflow-hidden bg-white rounded-[32px] border shadow-md transition-all duration-500 hover:shadow-2xl hover:-translate-y-2.5 p-4 opacity-0"
                 style={{
-                  borderColor: `${theme.borderColor}40`
+                  borderColor: `${theme.primaryColor || '#0a2342'}20`,
+                  animation: 'studentCascadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  animationDelay: `${index * 100}ms`,
                 }}
               >
-                {/* Card Header / Image */}
-                <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100">
+                {/* Photo Header */}
+                <div className="relative w-full aspect-[4/3] rounded-[24px] overflow-hidden bg-gray-900 mb-3.5 shadow-sm">
                   <img
                     src={student.image}
                     alt={student.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Sleek Rank Badge */}
+                  {/* Top-Left Floating Rank Badge */}
                   <div
-                    className="absolute top-3 left-3 px-2.5 py-1 text-[12px] font-bold text-white rounded-md shadow-sm z-10"
-                    style={{ backgroundColor: theme.primaryColor }}
+                    className="absolute top-3 left-3 px-3 py-1 text-xs font-black text-white rounded-full shadow-md z-10 backdrop-blur-md flex items-center gap-1.5 border border-white/30"
+                    style={{ backgroundColor: theme.primaryColor || '#0a2342' }}
                   >
-                    Rank {student.rank}
+                    <Award className="h-3.5 w-3.5" />
+                    <span>{student.rank}</span>
                   </div>
 
-                  {/* Minimalist Trophy Badge */}
-                  <div
-                    className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-full bg-white shadow-sm z-10"
-                  >
-                    {index === 0 ? <Trophy className="h-3.5 w-3.5" style={{ color: theme.primaryColor }} /> : <Medal className="h-3.5 w-3.5" style={{ color: theme.primaryColor }} />}
+                  {/* Top-Right Trophy Icon */}
+                  <div className="absolute top-3 right-3 flex items-center justify-center w-8 h-8 rounded-full bg-white/95 backdrop-blur-md shadow-md z-10 border border-white/50">
+                    {index === 0 ? (
+                      <Trophy className="h-4 w-4" style={{ color: theme.primaryColor || '#0a2342' }} />
+                    ) : (
+                      <Medal className="h-4 w-4" style={{ color: theme.primaryColor || '#0a2342' }} />
+                    )}
+                  </div>
+
+                  {/* Bottom Category/Standard Tag */}
+                  <div className="absolute bottom-3 left-3 z-10">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white bg-black/45 backdrop-blur-md border border-white/30 truncate max-w-[130px]">
+                      {student.standard}
+                    </span>
                   </div>
                 </div>
 
                 {/* Card Body */}
-                <div className="p-4 sm:p-5 flex flex-col flex-1">
-                  {/* Identity */}
-                  <div className="mb-3">
-                    <h3 className="text-[17px] font-bold mb-1 leading-snug line-clamp-1" style={{ color: theme.primaryColor }}>
+                <div className="flex flex-col flex-1 justify-between px-1">
+                  <div>
+                    <h3 className="text-base sm:text-[17px] font-extrabold mb-1.5 leading-snug truncate" style={{ color: theme.textColor || theme.primaryColor || '#0a2342' }}>
                       {student.name}
                     </h3>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primaryColor }}>
-                      {student.standard}
-                    </p>
+
+                    <div className="flex items-center gap-2 text-xs font-medium text-gray-600 mb-4">
+                      <GraduationCap className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primaryColor || '#0a2342' }} />
+                      <span className="truncate">{student.achievement}</span>
+                    </div>
                   </div>
 
-                  {/* Achievement (Clean, Minimal text) */}
-                  <div className="flex items-start gap-2 mb-5 flex-1">
-                    <GraduationCap className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 opacity-80" style={{ color: theme.primaryColor }} />
-                    <p className="text-xs font-medium leading-relaxed text-[#475569] line-clamp-3">
-                      {student.achievement}
-                    </p>
-                  </div>
-
-                  {/* Score */}
-                  <div className="flex items-center justify-between pt-3 border-t border-dashed" style={{ borderColor: `${theme.borderColor}40` }}>
-                    <span className="text-[15px] font-bold text-[#64748b]">Score</span>
+                  {/* Score Footer */}
+                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between mt-auto">
+                    <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Score</span>
                     <span
-                      className="inline-flex items-center justify-center text-[14px] font-bold"
-                      style={{ color: theme.primaryColor }}
+                      className="inline-flex items-center justify-center px-3.5 py-1 rounded-xl text-xs font-black text-white shadow-sm"
+                      style={{ backgroundColor: theme.buttonColor || theme.primaryColor || '#0a2342', color: theme.fontColor || '#FFFFFF' }}
                     >
                       {student.score}
                     </span>

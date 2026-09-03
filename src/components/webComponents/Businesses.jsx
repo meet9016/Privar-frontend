@@ -81,7 +81,7 @@ export default function Businesses() {
       }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="relative z-10 flex flex-col items-center text-center mb-12 sm:mb-10">
+        <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-4">
           {/* Badge */}
           <div
             className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"

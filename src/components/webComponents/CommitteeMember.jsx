@@ -92,7 +92,7 @@ export default function Members() {
   return (
     <section
       id="members"
-      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8  relative overflow-hidden"
       style={{
         backgroundColor: '#FFFFFF', // User requested strictly white background
       }}
@@ -102,11 +102,8 @@ export default function Members() {
       <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-[0.03] blur-3xl pointer-events-none" style={{ backgroundColor: theme.secondaryColor }} />
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-8 sm:mb-12 relative">
-          {/* Faint Background Text */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-full text-[5rem] sm:text-[8rem] md:text-[10rem] font-black opacity-[0.02] pointer-events-none tracking-tighter uppercase whitespace-nowrap select-none" style={{ color: theme.primaryColor }}>
-            Committee
-          </div>
+        <div className="text-center mb-8 sm:mb-4 relative">
+       
 
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
@@ -159,7 +156,7 @@ export default function Members() {
                 gap: '24px',
                 width: 'max-content',
                 padding: '10px 12px', // 12px + 12px = 24px (equals gap) to make the -50% scroll mathematically seamless
-                animation: 'scroll-left 90s linear infinite', // Slowed down slightly for smoother readability
+                animation: 'scroll-left 160s linear infinite', // Slowed down for smooth readability
               }}
               onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
               onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
@@ -167,45 +164,39 @@ export default function Members() {
               {doubled.map((member, i) => (
                 <article
                   key={`${member.id}-${i}`}
-                  className="group relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden transition-all duration-500 bg-white border"
+                  className="group relative flex-shrink-0 w-[210px] sm:w-[230px] rounded-t-[36px] rounded-b-2xl overflow-hidden transition-all duration-500 bg-white border shadow-sm hover:shadow-2xl hover:-translate-y-2 flex flex-col"
                   style={{
-                    borderColor: `${theme.borderColor}50`,
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-5px)'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'translateY(0px)'
+                    borderColor: `${theme.primaryColor || '#0a2342'}20`,
                   }}
                 >
-                  {/* Flat Square Image (Edge-to-Edge) */}
-                  <div className="relative w-full aspect-square bg-gray-50 overflow-hidden">
+                  {/* Capsule Portrait Container */}
+                  <div className="relative w-full aspect-[4/4.8] bg-gray-100 overflow-hidden">
                     <img
                       src={member.image}
                       alt={member.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       draggable={false}
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
-                  </div>
 
-                  {/* Text Content */}
-                  <div className="px-4 pt-3 pb-4 text-center relative z-20 bg-white flex flex-col items-center">
-                    <h3
-                      className="text-base sm:text-[17px] font-bold mb-1.5 w-full truncate transition-colors duration-300"
-                      style={{ color: theme.primaryColor }}
-                    >
-                      {member.name}
-                    </h3>
-                    <div
-                      className="inline-flex items-center justify-center text-[11px] sm:text-[12px] font-medium tracking-wide px-3 py-0.5 rounded-full border bg-white"
-                      style={{
-                        color: theme.primaryColor,
-                        borderColor: theme.primaryColor,
-                      }}
-                    >
-                      {member.role}
+                    {/* Gradient Overlay for Text Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent z-10 pointer-events-none" />
+
+                    {/* Top-Right Floating Role Badge */}
+                    <div className="absolute top-3 right-3 z-20 pointer-events-none">
+                      <span
+                        className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-black tracking-wider uppercase shadow-md backdrop-blur-md bg-white/95 text-gray-900 border border-white/40 truncate"
+                        style={{ color: theme.primaryColor || '#0a2342' }}
+                      >
+                        {member.role}
+                      </span>
+                    </div>
+
+                    {/* Bottom Overlay Name Label */}
+                    <div className="absolute bottom-3 left-3 right-3 z-20 pointer-events-none text-left">
+                      <h3 className="text-white text-sm sm:text-base font-extrabold leading-snug drop-shadow-md truncate">
+                        {member.name}
+                      </h3>
                     </div>
                   </div>
                 </article>
