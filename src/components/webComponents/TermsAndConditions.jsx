@@ -4,7 +4,7 @@ export default function TermsAndConditions() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-gray-800 space-y-6">
       <h1 className="text-3xl font-bold mb-2">Terms & Conditions</h1>
-      <p className="text-sm text-gray-500 mb-8">Effective Date: 2 July 206</p>
+      <p className="text-sm text-gray-500 mb-8">Effective Date: 2 July 2026</p>
 
       <p className="leading-relaxed">Welcome to Parivar. These Terms & Conditions (“Terms”) govern your access to and use of the Parivar website, application and related services.</p>
       <p className="leading-relaxed">By registering for or using Parivar, you agree to these Terms. If you do not agree with these Terms, please do not use the platform.</p>
