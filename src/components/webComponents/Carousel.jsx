@@ -47,29 +47,43 @@ const Carousel = ({
   const [touchEnd, setTouchEnd] = useState(0);
   const [theme, setTheme] = useState(getInitialWebTheme);
   const [images, setImages] = useState(() => normalizeBannerImages(getInitialWebTheme().bannerImages));
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const handleStorage = () => {
+    const handleUpdate = () => {
       const loaded = getInitialWebTheme();
       setTheme(loaded);
       const parsed = normalizeBannerImages(loaded.bannerImages);
-      if (parsed.length) setImages(parsed);
+      setImages(parsed);
+      setLoading(false);
     };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('web-theme-updated', handleUpdate);
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('web-theme-updated', handleUpdate);
+    };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchBannerImages = async () => {
       try {
         const res = await memberApi.get('/get_app_theme');
         const data = res.data?.data || res.data || {};
         const bannerImages = normalizeBannerImages(data.bannerImages);
-        if (bannerImages.length) setImages(bannerImages);
+        if (isMounted) {
+          setImages(bannerImages);
+          setLoading(false);
+        }
       } catch (error) {
         console.error('Failed to load banner images:', error);
+        if (isMounted) setLoading(false);
       }
     };
     fetchBannerImages();
+    return () => { isMounted = false; };
   }, []);
 
   // Keyboard navigation
@@ -80,7 +94,7 @@ const Carousel = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [images.length]);
 
   // Autoplay
   useEffect(() => {
@@ -125,7 +139,7 @@ const Carousel = ({
 
   return (
     <div
-      className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.8/1] max-h-[520px] overflow-hidden group  transition-all duration-500 bg-gray-900 border border-black/10"
+      className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.8/1] max-h-[520px] overflow-hidden group transition-all duration-500 bg-gray-900 border border-black/10"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -175,7 +189,7 @@ const Carousel = ({
               />
             </div>
           );
-        }) : (
+        }) : loading ? (
           <div
             className="absolute inset-0 flex items-center justify-center"
             style={{
@@ -183,6 +197,20 @@ const Carousel = ({
             }}
           >
             <div className="w-10 h-10 rounded-full border-3 border-white/30 border-t-white animate-spin" />
+          </div>
+        ) : (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center text-white px-4 text-center"
+            style={{
+              background: `linear-gradient(135deg, ${theme.primaryColor || '#0a2342'} 0%, ${theme.gradientEnd || '#1e3a8a'} 100%)`
+            }}
+          >
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-md">
+              {theme.name || 'Parivar'}
+            </h2>
+            <p className="mt-2 text-sm sm:text-base text-white/80 max-w-md">
+              Welcome to our official community portal.
+            </p>
           </div>
         )}
       </div>

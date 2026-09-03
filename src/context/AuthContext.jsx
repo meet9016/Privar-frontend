@@ -25,7 +25,8 @@ const storeWebTheme = (themeData) => {
     'instagram',
     'twitter',
     'youtube',
-    'whatsapp'
+    'whatsapp',
+    'bannerImages'
   ]
 
   themeKeys.forEach((key) => {
@@ -34,6 +35,8 @@ const storeWebTheme = (themeData) => {
 
     if (value === undefined || value === null || value === '') {
       localStorage.removeItem(storageKey)
+    } else if (Array.isArray(value)) {
+      localStorage.setItem(storageKey, JSON.stringify(value))
     } else {
       localStorage.setItem(storageKey, value)
     }

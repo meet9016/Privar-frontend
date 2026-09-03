@@ -46,6 +46,7 @@ export const useWebTheme = () => {
 
         // Notify same-tab components to re-read from localStorage
         // (localStorage.setItem does NOT fire 'storage' events in the same tab)
+        window.dispatchEvent(new Event('web-theme-updated'))
         window.dispatchEvent(new Event('storage'))
 
         setTheme(themeData)

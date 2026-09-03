@@ -21,15 +21,28 @@ export const getSubdomainTenant = () => {
     return localStorage.getItem('tenant_code') || ''
   }
 
+  // If IP address (IPv4 or IPv6), do not treat first octet as a tenant subdomain
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':')) {
+    return localStorage.getItem('tenant_code') || ''
+  }
+
   const parts = hostname.split('.')
-  // Check if first part is a tenant subdomain
-  if (parts.length >= 2) {
+  // Check for multi-part domains (e.g. chovatiya.parivar.me -> parts: ['chovatiya', 'parivar', 'me'])
+  if (parts.length >= 3) {
+    const sub = parts[0].toLowerCase()
+    const nonTenantSubdomains = ['www', 'admin', 'api', 'app', 'superadmin', 'parivar', 'mail', 'service']
+    if (!nonTenantSubdomains.includes(sub)) {
+      return sub
+    }
+  } else if (parts.length === 2 && parts[1].toLowerCase() === 'localhost') {
+    // e.g. chovatiya.localhost
     const sub = parts[0].toLowerCase()
     const nonTenantSubdomains = ['www', 'admin', 'api', 'app', 'superadmin', 'parivar', 'mail', 'service']
     if (!nonTenantSubdomains.includes(sub)) {
       return sub
     }
   }
+
   return localStorage.getItem('tenant_code') || ''
 }
 

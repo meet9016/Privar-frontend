@@ -10,6 +10,7 @@ import Loader from '../components/common/Loader'
 import { toast } from '../lib/toast'
 import { AuthContext } from '../context/AuthContext'
 import { confirm } from '../lib/confirm'
+import { compressImage } from '../lib/imageCompressor'
 
 const DEFAULT_COLORS = {
   primaryColor: '#E65100',
@@ -58,7 +59,8 @@ const WEB_THEME_KEYS = [
   'twitter',
   'instagram',
   'youtube',
-  'whatsapp'
+  'whatsapp',
+  'bannerImages'
 ]
 
 const persistWebThemeToLocalStorage = (theme) => {
@@ -68,6 +70,8 @@ const persistWebThemeToLocalStorage = (theme) => {
 
     if (value === undefined || value === null || value === '') {
       localStorage.removeItem(storageKey)
+    } else if (Array.isArray(value)) {
+      localStorage.setItem(storageKey, JSON.stringify(value))
     } else {
       localStorage.setItem(storageKey, value)
     }
@@ -286,18 +290,26 @@ export default function SettingsPage() {
 
   const handleConfigChange = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
 
-  const handleLogoChange = (field, file) => setLogoFiles(prev => ({ ...prev, [field]: file }))
+  const handleLogoChange = async (field, file) => {
+    if (!file) return
+    const maxDim = field === 'favicon' ? 128 : 512
+    const compressed = await compressImage(file, { maxWidth: maxDim, maxHeight: maxDim, quality: 0.85 })
+    setLogoFiles(prev => ({ ...prev, [field]: compressed }))
+  }
 
   const handleLogoDelete = (field) => {
     setLogoFiles(prev => ({ ...prev, [field]: null }))
     setConfig(prev => ({ ...prev, [field]: '' }))
   }
 
-  const handleBannerAdd = (file) => setNewBannerFiles(prev => [...prev, file])
+  const handleBannerAdd = async (file) => {
+    if (!file) return
+    const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1080, quality: 0.85 })
+    setNewBannerFiles(prev => [...prev, compressed])
+  }
 
   const handleBannerDelete = (index, type) => {
     const urlCount = config.bannerImages.filter((_, i) => !deletedBannerUrls.includes(config.bannerImages[i])).length
-    // Rebuild: existing URLs first, then new files
     const existingUrls = config.bannerImages.filter(u => !deletedBannerUrls.includes(u))
     if (type === 'url') {
       const url = existingUrls[index]
