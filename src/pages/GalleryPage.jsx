@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Edit2, Filter, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, X, ImageOff } from 'lucide-react'
-import api, { assetUrl, getGalleryList } from '../lib/api'
+import api, { assetUrl, getGalleryList, formatDate } from '../lib/api'
 import { GALLERY_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -261,10 +261,12 @@ export default function GalleryPage({ headerLeftContent }) {
     setFilePreviews(filePreviews.filter((_, idx) => idx !== index))
   }
 
-  const handleCategorySelect = (event) => {
-    const selectedId = event.target.value
+  const handleCategorySelect = (valOrEvent) => {
+    const selectedId = (valOrEvent && typeof valOrEvent === 'object' && valOrEvent.target)
+      ? valOrEvent.target.value
+      : valOrEvent
     setCategoryId(selectedId)
-    const category = categories.find((item) => item.id === selectedId)
+    const category = categories.find((item) => String(item.id || item._id) === String(selectedId))
     setCategoryName(category?.category || '')
     if (fieldErrors.category) setFieldErrors(prev => ({ ...prev, category: null }))
   }
@@ -451,22 +453,38 @@ export default function GalleryPage({ headerLeftContent }) {
             key: 'month_year',
             render: (row) => {
               if (row.date) {
-                const d = new Date(row.date);
-                if (!isNaN(d.getTime())) {
-                  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
-                }
+                return formatDate(row.date)
               }
               const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-              let mText = ''
+              let mNum = ''
               if (row.month) {
-                const mIdx = parseInt(row.month, 10)
-                mText = (!isNaN(mIdx) && monthNames[mIdx]) ? monthNames[mIdx] : row.month
+                const idx = monthNames.findIndex(m => m && m.toLowerCase() === String(row.month).trim().toLowerCase())
+                if (idx > 0) {
+                  mNum = String(idx).padStart(2, '0')
+                } else {
+                  const parsed = parseInt(row.month, 10)
+                  if (!isNaN(parsed) && parsed >= 1 && parsed <= 12) {
+                    mNum = String(parsed).padStart(2, '0')
+                  }
+                }
               }
-              if (mText && row.year) return `${mText} ${row.year}`
+
               if (row.year) {
-                return row.year.includes('-') ? new Date(row.year + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : row.year
+                const yStr = String(row.year).trim()
+                if (yStr.includes('-')) {
+                  const parts = yStr.split('-')
+                  const y = parts[0]
+                  const m = parts[1] ? parts[1].padStart(2, '0') : (mNum || '01')
+                  const d = parts[2] ? parts[2].padStart(2, '0') : '01'
+                  return `${d}/${m}/${y}`
+                }
+                if (mNum) {
+                  return `01/${mNum}/${yStr}`
+                }
+                return `01/01/${yStr}`
               }
-              if (mText) return mText
+
+              if (mNum) return `01/${mNum}`
               return '-'
             }
           },
@@ -540,9 +558,9 @@ export default function GalleryPage({ headerLeftContent }) {
               label="Category"
               required
               value={categoryId}
-              onChange={(val) => handleCategorySelect({ target: { value: val } })}
+              onChange={(val) => handleCategorySelect(val)}
               disabled={saving}
-              options={categories.map((item) => ({ label: item.category, value: item.id }))}
+              options={categories.map((item) => ({ label: item.category, value: item.id || item._id }))}
               error={fieldErrors.category}
             />
 
