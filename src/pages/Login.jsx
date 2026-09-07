@@ -8,7 +8,7 @@ import { getCommunitySurname, getCommunityFullName, getDomainCommunityName, getS
 export default function Login() {
   const { login, token } = useContext(AuthContext)
   const navigate = useNavigate()
-  const [email, setEmail] = useState('ravi@gmail.com')
+  const [email, setEmail] = useState('bhavik@gmail.com')
   const [password, setPassword] = useState('123456')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -81,13 +81,13 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-text relative overflow-hidden font-sans">
-      
+
       {/* Dynamic ambient backgrounds */}
       <div className="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
 
       <div className="w-full max-w-md p-8 bg-surface border border-border rounded-3xl shadow-glass-lg relative z-10 animate-slide-up">
-        
+
         {/* Header Title & Web Logo */}
         <div className="flex flex-col items-center mb-8 text-center">
           {webTheme.webLogo && (
@@ -142,9 +142,9 @@ export default function Login() {
 
           {/* Terms Checkbox */}
           <div className="flex items-center gap-2.5 mt-2">
-            <input 
-              type="checkbox" 
-              id="agree" 
+            <input
+              type="checkbox"
+              id="agree"
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
               className="shrink-0 w-4 h-4 rounded border border-border text-primary focus:ring-primary/50 bg-input-bg cursor-pointer"
