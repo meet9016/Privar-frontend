@@ -43,7 +43,7 @@ export default function News({ headerLeftContent }) {
     status: 1,
     image: null,
     remove_image: false,
-    send_notification: false,
+    send_notification: true,
   }
 
   const [formData, setFormData] = useState(emptyNewsForm)
