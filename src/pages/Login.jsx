@@ -8,8 +8,8 @@ import { getCommunitySurname, getCommunityFullName, getDomainCommunityName, getS
 export default function Login() {
   const { login, token } = useContext(AuthContext)
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('ravi@gmail.com')
+  const [password, setPassword] = useState('123456')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -88,8 +88,17 @@ export default function Login() {
 
       <div className="w-full max-w-md p-8 bg-surface border border-border rounded-3xl shadow-glass-lg relative z-10 animate-slide-up">
         
-        {/* Header Title */}
+        {/* Header Title & Web Logo */}
         <div className="flex flex-col items-center mb-8 text-center">
+          {webTheme.webLogo && (
+            <div className="mb-4 flex items-center justify-center">
+              <img
+                src={assetUrl(webTheme.webLogo)}
+                alt={`${domainName} Logo`}
+                className="max-h-20 w-auto object-contain drop-shadow-sm transition-transform hover:scale-105"
+              />
+            </div>
+          )}
           <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
             {domainName.toLowerCase().includes('parivar') ? domainName : `${domainName} Parivar`}
           </h1>

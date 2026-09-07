@@ -139,7 +139,7 @@ const Carousel = ({
 
   return (
     <div
-      className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.8/1] max-h-[520px] overflow-hidden group transition-all duration-500 bg-gray-900 border border-black/10"
+      className="relative w-full h-[380px] sm:h-[480px] md:h-[560px] lg:h-[650px] xl:h-[720px] max-h-[85vh] overflow-hidden group transition-all duration-500 bg-[#080d28] border-b border-black/10"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -164,28 +164,21 @@ const Carousel = ({
           return (
             <div
               key={index}
-              className="absolute inset-0 w-full h-full"
+              className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#080d28]"
               style={{
                 opacity: isActive ? 1 : 0,
-                transform: isActive ? 'scale(1)' : 'scale(1.05)',
+                transform: isActive ? 'scale(1)' : 'scale(1.02)',
                 transition: 'opacity 1100ms cubic-bezier(0.4,0,0.2,1), transform 1200ms cubic-bezier(0.4,0,0.2,1)',
                 zIndex: isActive ? 10 : 0,
                 pointerEvents: isActive ? 'auto' : 'none',
               }}
             >
-              {/* Image with slow ambient zoom effect */}
+              {/* Image with crisp responsive presentation without cutting bottom prices */}
               <img
                 src={image}
                 alt={`Slide ${index + 1}`}
-                className="w-full h-full object-cover origin-center transition-transform duration-700"
+                className="w-full h-full object-cover object-center sm:object-contain md:object-cover transition-transform duration-700"
                 draggable={false}
-              />
-              {/* Multi-gradient vignette overlay for depth */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.6) 100%)'
-                }}
               />
             </div>
           );
