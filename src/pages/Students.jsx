@@ -492,8 +492,8 @@ export default function Students({ headerLeftContent }) {
           icon: GraduationCap,
           title: 'No students found',
           description: 'There are no student records matching your criteria',
-          actionLabel: 'Add Student',
-          onAction: handleCreate
+          actionLabel: (permissions.canAdd || permissions.isSuperAdmin) ? 'Add Student' : undefined,
+          onAction: (permissions.canAdd || permissions.isSuperAdmin) ? handleCreate : undefined
         }}
         pagination={{
           currentPage: page,

@@ -137,6 +137,21 @@ export function AuthProvider({ children }) {
       if (stored) {
         setToken(stored)
         setUser(storedUser ? JSON.parse(storedUser) : null)
+        // Refresh profile from backend to get fresh role & permissions
+        try {
+          const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+          const headers = { 'Authorization': `Bearer ${stored}` }
+          if (storedTenant || currentSubdomain) headers['x-tenant-id'] = currentSubdomain || storedTenant
+          const profileRes = await fetch(`${apiBase}/api/auth/me`, { headers })
+          if (profileRes.ok) {
+            const pJson = await profileRes.json()
+            const freshUser = pJson.data || pJson.user || pJson
+            if (freshUser && freshUser.id) {
+              setUser(freshUser)
+              localStorage.setItem('auth_user', JSON.stringify(freshUser))
+            }
+          }
+        } catch (_) {}
       }
 
       // Fetch website theme colors (separate from admin dashboard theme)

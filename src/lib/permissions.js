@@ -45,17 +45,22 @@ export const hasPermission = (user, permission) => {
     user?.committee_role === 'Admin' ||
     user?.role_name?.toLowerCase() === 'admin' ||
     user?.role_name?.toLowerCase() === 'super admin' ||
-    !!user?.role_id
+    user?.role_id?.name?.toLowerCase() === 'admin' ||
+    user?.role_id?.name?.toLowerCase() === 'super admin' ||
+    (user?.is_committee === true && !user?.role_id)
   ) {
     return true;
   }
 
-  const required = Array.isArray(permission) ? permission : [permission];
-  const permissions = Array.isArray(user?.permissions) ? user.permissions : [];
+  const userPermissions = Array.isArray(user?.permissions)
+    ? user.permissions
+    : (Array.isArray(user?.role_id?.permissions) ? user.role_id.permissions : []);
 
-  if (permissions.length === 0) {
+  if (userPermissions.length === 0) {
     return false;
   }
 
-  return required.some((item) => permissions.includes(item) || permissions.includes(legacyPermissionFor(item)));
+  const required = Array.isArray(permission) ? permission : [permission];
+
+  return required.some((item) => userPermissions.includes(item) || userPermissions.includes(legacyPermissionFor(item)));
 };

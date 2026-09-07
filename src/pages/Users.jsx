@@ -663,8 +663,8 @@ export default function Users() {
           icon: UsersIcon,
           title: 'No Members found',
           description: 'Try expanding your search criteria or register a new member',
-          actionLabel: 'Add Member',
-          onAction: handleCreate
+          actionLabel: (permissions.canAdd || permissions.isSuperAdmin) ? 'Add Member' : undefined,
+          onAction: (permissions.canAdd || permissions.isSuperAdmin) ? handleCreate : undefined
         }}
         pagination={{
           currentPage,

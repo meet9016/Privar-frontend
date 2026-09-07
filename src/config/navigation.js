@@ -48,7 +48,7 @@ export const engagementNavigation = [
 ]
 
 export const masterNavigation = [
-  { type: 'business', label: 'Business', permission: 'businesses.list' },
+  { type: 'business', label: 'Business', permission: 'masters.list' },
   { type: 'bank-details', label: 'Bank Details', permission: 'masters.list', to: '/admin/bank-details' },
   { type: 'country', label: 'Country', permission: 'masters.list' },
   { type: 'state', label: 'State', permission: 'masters.list' },

@@ -383,8 +383,8 @@ export default function Donations({ headerLeftContent }) {
           icon: Landmark,
           title: 'No donations found',
           description: 'There are no donation records matching your criteria',
-          actionLabel: 'Add Donation',
-          onAction: handleCreate
+          actionLabel: (permissions.canAdd || permissions.isSuperAdmin) ? 'Add Donation' : undefined,
+          onAction: (permissions.canAdd || permissions.isSuperAdmin) ? handleCreate : undefined
         }}
         pagination={{
           currentPage: page,

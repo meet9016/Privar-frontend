@@ -15,6 +15,7 @@ import SearchInput from '../components/common/SearchInput'
 import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
+import usePermissions from '../hooks/usePermissions'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -41,6 +42,7 @@ const getMonthNumber = (m) => {
 }
 
 export default function GalleryPage({ headerLeftContent }) {
+  const permissions = usePermissions('gallery')
   const [rows, setRows] = useState([])
   const [limit, setLimit] = useState(15)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 15 })
@@ -421,9 +423,11 @@ export default function GalleryPage({ headerLeftContent }) {
               ]}
             />
           </FilterPopover>
-          <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
-            Add Images
-          </Button>
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />}>
+              Add Images
+            </Button>
+          )}
         </div>
       </div>
 
@@ -519,12 +523,16 @@ export default function GalleryPage({ headerLeftContent }) {
             key: 'actions',
             align: 'left',
             render: row => (<div className="flex items-center justify-start gap-2">
-              <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             )
           }

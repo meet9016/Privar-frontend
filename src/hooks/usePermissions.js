@@ -13,7 +13,9 @@ export default function usePermissions(moduleKey) {
       user?.committee_role === 'Admin' ||
       user?.role_name?.toLowerCase() === 'admin' ||
       user?.role_name?.toLowerCase() === 'super admin' ||
-      !!user?.role_id;
+      user?.role_id?.name?.toLowerCase() === 'admin' ||
+      user?.role_id?.name?.toLowerCase() === 'super admin' ||
+      (user?.is_committee === true && !user?.role_id);
     
     if (isSuperAdmin) {
       return { 
@@ -28,7 +30,9 @@ export default function usePermissions(moduleKey) {
       };
     }
 
-    const perms = Array.isArray(user?.permissions) ? user.permissions : [];
+    const perms = Array.isArray(user?.permissions)
+      ? user.permissions
+      : (Array.isArray(user?.role_id?.permissions) ? user.role_id.permissions : []);
     
     if (!moduleKey) {
       return { 

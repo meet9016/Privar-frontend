@@ -294,19 +294,15 @@ export default function Businesses({ headerLeftContent }) {
                 <button onClick={() => handleView(biz)} className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all" title="View">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
-                {(!permissions.canEdit && !permissions.isSuperAdmin) ? null : (
-                  (permissions.isSuperAdmin || biz.is_own) ? (
-                    <button onClick={() => handleEdit(biz)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                  ) : null
+                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleEdit(biz)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
                 )}
-                {(!permissions.canDelete && !permissions.isSuperAdmin) ? null : (
-                  (permissions.isSuperAdmin || biz.is_own) ? (
-                    <button onClick={() => handleDelete(biz.id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  ) : null
+                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                  <button onClick={() => handleDelete(biz.id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
             )
