@@ -67,9 +67,7 @@ function StatCard({ title, value, growth, icon: Icon, gradientClass, lightBorder
           <p className="text-[13px] font-semibold text-text-secondary mb-0.5">{title}</p>
           <p className="text-[26px] font-bold text-text leading-none mb-1.5">{value}</p>
           <div className={`flex items-center text-[11px] font-bold ${isPositive ? 'text-[#10b981]' : 'text-[#f43f5e]'}`}>
-            <svg className={`w-3 h-3 mr-0.5 ${isPositive ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
-            </svg>
+             <TrendingUp className={`w-3.5 h-3.5 mr-0.5 ${isPositive ? '' : 'rotate-180'}`} />
             {isPositive ? '+' : '-'}{Math.abs(growth || 0)}%
             <span className="text-text-secondary/60 font-medium ml-1">from last month</span>
           </div>

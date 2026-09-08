@@ -8,7 +8,7 @@ import { getCommunitySurname, getCommunityFullName, getSubdomainTenant, assetUrl
 
 const LinkItem = ({ to, icon: Icon, label, end }) => {
   const location = useLocation()
-  const isDashboardActive = (to === '/admin' || to === '/admin/dashboard') && 
+  const isDashboardActive = (to === '/admin' || to === '/admin/dashboard') &&
     (location.pathname === '/admin' || location.pathname === '/admin/' || location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/')
 
   return (
@@ -17,11 +17,10 @@ const LinkItem = ({ to, icon: Icon, label, end }) => {
       end={end}
       className={({ isActive }) => {
         const active = isActive || isDashboardActive
-        return `group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${
-          active
-            ? 'text-white font-bold shadow-md border-transparent bg-primary'
-            : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
-        }`
+        return `group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${active
+          ? 'text-white font-bold shadow-md border-transparent bg-primary'
+          : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
+          }`
       }}
       title={label}
     >
@@ -57,24 +56,23 @@ const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
     <div className="space-y-1">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${
-          isChildActive && !isOpen
-            ? 'text-white font-bold shadow-md border-transparent bg-primary'
-            : isOpen 
+        className={`group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${isChildActive && !isOpen
+          ? 'text-white font-bold shadow-md border-transparent bg-primary'
+          : isOpen
             ? 'text-primary font-bold bg-primary/10 border-transparent'
             : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
-        }`}
+          }`}
       >
         <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 ${isChildActive || isOpen ? 'text-primary font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />
         <span className="truncate tracking-tight flex-1 text-left">{label}</span>
-        <svg 
-          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+        <svg
+          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      
+
       {isOpen && (
         <div className="pl-11 pr-2 py-1.5 space-y-1.5">
           {items.map(item => {
@@ -83,11 +81,10 @@ const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
               <NavLink
                 key={item.type || item.to}
                 to={itemPath}
-                className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-[13px] transition-colors ${
-                  isActive || location.pathname === itemPath
-                    ? 'bg-primary text-white font-semibold shadow-sm' 
-                    : 'text-text-secondary hover:text-text hover:bg-surface-secondary font-medium'
-                }`}
+                className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-[13px] transition-colors ${isActive || location.pathname === itemPath
+                  ? 'bg-primary text-white font-semibold shadow-sm'
+                  : 'text-text-secondary hover:text-text hover:bg-surface-secondary font-medium'
+                  }`}
               >
                 {item.label}
               </NavLink>
@@ -137,13 +134,13 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col justify-between border-r border-border bg-surface px-3 py-4 shadow-glass transition-all duration-300">
-      
+
       {/* Brand Web Logo Section at Top of Sidebar */}
-      <div className="mb-4 flex shrink-0 items-center justify-center p-3 border-b border-border/50">
-        <img 
-          src={webTheme.webLogo ? assetUrl(webTheme.webLogo) : "/parivar.png"} 
-          alt={getCommunityFullName()} 
-          className="h-11 w-auto max-w-full object-contain" 
+      <div className="mb-4 flex shrink-0 items-center p-3 border-b border-border/50">
+        <img
+          src={webTheme.webLogo ? assetUrl(webTheme.webLogo) : "/parivar.png"}
+          alt={getCommunityFullName()}
+          className="h-11 w-auto max-w-full object-contain"
           onError={(e) => {
             e.currentTarget.style.display = 'none';
             if (e.currentTarget.nextSibling) {
@@ -151,6 +148,15 @@ export default function Sidebar() {
             }
           }}
         />
+        <div className="ml-3">
+          <h1 className="text-1xl font-bold text-text-primary leading-tight">
+            Our Community
+          </h1>
+
+          <p className="text-xs text-text-secondary ml-2 mt-0.5">
+            Together we grow
+          </p>
+        </div>
         <div className="hidden items-center justify-center">
           <Shield className="h-9 w-9 text-primary" />
         </div>
@@ -186,11 +192,11 @@ export default function Sidebar() {
         )}
 
         {visibleMasterNavigation.length > 0 && (
-          <CollapsibleFolder 
-            icon={Database} 
-            label="Masters" 
-            items={visibleMasterNavigation} 
-            parentPath="/admin/masters" 
+          <CollapsibleFolder
+            icon={Database}
+            label="Masters"
+            items={visibleMasterNavigation}
+            parentPath="/admin/masters"
           />
         )}
 
