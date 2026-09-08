@@ -37,7 +37,7 @@ export const docTranslations = {
         supportTitle: "Contact & Support",
         website: "https://parivar.me",
         email: "support@parivar.org",
-        phone: "+91 88667 79008",
+        phone: "+91 63547 20801",
         setupProgressTitle: "Quick Setup Guide",
         setupSteps: [
           {
@@ -252,7 +252,7 @@ export const docTranslations = {
         supportTitle: "संपर्क व सहायता",
         website: "https://parivar.me",
         email: "support@parivar.org",
-        phone: "+91 88667 79008",
+        phone: "+91 63547 20801",
         setupProgressTitle: "त्वरित शुरुआत गाइड",
         setupSteps: [
           {
@@ -487,7 +487,7 @@ export const docTranslations = {
         supportTitle: "સંપર્ક અને સહાય",
         website: "https://parivar.me",
         email: "support@parivar.org",
-        phone: "+91 88667 79008",
+        phone: "+91 63547 20801",
         setupProgressTitle: "ઝડપી શરૂઆત માર્ગદર્શિકા",
         setupSteps: [
           {
