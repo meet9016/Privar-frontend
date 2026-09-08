@@ -80,26 +80,27 @@ export default function Login() {
   const domainName = getDomainCommunityName()
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-text relative overflow-hidden font-sans">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background text-text relative overflow-hidden font-sans p-4">
 
       {/* Dynamic ambient backgrounds */}
       <div className="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
 
-      <div className="w-full max-w-md p-8 bg-surface border border-border rounded-3xl shadow-glass-lg relative z-10 animate-slide-up">
+      {/* Web Logo outside above the card */}
+      {webTheme.webLogo && (
+        <div className="flex items-center justify-center mb-6 z-10 animate-slide-up">
+          <img
+            src={assetUrl(webTheme.webLogo)}
+            alt={`${domainName} Logo`}
+            className="max-h-24 w-auto object-contain drop-shadow-md transition-transform hover:scale-105"
+          />
+        </div>
+      )}
 
-        {/* Header Title & Web Logo */}
-        <div className="flex flex-col items-center mb-8 text-center">
-          {webTheme.webLogo && (
-            <div className="mb-4 flex items-center justify-center">
-              <img
-                src={assetUrl(webTheme.webLogo)}
-                alt={`${domainName} Logo`}
-                className="max-h-20 w-auto object-contain drop-shadow-sm transition-transform hover:scale-105"
-              />
-            </div>
-          )}
-          <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
+      <div className="w-full max-w-md p-8 bg-surface border border-border rounded-3xl shadow-glass-lg relative z-10 animate-slide-up">
+        {/* Web Name inside the form */}
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
             {domainName.toLowerCase().includes('parivar') ? domainName : `${domainName} Parivar`}
           </h1>
         </div>
