@@ -9,7 +9,7 @@ import Select from '../components/common/Select'
 /* ─── Premium Table Card ─────────────────────────────────── */
 function TableCard({ title, routePath, data = [], columns }) {
   const navigate = useNavigate()
-  
+
   return (
     <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
@@ -51,31 +51,33 @@ function TableCard({ title, routePath, data = [], columns }) {
 }
 
 /* ─── Animated Stat Card ─────────────────────────────────── */
-function StatCard({ title, value, growth, icon: Icon, colorClass, gradientClass, delay = 0 }) {
+function StatCard({ title, value, growth, icon: Icon, gradientClass, lightBorder, chevronBg, chevronColor, delay = 0 }) {
   const isPositive = growth >= 0;
   
   return (
     <div
-      className="bg-white dark:bg-card border border-border rounded-xl p-5 shadow-sm flex items-start gap-4 transition-all duration-300 hover:shadow-md"
+      className={`bg-white dark:bg-card border ${lightBorder || 'border-border'} rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between gap-2 transition-all duration-300 hover:shadow-md cursor-pointer`}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${gradientClass} text-white shadow-sm flex-shrink-0`}>
-        <Icon className="w-6 h-6" />
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-text-secondary mb-1">{title}</p>
-        <p className="text-3xl font-bold text-text leading-tight mb-2">{value}</p>
-        <div className="flex items-center gap-1.5 text-xs font-semibold">
-          {growth !== undefined ? (
-             <span className={`flex items-center ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-               <TrendingUp className={`w-3.5 h-3.5 mr-0.5 ${isPositive ? '' : 'rotate-180'}`} />
-               {isPositive ? '+' : '-'}{Math.abs(growth)}%
-             </span>
-          ) : (
-            <span className="text-text-secondary">—</span>
-          )}
-          <span className="text-text-secondary font-medium ml-1">vs last month</span>
+      <div className="flex items-center gap-4">
+        <div className={`w-[52px] h-[52px] flex items-center justify-center rounded-[18px] bg-gradient-to-br ${gradientClass} text-white shadow-sm flex-shrink-0`}>
+          <Icon className="w-6 h-6" />
         </div>
+        <div className="flex flex-col items-start">
+          <p className="text-[13px] font-semibold text-text-secondary mb-0.5">{title}</p>
+          <p className="text-[26px] font-bold text-text leading-none mb-1.5">{value}</p>
+          <div className={`flex items-center text-[11px] font-bold ${isPositive ? 'text-[#10b981]' : 'text-[#f43f5e]'}`}>
+            <svg className={`w-3 h-3 mr-0.5 ${isPositive ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+            </svg>
+            {isPositive ? '+' : '-'}{Math.abs(growth || 0)}%
+            <span className="text-text-secondary/60 font-medium ml-1">from last month</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${chevronBg || 'bg-surface-secondary'}`}>
+        <ChevronRight className={`w-3.5 h-3.5 ${chevronColor || 'text-text-secondary'}`} strokeWidth={3} />
       </div>
     </div>
   )
@@ -94,19 +96,19 @@ function DashboardSkeleton() {
         <div className="h-8 w-20 rounded-full bg-surface-secondary/60" />
       </div>
 
-      {/* 4 Stat Cards Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white dark:bg-card border border-border rounded-xl p-5 shadow-sm flex items-start gap-4">
-            <div className="w-13 h-13 rounded-2xl bg-surface-secondary/70 shrink-0" />
-            <div className="flex-1 space-y-2.5">
-              <div className="h-3.5 w-24 bg-surface-secondary/60 rounded-md" />
-              <div className="h-7 w-16 bg-surface-secondary/80 rounded-lg" />
-              <div className="flex items-center gap-2">
-                <div className="h-3.5 w-12 bg-surface-secondary/60 rounded-md" />
-                <div className="h-3 w-20 bg-surface-secondary/40 rounded-md" />
+      {/* 8 Stat Cards Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div key={i} className="bg-white dark:bg-card border border-border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-2">
+            <div className="flex items-center gap-4">
+              <div className="w-[52px] h-[52px] rounded-[18px] bg-surface-secondary/70 shrink-0" />
+              <div className="space-y-1.5">
+                <div className="h-3 w-20 bg-surface-secondary/60 rounded-md" />
+                <div className="h-6 w-12 bg-surface-secondary/80 rounded-md" />
+                <div className="h-2.5 w-24 bg-surface-secondary/40 rounded-md" />
               </div>
             </div>
+            <div className="w-6 h-6 rounded-full bg-surface-secondary/50 shrink-0" />
           </div>
         ))}
       </div>
@@ -304,13 +306,17 @@ export default function Dashboard() {
 
   if (!data) return <div className="p-8 text-center text-text-secondary">Failed to load dashboard</div>
 
-  const { kpis, charts, tables, recentActivity, atAGlance, activitySummaryTotals } = data
+  const { charts, tables, recentActivity, atAGlance, activitySummaryTotals } = data
 
   const statCards = [
-    { title: 'Total Members', value: kpis?.users?.total || 0, growth: kpis?.users?.growth || 0, icon: Users, gradientClass: 'from-violet-500 to-indigo-500' },
-    { title: 'Businesses', value: kpis?.businesses?.total || 0, growth: kpis?.businesses?.growth || 0, icon: Briefcase, gradientClass: 'from-emerald-400 to-teal-500' },
-    { title: 'Posts', value: kpis?.posts?.total || 0, growth: kpis?.posts?.growth || 0, icon: FileText, gradientClass: 'from-blue-400 to-blue-500' },
-    { title: 'Events', value: kpis?.events?.total || 0, growth: kpis?.events?.growth || 0, icon: Calendar, gradientClass: 'from-amber-400 to-orange-500' },
+    { title: 'Total Members', value: activitySummaryTotals?.members?.total || 0, growth: activitySummaryTotals?.members?.growth || 0, icon: Users, gradientClass: 'from-indigo-500 to-violet-500', lightBorder: 'border-indigo-100 dark:border-indigo-500/20', chevronBg: 'bg-indigo-50 dark:bg-indigo-500/10', chevronColor: 'text-indigo-500 dark:text-indigo-400' },
+    { title: 'Businesses', value: activitySummaryTotals?.businesses?.total || 0, growth: activitySummaryTotals?.businesses?.growth || 0, icon: Briefcase, gradientClass: 'from-teal-400 to-emerald-500', lightBorder: 'border-emerald-100 dark:border-emerald-500/20', chevronBg: 'bg-emerald-50 dark:bg-emerald-500/10', chevronColor: 'text-emerald-500 dark:text-emerald-400' },
+    { title: 'Posts', value: activitySummaryTotals?.posts?.total || 0, growth: activitySummaryTotals?.posts?.growth || 0, icon: FileText, gradientClass: 'from-blue-400 to-blue-500', lightBorder: 'border-blue-100 dark:border-blue-500/20', chevronBg: 'bg-blue-50 dark:bg-blue-500/10', chevronColor: 'text-blue-500 dark:text-blue-400' },
+    { title: 'Events', value: activitySummaryTotals?.events?.total || 0, growth: activitySummaryTotals?.events?.growth || 0, icon: Calendar, gradientClass: 'from-orange-400 to-orange-500', lightBorder: 'border-orange-100 dark:border-orange-500/20', chevronBg: 'bg-orange-50 dark:bg-orange-500/10', chevronColor: 'text-orange-500 dark:text-orange-400' },
+    { title: 'Students', value: activitySummaryTotals?.students?.total || 0, growth: activitySummaryTotals?.students?.growth || 0, icon: Users, gradientClass: 'from-rose-400 to-rose-500', lightBorder: 'border-rose-100 dark:border-rose-500/20', chevronBg: 'bg-rose-50 dark:bg-rose-500/10', chevronColor: 'text-rose-500 dark:text-rose-400' },
+    { title: 'Upcoming Events', value: activitySummaryTotals?.upcomingEvents?.total || 0, growth: activitySummaryTotals?.upcomingEvents?.growth || 0, icon: Clock, gradientClass: 'from-cyan-400 to-blue-500', lightBorder: 'border-cyan-100 dark:border-cyan-500/20', chevronBg: 'bg-cyan-50 dark:bg-cyan-500/10', chevronColor: 'text-cyan-500 dark:text-cyan-400' },
+    { title: 'Active Jobs', value: activitySummaryTotals?.activeJobs?.total || 0, growth: activitySummaryTotals?.activeJobs?.growth || 0, icon: Briefcase, gradientClass: 'from-lime-400 to-green-500', lightBorder: 'border-green-100 dark:border-green-500/20', chevronBg: 'bg-green-50 dark:bg-green-500/10', chevronColor: 'text-green-500 dark:text-green-400' },
+    { title: 'Donations', value: activitySummaryTotals?.donations?.total || 0, growth: activitySummaryTotals?.donations?.growth || 0, icon: CreditCard, gradientClass: 'from-amber-400 to-orange-400', lightBorder: 'border-amber-100 dark:border-amber-500/20', chevronBg: 'bg-amber-50 dark:bg-amber-500/10', chevronColor: 'text-amber-500 dark:text-amber-400' },
   ]
 
   const COLORS = ['#8b5cf6', '#f59e0b', '#10b981', '#3b82f6'];
@@ -331,7 +337,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, i) => (
           <StatCard key={i} {...card} delay={i * 50} />
         ))}
@@ -344,7 +350,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-2 z-10">
             <h4 className="text-sm font-bold text-text">Members Overview</h4>
             <div className="relative w-[148px]">
-              <Select 
+              <Select
                 value={membersFilter}
                 onChange={setMembersFilter}
                 searchable={false}
@@ -374,7 +380,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-bold text-text">Businesses by Category</h4>
             <div className="relative w-[148px]">
-              <Select 
+              <Select
                 value={businessFilter}
                 onChange={setBusinessFilter}
                 searchable={false}
@@ -411,7 +417,7 @@ export default function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-black text-text leading-none">{(charts?.businessCategories || []).reduce((a,b)=>a+b.value,0)}</span>
+              <span className="text-2xl font-black text-text leading-none">{(charts?.businessCategories || []).reduce((a, b) => a + b.value, 0)}</span>
               <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mt-0.5">Total</span>
             </div>
           </div>
@@ -449,7 +455,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-bold text-text">Activity Summary</h4>
             <div className="relative w-[148px]">
-              <Select 
+              <Select
                 value={activityFilter}
                 onChange={setActivityFilter}
                 searchable={false}
@@ -463,129 +469,125 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-3">
-             {/* Mini Chart 1 - Total Posts (Purple) */}
-             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-violet-500/30 transition-all">
-                <div className="z-10 flex flex-col">
-                  <p className="text-xs text-violet-600 dark:text-violet-400 font-semibold mb-0.5">Total Posts</p>
-                  <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.posts?.total || 0}</p>
-                </div>
-                <div className="z-10 mt-2">
-                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
-                    (activitySummaryTotals?.posts?.growth || 0) >= 0 
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+            {/* Mini Chart 1 - Total Posts (Purple) */}
+            <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-violet-500/30 transition-all">
+              <div className="z-10 flex flex-col">
+                <p className="text-xs text-violet-600 dark:text-violet-400 font-semibold mb-0.5">Total Posts</p>
+                <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.posts?.total || 0}</p>
+              </div>
+              <div className="z-10 mt-2">
+                <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${(activitySummaryTotals?.posts?.growth || 0) >= 0
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.posts?.growth || 0) >= 0 ? '' : 'rotate-180'}`} /> 
-                    {(activitySummaryTotals?.posts?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.posts?.growth || 0)}%
-                  </div>
+                  <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.posts?.growth || 0) >= 0 ? '' : 'rotate-180'}`} />
+                  {(activitySummaryTotals?.posts?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.posts?.growth || 0)}%
                 </div>
-                <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
-                        <defs>
-                          <linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                       <Area type="monotone" dataKey="posts" stroke="#8b5cf6" fill="url(#colorPosts)" strokeWidth={1.5} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-             </div>
-             
-             {/* Mini Chart 2 - Total Events (Orange) */}
-             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-orange-500/30 transition-all">
-                <div className="z-10 flex flex-col">
-                  <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold mb-0.5">Total Events</p>
-                  <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.events?.total || 0}</p>
-                </div>
-                <div className="z-10 mt-2">
-                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
-                    (activitySummaryTotals?.events?.growth || 0) >= 0 
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                  }`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.events?.growth || 0) >= 0 ? '' : 'rotate-180'}`} /> 
-                    {(activitySummaryTotals?.events?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.events?.growth || 0)}%
-                  </div>
-                </div>
-                <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
-                        <defs>
-                          <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                       <Area type="monotone" dataKey="events" stroke="#f97316" fill="url(#colorEvents)" strokeWidth={1.5} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-             </div>
+              </div>
+              <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={charts?.activity || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="posts" stroke="#8b5cf6" fill="url(#colorPosts)" strokeWidth={1.5} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
-             {/* Mini Chart 3 - New Members (Blue) */}
-             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-blue-500/30 transition-all">
-                <div className="z-10 flex flex-col">
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mb-0.5">New Members</p>
-                  <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.members?.total || 0}</p>
-                </div>
-                <div className="z-10 mt-2">
-                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
-                    (activitySummaryTotals?.members?.growth || 0) >= 0 
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+            {/* Mini Chart 2 - Total Events (Orange) */}
+            <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-orange-500/30 transition-all">
+              <div className="z-10 flex flex-col">
+                <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold mb-0.5">Total Events</p>
+                <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.events?.total || 0}</p>
+              </div>
+              <div className="z-10 mt-2">
+                <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${(activitySummaryTotals?.events?.growth || 0) >= 0
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.members?.growth || 0) >= 0 ? '' : 'rotate-180'}`} /> 
-                    {(activitySummaryTotals?.members?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.members?.growth || 0)}%
-                  </div>
+                  <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.events?.growth || 0) >= 0 ? '' : 'rotate-180'}`} />
+                  {(activitySummaryTotals?.events?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.events?.growth || 0)}%
                 </div>
-                <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
-                        <defs>
-                          <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                       <Area type="monotone" dataKey="members" stroke="#3b82f6" fill="url(#colorMembers)" strokeWidth={1.5} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-             </div>
+              </div>
+              <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={charts?.activity || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="events" stroke="#f97316" fill="url(#colorEvents)" strokeWidth={1.5} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
-             {/* Mini Chart 4 - Active Businesses (Green) */}
-             <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-emerald-500/30 transition-all">
-                <div className="z-10 flex flex-col">
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mb-0.5">Active Businesses</p>
-                  <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.businesses?.total || 0}</p>
-                </div>
-                <div className="z-10 mt-2">
-                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
-                    (activitySummaryTotals?.businesses?.growth || 0) >= 0 
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+            {/* Mini Chart 3 - New Members (Blue) */}
+            <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-blue-500/30 transition-all">
+              <div className="z-10 flex flex-col">
+                <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mb-0.5">New Members</p>
+                <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.members?.total || 0}</p>
+              </div>
+              <div className="z-10 mt-2">
+                <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${(activitySummaryTotals?.members?.growth || 0) >= 0
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.businesses?.growth || 0) >= 0 ? '' : 'rotate-180'}`} /> 
-                    {(activitySummaryTotals?.businesses?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.businesses?.growth || 0)}%
-                  </div>
+                  <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.members?.growth || 0) >= 0 ? '' : 'rotate-180'}`} />
+                  {(activitySummaryTotals?.members?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.members?.growth || 0)}%
                 </div>
-                <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={charts?.activity || []} margin={{top:5, right:0, left:0, bottom:0}}>
-                        <defs>
-                          <linearGradient id="colorBiz" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                       <Area type="monotone" dataKey="businesses" stroke="#10b981" fill="url(#colorBiz)" strokeWidth={1.5} />
-                    </AreaChart>
-                  </ResponsiveContainer>
+              </div>
+              <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={charts?.activity || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="members" stroke="#3b82f6" fill="url(#colorMembers)" strokeWidth={1.5} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Mini Chart 4 - Active Businesses (Green) */}
+            <div className="border border-border rounded-xl p-3 flex flex-col justify-between relative overflow-hidden bg-surface dark:bg-card hover:border-emerald-500/30 transition-all">
+              <div className="z-10 flex flex-col">
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mb-0.5">Active Businesses</p>
+                <p className="text-2xl sm:text-3xl font-medium text-text leading-tight">{activitySummaryTotals?.businesses?.total || 0}</p>
+              </div>
+              <div className="z-10 mt-2">
+                <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${(activitySummaryTotals?.businesses?.growth || 0) >= 0
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  }`}>
+                  <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.businesses?.growth || 0) >= 0 ? '' : 'rotate-180'}`} />
+                  {(activitySummaryTotals?.businesses?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.businesses?.growth || 0)}%
                 </div>
-             </div>
+              </div>
+              <div className="absolute bottom-0 right-0 w-24 h-11 opacity-60 pointer-events-none z-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={charts?.activity || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorBiz" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="businesses" stroke="#10b981" fill="url(#colorBiz)" strokeWidth={1.5} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -593,48 +595,60 @@ export default function Dashboard() {
       {/* ── Tables Grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <TableCard title="Recent Members" data={tables?.recentMembers} routePath="/admin/users" columns={[
-          { key: 'name', label: 'Name', render: (v, r) => (
-            <div className="flex items-center gap-2">
-               {r.image ? <img src={r.image} className="w-6 h-6 rounded-full object-cover" /> : <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center text-[10px] font-bold"><Users className="w-3 h-3"/></div>}
-               <span className="font-semibold">{v}</span>
-            </div>
-          )},
-          { key: 'email', label: 'Email', render: (v) => <span className="text-xs truncate max-w-[100px] block">{v||'-'}</span> },
-          { key: 'status', label: 'Status', render: v => (
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{v}</span>
-          )},
+          {
+            key: 'name', label: 'Name', render: (v, r) => (
+              <div className="flex items-center gap-2">
+                {r.image ? <img src={r.image} className="w-6 h-6 rounded-full object-cover" /> : <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center text-[10px] font-bold"><Users className="w-3 h-3" /></div>}
+                <span className="font-semibold">{v}</span>
+              </div>
+            )
+          },
+          { key: 'email', label: 'Email', render: (v) => <span className="text-xs truncate max-w-[100px] block">{v || '-'}</span> },
+          {
+            key: 'status', label: 'Status', render: v => (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{v}</span>
+            )
+          },
         ]} />
 
         <TableCard title="Recent Events" data={tables?.recentEvents} routePath="/admin/events" columns={[
-          { key: 'title', label: 'Event Name', render: (v, r) => (
-            <div className="flex items-center gap-2">
-               {r.image ? <img src={r.image} className="w-8 h-6 rounded object-cover" /> : <div className="w-8 h-6 rounded bg-orange-100 text-orange-600 flex items-center justify-center"><Calendar className="w-3 h-3"/></div>}
-               <span className="font-semibold truncate max-w-[120px] block text-xs">{v}</span>
-            </div>
-          )},
+          {
+            key: 'title', label: 'Event Name', render: (v, r) => (
+              <div className="flex items-center gap-2">
+                {r.image ? <img src={r.image} className="w-8 h-6 rounded object-cover" /> : <div className="w-8 h-6 rounded bg-orange-100 text-orange-600 flex items-center justify-center"><Calendar className="w-3 h-3" /></div>}
+                <span className="font-semibold truncate max-w-[120px] block text-xs">{v}</span>
+              </div>
+            )
+          },
           { key: 'date', label: 'Date', render: (v) => <span className="text-xs truncate block max-w-[90px]">{v ? new Date(v).toISOString().split('T')[0] : '-'}</span> },
-          { key: 'status', label: 'Status', render: v => (
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>{v}</span>
-          )},
+          {
+            key: 'status', label: 'Status', render: v => (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>{v}</span>
+            )
+          },
         ]} />
 
         <TableCard title="Recent Posts" data={tables?.recentPosts} routePath="/admin/posts" columns={[
-          { key: 'title', label: 'Title', render: (v, r) => (
-             <div className="flex items-center gap-2">
-               {r.image ? <img src={r.image} className="w-8 h-6 rounded object-cover" /> : <div className="w-8 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center"><FileText className="w-3 h-3"/></div>}
-               <span className="font-semibold truncate max-w-[110px] block text-xs">{v}</span>
-             </div>
-          )},
+          {
+            key: 'title', label: 'Title', render: (v, r) => (
+              <div className="flex items-center gap-2">
+                {r.image ? <img src={r.image} className="w-8 h-6 rounded object-cover" /> : <div className="w-8 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center"><FileText className="w-3 h-3" /></div>}
+                <span className="font-semibold truncate max-w-[110px] block text-xs">{v}</span>
+              </div>
+            )
+          },
           { key: 'date', label: 'Date', render: (v) => <span className="text-xs">{v ? new Date(v).toISOString().split('T')[0] : '-'}</span> },
-          { key: 'status', label: 'Status', render: v => (
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Published' ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary'}`}>{v}</span>
-          )},
+          {
+            key: 'status', label: 'Status', render: v => (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${v === 'Published' ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary'}`}>{v}</span>
+            )
+          },
         ]} />
       </div>
 
       {/* ── Bottom Section Grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        
+
         {/* Recent Activity Timeline */}
         <div className="bg-white dark:bg-card border border-border rounded-xl shadow-sm flex flex-col h-96">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
@@ -642,24 +656,24 @@ export default function Dashboard() {
             <span className="text-xs text-primary font-semibold cursor-pointer">View all</span>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar p-5 pb-0">
-              <div className="relative pl-3 border-l-2 border-border/60 pb-5 space-y-6">
-                {(recentActivity || []).slice(0, 3).map((act, i) => (
-                   <div key={i} className="relative">
-                      <div className={`absolute -left-[22px] p-1.5 rounded-full border-[3px] border-card ${act.type === 'member' ? 'bg-violet-500' : act.type === 'business' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
-                         {act.type === 'member' ? <Users className="w-3 h-3 text-white"/> : act.type === 'business' ? <Briefcase className="w-3 h-3 text-white"/> : <FileText className="w-3 h-3 text-white"/>}
-                      </div>
-                      <div className="pl-4">
-                         <p className="text-sm text-text font-medium leading-snug max-w-xs">{act.title}</p>
-                         <p className="text-xs text-text-secondary mt-1 flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(act.time).toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</p>
-                      </div>
-                   </div>
-                ))}
-                {(recentActivity || []).length > 3 && (
-                   <div className="relative text-center mt-4 pt-4 border-t border-border/50">
-                      <span className="text-xs font-semibold text-primary cursor-pointer hover:underline">... View all recent activity</span>
-                   </div>
-                )}
-             </div>
+            <div className="relative pl-3 border-l-2 border-border/60 pb-5 space-y-6">
+              {(recentActivity || []).slice(0, 3).map((act, i) => (
+                <div key={i} className="relative">
+                  <div className={`absolute -left-[22px] p-1.5 rounded-full border-[3px] border-card ${act.type === 'member' ? 'bg-violet-500' : act.type === 'business' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
+                    {act.type === 'member' ? <Users className="w-3 h-3 text-white" /> : act.type === 'business' ? <Briefcase className="w-3 h-3 text-white" /> : <FileText className="w-3 h-3 text-white" />}
+                  </div>
+                  <div className="pl-4">
+                    <p className="text-sm text-text font-medium leading-snug max-w-xs">{act.title}</p>
+                    <p className="text-xs text-text-secondary mt-1 flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(act.time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
+                  </div>
+                </div>
+              ))}
+              {(recentActivity || []).length > 3 && (
+                <div className="relative text-center mt-4 pt-4 border-t border-border/50">
+                  <span className="text-xs font-semibold text-primary cursor-pointer hover:underline">... View all recent activity</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -669,45 +683,45 @@ export default function Dashboard() {
             <h4 className="text-sm font-bold text-text">Quick Shortcuts</h4>
           </div>
           <div className="p-5 grid grid-cols-4 gap-4 flex-1 content-start">
-             <div onClick={()=>navigate('/admin/users')} className="flex flex-col items-center justify-center p-3 border border-violet-100 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
-                <div className="p-2 rounded-lg text-violet-600 group-hover:scale-110 transition-transform"><UserPlus className="w-6 h-6"/></div>
-                <span className="text-[11px] font-bold text-violet-600 leading-tight">Add<br/>Member</span>
-             </div>
-             
-             <div onClick={()=>navigate('/admin/businesses')} className="flex flex-col items-center justify-center p-3 border border-emerald-100 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
-                <div className="p-2 rounded-lg text-emerald-600 group-hover:scale-110 transition-transform"><Briefcase className="w-6 h-6"/></div>
-                <span className="text-[11px] font-bold text-emerald-600 leading-tight">Add<br/>Business</span>
-             </div>
-             
-             <div onClick={()=>navigate('/admin/posts')} className="flex flex-col items-center justify-center p-3 border border-blue-100 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
-                <div className="p-2 rounded-lg text-blue-600 group-hover:scale-110 transition-transform"><FileEdit className="w-6 h-6"/></div>
-                <span className="text-[11px] font-bold text-blue-600 leading-tight">Create<br/>Post</span>
-             </div>
-             
-             <div onClick={()=>navigate('/admin/events')} className="flex flex-col items-center justify-center p-3 border border-orange-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
-                <div className="p-2 rounded-lg text-orange-500 group-hover:scale-110 transition-transform"><Calendar className="w-6 h-6"/></div>
-                <span className="text-[11px] font-bold text-orange-500 leading-tight">Create<br/>Event</span>
-             </div>
-             
-             <div onClick={()=>navigate('/admin/roles')} className="flex flex-col items-center justify-center p-3 border border-violet-100 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
-                <div className="p-2 rounded-lg text-violet-600 group-hover:scale-110 transition-transform"><Shield className="w-6 h-6"/></div>
-                <span className="text-[11px] font-bold text-violet-600 leading-tight">Manage<br/>Roles</span>
-             </div>
-             
-             <div onClick={()=>navigate('/admin/reports')} className="flex flex-col items-center justify-center p-3 border border-blue-100 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
-                <div className="p-2 rounded-lg text-blue-600 group-hover:scale-110 transition-transform"><FileText className="w-6 h-6"/></div>
-                <span className="text-[11px] font-bold text-blue-600 leading-tight">View<br/>Reports</span>
-             </div>
-             
-             <div onClick={()=>navigate('/admin/users')} className="flex flex-col items-center justify-center p-3 border border-emerald-100 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
-                <div className="p-2 rounded-lg text-emerald-600 group-hover:scale-110 transition-transform"><Users className="w-6 h-6"/></div>
-                <span className="text-[11px] font-bold text-emerald-600 leading-tight">Manage<br/>Users</span>
-             </div>
-             
-             <div onClick={()=>navigate('/admin/settings')} className="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
-                <div className="p-2 rounded-lg text-slate-700 dark:text-slate-400 group-hover:scale-110 transition-transform"><Settings className="w-6 h-6"/></div>
-                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-400 leading-tight">Settings</span>
-             </div>
+            <div onClick={() => navigate('/admin/users')} className="flex flex-col items-center justify-center p-3 border border-violet-100 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+              <div className="p-2 rounded-lg text-violet-600 group-hover:scale-110 transition-transform"><UserPlus className="w-6 h-6" /></div>
+              <span className="text-[11px] font-bold text-violet-600 leading-tight">Add<br />Member</span>
+            </div>
+
+            <div onClick={() => navigate('/admin/businesses')} className="flex flex-col items-center justify-center p-3 border border-emerald-100 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+              <div className="p-2 rounded-lg text-emerald-600 group-hover:scale-110 transition-transform"><Briefcase className="w-6 h-6" /></div>
+              <span className="text-[11px] font-bold text-emerald-600 leading-tight">Add<br />Business</span>
+            </div>
+
+            <div onClick={() => navigate('/admin/posts')} className="flex flex-col items-center justify-center p-3 border border-blue-100 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+              <div className="p-2 rounded-lg text-blue-600 group-hover:scale-110 transition-transform"><FileEdit className="w-6 h-6" /></div>
+              <span className="text-[11px] font-bold text-blue-600 leading-tight">Create<br />Post</span>
+            </div>
+
+            <div onClick={() => navigate('/admin/events')} className="flex flex-col items-center justify-center p-3 border border-orange-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+              <div className="p-2 rounded-lg text-orange-500 group-hover:scale-110 transition-transform"><Calendar className="w-6 h-6" /></div>
+              <span className="text-[11px] font-bold text-orange-500 leading-tight">Create<br />Event</span>
+            </div>
+
+            <div onClick={() => navigate('/admin/roles')} className="flex flex-col items-center justify-center p-3 border border-violet-100 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+              <div className="p-2 rounded-lg text-violet-600 group-hover:scale-110 transition-transform"><Shield className="w-6 h-6" /></div>
+              <span className="text-[11px] font-bold text-violet-600 leading-tight">Manage<br />Roles</span>
+            </div>
+
+            <div onClick={() => navigate('/admin/reports')} className="flex flex-col items-center justify-center p-3 border border-blue-100 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+              <div className="p-2 rounded-lg text-blue-600 group-hover:scale-110 transition-transform"><FileText className="w-6 h-6" /></div>
+              <span className="text-[11px] font-bold text-blue-600 leading-tight">View<br />Reports</span>
+            </div>
+
+            <div onClick={() => navigate('/admin/users')} className="flex flex-col items-center justify-center p-3 border border-emerald-100 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+              <div className="p-2 rounded-lg text-emerald-600 group-hover:scale-110 transition-transform"><Users className="w-6 h-6" /></div>
+              <span className="text-[11px] font-bold text-emerald-600 leading-tight">Manage<br />Users</span>
+            </div>
+
+            <div onClick={() => navigate('/admin/settings')} className="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-500/10 transition-colors cursor-pointer group text-center gap-2 h-[110px]">
+              <div className="p-2 rounded-lg text-slate-700 dark:text-slate-400 group-hover:scale-110 transition-transform"><Settings className="w-6 h-6" /></div>
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-400 leading-tight">Settings</span>
+            </div>
           </div>
         </div>
 
@@ -717,49 +731,49 @@ export default function Dashboard() {
             <h4 className="text-sm font-bold text-text">At a Glance</h4>
           </div>
           <div className="p-5 flex flex-col gap-4">
-             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-600"><Users className="w-4 h-4"/></div>
-                 <div>
-                   <p className="text-sm font-bold text-text">Active Members</p>
-                   <p className="text-xs text-text-secondary">Last 30 days</p>
-                 </div>
-               </div>
-               <span className="text-lg font-black">{atAGlance?.activeMembers || 0}</span>
-             </div>
-             
-             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"><Briefcase className="w-4 h-4"/></div>
-                 <div>
-                   <p className="text-sm font-bold text-text">Active Businesses</p>
-                   <p className="text-xs text-text-secondary">Last 30 days</p>
-                 </div>
-               </div>
-               <span className="text-lg font-black">{atAGlance?.activeBusinesses || 0}</span>
-             </div>
-             
-             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600"><FileText className="w-4 h-4"/></div>
-                 <div>
-                   <p className="text-sm font-bold text-text">Posts This Month</p>
-                   <p className="text-xs text-text-secondary">This month</p>
-                 </div>
-               </div>
-               <span className="text-lg font-black">{atAGlance?.postsThisMonth || 0}</span>
-             </div>
-             
-             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600"><Calendar className="w-4 h-4"/></div>
-                 <div>
-                   <p className="text-sm font-bold text-text">Upcoming Events</p>
-                   <p className="text-xs text-text-secondary">Next 30 days</p>
-                 </div>
-               </div>
-               <span className="text-lg font-black">{atAGlance?.upcomingEvents || 0}</span>
-             </div>
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-600"><Users className="w-4 h-4" /></div>
+                <div>
+                  <p className="text-sm font-bold text-text">Active Members</p>
+                  <p className="text-xs text-text-secondary">Last 30 days</p>
+                </div>
+              </div>
+              <span className="text-lg font-black">{atAGlance?.activeMembers || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"><Briefcase className="w-4 h-4" /></div>
+                <div>
+                  <p className="text-sm font-bold text-text">Active Businesses</p>
+                  <p className="text-xs text-text-secondary">Last 30 days</p>
+                </div>
+              </div>
+              <span className="text-lg font-black">{atAGlance?.activeBusinesses || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600"><FileText className="w-4 h-4" /></div>
+                <div>
+                  <p className="text-sm font-bold text-text">Posts This Month</p>
+                  <p className="text-xs text-text-secondary">This month</p>
+                </div>
+              </div>
+              <span className="text-lg font-black">{atAGlance?.postsThisMonth || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-secondary/50 transition-colors cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600"><Calendar className="w-4 h-4" /></div>
+                <div>
+                  <p className="text-sm font-bold text-text">Upcoming Events</p>
+                  <p className="text-xs text-text-secondary">Next 30 days</p>
+                </div>
+              </div>
+              <span className="text-lg font-black">{atAGlance?.upcomingEvents || 0}</span>
+            </div>
           </div>
         </div>
 
