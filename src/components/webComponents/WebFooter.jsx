@@ -60,17 +60,17 @@ export default function WebFooter() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-8 items-start">
 
-          {/* Brand & Description */}
-          <div className="space-y-5">
+          {/* Brand & App Download */}
+          <div className="space-y-4 flex flex-col items-center sm:items-start text-center sm:text-left">
             <Link to="/" className="inline-block group">
               {theme?.webLogo ? (
-                <div className="p-2 bg-white/95 rounded-xl shadow-lg border border-white/40 transition-transform group-hover:scale-105">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 p-2 bg-white rounded-2xl shadow-xl border border-white/20 transition-transform group-hover:scale-105 flex items-center justify-center overflow-hidden">
                   <img
                     src={assetUrl(theme.webLogo)}
                     alt={theme.name || 'Logo'}
-                    className="h-14 w-auto object-contain"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               ) : (
@@ -79,59 +79,38 @@ export default function WebFooter() {
                 </span>
               )}
             </Link>
-            <p className="text-gray-300 text-sm sm:text-base leading-relaxed max-w-xs font-normal">
-              Connecting families, celebrating traditions, and building a stronger community together. Stay updated with our latest events and news.
-            </p>
 
             {/* App Download Buttons */}
-            <div className="flex flex-col gap-1 pt-4">
-              <p className="text-sm font-bold text-white uppercase tracking-wider mb-0">Download Our App</p>
-              <div className="flex flex-row flex-nowrap items-center gap-1 -ml-2">
+            <div className="flex flex-col gap-2 pt-2 items-center sm:items-start">
+              <p className="text-xs font-bold text-white uppercase tracking-wider">Download Our App</p>
+              <div className="flex flex-row items-center gap-3">
                 <a
                   href="https://play.google.com/store/apps/details?id=com.digitalks.parivar"
                   target="_blank"
                   rel="noreferrer"
-                  className="transition-transform hover:scale-105 shrink-0"
+                  className="transition-transform hover:scale-105 shrink-0 block"
                 >
                   <img
                     src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
                     alt="Get it on Google Play"
-                    className="h-[83px] w-auto object-contain"
+                    className="h-[54px] w-auto object-contain -my-2 -ml-2"
                   />
                 </a>
+
                 <a
                   href="#"
                   target="_blank"
                   rel="noreferrer"
-                  className="transition-transform hover:scale-105 shrink-0 ml-1"
+                  className="transition-transform hover:scale-105 shrink-0 block"
                 >
                   <img
                     src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
                     alt="Download on the App Store"
-                    className="h-[58px] w-auto object-contain"
+                    className="h-[36px] w-auto object-contain"
                   />
                 </a>
               </div>
             </div>
-            {/* {socialLinks.length > 0 && (
-              <div className="flex items-center gap-3 pt-2">
-                {socialLinks.map((social) => {
-                  const Icon = social.icon;
-                  return (
-                    <a
-                      key={social.label}
-                      href={social.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-gray-300 hover:text-white transition-all duration-300 p-2.5 bg-white/5 rounded-xl border border-white/10 hover:border-white/40 hover:-translate-y-1 shadow-sm"
-                      aria-label={social.label}
-                    >
-                      <Icon size={18} />
-                    </a>
-                  );
-                })}
-              </div>
-            )} */}
           </div>
 
           {/* Quick Links */}

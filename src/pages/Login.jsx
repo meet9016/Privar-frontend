@@ -88,11 +88,12 @@ export default function Login() {
 
       {/* Web Logo outside above the card */}
       {webTheme.webLogo && (
-        <div className="flex items-center justify-center mb-6 z-10 animate-slide-up">
+        <div className="flex items-center justify-center mb-4 z-10 animate-slide-up">
           <img
             src={assetUrl(webTheme.webLogo)}
             alt={`${domainName} Logo`}
-            className="max-h-24 w-auto object-contain drop-shadow-md transition-transform hover:scale-105"
+            className="h-[13rem] w-auto max-w-[340px] object-contain drop-shadow-xl transition-transform hover:scale-105"
+            style={{ maxHeight: '13rem' }}
           />
         </div>
       )}

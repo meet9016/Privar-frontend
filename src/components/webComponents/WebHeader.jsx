@@ -173,8 +173,8 @@ export default function WebHeader() {
             {/* Logo & Title */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {theme?.webLogo ? (
-                <Link to="/">
-                  <img src={assetUrl(theme.webLogo)} alt={`${theme.name} logo`} className="h-12 object-contain" />
+                <Link to="/" className="flex items-center">
+                  <img src={assetUrl(theme.webLogo)} alt={`${theme.name} logo`} className="h-16 sm:h-18 w-auto max-w-[200px] object-contain transition-transform hover:scale-105" />
                 </Link>
               ) : null}
               {/* <div className="hidden sm:block">
