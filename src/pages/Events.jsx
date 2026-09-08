@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter, X } from 'lucide-react'
+import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter, X, Bell, Users, Shield, UserCheck } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
 import { EVENT_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
@@ -8,6 +8,7 @@ import Loader from '../components/common/Loader'
 import { useNavigate } from 'react-router-dom'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
+import MultiSelect from '../components/common/MultiSelect'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
@@ -26,7 +27,6 @@ const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-borde
 const defaultForm = {
   title: '',
   description: '',
-
   event_location: '',
   location_link: '',
   event_category_id: '',
@@ -38,8 +38,12 @@ const defaultForm = {
   country_id: '',
   state_id: '',
   city_id: '',
-  remove_image: false
+  remove_image: false,
+  send_notification: true,
+  target_type: 'all', // 'all' | 'committee' | 'specific'
+  target_user_ids: []
 }
+
 
 
 export default function Events({ headerLeftContent }) {
@@ -67,6 +71,7 @@ export default function Events({ headerLeftContent }) {
   const [countryList, setCountryList] = useState([])
   const [stateList, setStateList] = useState([])
   const [cityList, setCityList] = useState([])
+  const [memberOptions, setMemberOptions] = useState([])
   const [viewEventDetail, setViewEventDetail] = useState(null)
   const [viewRegistrationsEvent, setViewRegistrationsEvent] = useState(null)
   const [eventRegistrations, setEventRegistrations] = useState([])
@@ -95,7 +100,15 @@ export default function Events({ headerLeftContent }) {
   const endpoint = '/events'
   const toDateTimeLocal = (value) => {
     if (!value) return ''
-    return new Date(value).toISOString().slice(0, 16)
+    const d = new Date(value)
+    if (isNaN(d.getTime())) return ''
+    const pad = (n) => String(n).padStart(2, '0')
+    const y = d.getFullYear()
+    const m = pad(d.getMonth() + 1)
+    const day = pad(d.getDate())
+    const h = pad(d.getHours())
+    const min = pad(d.getMinutes())
+    return `${y}-${m}-${day}T${h}:${min}`
   }
 
   const navigate = useNavigate()
@@ -120,6 +133,85 @@ export default function Events({ headerLeftContent }) {
       setLoading(false)
     }
   }, [page, limit, debouncedSearch, filters])
+
+  const fetchMembers = useCallback(async () => {
+    try {
+      const res = await api.get(`${MEMBER_ENDPOINTS.GET_MEMBERS}?limit=1000`)
+      const list = res.data?.data || []
+      
+      const heads = list.filter(m => m.familyHead || m.relation === 'Self')
+      const nonHeads = list.filter(m => !m.familyHead && m.relation !== 'Self')
+
+      const processedIds = new Set()
+      const hierarchicalList = []
+
+      heads.forEach(head => {
+        const headId = String(head.id || head._id)
+        const headMemberId = String(head.member_id || '')
+        
+        const children = nonHeads.filter(c => {
+          const cHeadId = String(c.family_head?.id || c.family_head?._id || c.family_head_id || '')
+          const cParentId = String(c.parent_member_id || '')
+          return (cHeadId && (cHeadId === headId || cHeadId === headMemberId)) ||
+                 (cParentId && (cParentId === headMemberId || cParentId === headId))
+        })
+
+        const childIds = children.map(c => String(c.id || c._id))
+        const headName = [head.first_name, head.middle_name, head.last_name].filter(Boolean).join(' ') || head.number || 'Unnamed'
+        const headSubtext = [head.member_id ? `ID: ${head.member_id}` : '', head.number].filter(Boolean).join(' • ')
+
+        hierarchicalList.push({
+          value: headId,
+          label: headName,
+          subtext: head.member_id ? `ID: ${head.member_id}` : '',
+          is_head: true,
+          is_child: false,
+          child_ids: childIds,
+          relation: 'Family Head'
+        })
+        processedIds.add(headId)
+
+        // Add children directly under the head
+        children.forEach(c => {
+          const cId = String(c.id || c._id)
+          const cName = [c.first_name, c.middle_name, c.last_name].filter(Boolean).join(' ') || c.number || 'Unnamed'
+
+          hierarchicalList.push({
+            value: cId,
+            label: cName,
+            subtext: c.member_id ? `ID: ${c.member_id}` : '',
+            is_head: false,
+            is_child: true,
+            parent_head_id: headId,
+            relation: c.relation || 'Member',
+            child_ids: []
+          })
+          processedIds.add(cId)
+        })
+      })
+
+      // Add remaining members not linked to any head
+      list.forEach(m => {
+        const mId = String(m.id || m._id)
+        if (!processedIds.has(mId)) {
+          const mName = [m.first_name, m.middle_name, m.last_name].filter(Boolean).join(' ') || m.number || 'Unnamed'
+          hierarchicalList.push({
+            value: mId,
+            label: mName,
+            subtext: m.member_id ? `ID: ${m.member_id}` : '',
+            is_head: false,
+            is_child: false,
+            relation: m.relation || 'Member',
+            child_ids: []
+          })
+        }
+      })
+
+      setMemberOptions(hierarchicalList)
+    } catch (err) {
+      console.error('Failed to load member options for notification targeting', err)
+    }
+  }, [])
 
   const fetchCountryList = useCallback(async () => {
     try {
@@ -169,7 +261,8 @@ export default function Events({ headerLeftContent }) {
     fetchCountryList()
     fetchStateList()
     fetchCityList()
-  }, [fetchCountryList, fetchStateList, fetchCityList])
+    fetchMembers()
+  }, [fetchCountryList, fetchStateList, fetchCityList, fetchMembers])
 
 
 
@@ -301,11 +394,15 @@ export default function Events({ headerLeftContent }) {
       start_time: toDateTimeLocal(row.start_time),
       end_time: toDateTimeLocal(row.end_time),
       image: '',
-      remove_image: false
+      remove_image: false,
+      send_notification: row.send_notification !== false,
+      target_type: row.target_type || 'all',
+      target_user_ids: Array.isArray(row.target_users) ? row.target_users.map(String) : []
     })
     setFieldErrors({})
     setIsModalOpen(true)
   }
+
 
   const handleSave = async (event) => {
     event.preventDefault()
@@ -340,6 +437,10 @@ export default function Events({ headerLeftContent }) {
       }
     }
 
+    if (formData.send_notification && formData.target_type === 'specific' && (!formData.target_user_ids || !formData.target_user_ids.length)) {
+      nextErrors.target_user_ids = 'Please select at least one member to receive the notification'
+    }
+
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors)
       setSaving(false)
@@ -365,6 +466,17 @@ export default function Events({ headerLeftContent }) {
       }
 
       Object.entries(bodyFields).forEach(([key, value]) => payload.append(key, value ?? ''))
+      
+      if (formData.send_notification) {
+        payload.append('send_notification', 'true')
+        payload.append('target_type', formData.target_type || 'all')
+        if (formData.target_type === 'specific') {
+          payload.append('target_user_ids', JSON.stringify(formData.target_user_ids))
+        }
+      } else {
+        payload.append('send_notification', 'false')
+      }
+
       if (formData.image instanceof File) {
         payload.append('image', formData.image)
       }
@@ -388,6 +500,7 @@ export default function Events({ headerLeftContent }) {
       setSaving(false)
     }
   }
+
 
   const handleDelete = async (rowOrId) => {
     const id = typeof rowOrId === 'object' ? (rowOrId?.id || rowOrId?._id || '') : (rowOrId || '')
@@ -816,7 +929,111 @@ export default function Events({ headerLeftContent }) {
             />
           </div>
 
+          {/* Notification Options Box */}
+          <div className="p-4 rounded-2xl bg-surface-secondary/40 border border-border space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <Bell size={16} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-text">Push Notification</h4>
+                  <p className="text-xs text-text-secondary">Notify members on their mobile app and dashboard</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={!!formData.send_notification}
+                  onChange={(e) => setFormData({ ...formData, send_notification: e.target.checked })}
+                  disabled={saving}
+                />
+                <div className="w-10 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {formData.send_notification && (
+              <div className="pt-2 border-t border-border/70 space-y-3 animate-fade-in">
+                <label className="block text-xs font-bold text-text uppercase tracking-wider">
+                  Target Audience
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, target_type: 'all' })}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
+                      formData.target_type === 'all'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
+                        : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
+                    }`}
+                  >
+                    <Users size={16} className="shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold leading-tight">All Members</div>
+                      <div className="text-[10px] opacity-75 truncate">Broadcast to everyone</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, target_type: 'committee' })}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
+                      formData.target_type === 'committee'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
+                        : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
+                    }`}
+                  >
+                    <Shield size={16} className="shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold leading-tight">Committee Only</div>
+                      <div className="text-[10px] opacity-75 truncate">Trustees & Committee</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, target_type: 'specific' })}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
+                      formData.target_type === 'specific'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
+                        : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
+                    }`}
+                  >
+                    <UserCheck size={16} className="shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold leading-tight">Specific Members</div>
+                      <div className="text-[10px] opacity-75 truncate">Select recipients</div>
+                    </div>
+                  </button>
+                </div>
+
+                {formData.target_type === 'specific' && (
+                  <div className="mt-2 animate-fade-in">
+                    <MultiSelect
+                      label="Select Members"
+                      required
+                      options={memberOptions}
+                      values={formData.target_user_ids}
+                      onChange={(selectedIds) => {
+                        setFormData({ ...formData, target_user_ids: selectedIds });
+                        if (fieldErrors.target_user_ids) {
+                          setFieldErrors({ ...fieldErrors, target_user_ids: null });
+                        }
+                      }}
+                      error={fieldErrors.target_user_ids}
+                      placeholder="Search and pick members..."
+                      disabled={saving}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
             </Button>

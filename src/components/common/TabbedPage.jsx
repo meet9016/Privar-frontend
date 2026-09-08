@@ -9,27 +9,21 @@ export default function TabbedPage({ title, tabs, storageKey }) {
   const tabRefs = useRef({})
   const [maxWidth, setMaxWidth] = useState(null)
 
-  // Initialize active tab from URL -> first available tab
-  const [activeTab, setActiveTab] = useState(() => {
-    const urlTab = searchParams.get('tab')
-    if (urlTab && tabs.some(t => t.id === urlTab)) return urlTab
+  const urlTab = searchParams.get('tab')
+  const activeTab = (urlTab && tabs.some(t => t.id === urlTab)) ? urlTab : (tabs[0]?.id || '')
 
-    return tabs[0]?.id || ''
-  })
-
-  // Update URL when tab changes
+  // Update URL when tab changes smoothly
   const handleTabChange = (tabId) => {
-    setActiveTab(tabId)
+    if (tabId === activeTab) return
     setSearchParams({ tab: tabId }, { replace: true })
   }
 
-  // Sync URL on mount only
+  // Ensure initial tab param is synced in URL if missing
   useEffect(() => {
-    const urlTab = searchParams.get('tab')
-    if (urlTab !== activeTab) {
+    if (!urlTab && activeTab) {
       setSearchParams({ tab: activeTab }, { replace: true })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [urlTab, activeTab, setSearchParams])
 
   // Compute max-width from first MAX_VISIBLE_TABS tab button widths + gap + padding
   useLayoutEffect(() => {

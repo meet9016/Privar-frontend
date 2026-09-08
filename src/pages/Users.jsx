@@ -247,18 +247,46 @@ export default function Users() {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const newSelected = new Set([...selectedUsers, ...users.map(u => u.id)]);
+      const newSelected = new Set([...selectedUsers, ...users.map(u => String(u.id || u._id))]);
       setSelectedUsers(Array.from(newSelected));
     } else {
-      const currentPageIds = users.map(u => u.id);
+      const currentPageIds = users.map(u => String(u.id || u._id));
       setSelectedUsers(selectedUsers.filter(id => !currentPageIds.includes(id)));
     }
   }
 
   const handleSelectUser = (id) => {
-    setSelectedUsers(prev => 
-      prev.includes(id) ? prev.filter(uid => uid !== id) : [...prev, id]
-    )
+    const targetIdStr = String(id);
+    const isCurrentlySelected = selectedUsers.some(uid => String(uid) === targetIdStr);
+    
+    // Find target user in user list
+    const targetUser = users.find(u => String(u.id || u._id) === targetIdStr);
+    const isHead = targetUser && (targetUser.familyHead || targetUser.relation === 'Self');
+    
+    // If user is a head, find all family members under this head
+    let relatedIds = [targetIdStr];
+    if (isHead) {
+      const headMemberId = String(targetUser.member_id || '');
+      const childMembers = users.filter(m => {
+        if (String(m.id || m._id) === targetIdStr) return false;
+        const mHeadId = String(m.family_head?.id || m.family_head?._id || m.family_head_id || '');
+        const mParentId = String(m.parent_member_id || '');
+        return (mHeadId && (mHeadId === targetIdStr || mHeadId === headMemberId)) ||
+               (mParentId && (mParentId === headMemberId || mParentId === targetIdStr));
+      });
+      childMembers.forEach(m => {
+        relatedIds.push(String(m.id || m._id));
+      });
+    }
+
+    if (isCurrentlySelected) {
+      // Deselect user and their family members if head
+      setSelectedUsers(prev => prev.filter(uid => !relatedIds.includes(String(uid))));
+    } else {
+      // Select user and their family members if head
+      const newSet = new Set([...selectedUsers.map(String), ...relatedIds]);
+      setSelectedUsers(Array.from(newSet));
+    }
   }
 
   const handleBulkUpdateStatus = async (status) => {
@@ -522,22 +550,25 @@ export default function Users() {
                 <input 
                   type="checkbox" 
                   className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary disabled:opacity-40 disabled:cursor-not-allowed"
-                  checked={users.length > 0 && users.every(u => selectedUsers.includes(u.id))}
+                  checked={users.length > 0 && users.every(u => selectedUsers.map(String).includes(String(u.id || u._id)))}
                   disabled={loading || users.length === 0}
                   onChange={handleSelectAll}
                 />
               </div>
             ),
-            render: (user) => (
-              <div className="flex items-center justify-center">
-                <input 
-                  type="checkbox" 
-                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
-                  checked={selectedUsers.includes(user.id)}
-                  onChange={() => handleSelectUser(user.id)}
-                />
-              </div>
-            )
+            render: (user) => {
+              const uId = String(user.id || user._id);
+              return (
+                <div className="flex items-center justify-center">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+                    checked={selectedUsers.map(String).includes(uId)}
+                    onChange={() => handleSelectUser(uId)}
+                  />
+                </div>
+              );
+            }
           },
           {
             key: 'name',
