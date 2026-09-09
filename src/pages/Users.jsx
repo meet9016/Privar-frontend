@@ -591,7 +591,7 @@ export default function Users() {
                     <div className="w-5.5 shrink-0" />
                   )}
                   <div className="flex items-center gap-2 whitespace-nowrap">
-                    <span className="font-semibold text-text">{user.name}</span>
+                    <span className="font-semibold text-text capitalize">{user.name}</span>
                     {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium shrink-0">
                         <span>Family Head</span>
