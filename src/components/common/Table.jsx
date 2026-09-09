@@ -132,7 +132,7 @@ export default function Table({
   loading = false,
   showSkeleton = false,
   className = '',
-  maxHeightClass = 'max-h-[920px]',
+  maxHeightClass = 'max-h-[600px]',
   stickyHeader = true,
   rowClassName,
   // Checkbox selection & Bulk Actions (Default false as requested)
@@ -223,16 +223,16 @@ export default function Table({
 
   return (
     <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col ${className}`}>
-      <div className={`overflow-x-auto overflow-y-auto custom-scrollbar ${maxHeightClass}`}>
+      <div className={`overflow-x-auto overflow-y-auto custom-scrollbar ${maxHeightClass}`} style={{ position: 'relative' }}>
         <table className="w-full min-w-full text-left border-collapse table-auto bg-white">
-          <thead className={stickyHeader ? "sticky top-0 z-10 shadow-sm" : ""}>
-            <tr className="border-b border-primary/20 text-text text-xs uppercase tracking-wider font-bold bg-primary-bg">
+          <thead className={stickyHeader ? "sticky top-0 z-20 shadow-sm" : ""}>
+            <tr className="border-b border-primary/20 text-text text-xs uppercase tracking-wider font-bold bg-white">
               {finalColumns.map((col, idx) => {
                 const isFirst = idx === 0;
                 const isLast = idx === finalColumns.length - 1;
                 const paddingClass = isFirst ? 'pl-6 pr-4 py-3.5' : isLast ? 'pl-4 pr-6 py-3.5' : 'px-4 py-3.5';
                 return (
-                  <th key={col.key || idx} className={`${paddingClass} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''} ${col.className || ''}`}>
+                  <th key={col.key || idx} className={`${paddingClass} bg-white ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''} ${col.className || ''}`}>
                     {col.headerRender ? col.headerRender() : col.header}
                   </th>
                 );
