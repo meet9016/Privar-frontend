@@ -1,12 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react'
-import { Bell, CheckCheck, Newspaper, Calendar, Megaphone } from 'lucide-react'
+import { Bell, CheckCheck, Newspaper, Calendar, Megaphone, Cake, Heart } from 'lucide-react'
 import { useNotifications } from '../context/NotificationContext'
 
 const typeIcon = (type) => {
   if (type === 'news') return <Newspaper className="w-4 h-4 text-blue-500" />
   if (type === 'event') return <Calendar className="w-4 h-4 text-green-500" />
+  if (type === 'birthday') return <Cake className="w-4 h-4 text-pink-500" />
+  if (type === 'anniversary') return <Heart className="w-4 h-4 text-rose-500" />
   return <Megaphone className="w-4 h-4 text-primary" />
 }
+
 
 const timeAgo = (date) => {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000)
