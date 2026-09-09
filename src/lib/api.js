@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { toast } from './toast'
 
-export const API_BASE = import.meta.env.VITE_API_BASE || `http://${window.location.hostname}:5000`
+export const API_BASE = import.meta.env.API_BASE || `http://${window.location.hostname}:5000`
 
 export const assetUrl = (path) => {
   if (!path) return ''

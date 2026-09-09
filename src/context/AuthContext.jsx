@@ -56,7 +56,7 @@ const storeWebTheme = (themeData) => {
  */
 const fetchWebTheme = async () => {
   try {
-    const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+    const apiBase = import.meta.env.API_BASE || 'http://localhost:5000'
     const tenantCode = getSubdomainTenant() || localStorage.getItem('tenant_code') || ''
     const headers = {}
     if (tenantCode) {
@@ -105,7 +105,7 @@ export function AuthProvider({ children }) {
     if (rawFavicon) {
       const fullFaviconUrl = /^https?:\/\//i.test(rawFavicon)
         ? rawFavicon
-        : `${import.meta.env.VITE_API_BASE || 'http://localhost:5000'}${rawFavicon.startsWith('/') ? rawFavicon : `/${rawFavicon}`}`
+        : `${import.meta.env.API_BASE || 'http://localhost:5000'}${rawFavicon.startsWith('/') ? rawFavicon : `/${rawFavicon}`}`
 
       let link = document.querySelector("link[rel~='icon']")
       if (!link) {
@@ -139,7 +139,7 @@ export function AuthProvider({ children }) {
         setUser(storedUser ? JSON.parse(storedUser) : null)
         // Refresh profile from backend to get fresh role & permissions
         try {
-          const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+          const apiBase = import.meta.env.API_BASE || 'http://localhost:5000'
           const headers = { 'Authorization': `Bearer ${stored}` }
           if (storedTenant || currentSubdomain) headers['x-tenant-id'] = currentSubdomain || storedTenant
           const profileRes = await fetch(`${apiBase}/api/auth/me`, { headers })
