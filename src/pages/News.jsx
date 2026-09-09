@@ -11,6 +11,7 @@ import Select from '../components/common/Select'
 import MultiSelect from '../components/common/MultiSelect'
 import DateTimePicker from '../components/common/DateTimePicker'
 import Button from '../components/common/Button'
+import Switch from '../components/common/Switch'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
 import FilterPopover from '../components/common/FilterPopover'
@@ -524,26 +525,14 @@ export default function News({ headerLeftContent }) {
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               disabled={saving}
             />
-            <div className="flex flex-col justify-center pt-1">
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">
-                Status
-              </label>
-              <div className="flex items-center gap-3 py-1">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={Number(formData.status ?? 1) === 1}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.checked ? 1 : 0 })}
-                    disabled={saving}
-                  />
-                  <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                </label>
-                <span className="text-sm font-semibold text-text">
-                  {Number(formData.status ?? 1) === 1 ? 'Approved' : 'Inactive'}
-                </span>
-              </div>
-            </div>
+            <Switch
+              label="Status"
+              checked={Number(formData.status ?? 1) === 1}
+              onChange={(val) => setFormData({ ...formData, status: val ? 1 : 0 })}
+              disabled={saving}
+              activeLabel="Approved"
+              inactiveLabel="Inactive"
+            />
           </div>
 
 
@@ -597,16 +586,12 @@ export default function News({ headerLeftContent }) {
                   <p className="text-xs text-text-secondary">Notify members on their mobile app and dashboard</p>
                 </div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={!!formData.send_notification}
-                  onChange={(e) => setFormData({ ...formData, send_notification: e.target.checked })}
-                  disabled={saving}
-                />
-                <div className="w-10 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-              </label>
+              <Switch
+                checked={!!formData.send_notification}
+                onChange={(val) => setFormData({ ...formData, send_notification: val })}
+                disabled={saving}
+                showText={false}
+              />
             </div>
 
             {formData.send_notification && (

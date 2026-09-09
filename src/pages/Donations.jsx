@@ -23,11 +23,20 @@ import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
 import Input from '../components/common/Input'
+import Select from '../components/common/Select'
 import Button from '../components/common/Button'
 import SearchInput from '../components/common/SearchInput'
 import useDebounce from '../hooks/useDebounce'
 import { toast } from '../lib/toast'
 import usePermissions from '../hooks/usePermissions'
+
+const PAYMENT_MODE_OPTIONS = [
+  { label: 'Cash', value: 'Cash' },
+  { label: 'Bank', value: 'Bank' },
+  { label: 'Transfer', value: 'Transfer' },
+  { label: 'UPI / Online', value: 'Online' },
+  { label: 'Cheque', value: 'Cheque' }
+]
 
 export default function Donations({ headerLeftContent }) {
   const permissions = usePermissions('donations')
@@ -38,6 +47,7 @@ export default function Donations({ headerLeftContent }) {
 
   const [formLoading, setFormLoading] = useState(false)
   const [dateValue, setDateValue] = useState(new Date().toISOString().slice(0, 10))
+  const [paymentMode, setPaymentMode] = useState('Cash')
   const [filters, setFilters] = useState({
     donator_name: '',
     donation_purpose: ''
@@ -102,12 +112,14 @@ export default function Donations({ headerLeftContent }) {
   const handleEdit = (donation) => {
     setSelectedDonation(donation)
     setDateValue(donation.date || new Date().toISOString().slice(0, 10))
+    setPaymentMode(donation.payment_mode || 'Cash')
     setIsModalOpen(true)
   }
 
   const handleCreate = () => {
     setSelectedDonation(null)
     setDateValue(new Date().toISOString().slice(0, 10))
+    setPaymentMode('Cash')
     setFieldErrors({})
     setIsModalOpen(true)
   }
@@ -142,13 +154,13 @@ export default function Donations({ headerLeftContent }) {
       return
     }
     const formData = new FormData(e.target)
+    formData.set('payment_mode', paymentMode)
+    formData.set('date', dateValue)
 
     try {
       if (selectedDonation) {
-
         await api.put(DONATION_ENDPOINTS.UPDATE_DONATION(selectedDonation.id), formData)
       } else {
-
         await api.post(DONATION_ENDPOINTS.CREATE_DONATION, formData)
       }
       await fetchDonations()
@@ -458,18 +470,13 @@ export default function Donations({ headerLeftContent }) {
               {fieldErrors.date && <p className="text-red-500 text-xs mt-1 font-semibold">Date is required</p>}
             </div>
 
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block font-semibold">Payment Mode <span className="text-red-500">*</span></label>
-              <select
-                name="payment_mode"
-                defaultValue={selectedDonation?.payment_mode || 'Cash'}
-                className="w-full px-3 py-2.5 bg-input-bg text-text border border-border hover:border-text-secondary/30 focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
-              >
-                <option value="Cash">Cash</option>
-                <option value="Bank">Bank</option>
-                <option value="Transfer">Transfer</option>
-              </select>
-            </div>
+            <Select
+              label="Payment Mode"
+              value={paymentMode}
+              onChange={(val) => setPaymentMode(val)}
+              options={PAYMENT_MODE_OPTIONS}
+              required={true}
+            />
 
           </div>
 
