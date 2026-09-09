@@ -61,6 +61,16 @@ const GENDER_OPTIONS = [
   { label: 'Other', value: 'Other' },
 ]
 
+export const capitalizeWords = (str) => {
+  if (!str) return ''
+  return str
+    .toString()
+    .trim()
+    .split(/\s+/)
+    .map(word => word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : '')
+    .join(' ')
+}
+
 export default function UserForm({ user, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
   const [countries, setCountries] = useState(cachedMasters ? cachedMasters.countries : [])
@@ -96,6 +106,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
   const [deletedMemberIds, setDeletedMemberIds] = useState([])
   const [membersLoading, setMembersLoading] = useState(false)
   const [expandedMemberIndex, setExpandedMemberIndex] = useState(null)
+  const [editingMember, setEditingMember] = useState(null)
 
   useEffect(() => {
     const fetchMasters = async () => {
@@ -298,34 +309,39 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
 
   // --- Dynamic Family Members Handlers ---
   const handleAddMember = () => {
+    // If another member was being edited, commit it first
+    let currentMembers = [...members]
+    if (expandedMemberIndex !== null && editingMember && currentMembers[expandedMemberIndex]) {
+      currentMembers[expandedMemberIndex] = { ...editingMember }
+    }
+
     const defaultLastName = formData.last_name || getCommunitySurname() || ''
     const defaultMiddleName = formData.first_name || ''
-    const newIdx = members.length
-    setMembers(prev => [
-      ...prev,
-      {
-        id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        first_name: '',
-        middle_name: defaultMiddleName,
-        last_name: defaultLastName,
-        relation: 'Spouse',
-        gender: 'Female',
-        dob: '',
-        anniversary: '',
-        blood_group: '',
-        number: '',
-        email: '',
-        status: 1
-      }
-    ])
-    // Auto-expand newly added member to fill details
+    const newIdx = currentMembers.length
+    const newMemberObj = {
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      first_name: '',
+      middle_name: defaultMiddleName,
+      last_name: defaultLastName,
+      relation: 'Spouse',
+      gender: 'Female',
+      dob: '',
+      anniversary: '',
+      blood_group: '',
+      number: '',
+      email: '',
+      status: 1
+    }
+
+    setMembers([...currentMembers, newMemberObj])
     setExpandedMemberIndex(newIdx)
+    setEditingMember({ ...newMemberObj })
   }
 
-  const handleMemberChange = (index, field, value) => {
-    setMembers(prev => {
-      const updated = [...prev]
-      const current = { ...updated[index], [field]: value }
+  const handleEditingMemberChange = (field, value) => {
+    setEditingMember(prev => {
+      if (!prev) return prev
+      const current = { ...prev, [field]: value }
 
       // Auto set gender when relationship changes
       if (field === 'relation') {
@@ -335,30 +351,67 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         }
       }
 
-      updated[index] = current
-      return updated
+      return current
     })
+  }
+
+  const handleDoneEditing = () => {
+    if (expandedMemberIndex !== null && editingMember) {
+      const sanitized = {
+        ...editingMember,
+        first_name: capitalizeWords(editingMember.first_name),
+        middle_name: capitalizeWords(editingMember.middle_name),
+        last_name: capitalizeWords(editingMember.last_name)
+      }
+      setMembers(prev => {
+        const updated = [...prev]
+        if (updated[expandedMemberIndex]) {
+          updated[expandedMemberIndex] = sanitized
+        }
+        return updated
+      })
+    }
+    setExpandedMemberIndex(null)
+    setEditingMember(null)
   }
 
   const handleRemoveMember = (index, e) => {
     if (e) e.stopPropagation()
     const target = members[index]
-    if (target._id) {
+    if (target?._id) {
       setDeletedMemberIds(prev => [...prev, target._id])
     }
     setMembers(prev => prev.filter((_, i) => i !== index))
     if (expandedMemberIndex === index) {
       setExpandedMemberIndex(null)
+      setEditingMember(null)
     } else if (expandedMemberIndex > index) {
       setExpandedMemberIndex(expandedMemberIndex - 1)
     }
   }
 
   const toggleExpandMember = (index) => {
-    setExpandedMemberIndex(prev => prev === index ? null : index)
+    if (expandedMemberIndex === index) {
+      // Done / collapse current member
+      handleDoneEditing()
+    } else {
+      // Commit previous member if open
+      let currentMembers = [...members]
+      if (expandedMemberIndex !== null && editingMember && currentMembers[expandedMemberIndex]) {
+        currentMembers[expandedMemberIndex] = {
+          ...editingMember,
+          first_name: capitalizeWords(editingMember.first_name),
+          middle_name: capitalizeWords(editingMember.middle_name),
+          last_name: capitalizeWords(editingMember.last_name)
+        }
+        setMembers(currentMembers)
+      }
+      setExpandedMemberIndex(index)
+      setEditingMember(currentMembers[index] ? { ...currentMembers[index] } : null)
+    }
   }
 
-  const validate = () => {
+  const validate = (membersToValidate = members) => {
     const newErrors = {}
     if (!formData.first_name.trim()) newErrors.first_name = 'First name is required'
     if (!formData.middle_name.trim()) newErrors.middle_name = 'Middle name is required'
@@ -373,7 +426,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     if (!formData.dob) newErrors.dob = 'Date of Birth is required'
 
     // Validate family members if any are added
-    members.forEach((m, idx) => {
+    membersToValidate.forEach((m, idx) => {
       if (!m.first_name || !m.first_name.trim()) {
         newErrors[`member_${idx}_first_name`] = 'Required'
       }
@@ -390,27 +443,46 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const newErrors = validate()
+
+    // First commit any active editing member buffer into effective members array
+    let currentMembers = [...members]
+    if (expandedMemberIndex !== null && editingMember && currentMembers[expandedMemberIndex]) {
+      currentMembers[expandedMemberIndex] = {
+        ...editingMember,
+        first_name: capitalizeWords(editingMember.first_name),
+        middle_name: capitalizeWords(editingMember.middle_name),
+        last_name: capitalizeWords(editingMember.last_name)
+      }
+      setMembers(currentMembers)
+    }
+
+    const newErrors = validate(currentMembers)
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       // If error belongs to a member, expand that member
       const memberErrKey = Object.keys(newErrors).find(k => k.startsWith('member_'))
       if (memberErrKey) {
         const errIdx = parseInt(memberErrKey.split('_')[1], 10)
-        if (!isNaN(errIdx)) setExpandedMemberIndex(errIdx)
+        if (!isNaN(errIdx)) {
+          setExpandedMemberIndex(errIdx)
+          setEditingMember(currentMembers[errIdx] ? { ...currentMembers[errIdx] } : null)
+        }
       }
       return
     }
 
     const payload = {
       ...formData,
+      first_name: capitalizeWords(formData.first_name),
+      middle_name: capitalizeWords(formData.middle_name),
+      last_name: capitalizeWords(formData.last_name),
       familyHead: true,
       relation: 'Self',
-      members: members.map(m => ({
+      members: currentMembers.map(m => ({
         ...(m._id ? { _id: m._id } : {}),
-        first_name: m.first_name.trim(),
-        middle_name: (m.middle_name || '').trim(),
-        last_name: (m.last_name || formData.last_name || '').trim(),
+        first_name: capitalizeWords(m.first_name),
+        middle_name: capitalizeWords(m.middle_name),
+        last_name: capitalizeWords(m.last_name || formData.last_name),
         relation: m.relation || 'Other',
         gender: m.gender || 'Male',
         dob: m.dob || null,
@@ -720,7 +792,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                     {/* Name */}
                     <div className="col-span-3 min-w-0">
                       <span className="text-xs font-bold text-text truncate block">
-                        {[m.first_name, m.middle_name, m.last_name].filter(Boolean).join(' ') || (
+                        {[capitalizeWords(m.first_name), capitalizeWords(m.middle_name), capitalizeWords(m.last_name)].filter(Boolean).join(' ') || (
                           <span className="text-text-secondary italic">New Member (Click to edit)</span>
                         )}
                       </span>
@@ -786,19 +858,12 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                   </div>
 
                   {/* Slide-Down Inline Edit Form (Accordion) */}
-                  {isExpanded && (
+                  {isExpanded && editingMember && (
                     <div className="p-3.5 sm:p-4 bg-surface/50 border-t border-b border-border/80 space-y-3 animate-fade-in">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-primary flex items-center gap-1">
                           <Edit2 className="w-3 h-3" /> Edit Details for Member #{idx + 1}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => setExpandedMemberIndex(null)}
-                          className="text-[11px] font-semibold text-text-secondary hover:text-text underline cursor-pointer"
-                        >
-                          Collapse Form
-                        </button>
                       </div>
 
                       {/* Row 1: First, Middle, Last, Relation (4 inputs) */}
@@ -806,8 +871,8 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                         <Input
                           label="First Name"
                           placeholder="First Name"
-                          value={m.first_name}
-                          onChange={(e) => handleMemberChange(idx, 'first_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                          value={editingMember.first_name || ''}
+                          onChange={(e) => handleEditingMemberChange('first_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
                           disabled={isLoading}
                           required={true}
                           error={fNameErr}
@@ -815,21 +880,21 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                         <Input
                           label="Middle Name"
                           placeholder="Middle Name"
-                          value={m.middle_name}
-                          onChange={(e) => handleMemberChange(idx, 'middle_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                          value={editingMember.middle_name || ''}
+                          onChange={(e) => handleEditingMemberChange('middle_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
                           disabled={isLoading}
                         />
                         <Input
                           label="Last Name / Surname"
                           placeholder="Surname"
-                          value={m.last_name}
-                          onChange={(e) => handleMemberChange(idx, 'last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                          value={editingMember.last_name || ''}
+                          onChange={(e) => handleEditingMemberChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
                           disabled={isLoading}
                         />
                         <Select
                           label="Relationship with Head"
-                          value={m.relation}
-                          onChange={(val) => handleMemberChange(idx, 'relation', val)}
+                          value={editingMember.relation || 'Spouse'}
+                          onChange={(val) => handleEditingMemberChange('relation', val)}
                           options={RELATION_OPTIONS}
                           required={true}
                           searchable={true}
@@ -841,29 +906,29 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
                         <Select
                           label="Gender"
-                          value={m.gender}
-                          onChange={(val) => handleMemberChange(idx, 'gender', val)}
+                          value={editingMember.gender || 'Male'}
+                          onChange={(val) => handleEditingMemberChange('gender', val)}
                           options={GENDER_OPTIONS}
                           disabled={isLoading}
                         />
                         <DatePicker
                           label="Date of Birth"
-                          value={m.dob}
-                          onChange={(val) => handleMemberChange(idx, 'dob', val)}
+                          value={editingMember.dob || ''}
+                          onChange={(val) => handleEditingMemberChange('dob', val)}
                           disabled={isLoading}
                           placeholder="Select DOB"
                         />
                         <DatePicker
                           label="Anniversary Date"
-                          value={m.anniversary}
-                          onChange={(val) => handleMemberChange(idx, 'anniversary', val)}
+                          value={editingMember.anniversary || ''}
+                          onChange={(val) => handleEditingMemberChange('anniversary', val)}
                           disabled={isLoading}
                           placeholder="Select Anniversary"
                         />
                         <Select
                           label="Blood Group"
-                          value={m.blood_group}
-                          onChange={(val) => handleMemberChange(idx, 'blood_group', val)}
+                          value={editingMember.blood_group || ''}
+                          onChange={(val) => handleEditingMemberChange('blood_group', val)}
                           options={[{ label: 'Select Blood Group', value: '' }, ...BLOOD_GROUPS]}
                           disabled={isLoading}
                           searchable={true}
@@ -877,8 +942,8 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                           type="tel"
                           maxLength={10}
                           placeholder="10 digit number"
-                          value={m.number}
-                          onChange={(e) => handleMemberChange(idx, 'number', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          value={editingMember.number || ''}
+                          onChange={(e) => handleEditingMemberChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
                           disabled={isLoading}
                           error={numErr}
                         />
@@ -886,14 +951,14 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                           label="Email Address"
                           type="email"
                           placeholder="email@example.com (Optional)"
-                          value={m.email}
-                          onChange={(e) => handleMemberChange(idx, 'email', e.target.value)}
+                          value={editingMember.email || ''}
+                          onChange={(e) => handleEditingMemberChange('email', e.target.value)}
                           disabled={isLoading}
                         />
                         <Switch
                           label="Status"
-                          checked={Number(m.status ?? 1) === 1}
-                          onChange={(val) => handleMemberChange(idx, 'status', val ? 1 : 0)}
+                          checked={Number(editingMember.status ?? 1) === 1}
+                          onChange={(val) => handleEditingMemberChange('status', val ? 1 : 0)}
                           disabled={isLoading}
                           activeLabel="Active"
                           inactiveLabel="Inactive"
@@ -903,7 +968,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => setExpandedMemberIndex(null)}
+                            onClick={handleDoneEditing}
                             className="w-full h-[38px] text-xs font-bold text-primary border-primary/30 hover:bg-primary/10 cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5 mr-1" /> Done
