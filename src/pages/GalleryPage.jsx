@@ -16,6 +16,7 @@ import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -57,6 +58,7 @@ export default function GalleryPage({ headerLeftContent }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [selected, setSelected] = useState(null)
+  const [previewImage, setPreviewImage] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [formError, setFormError] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -438,8 +440,12 @@ export default function GalleryPage({ headerLeftContent }) {
             header: 'Preview',
             key: 'preview',
             render: (row) => row.images?.[0] ? (
-              <div className="relative inline-block">
-                <img src={assetUrl(row.images[0])} alt={row.category || 'Gallery'} className="h-12 w-16 rounded-lg object-cover border border-border" />
+              <div 
+                className="relative inline-block cursor-pointer group"
+                onClick={() => setPreviewImage({ url: assetUrl(row.images[0]), title: row.category || 'Gallery Image' })}
+                title="Click to preview image (Zoom/Pan)"
+              >
+                <img src={assetUrl(row.images[0])} alt={row.category || 'Gallery'} className="h-12 w-16 rounded-lg object-cover border border-border group-hover:scale-105 transition-transform" />
               </div>
             ) : (
               <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
@@ -631,6 +637,13 @@ export default function GalleryPage({ headerLeftContent }) {
           </div>
         </form>
       </Modal>
+
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title || 'Gallery Image'}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }

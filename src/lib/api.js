@@ -12,6 +12,25 @@ export const assetUrl = (path) => {
 }
 
 /**
+ * Uploads a file directly to the DigiTalks media service (https://service.digitalks.co.in)
+ * via the backend /api/upload proxy.
+ */
+export const uploadFileToDigitalks = async (file, folder = 'members') => {
+  if (!file) return ''
+
+  const formData = new FormData()
+  formData.append('folder_structure', folder)
+  formData.append('file', file)
+
+  const res = await api.post('/upload', formData)
+  const url = res.data?.data?.url || res.data?.data?.file_url || res.data?.file_url || res.data?.url
+  if (url) {
+    return url
+  }
+  throw new Error(res.data?.message || 'Failed to upload image')
+}
+
+/**
  * Extracts the tenant slug from the subdomain (e.g. 'chovatiya.parivar.me' -> 'chovatiya')
  */
 export const getSubdomainTenant = () => {
@@ -153,7 +172,13 @@ const setupInterceptors = (axiosInstance) => {
         config.headers['x-tenant-id'] = tenantCode
       }
       if (config.data instanceof FormData) {
-        delete config.headers['Content-Type']
+        if (config.headers?.delete) {
+          config.headers.delete('Content-Type')
+          config.headers.delete('content-type')
+        } else if (config.headers) {
+          delete config.headers['Content-Type']
+          delete config.headers['content-type']
+        }
       }
       return config
     },

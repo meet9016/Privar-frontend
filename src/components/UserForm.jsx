@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { normalizeRoleId } from '../lib/roles'
-import api, { getCommunitySurname, formatDate } from '../lib/api'
+import api, { getCommunitySurname, formatDate, uploadFileToDigitalks, assetUrl } from '../lib/api'
 import { MEMBER_ENDPOINTS } from '../utils/endpoints'
 import Input from './common/Input'
 import Select from './common/Select'
@@ -9,7 +9,126 @@ import Switch from './common/Switch'
 import Button from './common/Button'
 import DatePicker from './DatePicker'
 import { isValidEmail } from '../lib/validation'
-import { Users as UsersIcon, Plus, Trash2, User, ChevronDown, ChevronUp, Edit2, Check } from 'lucide-react'
+import { Users as UsersIcon, Plus, Trash2, User, ChevronDown, ChevronUp, Edit2, Check, Camera, Image as ImageIcon, X, RefreshCw, Eye } from 'lucide-react'
+import { toast } from '../lib/toast'
+import ImagePreviewModal from './common/ImagePreviewModal'
+
+function MemberAvatarUpload({ value, onChange, name, disabled, label = "Photo", size = 52 }) {
+  const fileInputRef = React.useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [previewModalOpen, setPreviewModalOpen] = useState(false)
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const uploadedUrl = await uploadFileToDigitalks(file, 'members')
+      if (uploadedUrl) {
+        onChange(uploadedUrl)
+        toast.success('Photo uploaded successfully')
+      }
+    } catch (err) {
+      console.error('Upload to service.digitalks.co.in failed', err)
+      toast.error('Failed to upload image. Please try again.')
+    } finally {
+      setUploading(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleRemove = (e) => {
+    e.stopPropagation()
+    onChange('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const previewSrc = value ? assetUrl(value) : ''
+
+  return (
+    <div className="flex items-center gap-3 shrink-0">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        onClick={(e) => { e.target.value = '' }}
+        accept="image/*"
+        className="hidden"
+        disabled={disabled || uploading}
+      />
+      <div
+        onClick={() => {
+          if (disabled || uploading) return
+          if (previewSrc) {
+            setPreviewModalOpen(true)
+          } else {
+            fileInputRef.current?.click()
+          }
+        }}
+        style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px`, maxWidth: `${size}px`, maxHeight: `${size}px` }}
+        className="relative rounded-full bg-surface-secondary border-2 border-dashed border-border/80 hover:border-primary/60 flex items-center justify-center cursor-pointer overflow-hidden transition-all group shrink-0 shadow-xs"
+        title={previewSrc ? "Click to preview image (Zoom/Pan)" : "Click to upload photo"}
+      >
+        {uploading ? (
+          <div className="flex items-center justify-center w-full h-full bg-surface-secondary/80">
+            <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+          </div>
+        ) : previewSrc ? (
+          <>
+            <img src={previewSrc} alt={name || 'Avatar'} className="w-full h-full object-cover block rounded-full" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+              <Eye className="w-4 h-4 text-white" />
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-text-secondary/70 group-hover:text-primary transition-colors">
+            <Camera className="w-4 h-4" />
+          </div>
+        )}
+      </div>
+      <div className="flex flex-col justify-center">
+        <span className="text-[11px] font-bold text-text uppercase tracking-wide">{label}</span>
+        <div className="flex items-center gap-2 mt-0.5">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || uploading}
+            className="text-[11px] font-bold text-primary hover:underline cursor-pointer disabled:opacity-50"
+          >
+            {uploading ? 'Uploading...' : (value ? 'Change' : 'Upload')}
+          </button>
+          {value && !uploading && (
+            <>
+              <button
+                type="button"
+                onClick={() => setPreviewModalOpen(true)}
+                className="text-[11px] font-bold text-text-secondary hover:text-primary hover:underline cursor-pointer"
+              >
+                Preview
+              </button>
+              <button
+                type="button"
+                onClick={handleRemove}
+                disabled={disabled}
+                className="text-[11px] font-bold text-error-text hover:underline cursor-pointer"
+              >
+                Remove
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <ImagePreviewModal
+        isOpen={previewModalOpen}
+        imageUrl={previewSrc}
+        title={name ? `${name}'s Photo` : 'Member Photo'}
+        onClose={() => setPreviewModalOpen(false)}
+      />
+    </div>
+  )
+}
 
 let cachedMasters = null;
 let mastersPromise = null;
@@ -24,20 +143,25 @@ const RELATION_GENDER_MAP = {
   Son: 'Male',
   Sister: 'Female',
   Brother: 'Male',
-  Grandmother: 'Female',
   Grandfather: 'Male',
-  Aunt: 'Female',
+  Grandmother: 'Female',
   Uncle: 'Male',
+  Aunt: 'Female',
   'Daughter-in-law': 'Female',
   'Son-in-law': 'Male',
+  Grandson: 'Male',
   Granddaughter: 'Female',
-  Grandson: 'Male'
+  Cousin: '',
+  Nephew: 'Male',
+  Niece: 'Female',
+  Other: ''
 }
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => ({ label: bg, value: bg }))
 
 const RELATION_OPTIONS = [
-  'Spouse',
+  'Wife',
+  'Husband',
   'Son',
   'Daughter',
   'Father',
@@ -52,6 +176,9 @@ const RELATION_OPTIONS = [
   'Son-in-law',
   'Grandson',
   'Granddaughter',
+  'Cousin',
+  'Nephew',
+  'Niece',
   'Other'
 ].map(rel => ({ label: rel, value: rel }))
 
@@ -71,7 +198,7 @@ export const capitalizeWords = (str) => {
     .join(' ')
 }
 
-export default function UserForm({ user, roles = [], onSubmit, isLoading, onCancel }) {
+export default function UserForm({ user, targetMemberId = null, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
   const [countries, setCountries] = useState(cachedMasters ? cachedMasters.countries : [])
   const [states, setStates] = useState(cachedMasters ? cachedMasters.states : [])
@@ -97,6 +224,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
     city_id: '',
     village: '',
     address: '',
+    image: '',
     status: 1
   })
   const [errors, setErrors] = useState({})
@@ -192,6 +320,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         city_id: user.city_id || '',
         village: user.village || user.village_id || '',
         address: user.address || '',
+        image: user.image || user.profile_image || '',
         status: user.status !== undefined ? Number(user.status) : 1
       })
 
@@ -221,17 +350,27 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                 first_name: m.first_name || '',
                 middle_name: m.middle_name || '',
                 last_name: m.last_name || '',
-                relation: m.relation || 'Spouse',
+                relation: m.relation === 'Spouse' ? 'Wife' : (m.relation || 'Wife'),
                 gender: m.gender || 'Male',
                 dob: mDob,
                 anniversary: mAnniversary,
                 blood_group: m.blood_group || '',
                 number: m.number || '',
                 email: m.email || '',
+                image: m.image || m.profile_image || '',
                 status: m.status !== undefined ? Number(m.status) : 1
               }
             })
             setMembers(childMembers)
+
+            // If targetMemberId provided, auto-expand that member's row for inline edit
+            if (targetMemberId) {
+              const targetIdx = childMembers.findIndex(m => String(m._id) === String(targetMemberId) || String(m.id) === String(targetMemberId))
+              if (targetIdx !== -1) {
+                setExpandedMemberIndex(targetIdx)
+                setEditingMember({ ...childMembers[targetIdx] })
+              }
+            }
           })
           .catch(err => console.error('Failed to fetch family members', err))
           .finally(() => setMembersLoading(false))
@@ -265,7 +404,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
       setDeletedMemberIds([])
       setExpandedMemberIndex(null)
     }
-  }, [user, countries])
+  }, [user, targetMemberId, countries])
 
   const activeRoles = useMemo(() => roles.filter((role) => Number(role.status ?? 1) === 1), [roles])
   const isEditingSelf = Boolean(user && loggedInUser && [
@@ -323,13 +462,14 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
       first_name: '',
       middle_name: defaultMiddleName,
       last_name: defaultLastName,
-      relation: 'Spouse',
+      relation: 'Wife',
       gender: 'Female',
       dob: '',
       anniversary: '',
       blood_group: '',
       number: '',
       email: '',
+      image: '',
       status: 1
     }
 
@@ -353,6 +493,20 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
 
       return current
     })
+
+    if (expandedMemberIndex !== null) {
+      setMembers(prev => {
+        const updated = [...prev]
+        if (updated[expandedMemberIndex]) {
+          updated[expandedMemberIndex] = {
+            ...updated[expandedMemberIndex],
+            [field]: value,
+            ...(field === 'relation' && RELATION_GENDER_MAP[value] ? { gender: RELATION_GENDER_MAP[value] } : {})
+          }
+        }
+        return updated
+      })
+    }
   }
 
   const handleDoneEditing = () => {
@@ -490,6 +644,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
         blood_group: m.blood_group || '',
         number: (m.number || '').trim(),
         email: (m.email || '').trim(),
+        image: m.image || '',
         status: m.status !== undefined ? Number(m.status) : 1
       })),
       deletedMemberIds
@@ -519,14 +674,27 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
       
       {/* ─── SECTION 1: FAMILY HEAD DETAILS (COMPACT 4 ITEMS PER LINE) ─────────── */}
       <div className="bg-card border border-border rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-border/60">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold">
-              <User className="w-3.5 h-3.5" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/60">
+          <div className="flex items-center gap-3.5">
+            <MemberAvatarUpload
+              value={formData.image}
+              onChange={(val) => handleChange('image', val)}
+              name={formData.first_name}
+              label="Head Photo"
+              size={54}
+              disabled={isLoading}
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold">
+                  <User className="w-3.5 h-3.5" />
+                </div>
+                <h3 className="text-xs font-bold text-text uppercase tracking-wide">Family Head Details</h3>
+              </div>
+              <p className="text-[11px] text-text-secondary mt-0.5">Primary head of the family</p>
             </div>
-            <h3 className="text-xs font-bold text-text uppercase tracking-wide">Family Head Details   </h3>
           </div>
-          <span className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold">
+          <span className="self-start sm:self-center px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold">
             Family Head
           </span>
         </div>
@@ -789,8 +957,18 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                       </span>
                     </div>
 
-                    {/* Name */}
-                    <div className="col-span-3 min-w-0">
+                    {/* Name with Avatar */}
+                    <div className="col-span-3 min-w-0 flex items-center gap-2">
+                      <div 
+                        style={{ width: '28px', height: '28px', minWidth: '28px', minHeight: '28px' }}
+                        className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-[11px] shrink-0 overflow-hidden shadow-xs"
+                      >
+                        {m.image ? (
+                          <img src={assetUrl(m.image)} alt={m.first_name} className="w-full h-full object-cover block" />
+                        ) : (
+                          (m.first_name || 'M').charAt(0).toUpperCase()
+                        )}
+                      </div>
                       <span className="text-xs font-bold text-text truncate block">
                         {[capitalizeWords(m.first_name), capitalizeWords(m.middle_name), capitalizeWords(m.last_name)].filter(Boolean).join(' ') || (
                           <span className="text-text-secondary italic">New Member (Click to edit)</span>
@@ -860,10 +1038,20 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                   {/* Slide-Down Inline Edit Form (Accordion) */}
                   {isExpanded && editingMember && (
                     <div className="p-3.5 sm:p-4 bg-surface/50 border-t border-b border-border/80 space-y-3 animate-fade-in">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-primary flex items-center gap-1">
-                          <Edit2 className="w-3 h-3" /> Edit Details for Member #{idx + 1}
-                        </span>
+                      <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                        <div className="flex items-center gap-3">
+                          <MemberAvatarUpload
+                            value={editingMember.image || ''}
+                            onChange={(val) => handleEditingMemberChange('image', val)}
+                            name={editingMember.first_name}
+                            label="Member Photo"
+                            size={48}
+                            disabled={isLoading}
+                          />
+                          <span className="text-xs font-bold text-primary flex items-center gap-1">
+                            <Edit2 className="w-3 h-3" /> Edit Details for Member #{idx + 1}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Row 1: First, Middle, Last, Relation (4 inputs) */}
@@ -893,7 +1081,7 @@ export default function UserForm({ user, roles = [], onSubmit, isLoading, onCanc
                         />
                         <Select
                           label="Relationship with Head"
-                          value={editingMember.relation || 'Spouse'}
+                          value={editingMember.relation || 'Wife'}
                           onChange={(val) => handleEditingMemberChange('relation', val)}
                           options={RELATION_OPTIONS}
                           required={true}
