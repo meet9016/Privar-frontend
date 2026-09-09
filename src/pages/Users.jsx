@@ -1,8 +1,8 @@
-import React, { useCallback, useContext, useEffect, useState, useMemo } from 'react'
-import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet, X, Download } from 'lucide-react'
+import React, { useCallback, useContext, useEffect, useState, useMemo, useRef } from 'react'
+import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet, X, Download, Network, List, Heart, Baby, ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react'
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
-import api, { getUsersList, formatDate } from '../lib/api'
+import api, { getUsersList, formatDate, assetUrl } from '../lib/api'
 import { MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
@@ -19,11 +19,13 @@ import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 export default function Users() {
   const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('members')
   const [users, setUsers] = useState([])
+  const [previewImage, setImagePreview] = useState(null)
   const [limit, setLimit] = useState(15)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 15 })
   const [loading, setLoading] = useState(false)
@@ -46,6 +48,7 @@ export default function Users() {
   const [roles, setRoles] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
+  const [editTargetMemberId, setEditTargetMemberId] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -56,6 +59,11 @@ export default function Users() {
   const [familyMembers, setFamilyMembers] = useState([])
   const [membersLoading, setMembersLoading] = useState(false)
   const [collapsedHeads, setCollapsedHeads] = useState([])
+  const [viewTab, setViewTab] = useState('chart') // 'chart' | 'details'
+  const [treeZoom, setTreeZoom] = useState(1)
+  const [treePan, setTreePan] = useState({ x: 0, y: 0 })
+  const [isTreeDragging, setIsTreeDragging] = useState(false)
+  const treeDragStartRef = useRef({ x: 0, y: 0, startPanX: 0, startPanY: 0 })
 
   const toggleExpand = (headId, e) => {
     e.stopPropagation()
@@ -231,18 +239,49 @@ export default function Users() {
   // Open create modal
   const handleCreate = () => {
     setSelectedUser(null)
+    setEditTargetMemberId(null)
     setIsModalOpen(true)
   }
 
   // Open edit modal
-  const handleEdit = (user) => {
-    setSelectedUser(user)
-    setIsModalOpen(true)
+  const handleEdit = async (user) => {
+    const isHead = user.isGroupParent || user.relation === 'Self' || user.familyHead
+    if (isHead) {
+      setSelectedUser(user)
+      setEditTargetMemberId(null)
+      setIsModalOpen(true)
+    } else {
+      // Member under head: find parent head
+      const headId = user.parentHeadId || user.family_head?.id || user.family_head?._id || user.family_head_id || user.parent_member_id
+      let headUser = users.find(u => String(u.id || u._id) === String(headId) || (u.member_id && u.member_id === user.parent_member_id))
+      
+      if (!headUser && headId) {
+        try {
+          // Fetch head user details if not found in current table page
+          const res = await api.get(MEMBER_ENDPOINTS.GET_MEMBER(headId))
+          headUser = res.data?.data || res.data
+        } catch (e) {
+          console.error('Could not fetch head user', e)
+        }
+      }
+
+      if (headUser) {
+        setSelectedUser(headUser)
+        setEditTargetMemberId(user.id || user._id)
+        setIsModalOpen(true)
+      } else {
+        // Fallback if no head found
+        setSelectedUser(user)
+        setEditTargetMemberId(null)
+        setIsModalOpen(true)
+      }
+    }
   }
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setSelectedUser(null)
+    setEditTargetMemberId(null)
   }
 
   const handleSelectAll = (e) => {
@@ -309,11 +348,14 @@ export default function Users() {
 
   const handleView = async (user) => {
     setViewingUser(user)
+    setViewTab('chart')
+    setTreeZoom(1)
+    setTreePan({ x: 0, y: 0 })
     setIsViewModalOpen(true)
     
     setMembersLoading(true)
     try {
-      const headId = user.family_head?.id || user.id
+      const headId = user.parentHeadId || user.family_head?.id || user.family_head?._id || user.family_head_id || user.parent_member_id || user.id || user._id
       const res = await api.get(MEMBER_ENDPOINTS.GET_FAMILY_MEMBERS(headId))
       setFamilyMembers(res.data?.data || res.data || [])
     } catch (err) {
@@ -323,10 +365,25 @@ export default function Users() {
     }
   }
 
+  // Auto-focus and scroll to target member card in tree modal
+  useEffect(() => {
+    if (isViewModalOpen && viewingUser && viewTab === 'chart') {
+      const timer = setTimeout(() => {
+        const el = document.getElementById('focused-tree-node')
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
+        }
+      }, 250)
+      return () => clearTimeout(timer)
+    }
+  }, [isViewModalOpen, viewingUser, viewTab, familyMembers])
+
   const closeViewModal = () => {
     setIsViewModalOpen(false)
     setViewingUser(null)
     setFamilyMembers([])
+    setTreeZoom(1)
+    setTreePan({ x: 0, y: 0 })
   }
 
   const clearFilters = () => {
@@ -590,7 +647,25 @@ export default function Users() {
                   ) : (
                     <div className="w-5.5 shrink-0" />
                   )}
-                  <div className="flex items-center gap-2 whitespace-nowrap">
+                  <div className="flex items-center gap-2.5 whitespace-nowrap">
+                    <div 
+                      onClick={(e) => {
+                        const imgSrc = user.image || user.profile_image ? assetUrl(user.image || user.profile_image) : ''
+                        if (imgSrc) {
+                          e.stopPropagation();
+                          setImagePreview({ url: imgSrc, title: `${user.name} (${user.relation || 'Member'})` });
+                        }
+                      }}
+                      style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', maxWidth: '32px', maxHeight: '32px' }}
+                      className={`w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-xs text-primary shrink-0 overflow-hidden shadow-xs ${user.image || user.profile_image ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all' : ''}`}
+                      title={user.image || user.profile_image ? "Click to view photo (Zoom/Pan)" : ""}
+                    >
+                      {user.image || user.profile_image ? (
+                        <img src={assetUrl(user.image || user.profile_image)} alt={user.name} className="w-full h-full object-cover block" />
+                      ) : (
+                        (user.name || 'U').charAt(0).toUpperCase()
+                      )}
+                    </div>
                     <span className="font-semibold text-text capitalize">{user.name}</span>
                     {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium shrink-0">
@@ -604,7 +679,7 @@ export default function Users() {
                       </span>
                     ) : (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary text-text-secondary border border-border/60 capitalize font-medium shrink-0">
-                        {user.relation}
+                        {user.relation === 'Spouse' ? 'Wife' : user.relation}
                       </span>
                     )}
                   </div>
@@ -716,118 +791,889 @@ export default function Users() {
         onClose={handleCloseModal}
         maxWidth="max-w-6xl"
       >
-        <UserForm user={selectedUser} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} onCancel={handleCloseModal} />
+        <UserForm user={selectedUser} targetMemberId={editTargetMemberId} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} onCancel={handleCloseModal} />
       </Modal>
 
-      {/* View Details Modal */}
+      {/* View Details & Family Tree Modal */}
       <Modal
         isOpen={isViewModalOpen}
-        title="Member Details"
+        title="Family & Member Details"
         onClose={closeViewModal}
-        maxWidth="max-w-4xl"
+        maxWidth="max-w-5xl"
       >
         {viewingUser && (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-6 p-6 bg-surface-secondary rounded-2xl border border-border items-center md:items-start">
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-4xl border-4 border-primary/20 shrink-0 overflow-hidden">
-                {viewingUser.image ? (
-                  <img src={viewingUser.image} alt={viewingUser.name} className="w-full h-full object-cover" />
-                ) : (
-                  viewingUser.name ? viewingUser.name.charAt(0).toUpperCase() : 'U'
-                )}
+          <div className="space-y-4">
+            {/* View Mode Tabs */}
+            {/* View Mode Tabs & Zoom Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
+              <div className="flex items-center gap-2 bg-surface-secondary/80 p-1 rounded-2xl border border-border/60">
+                <button
+                  type="button"
+                  onClick={() => setViewTab('chart')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    viewTab === 'chart'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'text-text-secondary hover:text-text'
+                  }`}
+                >
+                  <Network className="w-3.5 h-3.5" />
+                  <span>Family Tree Chart</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewTab('details')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    viewTab === 'details'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'text-text-secondary hover:text-text'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>Profile & Members List</span>
+                </button>
               </div>
-              <div className="flex-1 text-center md:text-left space-y-2">
-                <h3 className="text-2xl font-black text-text">{viewingUser.name}</h3>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${Number(viewingUser.status ?? 1) === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary border border-border'}`}>
-                    {Number(viewingUser.status ?? 1) === 1 ? 'Active' : 'Inactive'}
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 capitalize">
-                    Relation: {viewingUser.relation || 'Self'}
-                  </span>
-                  {viewingUser.is_committee && (
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> Committee Member
+
+              <div className="flex items-center gap-3">
+                {/* Interactive Zoom & Pan Controls for Family Tree */}
+                {viewTab === 'chart' && (
+                  <div className="flex items-center gap-2">
+                    <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary bg-surface-secondary/70 border border-border px-2.5 py-1 rounded-full select-none">
+                      <Move className="w-3 h-3 text-primary" /> Drag to move
                     </span>
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-border/50 text-sm">
-                  <div>
-                    <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Contact</p>
-                    <p className="text-text font-medium flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-text-secondary" /> {viewingUser.phone || viewingUser.number}</p>
-                    {viewingUser.email && <p className="text-text font-medium mt-1 flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-text-secondary" /> {viewingUser.email}</p>}
-                  </div>
-                  <div>
-                    <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Personal</p>
-                    <p className="text-text font-medium flex items-center gap-2"><User className="w-3.5 h-3.5 text-text-secondary shrink-0" /> Gender: {viewingUser.gender || '-'}</p>
-                    <p className="text-text font-medium mt-1 flex items-center gap-2"><Droplet className="w-3.5 h-3.5 text-red-500 shrink-0" /> Blood Group: {viewingUser.blood_group || '-'}</p>
-                    <p className="text-text font-medium mt-1 flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-text-secondary shrink-0" /> DOB: {formatDate(viewingUser.dob)}</p>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Location</p>
-                    <p className="text-text font-medium flex items-center gap-2 mt-1 flex-wrap">
-                      <MapPin className="w-3.5 h-3.5 text-text-secondary shrink-0" />
-                      <span>{viewingUser.address || '-'}</span>
-                      {viewingUser.village && <span className="text-primary font-semibold">({viewingUser.village})</span>}
-                      {viewingUser.city_name ? `, City: ${viewingUser.city_name}` : (viewingUser.city_id?.name ? `, City: ${viewingUser.city_id.name}` : (viewingUser.city ? `, City: ${viewingUser.city}` : ''))}
-                    </p>
-                  </div>
-                  {viewingUser.family_head && viewingUser.family_head.name && viewingUser.relation !== 'Self' && (
-                    <div className="sm:col-span-2">
-                      <p className="text-text-secondary text-xs uppercase tracking-wider font-semibold mb-1">Family Head</p>
-                      <p className="text-text font-medium bg-surface rounded-lg p-2 border border-border inline-flex items-center gap-2">
-                        <Crown className="w-4 h-4 text-amber-500" /> {viewingUser.family_head.name}
-                      </p>
+                    <div className="flex items-center gap-1 bg-surface-secondary border border-border/80 px-2 py-1 rounded-2xl shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => setTreeZoom(z => Math.max(0.4, Number((z - 0.15).toFixed(2))))}
+                        className="p-1.5 hover:bg-surface rounded-xl text-text-secondary hover:text-text cursor-pointer transition-colors"
+                        title="Zoom Out (-)"
+                      >
+                        <ZoomOut className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setTreeZoom(1); setTreePan({ x: 0, y: 0 }); }}
+                        className="px-2 py-0.5 text-[11px] font-bold text-text-secondary hover:text-primary hover:bg-surface rounded-lg cursor-pointer transition-colors"
+                        title="Reset View (100%)"
+                      >
+                        {Math.round(treeZoom * 100)}%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTreeZoom(z => Math.min(1.8, Number((z + 0.15).toFixed(2))))}
+                        className="p-1.5 hover:bg-surface rounded-xl text-text-secondary hover:text-text cursor-pointer transition-colors"
+                        title="Zoom In (+)"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setTreeZoom(1); setTreePan({ x: 0, y: 0 }); }}
+                        className="p-1.5 hover:bg-surface rounded-xl text-text-secondary hover:text-text cursor-pointer transition-colors"
+                        title="Reset Pan & Zoom"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  )}
+                  </div>
+                )}
+
+                <div className="text-xs text-text-secondary font-medium">
+                  Family Total: <span className="font-bold text-primary">{Math.max(1, familyMembers.length)} Members</span>
                 </div>
               </div>
             </div>
 
-            <div>
-              <h4 className="text-lg font-bold text-text mb-3">Family Members ({familyMembers.filter(m => m.id !== viewingUser.id).length})</h4>
-              {membersLoading ? (
-                <div className="py-8 text-center text-text-secondary animate-pulse">Loading members...</div>
-              ) : familyMembers.filter(m => m.id !== viewingUser.id).length > 0 ? (
-                <div className="overflow-x-auto bg-card border border-border rounded-xl shadow-sm">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-secondary/50 text-text-secondary text-xs uppercase tracking-wider font-semibold border-b border-border">
-                        <th className="p-3">Name</th>
-                        <th className="p-3">Relation</th>
-                        <th className="p-3">Gender</th>
-                        <th className="p-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {familyMembers.filter(m => m.id !== viewingUser.id).map(member => (
-                        <tr key={member.id} className="hover:bg-surface-secondary/30 transition-colors text-sm">
-                          <td className="p-3 font-medium text-text flex items-center gap-2">
-                            {member.relation === 'Self' && <Crown className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" title="Family Head" />}
-                            {member.name}
-                          </td>
-                          <td className="p-3 text-text-secondary capitalize">{member.relation}</td>
-                          <td className="p-3 text-text-secondary">{member.gender || '-'}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${Number(member.status) === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary'}`}>
-                              {Number(member.status) === 1 ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                        </tr>
+            {/* TAB 1: VISUAL FAMILY TREE CHART (MATCHING REFERENCE DIAGRAM) */}
+            {viewTab === 'chart' && (
+              <div className="py-2">
+                {membersLoading ? (
+                  <div className="py-20 text-center text-xs text-text-secondary font-medium">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-primary mb-2" />
+                    Loading family tree...
+                  </div>
+                ) : (() => {
+                  const allList = familyMembers.length > 0 ? familyMembers : [viewingUser]
+                  const head = allList.find(m => m.relation === 'Self' || m.familyHead || String(m.id || m._id) === String(viewingUser.family_head?.id || viewingUser.id)) || viewingUser
+                  const others = allList.filter(m => String(m.id || m._id) !== String(head.id || head._id) && m.relation !== 'Self')
+                  
+                  // Categorize relatives
+                  const grandfather = others.find(m => m.relation === 'Grandfather')
+                  const grandmother = others.find(m => m.relation === 'Grandmother')
+
+                  const father = others.find(m => m.relation === 'Father')
+                  const mother = others.find(m => m.relation === 'Mother')
+
+                  const uncles = others.filter(m => m.relation === 'Uncle')
+                  const aunts = others.filter(m => m.relation === 'Aunt')
+
+                  const spouses = others.filter(m => ['Spouse', 'Wife', 'Husband'].includes(m.relation))
+                  const spouse = spouses[0] || null
+
+                  const brothers = others.filter(m => m.relation === 'Brother')
+                  const sisters = others.filter(m => m.relation === 'Sister')
+                  const cousins = others.filter(m => m.relation === 'Cousin')
+                  const nephews = others.filter(m => m.relation === 'Nephew')
+                  const nieces = others.filter(m => m.relation === 'Niece')
+
+                  const sons = others.filter(m => m.relation === 'Son')
+                  const daughters = others.filter(m => m.relation === 'Daughter')
+                  const sonsInLaw = others.filter(m => m.relation === 'Son-in-law')
+                  const daughtersInLaw = others.filter(m => m.relation === 'Daughter-in-law')
+                  const otherChildren = others.filter(m => ['Child'].includes(m.relation))
+                  const allChildren = [...sons, ...daughters, ...sonsInLaw, ...daughtersInLaw, ...otherChildren]
+
+                  const grandsons = others.filter(m => m.relation === 'Grandson')
+                  const granddaughters = others.filter(m => m.relation === 'Granddaughter')
+                  const allGrandchildren = [...grandsons, ...granddaughters]
+                  
+                  // Uncategorized / Remaining members
+                  const processedIds = new Set([
+                    head?.id || head?._id,
+                    grandfather?.id || grandfather?._id,
+                    grandmother?.id || grandmother?._id,
+                    father?.id || father?._id,
+                    mother?.id || mother?._id,
+                    ...uncles.map(u => u.id || u._id),
+                    ...aunts.map(a => a.id || a._id),
+                    ...spouses.map(s => s.id || s._id),
+                    ...brothers.map(b => b.id || b._id),
+                    ...sisters.map(s => s.id || s._id),
+                    ...cousins.map(c => c.id || c._id),
+                    ...nephews.map(n => n.id || n._id),
+                    ...nieces.map(n => n.id || n._id),
+                    ...allChildren.map(c => c.id || c._id),
+                    ...allGrandchildren.map(g => g.id || g._id)
+                  ].filter(Boolean).map(String))
+
+                  const extraMembers = others.filter(m => !processedIds.has(String(m.id || m._id)))
+
+                  const formatTitleCase = (str) => {
+                    if (!str) return ''
+                    return str
+                      .toString()
+                      .trim()
+                      .replace(/[_-]+/g, ' ')
+                      .split(/\s+/)
+                      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                      .join(' ')
+                  }
+
+                  // ─── EDRAWMAX TREE NODE CARD ─────────────────────────────
+                  const EdrawCard = ({ member, roleLabel, isHead = false }) => {
+                    if (!member) return null
+                    const fullName = member.name || [member.first_name, member.middle_name, member.last_name].filter(Boolean).join(' ') || roleLabel
+                    let displayRole = isHead ? 'Head (Self)' : (roleLabel || member.relation || 'Member')
+                    if (displayRole && displayRole.toLowerCase() === 'spouse') {
+                      displayRole = member.gender === 'Male' ? 'Husband' : 'Wife'
+                    }
+                    const imageSrc = member.image || member.profile_image ? assetUrl(member.image || member.profile_image) : ''
+
+                    const isFocused = Boolean(
+                      viewingUser && member && (
+                        String(viewingUser.id || viewingUser._id) === String(member.id || member._id) ||
+                        (viewingUser.member_id && member.member_id && String(viewingUser.member_id) === String(member.member_id)) ||
+                        (viewingUser.name && (viewingUser.name.toLowerCase() === (member.name || '').toLowerCase() || viewingUser.name.toLowerCase() === fullName.toLowerCase()))
+                      )
+                    )
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div 
+                          id={isFocused ? 'focused-tree-node' : undefined}
+                          className={`w-36 sm:w-40 bg-white dark:bg-slate-900 rounded-2xl border transition-all duration-300 flex flex-col items-center select-none relative ${
+                            isFocused
+                              ? 'border-emerald-500 ring-4 ring-emerald-500/40 shadow-xl scale-105 z-30'
+                              : isHead 
+                                ? 'border-amber-400 dark:border-amber-500/80 shadow-md ring-2 ring-amber-400/30' 
+                                : 'border-slate-400/80 dark:border-slate-500/80 shadow-xs'
+                          } p-2.5 hover:shadow-md`}>
+                          
+                          {/* Focused Viewing Badge (Emerald) */}
+                          {isFocused && (
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg z-30 animate-bounce whitespace-nowrap ring-2 ring-white dark:ring-slate-900">
+                              <Eye className="w-2.5 h-2.5 fill-white" />
+                              <span>Viewing</span>
+                            </div>
+                          )}
+
+                          {/* Head Badge (Crown) - Yellow / Golden */}
+                          {isHead && !isFocused && (
+                            <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md z-10 border border-yellow-300">
+                              <Crown className="w-3 h-3 text-yellow-100 fill-yellow-200" />
+                              <span>Head</span>
+                            </div>
+                          )}
+
+                          {/* Photo Box */}
+                          <div 
+                            className={`w-full h-24 sm:h-28 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 ${imageSrc ? 'cursor-pointer group/photo' : ''}`}
+                            onClick={(e) => {
+                              if (imageSrc) {
+                                e.stopPropagation();
+                                setImagePreview({ url: imageSrc, title: `${fullName} (${displayRole})` });
+                              }
+                            }}
+                            title={imageSrc ? 'Click to preview photo (Zoom/Pan)' : ''}
+                          >
+                            {imageSrc ? (
+                              <div className="relative w-full h-full">
+                                <img src={imageSrc} alt={fullName} className="w-full h-full object-cover rounded-xl block group-hover/photo:scale-105 transition-transform duration-200" />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/photo:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
+                                  <Eye className="w-5 h-5 text-white drop-shadow-md" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                                isHead ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                              } shrink-0`}>
+                                <User className="w-7 h-7" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Name (Title Case) */}
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-100 text-center mt-2 truncate w-full block" title={fullName}>
+                            {formatTitleCase(fullName)}
+                          </span>
+
+                          {/* Role Badge (Title Case) */}
+                          <div className={`w-full py-0.5 px-2 text-[10px] font-semibold rounded-xl text-center border truncate mt-1 ${
+                            isHead 
+                              ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 font-bold' 
+                              : 'bg-blue-50/90 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-blue-100 dark:border-slate-700'
+                          }`}>
+                            {formatTitleCase(displayRole)}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  // ─── UNIFIED RECURSIVE GENEALOGICAL TREE NODE (100% MATHEMATICAL ALIGNMENT) ───
+                  const renderTreeNode = ({
+                    member1,
+                    member2 = null,
+                    label1,
+                    label2 = null,
+                    isHead1 = false,
+                    isHead2 = false,
+                    spouseBadge = 'Married',
+                    children = [],
+                    childrenBadge = null
+                  }) => {
+                    const validChildren = (children || []).filter(Boolean)
+                    const hasChildren = validChildren.length > 0
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        {/* Node Header (Single Member or Married Couple) */}
+                        <div className="flex items-center justify-center relative">
+                          <EdrawCard member={member1} roleLabel={label1} isHead={isHead1} />
+
+                          {member2 && (
+                            <>
+                              {/* Horizontal spouse bridge with pill badge */}
+                              <div className="w-12 sm:w-16 h-[2.5px] bg-[#3B5998] relative flex items-center justify-center shrink-0">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#3B5998] text-white font-semibold text-[9px] shadow-sm select-none z-20">
+                                  {spouseBadge}
+                                </span>
+                              </div>
+                              <EdrawCard member={member2} roleLabel={label2} isHead={isHead2} />
+                            </>
+                          )}
+                        </div>
+
+                        {/* Downward Connector & Children Row with generous generation clearance */}
+                        {hasChildren && (
+                          <div className="flex flex-col items-center w-full">
+                            {/* Stem dropping from exact bottom center of couple/card */}
+                            <div className="w-[2.5px] h-10 bg-[#3B5998]" />
+
+                            {/* Children Row with Spanning Horizontal Bar */}
+                            <div className="flex items-start justify-center relative pt-0">
+                              {/* Children Badge pill */}
+                              {childrenBadge && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                                  <span className="px-3.5 py-0.5 rounded-full bg-[#3B5998] text-white font-bold text-[10px] shadow-sm select-none">
+                                    {childrenBadge}
+                                  </span>
+                                </div>
+                              )}
+
+                              {validChildren.map((childNode, idx) => (
+                                <div key={idx} className="relative flex flex-col items-center px-6 sm:px-10">
+                                  {/* Horizontal line starting at 50% of first child, ending at 50% of last child */}
+                                  {validChildren.length > 1 && (
+                                    <div 
+                                      className="absolute top-0 h-[2.5px] bg-[#3B5998]"
+                                      style={{
+                                        left: idx === 0 ? '50%' : '0%',
+                                        right: idx === validChildren.length - 1 ? '50%' : '0%'
+                                      }}
+                                    />
+                                  )}
+
+                                  {/* Vertical stem dropping from horizontal bar into top center of child node with directional arrowhead */}
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-[2.5px] h-8 bg-[#3B5998]" />
+                                    <div className="w-0 h-0 border-l-[4.5px] border-l-transparent border-r-[4.5px] border-r-transparent border-t-[6px] border-t-[#3B5998] -mt-[0.5px]" />
+                                  </div>
+
+                                  {/* Child Node */}
+                                  {childNode}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+
+                  // ─── BUILD GENEALOGICAL SUB-TREES FROM BOTTOM TO TOP ──────────────────
+
+                  // 1. Grandchildren Level (Level 5) - Grandson / Granddaughter (Beta ka Beta / Beti)
+                  const grandchildNodes = allGrandchildren.map(g => (
+                    renderTreeNode({
+                      member1: g,
+                      label1: g.relation
+                    })
+                  ))
+
+                  // 2. Head's Children Level (Level 4)
+                  const pairedChildNodes = []
+                  const usedChildIds = new Set()
+                  let attachedGrandchildren = false
+
+                  // First: Sons (Beta) + Daughters-in-law (Bahu) -> Grandchildren (Grandson/Granddaughter) attach UNDER SONS!
+                  sons.forEach((s, idx) => {
+                    const sId = String(s.id || s._id)
+                    usedChildIds.add(sId)
+                    const dil = daughtersInLaw[idx]
+                    const childGrandchildren = !attachedGrandchildren && grandchildNodes.length > 0 ? grandchildNodes : []
+                    if (childGrandchildren.length > 0) attachedGrandchildren = true
+
+                    if (dil) {
+                      const dilId = String(dil.id || dil._id)
+                      usedChildIds.add(dilId)
+                      pairedChildNodes.push(
+                        renderTreeNode({
+                          member1: s,
+                          member2: dil,
+                          label1: 'Son',
+                          label2: 'Daughter In Law',
+                          spouseBadge: 'Married',
+                          children: childGrandchildren,
+                          childrenBadge: childGrandchildren.length > 0 ? 'Children' : null
+                        })
+                      )
+                    } else {
+                      pairedChildNodes.push(
+                        renderTreeNode({
+                          member1: s,
+                          label1: 'Son',
+                          children: childGrandchildren,
+                          childrenBadge: childGrandchildren.length > 0 ? 'Children' : null
+                        })
+                      )
+                    }
+                  })
+
+                  // Second: Daughters (Beti) -> Direct child cards in lineage chart (No Son-in-law)
+                  daughters.forEach(d => {
+                    const dId = String(d.id || d._id)
+                    usedChildIds.add(dId)
+                    pairedChildNodes.push(
+                      renderTreeNode({
+                        member1: d,
+                        label1: 'Daughter'
+                      })
+                    )
+                  })
+
+                  // Other direct children (excluding in-laws)
+                  otherChildren.forEach(c => {
+                    const cId = String(c.id || c._id)
+                    if (!usedChildIds.has(cId)) {
+                      pairedChildNodes.push(
+                        renderTreeNode({
+                          member1: c,
+                          label1: c.relation || 'Child'
+                        })
+                      )
+                    }
+                  })
+
+                  // Fallback: If grandchildren exist but no sons were present, attach directly
+                  if (!attachedGrandchildren && grandchildNodes.length > 0) {
+                    pairedChildNodes.push(...grandchildNodes)
+                  }
+
+                  // 3. Head Couple (Me + Wife / Husband) (Level 3)
+                  const headCoupleNode = renderTreeNode({
+                    member1: head,
+                    member2: spouse,
+                    label1: 'Head (Self)',
+                    label2: spouse ? (['Spouse', 'wife', 'Wife'].includes(spouse.relation) ? (spouse.gender === 'Male' ? 'Husband' : 'Wife') : (spouse.relation || 'Wife')) : null,
+                    isHead1: true,
+                    spouseBadge: 'Married',
+                    children: pairedChildNodes,
+                    childrenBadge: pairedChildNodes.length > 0 ? 'Children' : null
+                  })
+
+                  // 4. Sibling Children (Nephews / Nieces under Brother / Sister) (Level 4 under Level 3)
+                  const siblingChildren = [...nephews, ...nieces]
+                  const nephewNieceNodes = siblingChildren.map(c => (
+                    renderTreeNode({
+                      member1: c,
+                      label1: c.relation
+                    })
+                  ))
+
+                  const sisterNodes = sisters.map((s, idx) => (
+                    renderTreeNode({
+                      member1: s,
+                      label1: 'Sister',
+                      children: idx === 0 && brothers.length === 0 && nephewNieceNodes.length > 0 ? nephewNieceNodes : [],
+                      childrenBadge: idx === 0 && brothers.length === 0 && nephewNieceNodes.length > 0 ? 'Children' : null
+                    })
+                  ))
+
+                  const brotherNodes = brothers.map((b, idx) => (
+                    renderTreeNode({
+                      member1: b,
+                      label1: 'Brother',
+                      children: idx === 0 && nephewNieceNodes.length > 0 ? nephewNieceNodes : [],
+                      childrenBadge: idx === 0 && nephewNieceNodes.length > 0 ? 'Children' : null
+                    })
+                  ))
+
+                  // 5. Siblings + Head Node Array under Parents (Level 3)
+                  const siblingsAndHeadNodes = [
+                    ...sisterNodes,
+                    headCoupleNode,
+                    ...brotherNodes
+                  ]
+
+                  // 6. Uncle & Aunt Couple + Cousins (Level 2 & Level 3)
+                  const cousinNodes = cousins.map(c => (
+                    renderTreeNode({
+                      member1: c,
+                      label1: 'Cousin'
+                    })
+                  ))
+
+                  const uncleAuntNodes = []
+                  const maxUncles = Math.max(uncles.length, aunts.length)
+                  for (let i = 0; i < maxUncles; i++) {
+                    const u = uncles[i]
+                    const a = aunts[i]
+                    const attachCousins = i === 0 && cousinNodes.length > 0 ? cousinNodes : []
+                    if (u && a) {
+                      uncleAuntNodes.push(
+                        renderTreeNode({
+                          member1: u,
+                          member2: a,
+                          label1: 'Uncle',
+                          label2: 'Aunt',
+                          spouseBadge: 'Married',
+                          children: attachCousins,
+                          childrenBadge: attachCousins.length > 0 ? 'Children' : null
+                        })
+                      )
+                    } else if (u) {
+                      uncleAuntNodes.push(
+                        renderTreeNode({
+                          member1: u,
+                          label1: 'Uncle',
+                          children: attachCousins,
+                          childrenBadge: attachCousins.length > 0 ? 'Children' : null
+                        })
+                      )
+                    } else if (a) {
+                      uncleAuntNodes.push(
+                        renderTreeNode({
+                          member1: a,
+                          label1: 'Aunt',
+                          children: attachCousins,
+                          childrenBadge: attachCousins.length > 0 ? 'Children' : null
+                        })
+                      )
+                    }
+                  }
+                  if (uncleAuntNodes.length === 0 && cousinNodes.length > 0) {
+                    uncleAuntNodes.push(...cousinNodes)
+                  }
+
+                  // 7. Parents Generation Tree (Father + Mother) (Level 2)
+                  const hasParents = Boolean(father || mother)
+                  const parentsNode = hasParents
+                    ? renderTreeNode({
+                        member1: father || mother,
+                        member2: father && mother ? mother : null,
+                        label1: father ? 'Father' : 'Mother',
+                        label2: father && mother ? 'Mother' : null,
+                        spouseBadge: 'Married',
+                        children: siblingsAndHeadNodes
+                      })
+                    : null
+
+                  // 8. Grandparents Generation Tree (Level 1)
+                  const hasGrandparents = Boolean(grandfather || grandmother)
+                  
+                  const grandparentsChildrenNodes = [
+                    parentsNode || (hasGrandparents ? siblingsAndHeadNodes : null),
+                    ...uncleAuntNodes
+                  ].flat().filter(Boolean)
+
+                  const fullTree = hasGrandparents ? (
+                    renderTreeNode({
+                      member1: grandfather || grandmother,
+                      member2: grandfather && grandmother ? grandmother : null,
+                      label1: grandfather ? 'Grandfather' : 'Grandmother',
+                      label2: grandfather && grandmother ? 'Grandmother' : null,
+                      spouseBadge: 'Married',
+                      children: grandparentsChildrenNodes
+                    })
+                  ) : hasParents ? (
+                    uncleAuntNodes.length > 0 ? (
+                      <div className="flex items-start justify-center relative">
+                        {[parentsNode, ...uncleAuntNodes].filter(Boolean).map((node, idx, arr) => (
+                          <div key={idx} className="relative flex flex-col items-center px-4 sm:px-8">
+                            {arr.length > 1 && (
+                              <div
+                                className="absolute top-0 h-[2.5px] bg-[#3B5998]"
+                                style={{
+                                  left: idx === 0 ? '50%' : '0%',
+                                  right: idx === arr.length - 1 ? '50%' : '0%'
+                                }}
+                              />
+                            )}
+                            <div className="flex flex-col items-center">
+                              <div className="w-[2.5px] h-6 bg-[#3B5998]" />
+                              <div className="w-0 h-0 border-l-[4.5px] border-l-transparent border-r-[4.5px] border-r-transparent border-t-[6px] border-t-[#3B5998] -mt-[0.5px]" />
+                            </div>
+                            {node}
+                          </div>
+                        ))}
+                      </div>
+                    ) : parentsNode
+                  ) : uncleAuntNodes.length > 0 ? (
+                    <div className="flex items-start justify-center relative">
+                      {[headCoupleNode, ...sisterNodes, ...brotherNodes, ...uncleAuntNodes].filter(Boolean).map((node, idx, arr) => (
+                        <div key={idx} className="relative flex flex-col items-center px-4 sm:px-8">
+                          {arr.length > 1 && (
+                            <div
+                              className="absolute top-0 h-[2.5px] bg-[#3B5998]"
+                              style={{
+                                left: idx === 0 ? '50%' : '0%',
+                                right: idx === arr.length - 1 ? '50%' : '0%'
+                              }}
+                            />
+                          )}
+                          <div className="flex flex-col items-center">
+                            <div className="w-[2.5px] h-6 bg-[#3B5998]" />
+                            <div className="w-0 h-0 border-l-[4.5px] border-l-transparent border-r-[4.5px] border-r-transparent border-t-[6px] border-t-[#3B5998] -mt-[0.5px]" />
+                          </div>
+                          {node}
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  ) : (
+                    (brothers.length > 0 || sisters.length > 0)
+                      ? (
+                        <div className="flex items-start justify-center relative">
+                          {siblingsAndHeadNodes.filter(Boolean).map((node, idx, arr) => (
+                            <div key={idx} className="relative flex flex-col items-center px-4 sm:px-8">
+                              {arr.length > 1 && (
+                                <div
+                                  className="absolute top-0 h-[2.5px] bg-[#3B5998]"
+                                  style={{
+                                    left: idx === 0 ? '50%' : '0%',
+                                    right: idx === arr.length - 1 ? '50%' : '0%'
+                                  }}
+                                />
+                              )}
+                              <div className="flex flex-col items-center">
+                                <div className="w-[2.5px] h-6 bg-[#3B5998]" />
+                                <div className="w-0 h-0 border-l-[4.5px] border-l-transparent border-r-[4.5px] border-r-transparent border-t-[6px] border-t-[#3B5998] -mt-[0.5px]" />
+                              </div>
+                              {node}
+                            </div>
+                          ))}
+                        </div>
+                      )
+                      : headCoupleNode
+                  )
+
+                  const handleTreeMouseDown = (e) => {
+                    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('.group\\/photo')) return
+                    if (e.button !== 0) return
+                    e.preventDefault()
+                    setIsTreeDragging(true)
+                    treeDragStartRef.current = {
+                      x: e.clientX,
+                      y: e.clientY,
+                      startPanX: treePan.x,
+                      startPanY: treePan.y
+                    }
+                  }
+
+                  const handleTreeMouseMove = (e) => {
+                    if (!isTreeDragging) return
+                    e.preventDefault()
+                    const deltaX = e.clientX - treeDragStartRef.current.x
+                    const deltaY = e.clientY - treeDragStartRef.current.y
+                    setTreePan({
+                      x: treeDragStartRef.current.startPanX + deltaX,
+                      y: treeDragStartRef.current.startPanY + deltaY
+                    })
+                  }
+
+                  const handleTreeMouseUp = () => {
+                    if (isTreeDragging) {
+                      setIsTreeDragging(false)
+                    }
+                  }
+
+                  const handleTreeTouchStart = (e) => {
+                    if (e.touches.length === 1) {
+                      const t = e.touches[0]
+                      setIsTreeDragging(true)
+                      treeDragStartRef.current = {
+                        x: t.clientX,
+                        y: t.clientY,
+                        startPanX: treePan.x,
+                        startPanY: treePan.y
+                      }
+                    }
+                  }
+
+                  const handleTreeTouchMove = (e) => {
+                    if (!isTreeDragging || e.touches.length !== 1) return
+                    const t = e.touches[0]
+                    const deltaX = t.clientX - treeDragStartRef.current.x
+                    const deltaY = t.clientY - treeDragStartRef.current.y
+                    setTreePan({
+                      x: treeDragStartRef.current.startPanX + deltaX,
+                      y: treeDragStartRef.current.startPanY + deltaY
+                    })
+                  }
+
+                  return (
+                    <div 
+                      className={`bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-8 overflow-hidden min-h-[500px] max-h-[75vh] flex flex-col items-center justify-start relative select-none ${
+                        isTreeDragging ? 'cursor-grabbing' : 'cursor-grab'
+                      }`}
+                      style={{
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none'
+                      }}
+                      onMouseDown={handleTreeMouseDown}
+                      onMouseMove={handleTreeMouseMove}
+                      onMouseUp={handleTreeMouseUp}
+                      onMouseLeave={handleTreeMouseUp}
+                      onTouchStart={handleTreeTouchStart}
+                      onTouchMove={handleTreeTouchMove}
+                      onTouchEnd={handleTreeMouseUp}
+                    >
+                      {/* Main Dynamic Tree with Zoom & Pan Transform */}
+                      <div 
+                        className="min-w-max py-4 flex flex-col items-center origin-top pointer-events-auto"
+                        style={{ 
+                          transform: `translate(${treePan.x}px, ${treePan.y}px) scale(${treeZoom})`,
+                          transition: isTreeDragging ? 'none' : 'transform 150ms cubic-bezier(0.2, 0, 0, 1)'
+                        }}
+                      >
+                        {fullTree}
+                      </div>
+
+                      {/* Extra / Unlinked Members (if any) */}
+                      {extraMembers.length > 0 && (
+                        <div 
+                          className="mt-8 pt-6 border-t border-border/70 w-full flex flex-col items-center origin-top pointer-events-auto"
+                          style={{ 
+                            transform: `translate(${treePan.x}px, ${treePan.y}px) scale(${treeZoom})`,
+                            transition: isTreeDragging ? 'none' : 'transform 150ms cubic-bezier(0.2, 0, 0, 1)'
+                          }}
+                        >
+                          <span className="text-[11px] font-bold text-text-secondary bg-surface-secondary px-3.5 py-1 rounded-full border border-border mb-4">
+                            Other Relatives ({extraMembers.length})
+                          </span>
+                          <div className="flex flex-wrap items-center justify-center gap-4">
+                            {extraMembers.map(m => (
+                              <EdrawCard key={m.id || m._id} member={m} roleLabel={m.relation} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {/* TAB 2: COMPLETE FAMILY MEMBERS LIST (FULL TABLE) */}
+            {viewTab === 'details' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold">
+                      <UsersIcon className="w-3.5 h-3.5" />
+                    </div>
+                    <h4 className="text-sm font-bold text-text uppercase tracking-wide">
+                      Complete Family List ({(() => {
+                        const list = [
+                          ...(familyMembers.some(m => m.relation === 'Self' || m.familyHead) ? [] : (viewingUser ? [viewingUser] : [])),
+                          ...familyMembers
+                        ]
+                        const uniqueList = []
+                        const seen = new Set()
+                        list.forEach(m => {
+                          const id = String(m.id || m._id)
+                          if (id && !seen.has(id)) {
+                            seen.add(id)
+                            uniqueList.push(m)
+                          }
+                        })
+                        return uniqueList.length
+                      })()})
+                    </h4>
+                  </div>
                 </div>
-              ) : (
-                <div className="py-8 text-center text-text-secondary bg-surface-secondary rounded-xl border border-border">
-                  No members found under this head.
-                </div>
-              )}
-            </div>
+
+                {membersLoading ? (
+                  <div className="py-12 text-center text-text-secondary animate-pulse text-sm">
+                    Loading family members...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto bg-card border border-border rounded-2xl shadow-xs">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface-secondary/70 text-text-secondary text-[11px] uppercase tracking-wider font-bold border-b border-border">
+                          <th className="p-3.5 text-center w-12">#</th>
+                          <th className="p-3.5">Member Name</th>
+                          <th className="p-3.5">Relationship</th>
+                          <th className="p-3.5">Gender</th>
+                          <th className="p-3.5">Mobile Number</th>
+                          <th className="p-3.5 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {(() => {
+                          const list = [
+                            ...(familyMembers.some(m => m.relation === 'Self' || m.familyHead) ? [] : (viewingUser ? [viewingUser] : [])),
+                            ...familyMembers
+                          ]
+                          const uniqueList = []
+                          const seen = new Set()
+                          list.forEach(m => {
+                            const id = String(m.id || m._id)
+                            if (id && !seen.has(id)) {
+                              seen.add(id)
+                              uniqueList.push(m)
+                            }
+                          })
+
+                          // Sort so Head is on top
+                          uniqueList.sort((a, b) => {
+                            const aIsHead = a.relation === 'Self' || a.familyHead
+                            const bIsHead = b.relation === 'Self' || b.familyHead
+                            if (aIsHead && !bIsHead) return -1
+                            if (!aIsHead && bIsHead) return 1
+                            return 0
+                          })
+
+                          return uniqueList.map((member, idx) => {
+                            const isCurrentViewing = viewingUser && (
+                              String(member.id || member._id) === String(viewingUser.id || viewingUser._id) ||
+                              (viewingUser.member_id && member.member_id && String(viewingUser.member_id) === String(member.member_id)) ||
+                              (viewingUser.name && viewingUser.name.toLowerCase() === (member.name || '').toLowerCase())
+                            )
+
+                            const isHeadMember = member.relation === 'Self' || member.familyHead
+
+                            return (
+                              <tr 
+                                key={member.id || member._id || idx} 
+                                className={`transition-all text-sm ${
+                                  isCurrentViewing 
+                                    ? 'bg-primary/10 border-l-4 border-l-primary font-semibold' 
+                                    : 'hover:bg-surface-secondary/40'
+                                }`}
+                              >
+                                <td className="p-3.5 text-xs text-text-secondary font-mono text-center">{idx + 1}</td>
+                                <td className="p-3.5 font-medium text-text">
+                                  <div className="flex items-center gap-3">
+                                    <div 
+                                      onClick={(e) => {
+                                        const imgSrc = member.image || member.profile_image ? assetUrl(member.image || member.profile_image) : ''
+                                        if (imgSrc) {
+                                          e.stopPropagation();
+                                          setImagePreview({ url: imgSrc, title: `${member.name || 'Member'} (${member.relation || 'Member'})` });
+                                        }
+                                      }}
+                                      style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', maxWidth: '32px', maxHeight: '32px' }}
+                                      className={`w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0 overflow-hidden shadow-xs ${member.image || member.profile_image ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all' : ''}`}
+                                      title={member.image || member.profile_image ? "Click to view photo (Zoom/Pan)" : ""}
+                                    >
+                                      {member.image || member.profile_image ? (
+                                        <img src={assetUrl(member.image || member.profile_image)} alt={member.name} className="w-full h-full object-cover block" />
+                                      ) : (
+                                        (member.name || 'M').charAt(0).toUpperCase()
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="capitalize font-semibold text-text">
+                                        {member.name || [member.first_name, member.middle_name, member.last_name].filter(Boolean).join(' ')}
+                                      </span>
+                                      {isCurrentViewing && (
+                                        <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold shadow-xs">
+                                          Viewing
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-3.5 text-text-secondary capitalize">
+                                  {isHeadMember ? (
+                                    <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold">
+                                      Head (Self)
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-md bg-surface-secondary text-text border border-border/60 text-xs font-medium">
+                                      {member.relation === 'Spouse' ? 'Wife' : member.relation}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-3.5 text-text-secondary">{member.gender || '-'}</td>
+                                <td className="p-3.5 text-text-secondary font-mono text-xs">{member.number || member.phone || '-'}</td>
+                                <td className="p-3.5 text-center">
+                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${Number(member.status ?? 1) === 1 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-surface-secondary text-text-secondary'}`}>
+                                    {Number(member.status ?? 1) === 1 ? 'Active' : 'Inactive'}
+                                  </span>
+                                </td>
+                              </tr>
+                            )
+                          })
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </Modal>
+
+      {/* Interactive Isolated Image Preview Popup with Zoom & Pan */}
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title || 'Member Photo'}
+        onClose={() => setImagePreview(null)}
+      />
     </div>
   )
 }

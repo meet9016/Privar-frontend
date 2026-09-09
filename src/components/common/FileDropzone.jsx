@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { UploadCloud, X, FileText, Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
+import ImagePreviewModal from './ImagePreviewModal';
 
 export default function FileDropzone({
   onFilesSelected,
@@ -175,40 +176,12 @@ export default function FileDropzone({
       </div>
       {error && <p className="text-red-500 text-xs mt-1 font-semibold">{error}</p>}
 
-      {fullscreenImage && ReactDOM.createPortal(
-        <div 
-          className="fixed inset-0 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
-          style={{ zIndex: 999999 }}
-          onClick={() => setFullscreenImage(null)}
-        >
-          <div 
-            className="relative max-w-4xl w-full max-h-[90vh] bg-surface rounded-2xl border border-border shadow-2xl p-4 flex flex-col items-center animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-full flex items-center justify-between pb-2 mb-3 border-b border-border">
-              <span className="text-sm font-semibold text-text">Image Preview</span>
-              <button
-                type="button"
-                onClick={() => setFullscreenImage(null)}
-                className="p-1.5 rounded-lg text-text-secondary hover:text-text hover:bg-surface-secondary transition-colors cursor-pointer"
-                title="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex items-center justify-center overflow-auto rounded-xl w-full max-h-[75vh]">
-              <img
-                src={fullscreenImage}
-                alt="Preview"
-                draggable={false}
-                onContextMenu={(e) => e.preventDefault()}
-                className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-sm select-none"
-              />
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <ImagePreviewModal
+        isOpen={Boolean(fullscreenImage)}
+        imageUrl={fullscreenImage}
+        title="Image Preview"
+        onClose={() => setFullscreenImage(null)}
+      />
     </div>
   );
 }
