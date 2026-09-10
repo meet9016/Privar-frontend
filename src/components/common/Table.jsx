@@ -132,7 +132,7 @@ export default function Table({
   loading = false,
   showSkeleton = false,
   className = '',
-  maxHeightClass = 'max-h-[600px]',
+  maxHeightClass = 'max-h-[calc(100vh-250px)]',
   stickyHeader = true,
   rowClassName,
   // Checkbox selection & Bulk Actions (Default false as requested)
