@@ -1208,7 +1208,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                       </div>
 
                       {/* Row 1: First Name, Middle Name, Last Name, Relationship (4 inputs) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-start">
                         <Input
                           label="First Name"
                           placeholder="First Name"
@@ -1261,8 +1261,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                         </div>
                       </div>
 
-                      {/* Row 2: Gender, DOB, Anniversary, Blood Group, Mobile (5 inputs in grid) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+                      {/* Row 2: Gender, Date of Birth, Anniversary Date, Blood Group, Mobile Number (Balanced 5 columns or clean 2+3 layout) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 items-start">
                         <Select
                           label="Gender"
                           value={editingMember.gender || 'Male'}
@@ -1292,16 +1292,18 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           disabled={isLoading}
                           searchable={true}
                         />
-                        <Input
-                          label="Mobile Number (Optional)"
-                          type="tel"
-                          maxLength={10}
-                          placeholder="10 digit number"
-                          value={editingMember.number || ''}
-                          onChange={(e) => handleEditingMemberChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                          disabled={isLoading}
-                          error={numErr}
-                        />
+                        <div className="col-span-1 sm:col-span-2 md:col-span-4 lg:col-span-1">
+                          <Input
+                            label="Mobile Number (Optional)"
+                            type="tel"
+                            maxLength={10}
+                            placeholder="10 digit number"
+                            value={editingMember.number || ''}
+                            onChange={(e) => handleEditingMemberChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                            disabled={isLoading}
+                            error={numErr}
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
