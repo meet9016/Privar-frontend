@@ -184,7 +184,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             required
             placeholder="Enter Last Name"
             value={formData.last_name}
-            onChange={(e) => handleFieldChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+            onChange={(e) => handleFieldChange('last_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
             disabled={isLoading}
             error={errors.last_name}
           />

@@ -28,7 +28,8 @@ export const MEMBER_ENDPOINTS = {
   MASTERS_COUNTRY: '/masters/country',
   MASTERS_STATE: '/masters/state',
   MASTERS_CITY: '/masters/city',
-  MASTERS_VILLAGE: '/masters/village'
+  MASTERS_VILLAGE: '/masters/village',
+  MASTERS_RELATIONSHIP: '/masters/relationship'
 }
 
 // Gallery Module API Endpoints
@@ -143,6 +144,7 @@ export const MASTER_ENDPOINTS = {
   EVENT_CATEGORY: '/masters/event-category',
   GALLERY_CATEGORY: '/masters/gallery-category',
   EXPENSE_CATEGORY: '/masters/expense-category',
+  RELATIONSHIP: '/masters/relationship',
   GET_MASTER: (type) => type === 'bank-details' ? '/bank-details' : `/masters/${type}`
 }
 

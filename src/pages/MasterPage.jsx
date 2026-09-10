@@ -35,7 +35,12 @@ export default function MasterPage({ type, headerLeftContent }) {
 
   const fields = useMemo(() => [
     ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*', className: 'sm:col-span-2' }] : []),
-    { name: 'name', label: `${label} Name`, required: true },
+    { name: 'name', label: `${label} Name (English)`, required: true, placeholder: type === 'relationship' ? 'e.g. Son-in-law, Sister' : `${label} Name` },
+    ...(type === 'relationship' ? [
+      { name: 'gujarati_name', label: 'Gujarati Name (ગુજરાતી નામ)', required: false, placeholder: 'દા.ત. જમાઈ, બહેન', transliterate: 'gu' },
+      { name: 'hindi_name', label: 'Hindi Name (हिंदी नाम - Optional)', required: false, placeholder: 'દા.ત. दामाद, बहन', transliterate: 'hi' },
+      { name: 'description', label: 'Relationship Meaning / Details (સમજૂતી)', type: 'textarea', required: false, placeholder: 'દા.ત. દીકરીના પતિ, પિતાની બહેન...', transliterate: 'gu' }
+    ] : []),
     ...(parentConfig ? [{ 
       name: 'parent_id', 
       label: parentConfig.label,
@@ -48,7 +53,12 @@ export default function MasterPage({ type, headerLeftContent }) {
 
   const columns = useMemo(() => [
     ...(type === 'business' ? [{ key: 'image', label: 'Image', type: 'image' }] : []),
-    { key: 'name', label: 'Name' },
+    { key: 'name', label: type === 'relationship' ? 'Relationship (English)' : 'Name' },
+    ...(type === 'relationship' ? [
+      { key: 'gujarati_name', label: 'Gujarati (ગુજરાતી)', render: (row) => row.gujarati_name ? <span className="font-semibold text-primary">({row.gujarati_name})</span> : '-' },
+      { key: 'hindi_name', label: 'Hindi (हिंदी)', render: (row) => row.hindi_name ? <span className="font-medium text-text-secondary">({row.hindi_name})</span> : '-' },
+      { key: 'description', label: 'Meaning (સમજૂતી)', render: (row) => row.description || '-' }
+    ] : []),
     ...(parentConfig ? [{ key: 'parent_name', label: parentConfig.label, render: (row) => (row.parent_name && !/^[0-9a-fA-F]{24}$/.test(row.parent_name) ? row.parent_name : '-') }] : []),
     { key: 'status', label: 'Status' }
   ], [type, parentConfig])
@@ -91,6 +101,8 @@ export default function MasterPage({ type, headerLeftContent }) {
       hideAdd={!permissions.canAdd && !permissions.isSuperAdmin}
       hideEdit={!permissions.canEdit && !permissions.isSuperAdmin}
       hideDelete={!permissions.canDelete && !permissions.isSuperAdmin}
+      isRowEditable={(row) => type === 'relationship' ? !row.is_default : true}
+      isRowDeletable={(row) => type === 'relationship' ? !row.is_default : true}
     />
   )
 }

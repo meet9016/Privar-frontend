@@ -24,9 +24,8 @@ export const ActivitiesPage = () => {
   const { user } = useContext(AuthContext)
   const tabs = useMemo(() => [
     { id: 'gallery', label: 'Gallery', icon: activityNavigation.find(n => n.to?.includes('gallery'))?.icon, permission: 'gallery.list', component: (props) => <ContentPage type="gallery" {...props} /> },
-    { id: 'birthday', label: 'Birthdays', icon: activityNavigation.find(n => n.to?.includes('birthday'))?.icon, permission: 'birthday.list', component: (props) => <ContentPage type="birthday" {...props} /> },
-    { id: 'job-vacancy', label: 'Job Vacancies', icon: activityNavigation.find(n => n.to?.includes('job-vacancy'))?.icon, permission: 'job-vacancy.list', component: (props) => <ContentPage type="job-vacancy" {...props} /> },
-    { id: 'events', label: 'Events', icon: activityNavigation.find(n => n.to?.includes('events'))?.icon, permission: 'events.list', component: (props) => <Events {...props} /> }
+    { id: 'events', label: 'Events', icon: activityNavigation.find(n => n.to?.includes('events'))?.icon, permission: 'events.list', component: (props) => <Events {...props} /> },
+    { id: 'students', label: 'Students', icon: activityNavigation.find(n => n.to?.includes('students'))?.icon, permission: 'students.list', component: (props) => <Students {...props} /> }
   ].filter(t => hasPermission(user, t.permission)), [user])
 
   return tabs.length > 0 ? <TabbedPage title="Activities" tabs={tabs} storageKey="activities" /> : null
@@ -36,7 +35,7 @@ export const ServicesPage = () => {
   const { user } = useContext(AuthContext)
   const tabs = useMemo(() => [
     { id: 'businesses', label: 'Businesses', icon: servicesNavigation.find(n => n.to?.includes('businesses'))?.icon, permission: 'businesses.list', component: (props) => <Businesses {...props} /> },
-    { id: 'students', label: 'Students', icon: servicesNavigation.find(n => n.to?.includes('students'))?.icon, permission: 'students.list', component: (props) => <Students {...props} /> },
+    { id: 'job-vacancy', label: 'Job Vacancies', icon: servicesNavigation.find(n => n.to?.includes('job-vacancy'))?.icon, permission: 'job-vacancy.list', component: (props) => <ContentPage type="job-vacancy" {...props} /> },
     { id: 'matrimonies', label: 'Matrimonies', icon: servicesNavigation.find(n => n.to?.includes('matrimonies'))?.icon, permission: 'matrimonies.list', component: (props) => <ContentPage type="matrimonies" {...props} /> }
   ].filter(t => hasPermission(user, t.permission)), [user])
 
@@ -48,6 +47,7 @@ export const MediaPage = () => {
   const tabs = useMemo(() => [
     { id: 'posts', label: 'Posts', icon: mediaNavigation.find(n => n.to?.includes('posts'))?.icon, permission: 'posts.list', component: (props) => <Posts {...props} /> },
     { id: 'news', label: 'News', icon: mediaNavigation.find(n => n.to?.includes('news'))?.icon, permission: 'news.list', component: (props) => <News {...props} /> },
+    { id: 'birthday', label: 'Birthdays', icon: mediaNavigation.find(n => n.to?.includes('birthday'))?.icon, permission: 'birthday.list', component: (props) => <ContentPage type="birthday" {...props} /> },
     { id: 'feedback', label: 'Feedback', icon: mediaNavigation.find(n => n.to?.includes('feedback'))?.icon, permission: 'feedback.list', component: (props) => <ContentPage type="feedback" {...props} /> }
   ].filter(t => hasPermission(user, t.permission)), [user])
 
@@ -61,7 +61,7 @@ export const EngagementsPage = () => {
     { id: 'donations', label: 'Donations', icon: engagementNavigation.find(n => n.to?.includes('donations'))?.icon, permission: 'donations.list', component: (props) => <Donations {...props} /> }
   ].filter(t => hasPermission(user, t.permission)), [user])
 
-  return tabs.length > 0 ? <TabbedPage title="Engagements" tabs={tabs} storageKey="engagements" /> : null
+  return tabs.length > 0 ? <TabbedPage title="Engagements & Donations" tabs={tabs} storageKey="engagements" /> : null
 }
 
 export const MastersPage = () => {

@@ -17,9 +17,10 @@ import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
+import { transliterateText } from '../utils/transliterate'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ 
@@ -516,19 +517,42 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
-                {!hideEdit && (
-                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!hideDelete && (
-                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            )
+            render: row => {
+              const canEditRow = isRowEditable ? isRowEditable(row) : true
+              const canDeleteRow = isRowDeletable ? isRowDeletable(row) : true
+              return (
+                <div className="flex items-center justify-start gap-2">
+                  {!hideEdit && (
+                    <button
+                      onClick={() => canEditRow && openEdit(row)}
+                      disabled={!canEditRow}
+                      className={`p-2 rounded-xl transition-all border ${
+                        canEditRow
+                          ? 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20 cursor-pointer'
+                          : 'text-text-secondary/40 bg-surface-secondary/40 border-border/40 cursor-not-allowed opacity-50'
+                      }`}
+                      title={canEditRow ? 'Edit' : 'System default item cannot be edited'}
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {!hideDelete && (
+                    <button
+                      onClick={() => canDeleteRow && handleDelete(row)}
+                      disabled={!canDeleteRow}
+                      className={`p-2 rounded-xl transition-all border ${
+                        canDeleteRow
+                          ? 'text-error-text bg-error-bg hover:bg-error/20 border-error-border cursor-pointer'
+                          : 'text-text-secondary/40 bg-surface-secondary/40 border-border/40 cursor-not-allowed opacity-50'
+                      }`}
+                      title={canDeleteRow ? 'Delete' : 'System default item cannot be deleted'}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )
+            }
           }])
         ]}
         data={rows}
@@ -577,6 +601,18 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                         setFormData({ ...formData, [field.name]: e.target.value })
                         if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
                       }} 
+                      onBlur={async (e) => {
+                        if (field.transliterate && e.target.value && /[a-zA-Z]/.test(e.target.value)) {
+                          try {
+                            const converted = await transliterateText(e.target.value, field.transliterate)
+                            if (converted && converted !== e.target.value) {
+                              setFormData(prev => ({ ...prev, [field.name]: converted }))
+                            }
+                          } catch (err) {
+                            console.error('Transliteration failed:', err)
+                          }
+                        }
+                      }}
                       className={`${fieldClass} ${fieldErrors[field.name] ? 'border-red-500' : ''}`} 
                       disabled={saving || field.disabled} 
                     />
@@ -743,35 +779,34 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                       const nameLower = field.name.toLowerCase()
 
                       if (fieldType === 'email') {
-                        // Keep email characters
+                        // Keep email as is
                       } else if (nameLower === 'ifsc_code' || nameLower.includes('gst')) {
                         val = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15)
-                      } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower.includes('contact') || nameLower.includes('number')) {
+                      } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower.includes('contact')) {
                         val = val.replace(/\D/g, '').slice(0, 10)
                       } else if (nameLower.includes('account_number') || nameLower.includes('pincode') || nameLower.includes('zip')) {
                         val = val.replace(/\D/g, '').slice(0, 20)
                       } else if (nameLower.includes('salary') || nameLower.includes('amount') || nameLower.includes('percentage') || nameLower.includes('height') || nameLower.includes('weight')) {
                         val = val.replace(/[^0-9.]/g, '')
-                      } else {
-                        // For name, country, state, city, village, taluka, district, title, full_name, etc. -> Alphabets & spaces ONLY!
-                        if (nameLower.includes('name') || nameLower.includes('title') || nameLower.includes('country') || nameLower.includes('state') || nameLower.includes('city') || nameLower.includes('district') || nameLower.includes('taluka') || nameLower.includes('village') || nameLower.includes('gotra') || nameLower.includes('occupation') || nameLower.includes('complexion') || nameLower.includes('education')) {
-                          if (title && title.toLowerCase().includes('blood group')) {
-                            val = val.replace(/[^a-zA-Z\s+-]/g, '')
-                          } else if (nameLower.includes('title')) {
-                            val = val.replace(/[^a-zA-Z0-9\s.,/#+-]/g, '')
-                          } else {
-                            val = val.replace(/[^a-zA-Z\s]/g, '')
-                          }
-                          
-                          if (nameLower.includes('full_name') || nameLower === 'name') {
-                            val = val.slice(0, 30)
-                          }
-                        }
+                      } else if (title && title.toLowerCase().includes('blood group')) {
+                        val = val.replace(/[^a-zA-Z\s+-]/g, '')
                       }
 
                       setFormData({ ...formData, [field.name]: val })
                       if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
                     }} 
+                    onBlur={async (e) => {
+                      if (field.transliterate && e.target.value && /[a-zA-Z]/.test(e.target.value)) {
+                        try {
+                          const converted = await transliterateText(e.target.value, field.transliterate)
+                          if (converted && converted !== e.target.value) {
+                            setFormData(prev => ({ ...prev, [field.name]: converted }))
+                          }
+                        } catch (err) {
+                          console.error('Transliteration failed:', err)
+                        }
+                      }
+                    }}
                     disabled={saving || field.disabled} 
                     error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />

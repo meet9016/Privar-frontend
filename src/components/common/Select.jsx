@@ -174,12 +174,20 @@ export default function Select({
               filteredOptions.map((option) => (
                 <div 
                   key={option.value}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors ${
+                  title={option.description || option.title || option.meaning || ''}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors flex flex-col justify-center ${
                     String(value) === String(option.value) ? 'bg-primary/5 text-primary font-semibold' : 'text-text'
                   }`}
                   onClick={() => handleSelect(option.value)}
                 >
-                  {option.label}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{option.label}</span>
+                  </div>
+                  {(option.description || option.meaning) && (
+                    <span className="text-[11px] text-text-secondary/80 font-normal truncate mt-0.5">
+                      {option.description || option.meaning}
+                    </span>
+                  )}
                 </div>
               ))
             ) : (

@@ -9,7 +9,7 @@ import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
 import { hasPermission } from '../lib/permissions'
 import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
-import UserForm from '../components/UserForm'
+import UserForm, { getRelationDisplay } from '../components/UserForm'
 import Select from '../components/common/Select'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
@@ -20,12 +20,14 @@ import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
 import ImagePreviewModal from '../components/common/ImagePreviewModal'
+import RelationshipGuideModal from '../components/common/RelationshipGuideModal'
 
 export default function Users() {
   const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('members')
   const [users, setUsers] = useState([])
   const [previewImage, setImagePreview] = useState(null)
+  const [guideRelation, setGuideRelation] = useState(null)
   const [limit, setLimit] = useState(15)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 15 })
   const [loading, setLoading] = useState(false)
@@ -669,7 +671,7 @@ export default function Users() {
                     <span className="font-semibold text-text capitalize">{user.name}</span>
                     {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium shrink-0">
-                        <span>Family Head</span>
+                        <span>Family Head (મુખ્ય)</span>
                         <span 
                           className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold shrink-0 select-none"
                           style={{ lineHeight: 0 }}
@@ -678,8 +680,15 @@ export default function Users() {
                         </span>
                       </span>
                     ) : (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary text-text-secondary border border-border/60 capitalize font-medium shrink-0">
-                        {user.relation === 'Spouse' ? 'Wife' : user.relation}
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setGuideRelation(user.relation === 'Spouse' ? 'Wife' : user.relation)
+                        }}
+                        className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-text-secondary border border-border/60 font-medium shrink-0 transition-colors cursor-pointer"
+                        title="Click to view relation explanation (સંબંધ સમજૂતી)"
+                      >
+                        {getRelationDisplay(user.relation === 'Spouse' ? 'Wife' : user.relation)}
                       </span>
                     )}
                   </div>
@@ -962,10 +971,11 @@ export default function Users() {
                   const EdrawCard = ({ member, roleLabel, isHead = false }) => {
                     if (!member) return null
                     const fullName = member.name || [member.first_name, member.middle_name, member.last_name].filter(Boolean).join(' ') || roleLabel
-                    let displayRole = isHead ? 'Head (Self)' : (roleLabel || member.relation || 'Member')
-                    if (displayRole && displayRole.toLowerCase() === 'spouse') {
-                      displayRole = member.gender === 'Male' ? 'Husband' : 'Wife'
+                    let rawRole = isHead ? 'Head' : (roleLabel || member.relation || 'Member')
+                    if (rawRole && rawRole.toLowerCase() === 'spouse') {
+                      rawRole = member.gender === 'Male' ? 'Husband' : 'Wife'
                     }
+                    let displayRole = isHead ? 'Head (મુખ્ય)' : getRelationDisplay(rawRole)
                     const imageSrc = member.image || member.profile_image ? assetUrl(member.image || member.profile_image) : ''
 
                     const isFocused = Boolean(
@@ -1638,11 +1648,11 @@ export default function Users() {
                                 <td className="p-3.5 text-text-secondary capitalize">
                                   {isHeadMember ? (
                                     <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold">
-                                      Head (Self)
+                                      Family Head (મુખ્ય)
                                     </span>
                                   ) : (
                                     <span className="px-2 py-0.5 rounded-md bg-surface-secondary text-text border border-border/60 text-xs font-medium">
-                                      {member.relation === 'Spouse' ? 'Wife' : member.relation}
+                                      {getRelationDisplay(member.relation === 'Spouse' ? 'Wife' : member.relation)}
                                     </span>
                                   )}
                                 </td>
@@ -1673,6 +1683,13 @@ export default function Users() {
         imageUrl={previewImage?.url}
         title={previewImage?.title || 'Member Photo'}
         onClose={() => setImagePreview(null)}
+      />
+
+      {/* Relationship Guide Modal */}
+      <RelationshipGuideModal
+        isOpen={Boolean(guideRelation)}
+        onClose={() => setGuideRelation(null)}
+        selectedRelation={guideRelation}
       />
     </div>
   )

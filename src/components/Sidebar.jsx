@@ -187,7 +187,7 @@ export default function Sidebar() {
 
         {visibleEngagementNavigation.length > 0 && (
           <div className="space-y-1">
-            <LinkItem to="/admin/engagements" label="Engagements" icon={Activity} />
+            <LinkItem to="/admin/engagements" label="Engagements & Donations" icon={Activity} />
           </div>
         )}
 

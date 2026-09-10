@@ -305,12 +305,12 @@ export default function Table({
                 return (
                   <tr
                     key={row[keyField] || i}
-                    className={`hover:bg-surface-secondary/80 even:bg-slate-50 text-[13px] font-medium text-text transition-colors ${isSelected ? 'bg-primary/10' : ''} ${rowClassName ? rowClassName(row, i) : ''}`}
+                    className={`hover:bg-surface-secondary/80 even:bg-slate-50/70 text-sm font-medium text-text transition-colors ${isSelected ? 'bg-primary/10' : ''} ${rowClassName ? rowClassName(row, i) : ''}`}
                   >
                     {finalColumns.map((col, idx) => {
                       const isFirst = idx === 0;
                       const isLast = idx === finalColumns.length - 1;
-                      const paddingClass = isFirst ? 'pl-6 pr-4 py-1.5' : isLast ? 'pl-4 pr-6 py-1.5' : 'px-4 py-1.5';
+                      const paddingClass = isFirst ? 'pl-6 pr-4 py-3' : isLast ? 'pl-4 pr-6 py-3' : 'px-4 py-3';
                       return (
                         <td key={col.key || idx} className={`${paddingClass} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''} ${col.className || ''}`}>
                           {col.render ? col.render(row, i) : row[col.key]}

@@ -25,20 +25,20 @@ export const coreNavigation = [
 
 export const activityNavigation = [
   { to: '/admin/gallery', label: 'Gallery', icon: Image, title: 'Gallery', permission: 'gallery.list' },
-  { to: '/admin/birthday', label: 'Birthdays', icon: CalendarDays, title: 'Member Birthdays', permission: 'birthday.list' },
-  { to: '/admin/job-vacancy', label: 'Job Vacancies', icon: Briefcase, title: 'Job Vacancies', permission: 'job-vacancy.list' },
   { to: '/admin/events', label: 'Events', icon: CalendarDays, title: 'Events', permission: 'events.list' },
+  { to: '/admin/students', label: 'Students', icon: GraduationCap, title: 'Student Directory', permission: 'students.list' },
 ]
 
 export const servicesNavigation = [
   { to: '/admin/businesses', label: 'Businesses', icon: Briefcase, title: 'Business Index', permission: 'businesses.list' },
-  { to: '/admin/students', label: 'Students', icon: GraduationCap, title: 'Students', permission: 'students.list' },
+  { to: '/admin/job-vacancy', label: 'Job Vacancies', icon: Briefcase, title: 'Job Vacancies', permission: 'job-vacancy.list' },
   { to: '/admin/matrimonies', label: 'Matrimonies', icon: Users, title: 'Matrimony Profiles', permission: 'matrimonies.list' },
 ]
 
 export const mediaNavigation = [
   { to: '/admin/posts', label: 'Posts', icon: FileText, title: 'Post Moderator', permission: 'posts.list' },
   { to: '/admin/news', label: 'News', icon: FileText, title: 'News Moderator', permission: 'news.list' },
+  { to: '/admin/birthday', label: 'Birthdays', icon: CalendarDays, title: 'Member Birthdays', permission: 'birthday.list' },
   { to: '/admin/feedback', label: 'Feedback', icon: FileText, title: 'Feedback', permission: 'feedback.list' },
 ]
 
@@ -50,6 +50,7 @@ export const engagementNavigation = [
 export const masterNavigation = [
   { type: 'business', label: 'Business', permission: 'masters.list' },
   { type: 'bank-details', label: 'Bank Details', permission: 'masters.list', to: '/admin/bank-details' },
+  { type: 'relationship', label: 'Relationship', permission: 'masters.list' },
   { type: 'country', label: 'Country', permission: 'masters.list' },
   { type: 'state', label: 'State', permission: 'masters.list' },
   { type: 'city', label: 'City', permission: 'masters.list' },

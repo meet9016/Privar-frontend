@@ -9,9 +9,11 @@ import Switch from './common/Switch'
 import Button from './common/Button'
 import DatePicker from './DatePicker'
 import { isValidEmail } from '../lib/validation'
-import { Users as UsersIcon, Plus, Trash2, User, ChevronDown, ChevronUp, Edit2, Check, Camera, Image as ImageIcon, X, RefreshCw, Eye } from 'lucide-react'
+import { Users as UsersIcon, Plus, Trash2, User, ChevronDown, ChevronUp, Edit2, Check, Camera, Image as ImageIcon, X, RefreshCw, Eye, HelpCircle, Languages, Sparkles } from 'lucide-react'
 import { toast } from '../lib/toast'
 import ImagePreviewModal from './common/ImagePreviewModal'
+import RelationshipGuideModal from './common/RelationshipGuideModal'
+import { transliterateText, isIndicText } from '../utils/transliterate'
 
 function MemberAvatarUpload({ value, onChange, name, disabled, label = "Photo", size = 52 }) {
   const fileInputRef = React.useRef(null)
@@ -99,23 +101,14 @@ function MemberAvatarUpload({ value, onChange, name, disabled, label = "Photo", 
             {uploading ? 'Uploading...' : (value ? 'Change' : 'Upload')}
           </button>
           {value && !uploading && (
-            <>
-              <button
-                type="button"
-                onClick={() => setPreviewModalOpen(true)}
-                className="text-[11px] font-bold text-text-secondary hover:text-primary hover:underline cursor-pointer"
-              >
-                Preview
-              </button>
-              <button
-                type="button"
-                onClick={handleRemove}
-                disabled={disabled}
-                className="text-[11px] font-bold text-error-text hover:underline cursor-pointer"
-              >
-                Remove
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={disabled}
+              className="text-[11px] font-bold text-error-text hover:underline cursor-pointer"
+            >
+              Remove
+            </button>
           )}
         </div>
       </div>
@@ -157,30 +150,137 @@ const RELATION_GENDER_MAP = {
   Other: ''
 }
 
-const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => ({ label: bg, value: bg }))
+export const RELATION_GUJARATI_MAP = {
+  Self: 'પોતે',
+  Head: 'મુખ્ય / પોતે',
+  'Family Head': 'મુખ્ય / પોતે',
+  Wife: 'પત્ની',
+  wife: 'પત્ની',
+  Husband: 'પતિ',
+  husband: 'પતિ',
+  Son: 'પુત્ર',
+  son: 'પુત્ર',
+  Daughter: 'પુત્રી',
+  daughter: 'પુત્રી',
+  Father: 'પિતા',
+  father: 'પિતા',
+  Mother: 'માતા',
+  mother: 'માતા',
+  Brother: 'ભાઈ',
+  brother: 'ભાઈ',
+  Sister: 'બહેન',
+  sister: 'બહેન',
+  Grandfather: 'દાદા',
+  grandfather: 'દાદા',
+  Grandmother: 'દાદી',
+  grandmother: 'દાદી',
+  Uncle: 'કાકા / મામા',
+  uncle: 'કાકા / મામા',
+  Aunt: 'કાકી / મામી / ફોઈ',
+  aunt: 'કાકી / મામી / ફોઈ',
+  'Daughter-in-law': 'પુત્રવધૂ',
+  'daughter-in-law': 'પુત્રવધૂ',
+  'Son-in-law': 'જમાઈ',
+  'son-in-law': 'જમાઈ',
+  Grandson: 'પૌત્ર',
+  grandson: 'પૌત્ર',
+  Granddaughter: 'પૌત્રી',
+  granddaughter: 'પૌત્રી',
+  Cousin: 'પિતરાઈ ભાઈ/બહેન',
+  cousin: 'પિતરાઈ ભાઈ/બહેન',
+  Nephew: 'ભત્રીજો / ભાણો',
+  nephew: 'ભત્રીજો / ભાણો',
+  Niece: 'ભત્રીજી / ભાણી',
+  niece: 'ભત્રીજી / ભાણી',
+  'Father-in-law': 'સસરા',
+  'father-in-law': 'સસરા',
+  'Mother-in-law': 'સાસુ',
+  'mother-in-law': 'સાસુ',
+  'Brother-in-law': 'સાળો / બનેવી',
+  'brother-in-law': 'સાળો / બનેવી',
+  'Sister-in-law': 'સાળી / ભાભી / નણંદ',
+  'sister-in-law': 'સાળી / ભાભી / નણંદ',
+  Bhabhi: 'ભાભી',
+  bhabhi: 'ભાભી',
+  BhabhiJi: 'ભાભી',
+  Kaka: 'કાકા',
+  kaka: 'કાકા',
+  Kaki: 'કાકી',
+  kaki: 'કાકી',
+  Mama: 'મામા',
+  mama: 'મામા',
+  Mami: 'મામી',
+  mami: 'મામી',
+  Masa: 'માસા',
+  masa: 'માસા',
+  Masi: 'માસી',
+  masi: 'માસી',
+  Fua: 'ફુવા',
+  fua: 'ફુવા',
+  Foi: 'ફોઈ',
+  foi: 'ફોઈ',
+  Nanand: 'નણંદ',
+  nanand: 'નણંદ',
+  Derani: 'દેરાણી',
+  derani: 'દેરાણી',
+  Jethani: 'જેઠાણી',
+  jethani: 'જેઠાણી',
+  Jeth: 'જેઠ',
+  jeth: 'જેઠ',
+  Diyor: 'દિયર',
+  diyor: 'દિયર',
+  Salo: 'સાળો',
+  salo: 'સાળો',
+  Sali: 'સાળી',
+  sali: 'સાળી',
+  Banevi: 'બનેવી',
+  banevi: 'બનેવી',
+  Jamai: 'જમાઈ',
+  jamai: 'જમાઈ',
+  Vahu: 'પુત્રવધૂ',
+  vahu: 'પુત્રવધૂ',
+  Spouse: 'પત્ની / પતિ',
+  spouse: 'પત્ની / પતિ',
+  Other: 'અન્ય',
+  other: 'અન્ય'
+}
 
-const RELATION_OPTIONS = [
-  'Wife',
-  'Husband',
-  'Son',
-  'Daughter',
-  'Father',
-  'Mother',
-  'Brother',
-  'Sister',
-  'Grandfather',
-  'Grandmother',
-  'Uncle',
-  'Aunt',
-  'Daughter-in-law',
-  'Son-in-law',
-  'Grandson',
-  'Granddaughter',
-  'Cousin',
-  'Nephew',
-  'Niece',
-  'Other'
-].map(rel => ({ label: rel, value: rel }))
+export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => ({ label: bg, value: bg }))
+
+export const getRelationDisplay = (relation, itemObj = null) => {
+  if (!relation) return ''
+  const cleanRel = relation === 'Spouse' ? 'Wife' : String(relation).trim()
+  if (cleanRel.includes('(') && cleanRel.includes(')')) return cleanRel
+  const guj = itemObj?.gujarati_name || RELATION_GUJARATI_MAP[cleanRel] || RELATION_GUJARATI_MAP[cleanRel.toLowerCase()] || ''
+  return guj ? `${cleanRel} (${guj})` : cleanRel
+}
+
+export const RELATION_OPTIONS = [
+  { name: 'Wife', meaning: 'પરિવારના વડા (Head) ના ધર્મપત્ની' },
+  { name: 'Husband', meaning: 'પરિવારના વડા (Head) ના પતિ / જીવનસાથી' },
+  { name: 'Son', meaning: 'પરિવારના વડાના દીકરા / પુત્ર' },
+  { name: 'Daughter', meaning: 'પરિવારના વડાની દીકરી / પુત્રી' },
+  { name: 'Father', meaning: 'પરિવારના વડાના પિતાશ્રી (બાપુજી/પપ્પા)' },
+  { name: 'Mother', meaning: 'પરિવારના વડાના માતુશ્રી (બા/મમ્મી)' },
+  { name: 'Brother', meaning: 'પરિવારના વડાના સગા ભાઈ' },
+  { name: 'Sister', meaning: 'પરિવારના વડાની સગી બહેન' },
+  { name: 'Grandfather', meaning: 'પિતાના પિતા (દાદા) અથવા માતાના પિતા (નાના)' },
+  { name: 'Grandmother', meaning: 'પિતાની માતા (દાદી) અથવા માતાની માતા (નાની)' },
+  { name: 'Uncle', meaning: 'કાકા, મામા, ફુવા અથવા માસા' },
+  { name: 'Aunt', meaning: 'કાકી, મામી, ફોઈ અથવા માસી' },
+  { name: 'Daughter-in-law', meaning: 'દીકરાની પત્ની (પુત્રવધૂ / વહુ)' },
+  { name: 'Son-in-law', meaning: 'દીકરીના પતિ (જમાઈ)' },
+  { name: 'Grandson', meaning: 'દીકરાનો દીકરો (પૌત્ર) અથવા દીકરીનો દીકરો (દોહિત્ર)' },
+  { name: 'Granddaughter', meaning: 'દીકરાની દીકરી (પૌત્રી) અથવા દીકરીની દીકરી (દોહિત્રી)' },
+  { name: 'Cousin', meaning: 'પિતરાઈ ભાઈ અથવા પિતરાઈ બહેન' },
+  { name: 'Other', meaning: 'અન્ય કૌટુંબિક સંબંધ' }
+].map(rel => ({
+  label: getRelationDisplay(rel.name),
+  value: rel.name,
+  name: rel.name,
+  meaning: rel.meaning,
+  description: rel.meaning
+}))
 
 const GENDER_OPTIONS = [
   { label: 'Male', value: 'Male' },
@@ -194,7 +294,12 @@ export const capitalizeWords = (str) => {
     .toString()
     .trim()
     .split(/\s+/)
-    .map(word => word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : '')
+    .map(word => {
+      if (!word) return ''
+      // If word contains Gujarati or Hindi unicode characters, keep as is
+      if (/[\u0A80-\u0AFF\u0900-\u097F]/.test(word)) return word
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
     .join(' ')
 }
 
@@ -204,6 +309,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const [states, setStates] = useState(cachedMasters ? cachedMasters.states : [])
   const [cities, setCities] = useState(cachedMasters ? cachedMasters.cities : [])
   const [villages, setVillages] = useState(cachedMasters ? cachedMasters.villages : [])
+  const [relationOptions, setRelationOptions] = useState(
+    cachedMasters?.relationships?.length ? cachedMasters.relationships : RELATION_OPTIONS
+  )
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -235,6 +343,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const [membersLoading, setMembersLoading] = useState(false)
   const [expandedMemberIndex, setExpandedMemberIndex] = useState(null)
   const [editingMember, setEditingMember] = useState(null)
+  const [guideModalOpen, setGuideModalOpen] = useState(false)
+  const [activeGuideTarget, setActiveGuideTarget] = useState(null)
 
   useEffect(() => {
     const fetchMasters = async () => {
@@ -243,6 +353,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setStates(cachedMasters.states)
         setCities(cachedMasters.cities)
         setVillages(cachedMasters.villages)
+        if (cachedMasters.relationships?.length) {
+          setRelationOptions(cachedMasters.relationships)
+        }
         return
       }
 
@@ -251,25 +364,41 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY),
           api.get(MEMBER_ENDPOINTS.MASTERS_STATE),
           api.get(MEMBER_ENDPOINTS.MASTERS_CITY),
-          api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } }))
+          api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } }))
         ])
       }
 
       try {
-        const [cRes, sRes, ciRes, vRes] = await mastersPromise
+        const [cRes, sRes, ciRes, vRes, relRes] = await mastersPromise
         const countryList = cRes.data?.data || []
+        
+        // Merge backend relationships with default RELATION_OPTIONS
+        const fetchedRels = (relRes.data?.data || []).filter(r => r.status !== 0 && r.status !== '0').map(r => ({
+          label: getRelationDisplay(r.name, r),
+          value: r.name,
+          name: r.name,
+          gujarati_name: r.gujarati_name || '',
+          description: r.description || ''
+        }))
+        const relMap = new Map()
+        RELATION_OPTIONS.forEach(r => relMap.set(r.value.toLowerCase(), r))
+        fetchedRels.forEach(r => relMap.set(r.value.toLowerCase(), r))
+        const mergedRelations = Array.from(relMap.values())
 
         cachedMasters = {
           countries: countryList,
           states: sRes.data?.data || [],
           cities: ciRes.data?.data || [],
-          villages: vRes.data?.data || []
+          villages: vRes.data?.data || [],
+          relationships: mergedRelations
         }
 
         setCountries(cachedMasters.countries)
         setStates(cachedMasters.states)
         setCities(cachedMasters.cities)
         setVillages(cachedMasters.villages)
+        setRelationOptions(mergedRelations)
 
         // If country not yet selected, default to India
         setFormData(prev => {
@@ -323,8 +452,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         image: user.image || user.profile_image || '',
         status: user.status !== undefined ? Number(user.status) : 1
       })
-
-      // Fetch family members if editing an existing user
       const headId = user.id || user._id
       if (headId) {
         setMembersLoading(true)
@@ -671,7 +798,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 px-0.5 text-text">
-      
       {/* ─── SECTION 1: FAMILY HEAD DETAILS (COMPACT 4 ITEMS PER LINE) ─────────── */}
       <div className="bg-card border border-border rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/60">
@@ -705,7 +831,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             label="First Name"
             placeholder="Head First Name"
             value={formData.first_name}
-            onChange={(e) => handleChange('first_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+            onChange={(e) => handleChange('first_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
             disabled={isLoading}
             required={true}
             error={errors.first_name}
@@ -714,7 +840,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             label="Middle Name"
             placeholder="Middle Name"
             value={formData.middle_name}
-            onChange={(e) => handleChange('middle_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+            onChange={(e) => handleChange('middle_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
             disabled={isLoading}
             required={true}
             error={errors.middle_name}
@@ -723,7 +849,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             label="Last Name / Surname"
             placeholder="Surname"
             value={formData.last_name}
-            onChange={(e) => handleChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+            onChange={(e) => handleChange('last_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
             disabled={isLoading}
             required={true}
             error={errors.last_name}
@@ -978,8 +1104,17 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
                     {/* Relation */}
                     <div className="col-span-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold">
-                        {m.relation || 'Relation'}
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveGuideTarget(idx)
+                          setGuideModalOpen(true)
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold hover:bg-primary/20 transition-colors cursor-pointer"
+                        title="Click to view relation explanation (સંબંધની સમજૂતી)"
+                      >
+                        <span>{getRelationDisplay(m.relation) || 'Relation'}</span>
+                        <HelpCircle className="w-3 h-3 opacity-70 shrink-0" />
                       </span>
                     </div>
 
@@ -1038,29 +1173,47 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                   {/* Slide-Down Inline Edit Form (Accordion) */}
                   {isExpanded && editingMember && (
                     <div className="p-3.5 sm:p-4 bg-surface/50 border-t border-b border-border/80 space-y-3 animate-fade-in">
-                      <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                        <div className="flex items-center gap-3">
+                      {/* Top Bar: Member Photo + Status Switch + Done Button */}
+                      <div className="flex items-center justify-between pb-2.5 border-b border-border/50">
+                        <div className="flex items-center gap-4">
                           <MemberAvatarUpload
                             value={editingMember.image || ''}
                             onChange={(val) => handleEditingMemberChange('image', val)}
                             name={editingMember.first_name}
                             label="Member Photo"
-                            size={48}
+                            size={44}
                             disabled={isLoading}
                           />
-                          <span className="text-xs font-bold text-primary flex items-center gap-1">
-                            <Edit2 className="w-3 h-3" /> Edit Details for Member #{idx + 1}
-                          </span>
+                          <div className="flex items-center pl-2 border-l border-border/60">
+                            <Switch
+                              label="Status"
+                              checked={Number(editingMember.status ?? 1) === 1}
+                              onChange={(val) => handleEditingMemberChange('status', val ? 1 : 0)}
+                              disabled={isLoading}
+                              activeLabel="Active"
+                              inactiveLabel="Inactive"
+                            />
+                          </div>
                         </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDoneEditing}
+                          className="h-[34px] px-4 text-xs font-bold text-primary border-primary/30 hover:bg-primary/10 cursor-pointer shadow-xs"
+                        >
+                          <Check className="w-3.5 h-3.5 mr-1" /> Done
+                        </Button>
                       </div>
 
-                      {/* Row 1: First, Middle, Last, Relation (4 inputs) */}
+                      {/* Row 1: First Name, Middle Name, Last Name, Relationship (4 inputs) */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
                         <Input
                           label="First Name"
                           placeholder="First Name"
                           value={editingMember.first_name || ''}
-                          onChange={(e) => handleEditingMemberChange('first_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                          onChange={(e) => handleEditingMemberChange('first_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
                           disabled={isLoading}
                           required={true}
                           error={fNameErr}
@@ -1069,29 +1222,47 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           label="Middle Name"
                           placeholder="Middle Name"
                           value={editingMember.middle_name || ''}
-                          onChange={(e) => handleEditingMemberChange('middle_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                          onChange={(e) => handleEditingMemberChange('middle_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
                           disabled={isLoading}
                         />
                         <Input
                           label="Last Name / Surname"
                           placeholder="Surname"
                           value={editingMember.last_name || ''}
-                          onChange={(e) => handleEditingMemberChange('last_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                          onChange={(e) => handleEditingMemberChange('last_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
                           disabled={isLoading}
                         />
-                        <Select
-                          label="Relationship with Head"
-                          value={editingMember.relation || 'Wife'}
-                          onChange={(val) => handleEditingMemberChange('relation', val)}
-                          options={RELATION_OPTIONS}
-                          required={true}
-                          searchable={true}
-                          error={relErr}
-                        />
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-semibold text-text">
+                              Relationship <span className="text-error-text">*</span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveGuideTarget(idx)
+                                setGuideModalOpen(true)
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                              title="Click to understand relationship in Gujarati & English"
+                            >
+                              <HelpCircle className="w-3.5 h-3.5" />
+                              <span>Guide (સમજૂતી)</span>
+                            </button>
+                          </div>
+                          <Select
+                            value={editingMember.relation || 'Wife'}
+                            onChange={(val) => handleEditingMemberChange('relation', val)}
+                            options={relationOptions}
+                            required={true}
+                            searchable={true}
+                            error={relErr}
+                          />
+                        </div>
                       </div>
 
-                      {/* Row 2: Gender, DOB, Anniversary, Blood Group (4 inputs) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+                      {/* Row 2: Gender, DOB, Anniversary, Blood Group, Mobile (5 inputs in grid) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
                         <Select
                           label="Gender"
                           value={editingMember.gender || 'Male'}
@@ -1121,10 +1292,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           disabled={isLoading}
                           searchable={true}
                         />
-                      </div>
-
-                      {/* Row 3: Mobile, Email, Status, Close/Done (4 items) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
                         <Input
                           label="Mobile Number (Optional)"
                           type="tel"
@@ -1135,33 +1302,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           disabled={isLoading}
                           error={numErr}
                         />
-                        <Input
-                          label="Email Address"
-                          type="email"
-                          placeholder="email@example.com (Optional)"
-                          value={editingMember.email || ''}
-                          onChange={(e) => handleEditingMemberChange('email', e.target.value)}
-                          disabled={isLoading}
-                        />
-                        <Switch
-                          label="Status"
-                          checked={Number(editingMember.status ?? 1) === 1}
-                          onChange={(val) => handleEditingMemberChange('status', val ? 1 : 0)}
-                          disabled={isLoading}
-                          activeLabel="Active"
-                          inactiveLabel="Inactive"
-                        />
-                        <div className="flex justify-end">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleDoneEditing}
-                            className="w-full h-[38px] text-xs font-bold text-primary border-primary/30 hover:bg-primary/10 cursor-pointer"
-                          >
-                            <Check className="w-3.5 h-3.5 mr-1" /> Done
-                          </Button>
-                        </div>
                       </div>
                     </div>
                   )}
@@ -1192,6 +1332,30 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           </Button>
         </div>
       </div>
+
+      <RelationshipGuideModal
+        isOpen={guideModalOpen}
+        onClose={() => {
+          setGuideModalOpen(false)
+          setActiveGuideTarget(null)
+        }}
+        selectedRelation={
+          activeGuideTarget !== null && members[activeGuideTarget]
+            ? members[activeGuideTarget].relation
+            : editingMember?.relation || ''
+        }
+        onSelectRelation={(selectedRel) => {
+          if (activeGuideTarget !== null) {
+            handleMemberFieldChange(activeGuideTarget, 'relation', selectedRel)
+            if (expandedMemberIndex === activeGuideTarget && editingMember) {
+              handleEditingMemberChange('relation', selectedRel)
+            }
+          } else if (editingMember) {
+            handleEditingMemberChange('relation', selectedRel)
+          }
+        }}
+        dynamicRelations={relationOptions}
+      />
     </form>
   )
 }

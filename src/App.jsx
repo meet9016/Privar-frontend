@@ -104,10 +104,10 @@ export default function App() {
           {/* Legacy redirects for old URLs to new tabbed URLs */}
           <Route path="gallery" element={<Navigate to="/admin/activities?tab=gallery" replace />} />
           <Route path="events" element={<Navigate to="/admin/activities?tab=events" replace />} />
-          <Route path="birthday" element={<Navigate to="/admin/activities?tab=birthday" replace />} />
-          <Route path="job-vacancy" element={<Navigate to="/admin/activities?tab=job-vacancy" replace />} />
+          <Route path="birthday" element={<Navigate to="/admin/media?tab=birthday" replace />} />
+          <Route path="job-vacancy" element={<Navigate to="/admin/services?tab=job-vacancy" replace />} />
           <Route path="businesses" element={<Navigate to="/admin/services?tab=businesses" replace />} />
-          <Route path="students" element={<Navigate to="/admin/services?tab=students" replace />} />
+          <Route path="students" element={<Navigate to="/admin/activities?tab=students" replace />} />
           <Route path="expenses" element={<Navigate to="/admin/services?tab=expenses" replace />} />
           <Route path="matrimonies" element={<Navigate to="/admin/services?tab=matrimonies" replace />} />
           <Route path="posts" element={<Navigate to="/admin/media?tab=posts" replace />} />
