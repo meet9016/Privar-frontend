@@ -365,7 +365,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   }
 
   return (
-    <div className="space-y-6 text-text">
+    <div className="space-y-4 text-text">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex-1 overflow-x-auto hide-scrollbar">
           {headerLeftContent ? headerLeftContent : (

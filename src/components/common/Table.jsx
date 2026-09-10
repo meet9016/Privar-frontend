@@ -132,7 +132,7 @@ export default function Table({
   loading = false,
   showSkeleton = false,
   className = '',
-  maxHeightClass = 'max-h-[calc(100vh-250px)]',
+  maxHeightClass = 'max-h-[calc(100vh-275px)]',
   stickyHeader = true,
   rowClassName,
   // Checkbox selection & Bulk Actions (Default false as requested)
@@ -222,8 +222,8 @@ export default function Table({
   const showingTo = pagination ? Math.min(showingFrom + (pagination.limit || 15) - 1, totalRecords) : data.length;
 
   return (
-    <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col ${className}`}>
-      <div className={`overflow-x-auto overflow-y-auto custom-scrollbar ${maxHeightClass}`} style={{ position: 'relative' }}>
+    <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col h-[calc(100vh-210px)] min-h-[540px] ${className}`}>
+      <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar" style={{ position: 'relative' }}>
         <table className="w-full min-w-full text-left border-collapse table-auto bg-white">
           <thead className={stickyHeader ? "sticky top-0 z-20 shadow-sm" : ""}>
             <tr className="border-b border-primary/20 text-text text-xs uppercase tracking-wider font-bold bg-white">

@@ -101,8 +101,6 @@ export default function MasterPage({ type, headerLeftContent }) {
       hideAdd={!permissions.canAdd && !permissions.isSuperAdmin}
       hideEdit={!permissions.canEdit && !permissions.isSuperAdmin}
       hideDelete={!permissions.canDelete && !permissions.isSuperAdmin}
-      isRowEditable={(row) => type === 'relationship' ? !row.is_default : true}
-      isRowDeletable={(row) => type === 'relationship' ? !row.is_default : true}
     />
   )
 }
