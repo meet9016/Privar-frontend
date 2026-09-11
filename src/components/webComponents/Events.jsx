@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { ArrowRight, Calendar, CheckCircle, Clock, MapPin, Users, X } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, MapPin, Users, X, AlertCircle } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { memberApi } from '../../lib/api'
+import { toast } from '../../lib/toast'
 
 const formatEventDate = (value) => {
   if (!value) return ''
@@ -95,7 +96,7 @@ export default function Events() {
     email: '',
     members: '1',
   })
-
+  const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
@@ -147,25 +148,73 @@ export default function Events() {
   const openRegisterDialog = (event) => {
     setSelectedEvent(event)
     setFormData({ name: '', email: '', phone: '', members: '1' })
+    setErrors({})
     setSubmitError('')
+  }
+
+  const validate = () => {
+    const newErrors = {}
+
+    if (!formData.name?.trim()) {
+      newErrors.name = 'Full name is required'
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Please enter a valid full name'
+    }
+
+    if (!formData.phone?.trim()) {
+      newErrors.phone = 'Phone number is required'
+    } else if (!/^\d{10}$/.test(formData.phone.trim())) {
+      newErrors.phone = 'Please enter a valid 10-digit mobile number'
+    }
+
+    if (!formData.email?.trim()) {
+      newErrors.email = 'Email address is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+
+    if (!formData.members || Number(formData.members) < 1) {
+      newErrors.members = 'Total members must be at least 1'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }))
+    }
+    if (submitError) setSubmitError('')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (!validate()) {
+      return
+    }
+
     setSubmitting(true)
     setSubmitError('')
     try {
       await memberApi.post('/event-registrations', {
-        name: formData.name,
-        email: formData.email,
-        number: formData.phone,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        number: formData.phone.trim(),
         total_attendee: Number(formData.members),
         event_id: selectedEvent._id,
         entry_type: selectedEvent.entry,
       })
+      toast.success('Registration submitted successfully!')
       setSelectedEvent(null)
+      setFormData({ name: '', email: '', phone: '', members: '1' })
+      setErrors({})
     } catch (error) {
-      setSubmitError(error?.response?.data?.message || 'Registration failed. Please try again.')
+      const errMsg = error?.response?.data?.message || 'Registration failed. Please try again.'
+      setSubmitError(errMsg)
+      toast.error(errMsg)
     } finally {
       setSubmitting(false)
     }
@@ -228,105 +277,129 @@ export default function Events() {
               </div>
             ))}
           </div>
+        ) : visibleEvents.length === 0 ? (
+          <div className="text-center py-16 px-4 bg-white rounded-2xl border border-gray-100 shadow-sm max-w-xl mx-auto">
+            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-gray-700 mb-1">No Upcoming Events</h3>
+            <p className="text-sm text-gray-500">Check back later for new events and celebrations.</p>
+          </div>
         ) : (
           <>
-            <div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
-              style={{
-                animation: 'sectionSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              }}
-            >
-              {visibleEvents.map((event, index) => (
-                <article
-                  key={event._id || event.title || index}
-                  className="group relative flex flex-col overflow-hidden rounded-tl-[36px] rounded-br-[36px] rounded-tr-xl rounded-bl-xl bg-white border shadow-md transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 p-4 min-h-[360px]"
-                  style={{
-                    borderColor: `${theme.primaryColor || '#0a2342'}20`,
-                  }}
-                >
-                  {/* Asymmetric Photo Stage */}
-                  <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-tl-[28px] rounded-br-[28px] rounded-tr-lg rounded-bl-lg bg-gray-900 mb-3.5">
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-112 group-hover:rotate-1"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
-
-                    {/* Top-Left Floating Date Capsule */}
-                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md rounded-full px-3 py-1 flex items-center gap-1.5 shadow-md border border-white/50">
-                      <span className="text-sm font-black leading-none" style={{ color: theme.primaryColor || '#0a2342' }}>{event.day}</span>
-                      <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: theme.primaryColor || '#0a2342' }}>{event.month}</span>
-                    </div>
-
-                    {/* Floating Category Pill */}
-                    <div className="absolute bottom-3 left-3 z-10">
-                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase text-white shadow-md backdrop-blur-md bg-black/50 border border-white/30 truncate max-w-[140px]">
-                        {event.category}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Content Body */}
-                  <div className="flex-1 flex flex-col justify-between pt-1">
-                    <div>
-                      <h4 className="text-base font-extrabold leading-snug mb-2 line-clamp-2" style={{ color: theme.textColor || theme.primaryColor || '#0a2342' }}>
-                        {event.title}
-                      </h4>
-
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-gray-500 mb-3">
-                        <div className="flex items-center gap-1 min-w-0 truncate">
-                          <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primaryColor || '#0a2342' }} />
-                          <span className="truncate">{event.location}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {visibleEvents.map((event, index) => {
+                return (
+                  <div
+                    key={event._id || `event-${index}`}
+                    className="group bg-white rounded-tl-[36px] rounded-br-[36px] rounded-tr-xl rounded-bl-xl border overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5"
+                    style={{
+                      borderColor: '#f1f5f9',
+                      boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                      animation: `sectionSlideUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.12}s`,
+                      opacity: 0,
+                    }}
+                  >
+                    {/* Image / Header Block with curved corners */}
+                    <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-tl-[28px] rounded-br-[28px] m-2" style={{ width: 'calc(100% - 16px)' }}>
+                      {event.image ? (
+                        <img
+                          src={event.image}
+                          alt={event.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{
+                            backgroundImage: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.gradientEnd || theme.primaryColor})`
+                          }}
+                        >
+                          <Calendar className="w-16 h-16 text-white/40" />
                         </div>
-                        <div className="flex items-center gap-1 min-w-0 shrink-0">
-                          <Clock className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primaryColor || '#0a2342' }} />
-                          <span>{event.time}</span>
+                      )}
+
+                      {/* Date Badge */}
+                      {event.date && (
+                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-md flex items-center gap-1.5 text-xs font-bold" style={{ color: theme.primaryColor }}>
+                          <span className="text-sm leading-none">{getDatePart(event.date, 'day')}</span>
+                          <span className="text-[10px] uppercase tracking-wider opacity-80 leading-none">{getDatePart(event.date, 'month')}</span>
                         </div>
-                      </div>
+                      )}
+
+                      {/* Category Badge */}
+                      {event.category && (
+                        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1 rounded-full">
+                          {event.category}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Footer Bar */}
-                    <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2 mt-auto">
-                      <div className="text-xs font-bold text-gray-400">
-                        Entry: <strong style={{ color: theme.primaryColor || '#0a2342' }}>{event.entry}</strong>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => openRegisterDialog(event)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-extrabold text-white transition-all duration-300 shadow-md hover:shadow-lg overflow-hidden shrink-0"
-                        style={{
-                          backgroundColor: theme.buttonColor || theme.primaryColor || '#0a2342',
-                          color: theme.fontColor || '#FFFFFF',
-                        }}
+                    {/* Card Content */}
+                    <div className="p-4 pt-2 flex flex-col flex-grow">
+                      <h3
+                        className="text-base font-bold line-clamp-1 mb-2 group-hover:text-primary transition-colors"
+                        style={{ color: theme.textColor }}
                       >
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        <span>Register Now</span>
-                      </button>
+                        {event.title}
+                      </h3>
+
+                      {/* Meta info: Venue, Time, Members */}
+                      <div className="space-y-1.5 mb-4 text-xs text-gray-500">
+                        {event.venue && (
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="truncate">{event.venue}</span>
+                          </div>
+                        )}
+                        {event.time && (
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span>{formatTimeOnly(event.time)}</span>
+                          </div>
+                        )}
+                        {event.membersCount !== undefined && event.membersCount !== null && (
+                          <div className="flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span>{event.membersCount} attending</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action / Entry Footer */}
+                      <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-500">
+                          Entry: <span className="text-gray-800 font-bold capitalize">{event.entry || 'Free'}</span>
+                        </span>
+
+                        <button
+                          onClick={() => openRegisterDialog(event)}
+                          className="text-xs font-bold px-3 py-1.5 rounded-full transition-all duration-200 hover:shadow-md hover:scale-105"
+                          style={{
+                            backgroundColor: theme.buttonColor || theme.primaryColor,
+                            color: theme.fontColor || '#FFFFFF',
+                          }}
+                        >
+                          Register Now
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </article>
-              ))}
+                )
+              })}
             </div>
 
-            {/* View All Events Button */}
+            {/* View More Button (Homepage only) */}
             {!isEventsPage && events.length > 4 && (
-              <div className="mt-5 flex justify-center">
+              <div className="mt-10 text-center">
                 <button
-                  type="button"
-                  onClick={() => {
-                    navigate('/events')
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-extrabold text-white transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
+                  onClick={() => navigate('/events')}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold border transition-all duration-200 hover:shadow-md"
                   style={{
-                    backgroundColor: theme.buttonColor || theme.primaryColor || '#0a2342',
-                    color: theme.fontColor || '#FFFFFF',
+                    color: theme.primaryColor,
+                    borderColor: theme.primaryColor,
+                    backgroundColor: 'transparent',
                   }}
                 >
-                  <span>View All Events ({events.length})</span>
+                  <span>View All Events</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -346,9 +419,10 @@ export default function Events() {
           }}
         >
           <div
-            className="w-full max-w-lg overflow-hidden rounded-lg border bg-white shadow-2xl"
+            className="w-full max-w-md overflow-hidden rounded-xl border bg-white shadow-2xl transition-all"
             style={{ borderColor: theme.borderColor }}
           >
+            {/* Header */}
             <div
               className="flex items-start justify-between gap-4 px-6 py-5"
               style={{
@@ -357,91 +431,132 @@ export default function Events() {
               }}
             >
               <div>
-                <p className="text-sm font-semibold opacity-90">Event Registration</p>
-                <h3 id="event-register-title" className="mt-1 text-xl font-semibold leading-snug">
+                <p className="text-xs font-semibold uppercase tracking-wider opacity-85">Event Registration</p>
+                <h3 id="event-register-title" className="mt-1 text-lg font-bold leading-snug">
                   {selectedEvent.title}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedEvent(null)}
-                className="rounded-md p-1.5 transition-colors hover:bg-white/15"
+                className="rounded-lg p-1.5 transition-colors hover:bg-white/20 text-white"
                 aria-label="Close registration dialog"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 px-6 py-6">
-              <label className="block">
-                <span className="text-sm font-semibold" style={{ color: theme.textColor }}>Full Name</span>
+            {/* Form */}
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 px-6 py-5">
+              {/* Full Name */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Full Name <span className="text-red-500 font-bold">*</span>
+                </label>
                 <input
                   type="text"
-                  required
                   value={formData.name}
-                  onChange={(event) => setFormData({ ...formData, name: event.target.value })}
-                  className="mt-2 w-full rounded-md border px-3 py-2.5 text-sm outline-none"
-                  style={{ borderColor: theme.borderColor, color: theme.textColor }}
-                  placeholder="Enter your name"
+                  onChange={(event) => handleChange('name', event.target.value)}
+                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${
+                    errors.name
+                      ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+                      : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
+                  }`}
+                  placeholder="Enter your full name"
                 />
-              </label>
+                {errors.name && (
+                  <p className="mt-1 text-xs text-red-500 font-medium">{errors.name}</p>
+                )}
+              </div>
 
-              <label className="block">
-                <span className="text-sm font-semibold" style={{ color: theme.textColor }}>Phone Number</span>
+              {/* Phone Number */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Phone Number <span className="text-red-500 font-bold">*</span>
+                </label>
                 <input
                   type="tel"
-                  required
                   maxLength={10}
                   value={formData.phone}
-                  onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
-                  className="mt-2 w-full rounded-md border px-3 py-2.5 text-sm outline-none"
-                  style={{ borderColor: theme.borderColor, color: theme.textColor }}
-                  placeholder="Enter phone number"
+                  onChange={(event) => {
+                    const onlyNums = event.target.value.replace(/\D/g, '')
+                    handleChange('phone', onlyNums)
+                  }}
+                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${
+                    errors.phone
+                      ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+                      : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
+                  }`}
+                  placeholder="Enter 10-digit mobile number"
                 />
-              </label>
-              <label className="block">
-                <span className="text-sm font-semibold" style={{ color: theme.textColor }}>Email</span>
-                <input
-                  type="tel"
-                  required
-                  value={formData.email}
-                  onChange={(event) => setFormData({ ...formData, email: event.target.value })}
-                  className="mt-2 w-full rounded-md border px-3 py-2.5 text-sm outline-none"
-                  style={{ borderColor: theme.borderColor, color: theme.textColor }}
-                  placeholder="Enter email number"
-                />
-              </label>
+                {errors.phone && (
+                  <p className="mt-1 text-xs text-red-500 font-medium">{errors.phone}</p>
+                )}
+              </div>
 
-              <label className="block">
-                <span className="text-sm font-semibold" style={{ color: theme.textColor }}>Total Members</span>
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Email Address <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(event) => handleChange('email', event.target.value)}
+                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${
+                    errors.email
+                      ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+                      : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
+                  }`}
+                  placeholder="Enter your email address"
+                />
+                {errors.email && (
+                  <p className="mt-1 text-xs text-red-500 font-medium">{errors.email}</p>
+                )}
+              </div>
+
+              {/* Total Members */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Total Members <span className="text-red-500 font-bold">*</span>
+                </label>
                 <input
                   type="number"
                   min="1"
-                  required
                   value={formData.members}
-                  onChange={(event) => setFormData({ ...formData, members: event.target.value })}
-                  className="mt-2 w-full rounded-md border px-3 py-2.5 text-sm outline-none"
-                  style={{ borderColor: theme.borderColor, color: theme.textColor }}
+                  onChange={(event) => handleChange('members', event.target.value)}
+                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all ${
+                    errors.members
+                      ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+                      : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
+                  }`}
+                  placeholder="1"
                 />
-              </label>
-
-
+                {errors.members && (
+                  <p className="mt-1 text-xs text-red-500 font-medium">{errors.members}</p>
+                )}
+              </div>
 
               {submitError && (
-                <p className="text-sm font-semibold" style={{ color: '#dc2626' }}>{submitError}</p>
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <span>{submitError}</span>
+                </div>
               )}
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="rounded-md px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
-                style={{
-                  backgroundColor: theme.buttonColor || theme.primaryColor,
-                  color: theme.fontColor,
-                }}
-              >
-                {submitting ? 'Submitting...' : 'Submit Registration'}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full rounded-lg px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-95 disabled:opacity-60 shadow-sm"
+                  style={{
+                    backgroundColor: theme.buttonColor || theme.primaryColor,
+                    color: theme.fontColor || '#FFFFFF',
+                  }}
+                >
+                  {submitting ? 'Submitting...' : 'Submit Registration'}
+                </button>
+              </div>
             </form>
           </div>
         </div>

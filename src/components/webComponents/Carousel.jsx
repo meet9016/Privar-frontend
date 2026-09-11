@@ -139,7 +139,7 @@ const Carousel = ({
 
   return (
     <div
-      className="relative w-full h-[380px] sm:h-[480px] md:h-[560px] lg:h-[650px] xl:h-[720px] max-h-[85vh] overflow-hidden group transition-all duration-500 bg-[#080d28] border-b border-black/10"
+      className="relative w-full h-[280px] xs:h-[320px] sm:h-[460px] md:h-[540px] lg:h-[620px] xl:h-[700px] max-h-[85vh] overflow-hidden group transition-all duration-500 bg-white sm:bg-[#080d28] border-b border-gray-100 sm:border-black/10"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -164,20 +164,20 @@ const Carousel = ({
           return (
             <div
               key={index}
-              className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#080d28]"
+              className="absolute inset-0 w-full h-full flex items-center justify-center bg-white sm:bg-[#080d28]"
               style={{
                 opacity: isActive ? 1 : 0,
-                transform: isActive ? 'scale(1)' : 'scale(1.02)',
-                transition: 'opacity 1100ms cubic-bezier(0.4,0,0.2,1), transform 1200ms cubic-bezier(0.4,0,0.2,1)',
+                transform: isActive ? 'scale(1)' : 'scale(1.01)',
+                transition: 'opacity 900ms cubic-bezier(0.4,0,0.2,1), transform 1000ms cubic-bezier(0.4,0,0.2,1)',
                 zIndex: isActive ? 10 : 0,
                 pointerEvents: isActive ? 'auto' : 'none',
               }}
             >
-              {/* Image with crisp responsive presentation without cutting bottom prices */}
+              {/* Image with crisp responsive presentation - 100% visible on mobile */}
               <img
                 src={image}
                 alt={`Slide ${index + 1}`}
-                className="w-full h-full object-cover object-center sm:object-contain md:object-cover transition-transform duration-700"
+                className="w-full h-full object-contain sm:object-cover object-center transition-transform duration-700"
                 draggable={false}
               />
             </div>
@@ -189,7 +189,7 @@ const Carousel = ({
               backgroundColor: theme.backgroundColor || '#0a2342'
             }}
           >
-            <div className="w-10 h-10 rounded-full border-3 border-white/30 border-t-white animate-spin" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-3 border-white/30 border-t-white animate-spin" />
           </div>
         ) : (
           <div
@@ -198,30 +198,28 @@ const Carousel = ({
               background: `linear-gradient(135deg, ${theme.primaryColor || '#0a2342'} 0%, ${theme.gradientEnd || '#1e3a8a'} 100%)`
             }}
           >
-            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-md">
+            <h2 className="text-xl sm:text-4xl font-extrabold tracking-tight drop-shadow-md">
               {theme.name || 'Parivar'}
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-white/80 max-w-md">
+            <p className="mt-1 sm:mt-2 text-xs sm:text-base text-white/80 max-w-md">
               Welcome to our official community portal.
             </p>
           </div>
         )}
       </div>
 
-
-
       {/* Left Arrow */}
       {showArrows && images.length > 1 && (
         <button
           onClick={prevSlide}
-          className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 p-3.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgb(0,0,0,0.25)] flex items-center justify-center"
+          className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-11 sm:h-11 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgb(0,0,0,0.25)] flex items-center justify-center"
           style={{
             backgroundColor: theme.primaryColor ? `${theme.primaryColor}E6` : '#0a2342E6',
             color: theme.fontColor || '#FFFFFF',
           }}
           aria-label="Previous slide"
         >
-          <ChevronLeft size={22} className="stroke-[2.5]" />
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
         </button>
       )}
 
@@ -229,20 +227,20 @@ const Carousel = ({
       {showArrows && images.length > 1 && (
         <button
           onClick={nextSlide}
-          className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 p-3.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgb(0,0,0,0.25)] flex items-center justify-center"
+          className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-11 sm:h-11 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgb(0,0,0,0.25)] flex items-center justify-center"
           style={{
             backgroundColor: theme.primaryColor ? `${theme.primaryColor}E6` : '#0a2342E6',
             color: theme.fontColor || '#FFFFFF',
           }}
           aria-label="Next slide"
         >
-          <ChevronRight size={22} className="stroke-[2.5]" />
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
         </button>
       )}
 
       {/* Dots */}
       {showDots && images.length > 1 && (
-        <div className="absolute bottom-5 sm:bottom-7 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-black/35 p-2 rounded-full backdrop-blur-md border border-white/20 shadow-xl">
+        <div className="absolute bottom-1.5 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 sm:gap-2 bg-black/25 px-2 py-1 sm:px-3 sm:py-2 rounded-full backdrop-blur-sm border border-white/20 shadow-md">
           {images.map((_, index) => (
             <button
               key={index}
@@ -250,10 +248,10 @@ const Carousel = ({
               className="rounded-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
               style={{
                 backgroundColor:
-                  index === currentIndex ? (theme.primaryColor || '#FFFFFF') : 'rgba(255, 255, 255, 0.45)',
-                width: index === currentIndex ? '34px' : '9px',
-                height: '9px',
-                boxShadow: index === currentIndex ? `0 0 12px ${theme.primaryColor || '#ffffff'}` : 'none'
+                  index === currentIndex ? (theme.primaryColor || '#FFFFFF') : 'rgba(255, 255, 255, 0.5)',
+                width: index === currentIndex ? '18px' : '5px',
+                height: '5px',
+                boxShadow: index === currentIndex ? `0 0 8px ${theme.primaryColor || '#ffffff'}` : 'none'
               }}
               aria-label={`Go to slide ${index + 1}`}
               aria-current={index === currentIndex ? 'true' : 'false'}

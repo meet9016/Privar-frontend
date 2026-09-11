@@ -88,7 +88,7 @@ export default function WebHeader() {
     <>
       {/* TOP CONTACT BAR */}
       <div
-        className="sticky top-0 z-40 transition-colors duration-300"
+        className="hidden md:block transition-colors duration-300"
         style={{
           backgroundColor: theme.primaryColor || '#0a2342', // Matching the dark blue in the image
         }}
@@ -162,7 +162,7 @@ export default function WebHeader() {
 
       {/* MAIN NAVIGATION BAR */}
       <header
-        className="sticky top-10 z-30 shadow-md border-b transition-colors duration-300"
+        className="sticky top-0 z-50 shadow-md border-b transition-colors duration-300"
         style={{
           backgroundColor: theme.backgroundColor || '#F5FFF7',
           borderColor: theme.borderColor || '#D7EFD9'
@@ -265,48 +265,40 @@ export default function WebHeader() {
           {isMobileMenuOpen && (
             <nav
               ref={mobileMenuRef}
-              className="lg:hidden py-4 px-4 border-t"
+              className="lg:hidden py-4 px-2 border-t animate-fade-in"
               style={{
                 borderColor: theme.borderColor || '#D7EFD9'
               }}
               aria-label="Mobile navigation"
             >
-              <div className="flex flex-col gap-3 mb-4">
-                {navigationLinks.map((link) => (
-                  <Link
-                    key={link.label}
-                    to={link.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
-                    style={{
-                      color: theme.textColor || '#123524'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = shadeColor(theme.textColor || '#123524', -92)
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent'
-                    }}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+              <div className="flex flex-col gap-1.5 mb-4">
+                {navigationLinks.map((link) => {
+                  const Icon = link.icon
+                  return (
+                    <Link
+                      key={link.label}
+                      to={link.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 hover:bg-black/5 active:scale-[0.98]"
+                      style={{
+                        color: theme.textColor || '#123524'
+                      }}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" style={{ color: theme.primaryColor || '#0a2342' }} aria-hidden="true" />
+                      <span>{link.label}</span>
+                    </Link>
+                  )
+                })}
               </div>
 
               {/* Mobile Login Button */}
               <a
                 href="/login"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 shadow-sm active:scale-[0.98]"
                 style={{
-                  backgroundImage: `linear-gradient(to right, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                  backgroundImage: `linear-gradient(to right, ${theme.primaryColor || '#0a2342'}, ${theme.secondaryColor || theme.primaryColor || '#0a2342'})`,
                   color: theme.fontColor || '#FFFFFF'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = `0 0 20px ${theme.primaryColor}40`
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = 'none'
                 }}
               >
                 <LogIn className="w-4 h-4" aria-hidden="true" />

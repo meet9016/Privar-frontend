@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState, useMemo, useRef } from 'react'
-import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet, X, Download, Network, List, Heart, Baby, ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react'
+import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet, X, Download, Upload, Network, List, Heart, Baby, ZoomIn, ZoomOut, RotateCcw, Move, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react'
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import api, { getUsersList, formatDate, assetUrl } from '../lib/api'
@@ -66,6 +66,17 @@ export default function Users() {
   const [treePan, setTreePan] = useState({ x: 0, y: 0 })
   const [isTreeDragging, setIsTreeDragging] = useState(false)
   const treeDragStartRef = useRef({ x: 0, y: 0, startPanX: 0, startPanY: 0 })
+
+  // --- Bulk Import State ---
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [importStep, setImportStep] = useState('upload') // 'upload' | 'preview' | 'result'
+  const [importFile, setImportFile] = useState(null)
+  const [importPreviewRows, setImportPreviewRows] = useState([])
+  const [importPreviewErrors, setImportPreviewErrors] = useState([])
+  const [importLoading, setImportLoading] = useState(false)
+  const [importResult, setImportResult] = useState(null)
+  const [importDragOver, setImportDragOver] = useState(false)
+  const importFileRef = useRef(null)
 
   const toggleExpand = (headId, e) => {
     e.stopPropagation()
@@ -484,7 +495,191 @@ export default function Users() {
     }
   };
 
-  
+
+  // ---- Bulk Import Handlers ----
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const wb = new ExcelJS.Workbook()
+      const ws = wb.addWorksheet('Members Template')
+
+      ws.columns = [
+        { header: 'First Name*', key: 'first_name', width: 18 },
+        { header: 'Middle Name', key: 'middle_name', width: 18 },
+        { header: 'Last Name', key: 'last_name', width: 18 },
+        { header: 'Mobile Number*', key: 'number', width: 20 },
+        { header: 'Email', key: 'email', width: 28 },
+        { header: 'Gender', key: 'gender', width: 14 },
+        { header: 'Date of Birth', key: 'dob', width: 18 },
+        { header: 'Anniversary', key: 'anniversary', width: 18 },
+        { header: 'Blood Group', key: 'blood_group', width: 14 },
+        { header: 'Relation', key: 'relation', width: 16 },
+        { header: 'Address', key: 'address', width: 30 },
+        { header: 'Is Family Head', key: 'is_family_head', width: 16 }
+      ]
+
+      // Style header row
+      const headerRow = ws.getRow(1)
+      headerRow.eachCell((cell, colNum) => {
+        const isRequired = [1, 4].includes(colNum)
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isRequired ? 'FF4F46E5' : 'FF818CF8' } }
+        cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 11 }
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+        cell.border = {
+          top: { style: 'thin' }, left: { style: 'thin' },
+          bottom: { style: 'thin' }, right: { style: 'thin' }
+        }
+      })
+      headerRow.height = 30
+
+      // Example row 1 — Family Head
+      ws.addRow([
+        'Ramesh', 'Kumar', 'Patel', '9876543210', 'ramesh@email.com',
+        'Male', '15-08-1975', '20-11-2000', 'O+', 'Self', '123 Main Street, Surat', 'Yes'
+      ])
+      // Example row 2 — Family Member
+      ws.addRow([
+        'Priya', 'Ramesh', 'Patel', '9876543211', '',
+        'Female', '05-06-1978', '', 'B+', 'Spouse', '', 'No'
+      ])
+      // Example row 3 — Child
+      ws.addRow([
+        'Raj', 'Ramesh', 'Patel', '9876543212', '',
+        'Male', '12-03-2005', '', 'A+', 'Son', '', 'No'
+      ])
+
+      // Style example rows
+      for (let r = 2; r <= 4; r++) {
+        const row = ws.getRow(r)
+        row.eachCell(cell => {
+          cell.alignment = { vertical: 'middle', horizontal: 'left' }
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+            left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+            bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+            right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+          }
+        })
+        if (r === 2) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F9FF' } }
+      }
+
+      // Notes row
+      const notesRow = ws.addRow([])
+      const notesCell = ws.getCell(`A${notesRow.number}`)
+      notesCell.value = '* Required fields | Relation: Self/Spouse/Son/Daughter/Father/Mother/Brother/Sister/Other | Date format: DD-MM-YYYY | Is Family Head: Yes/No'
+      notesCell.font = { italic: true, color: { argb: 'FF6B7280' }, size: 9 }
+      ws.mergeCells(`A${notesRow.number}:L${notesRow.number}`)
+
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      saveAs(blob, 'Members_Import_Template.xlsx')
+      toast.success('Template downloaded successfully!')
+    } catch (err) {
+      toast.error('Failed to download template')
+      console.error(err)
+    }
+  }
+
+  const IMPORT_COLUMNS = [
+    'First Name', 'Middle Name', 'Last Name', 'Mobile Number',
+    'Email', 'Gender', 'Date of Birth', 'Anniversary',
+    'Blood Group', 'Relation', 'Address', 'Is Family Head'
+  ]
+  const REQUIRED_COLS = ['First Name', 'Mobile Number']
+
+  const parseImportFile = async (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        try {
+          const XLSX = await import('exceljs')
+          const wb = new XLSX.Workbook()
+          await wb.xlsx.load(e.target.result)
+          const ws = wb.worksheets[0]
+          if (!ws) return resolve({ rows: [], errors: [] })
+
+          const headers = []
+          ws.getRow(1).eachCell((cell, col) => { headers[col] = (cell.value || '').toString().trim() })
+
+          const rows = []
+          const parseErrors = []
+
+          ws.eachRow((row, rowIndex) => {
+            if (rowIndex === 1) return // skip header
+            const obj = {}
+            headers.forEach((h, col) => { obj[h] = (row.getCell(col).value ?? '') })
+
+            // skip completely blank rows
+            const vals = Object.values(obj).map(v => String(v || '').trim()).filter(Boolean)
+            if (vals.length === 0) return
+
+            const rowErrors = []
+            REQUIRED_COLS.forEach(col => {
+              const val = String(obj[col] || '').trim()
+              if (!val) rowErrors.push(`${col} is required`)
+            })
+
+            rows.push({ rowIndex, data: obj, errors: rowErrors })
+          })
+
+          resolve({ rows, errors: parseErrors })
+        } catch (err) { reject(err) }
+      }
+      reader.onerror = reject
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
+  const handleImportFileChange = async (file) => {
+    if (!file) return
+    const ext = file.name.split('.').pop().toLowerCase()
+    if (!['xlsx', 'xls'].includes(ext)) {
+      toast.error('Please upload a valid Excel file (.xlsx or .xls)')
+      return
+    }
+    setImportFile(file)
+    try {
+      const { rows, errors } = await parseImportFile(file)
+      setImportPreviewRows(rows)
+      setImportPreviewErrors(errors)
+      setImportStep('preview')
+    } catch (err) {
+      toast.error('Failed to read Excel file. Please use the template.')
+    }
+  }
+
+  const handleImportSubmit = async () => {
+    if (!importFile) return
+    setImportLoading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', importFile)
+      const res = await api.post(MEMBER_ENDPOINTS.BULK_IMPORT, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      const result = res.data?.data || res.data || {}
+      setImportResult(result)
+      setImportStep('result')
+      if ((result.created_count || 0) > 0) {
+        fetchUsers()
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Import failed. Please check your file and try again.')
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false)
+    setImportStep('upload')
+    setImportFile(null)
+    setImportPreviewRows([])
+    setImportPreviewErrors([])
+    setImportResult(null)
+    setImportDragOver(false)
+    if (importFileRef.current) importFileRef.current.value = ''
+  }
 
   return (
     <div className="space-y-4">
@@ -572,6 +767,16 @@ export default function Users() {
           <Button onClick={handleExportExcel} variant="secondary" icon={<Download className="w-4 h-4" />} className="h-10 border-primary text-primary hover:bg-primary hover:text-white">
             Export
           </Button>
+          {(!permissions.canAdd && !permissions.isSuperAdmin) ? null : (
+            <Button
+              onClick={() => { setIsImportModalOpen(true); setImportStep('upload') }}
+              variant="secondary"
+              icon={<Upload className="w-4 h-4" />}
+              className="h-10 border-emerald-500 text-emerald-600 hover:bg-primary hover:text-white"
+            >
+              Import
+            </Button>
+          )}
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button
               onClick={handleCreate}
@@ -1691,10 +1896,257 @@ export default function Users() {
         onClose={() => setGuideRelation(null)}
         selectedRelation={guideRelation}
       />
+
+
+      {/* ========== Bulk Import Modal ========== */}
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={handleCloseImportModal}
+        title="Bulk Import Members"
+        maxWidth="max-w-3xl"
+      >
+        {/* Step indicator */}
+        <div className="flex items-center mb-5">
+          {[{ id: 'upload', label: 'Upload File' }, { id: 'preview', label: 'Preview' }, { id: 'result', label: 'Result' }].map((step, idx, arr) => {
+            const steps = ['upload', 'preview', 'result']
+            const currentIdx = steps.indexOf(importStep)
+            const stepIdx = steps.indexOf(step.id)
+            const isActive = importStep === step.id
+            const isDone = currentIdx > stepIdx
+            return (
+              <React.Fragment key={step.id}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all shrink-0 ${isActive ? 'bg-primary border-primary text-white' : isDone ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-secondary border-border text-text-secondary'}`}>
+                    {isDone ? '\u2713' : idx + 1}
+                  </div>
+                  <span className={`text-xs font-semibold whitespace-nowrap ${isActive ? 'text-primary' : isDone ? 'text-primary/80' : 'text-text-secondary'}`}>{step.label}</span>
+                </div>
+                {idx < arr.length - 1 && (
+                  <div className={`flex-1 h-px mx-3 rounded transition-all ${isDone ? 'bg-primary/50' : 'bg-border'}`} />
+                )}
+              </React.Fragment>
+            )
+          })}
+        </div>
+
+        {/* === STEP 1: Upload === */}
+        {importStep === 'upload' && (
+          <div className="space-y-4">
+            {/* Template download banner */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl border border-border bg-surface-secondary/40">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-text">Download Import Template</p>
+                <p className="text-xs text-text-secondary mt-0.5">Download the Excel template, fill in your member data, and upload it below. Fields marked <span className="text-red-500 font-semibold">*</span> are mandatory.</p>
+              </div>
+              <Button
+                onClick={handleDownloadTemplate}
+                variant="secondary"
+                icon={<Download className="w-4 h-4" />}
+                className="whitespace-nowrap shrink-0"
+              >
+                Download Template
+              </Button>
+            </div>
+
+            {/* File upload drop zone */}
+            <div>
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                Upload Excel File <span className="text-red-500">*</span>
+              </label>
+              <div
+                className={`border-2 border-dashed rounded-xl py-10 px-6 flex flex-col items-center gap-3 transition-all cursor-pointer ${importDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-surface-secondary/40'}`}
+                onClick={() => importFileRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setImportDragOver(true) }}
+                onDragLeave={() => setImportDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setImportDragOver(false)
+                  const file = e.dataTransfer.files[0]
+                  if (file) handleImportFileChange(file)
+                }}
+              >
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all ${importDragOver ? 'bg-primary/10 text-primary' : 'bg-surface-secondary text-text-secondary'}`}>
+                  <FileSpreadsheet className="w-7 h-7" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-text">Drag &amp; drop your file here, or click to browse</p>
+                  <p className="text-xs text-text-secondary mt-1">Supported formats: .xlsx, .xls</p>
+                </div>
+                <input
+                  ref={importFileRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleImportFileChange(file)
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Column guide */}
+            <div className="rounded-xl border border-border bg-surface-secondary/30 p-4">
+              <p className="text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">Required Column Headers</p>
+              <div className="flex flex-wrap gap-2">
+                {['First Name*', 'Middle Name', 'Last Name', 'Mobile Number*', 'Email', 'Gender', 'Date of Birth', 'Anniversary', 'Blood Group', 'Relation', 'Address', 'Is Family Head'].map(col => (
+                  <span key={col} className={`text-xs px-2.5 py-1 rounded-lg font-medium border ${col.includes('*') ? 'bg-red-50 text-red-500 border-red-200' : 'bg-surface-secondary text-text-secondary border-border'}`}>
+                    {col}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[10px] text-text-secondary mt-2.5">
+                <span className="text-red-500 font-semibold">*</span> Required &nbsp;|&nbsp; Date format: <strong>DD-MM-YYYY</strong> &nbsp;|&nbsp; Is Family Head: <strong>Yes / No</strong> &nbsp;|&nbsp; Relation: Self / Spouse / Son / Daughter / Father / Mother / etc.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* === STEP 2: Preview === */}
+        {importStep === 'preview' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-text">
+                  Preview: <span className="text-primary">{importPreviewRows.length} rows</span> found in <span className="text-text-secondary italic">{importFile?.name}</span>
+                </p>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  <span className="text-green-600 font-semibold">{importPreviewRows.filter(r => r.errors.length === 0).length} valid</span>
+                  {importPreviewRows.filter(r => r.errors.length > 0).length > 0 && (
+                    <span> &middot; <span className="text-red-500 font-semibold">{importPreviewRows.filter(r => r.errors.length > 0).length} with errors</span> (these rows will be skipped)</span>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={() => { setImportStep('upload'); setImportFile(null); setImportPreviewRows([]) }}
+                className="text-xs text-text-secondary hover:text-primary underline cursor-pointer transition-colors"
+              >
+                Change file
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-border overflow-hidden">
+              <div className="overflow-x-auto max-h-72">
+                <table className="w-full text-xs">
+                  <thead className="bg-surface-secondary sticky top-0 z-10">
+                    <tr>
+                      <th className="px-3 py-2.5 text-left font-semibold text-text-secondary border-b border-border">#</th>
+                      {['First Name', 'Middle Name', 'Last Name', 'Mobile', 'Gender', 'Relation', 'Is Head', 'Status'].map(h => (
+                        <th key={h} className="px-3 py-2.5 text-left font-semibold text-text-secondary border-b border-border whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importPreviewRows.map((row, idx) => {
+                      const d = row.data
+                      const hasError = row.errors.length > 0
+                      return (
+                        <tr key={idx} className={`border-b border-border/50 last:border-0 ${hasError ? 'bg-red-50/70' : idx % 2 === 0 ? 'bg-surface' : 'bg-surface-secondary/20'}`}>
+                          <td className="px-3 py-2 text-text-secondary font-medium">{row.rowIndex}</td>
+                          <td className="px-3 py-2 font-semibold text-text whitespace-nowrap">{String(d['First Name'] || d['first_name'] || '-')}</td>
+                          <td className="px-3 py-2 text-text-secondary">{String(d['Middle Name'] || d['middle_name'] || '-')}</td>
+                          <td className="px-3 py-2 text-text-secondary">{String(d['Last Name'] || d['last_name'] || '-')}</td>
+                          <td className="px-3 py-2 text-text-secondary">{String(d['Mobile Number'] || d['mobile'] || d['number'] || '-')}</td>
+                          <td className="px-3 py-2 text-text-secondary">{String(d['Gender'] || d['gender'] || '-')}</td>
+                          <td className="px-3 py-2 text-text-secondary">{String(d['Relation'] || d['relation'] || '-')}</td>
+                          <td className="px-3 py-2 text-text-secondary">{String(d['Is Family Head'] || d['is family head'] || 'No')}</td>
+                          <td className="px-3 py-2">
+                            {hasError ? (
+                              <div className="flex items-center gap-1 text-red-500">
+                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                <span className="text-[10px] font-semibold">{row.errors.join(', ')}</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span className="text-[10px] font-medium">Valid</span>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <Button onClick={() => setImportStep('upload')} variant="secondary">← Back</Button>
+              <Button
+                onClick={handleImportSubmit}
+                variant="primary"
+                disabled={importLoading || importPreviewRows.filter(r => r.errors.length === 0).length === 0}
+                isLoading={importLoading}
+                icon={!importLoading ? <Upload className="w-4 h-4" /> : null}
+              >
+                {importLoading ? 'Importing...' : `Import ${importPreviewRows.filter(r => r.errors.length === 0).length} Members`}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* === STEP 3: Result === */}
+        {importStep === 'result' && importResult && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-border bg-surface-secondary/30 p-5 text-center">
+                <div className="text-3xl font-bold text-primary">{importResult.created_count || 0}</div>
+                <div className="text-sm font-semibold text-text-secondary mt-1">Members Created</div>
+              </div>
+              <div className={`rounded-xl border p-5 text-center ${(importResult.failed_count || 0) > 0 ? 'border-red-200 bg-red-50/50' : 'border-border bg-surface-secondary/30'}`}>
+                <div className={`text-3xl font-bold ${(importResult.failed_count || 0) > 0 ? 'text-red-500' : 'text-text-secondary'}`}>{importResult.failed_count || 0}</div>
+                <div className={`text-sm font-semibold mt-1 ${(importResult.failed_count || 0) > 0 ? 'text-red-500' : 'text-text-secondary'}`}>Failed / Skipped</div>
+              </div>
+            </div>
+
+            {importResult.created && importResult.created.length > 0 && (
+              <div className="rounded-xl border border-border overflow-hidden">
+                <div className="px-4 py-2.5 bg-surface-secondary border-b border-border">
+                  <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">\u2713 Successfully Created</p>
+                </div>
+                <div className="max-h-40 overflow-y-auto divide-y divide-border/50">
+                  {importResult.created.map((m, i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                        {(m.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-sm font-medium text-text flex-1">{m.name}</span>
+                      <span className="text-xs text-text-secondary">{m.number}</span>
+                      <span className="text-xs bg-surface-secondary border border-border px-2 py-0.5 rounded-lg text-text-secondary font-medium">ID: {m.member_id}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {importResult.errors && importResult.errors.length > 0 && (
+              <div className="rounded-xl border border-red-200 overflow-hidden">
+                <div className="px-4 py-2.5 bg-red-50 border-b border-red-200">
+                  <p className="text-xs font-semibold text-red-500 uppercase tracking-wider">\u2717 Failed / Skipped Rows</p>
+                </div>
+                <div className="max-h-40 overflow-y-auto divide-y divide-red-100">
+                  {importResult.errors.map((e, i) => (
+                    <div key={i} className="flex items-start gap-3 px-4 py-2.5">
+                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-xs text-text-secondary">Row {e.row}{e.name ? ` (${e.name})` : ''}: </span>
+                        <span className="text-xs text-red-500 font-semibold">{e.reason}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <Button onClick={handleCloseImportModal} variant="primary" icon={<CheckCircle2 className="w-4 h-4" />}>
+                Done
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
-
-
-
-

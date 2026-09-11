@@ -23,6 +23,7 @@ export const MEMBER_ENDPOINTS = {
   UPDATE_MEMBER: (id) => `/users/${id}`,
   DELETE_MEMBER: (id) => `/users/${id}`,
   BULK_UPDATE_STATUS: '/users/bulk-update',
+  BULK_IMPORT: '/users/bulk-import',
   GET_FAMILY_MEMBERS: (headId) => `/users/family/${headId}`,
   GET_ROLES: '/roles',
   MASTERS_COUNTRY: '/masters/country',
