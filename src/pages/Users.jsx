@@ -764,7 +764,7 @@ export default function Users() {
               </button>
             </div>
           )}
-          <Button onClick={handleExportExcel} variant="secondary" icon={<Download className="w-4 h-4" />} className="h-10 border-primary text-primary hover:bg-primary hover:text-white">
+          <Button onClick={handleExportExcel} variant="secondary" icon={<Download className="w-4 h-4" />} className="h-10 border-border text-text hover:bg-surface-secondary">
             Export
           </Button>
           {(!permissions.canAdd && !permissions.isSuperAdmin) ? null : (
@@ -772,7 +772,7 @@ export default function Users() {
               onClick={() => { setIsImportModalOpen(true); setImportStep('upload') }}
               variant="secondary"
               icon={<Upload className="w-4 h-4" />}
-              className="h-10 border-emerald-500 text-emerald-600 hover:bg-primary hover:text-white"
+              className="h-10 border-border text-text hover:bg-surface-secondary"
             >
               Import
             </Button>
