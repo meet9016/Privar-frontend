@@ -149,6 +149,23 @@ export const MASTER_ENDPOINTS = {
   GET_MASTER: (type) => type === 'bank-details' ? '/bank-details' : `/masters/${type}`
 }
 
+// Mandal / Monthly Contribution Module API Endpoints
+export const MANDAL_ENDPOINTS = {
+  GET_LIST: '/mandal/list',
+  CREATE_MANDAL: '/mandal/create',
+  DELETE_MANDAL: (id) => `/mandal/${id}`,
+  GET_SETUP: '/mandal/setup',
+  UPDATE_SETUP: '/mandal/setup',
+  GET_DASHBOARD: '/mandal/dashboard',
+  GET_MEMBERS: '/mandal/members',
+  TOGGLE_MEMBER: '/mandal/members/toggle',
+  BULK_MEMBERS: '/mandal/members/bulk',
+  GET_CONTRIBUTIONS: '/mandal/contributions',
+  UPDATE_CONTRIBUTION: (id) => `/mandal/contributions/${id}`,
+  BULK_MARK_PAID: '/mandal/contributions/bulk-mark-paid',
+  GET_HISTORY: '/mandal/history'
+}
+
 export default {
   COMMITTEE: COMMITTEE_ENDPOINTS,
   ROLES: ROLES_ENDPOINTS,
@@ -165,5 +182,7 @@ export default {
   FEEDBACK: FEEDBACK_ENDPOINTS,
   EXPENSE: EXPENSE_ENDPOINTS,
   DONATION: DONATION_ENDPOINTS,
+  MANDAL: MANDAL_ENDPOINTS,
   MASTER: MASTER_ENDPOINTS
 }
+

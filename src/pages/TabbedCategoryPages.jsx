@@ -8,6 +8,7 @@ import Donations from './Donations'
 import Expenses from './Expenses'
 import Posts from './Post'
 import News from './News'
+import Mandal from './Mandal'
 import MasterPage from './MasterPage'
 import { AuthContext } from '../context/AuthContext'
 import { hasPermission } from '../lib/permissions'
@@ -18,7 +19,7 @@ import {
   engagementNavigation,
   masterNavigation
 } from '../config/navigation'
-import { Database } from 'lucide-react'
+import { Database, CalendarDays } from 'lucide-react'
 
 export const ActivitiesPage = () => {
   const { user } = useContext(AuthContext)
@@ -58,10 +59,11 @@ export const EngagementsPage = () => {
   const { user } = useContext(AuthContext)
   const tabs = useMemo(() => [
     { id: 'expenses', label: 'Expenses', icon: engagementNavigation.find(n => n.to?.includes('expenses'))?.icon, permission: 'expenses.list', component: (props) => <Expenses {...props} /> },
-    { id: 'donations', label: 'Donations', icon: engagementNavigation.find(n => n.to?.includes('donations'))?.icon, permission: 'donations.list', component: (props) => <Donations {...props} /> }
+    { id: 'donations', label: 'Donations', icon: engagementNavigation.find(n => n.to?.includes('donations'))?.icon, permission: 'donations.list', component: (props) => <Donations {...props} /> },
+    { id: 'contribution', label: 'Monthly Contribution', icon: engagementNavigation.find(n => n.to?.includes('mandal'))?.icon || CalendarDays, permission: 'expenses.list', component: (props) => <Mandal {...props} /> }
   ].filter(t => hasPermission(user, t.permission)), [user])
 
-  return tabs.length > 0 ? <TabbedPage title="Engagements & Donations" tabs={tabs} storageKey="engagements" /> : null
+  return tabs.length > 0 ? <TabbedPage title="Expense & Donations" tabs={tabs} storageKey="engagements" /> : null
 }
 
 export const MastersPage = () => {

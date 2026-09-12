@@ -46,14 +46,35 @@ export const RELATION_GUIDE_DATA = [
   },
   {
     relation: 'Brother',
-    gujarati: 'ભાઈ',
+    gujarati: 'ભાઈ (મોટા / નાના)',
     meaning: 'પરિવારના વડાના સગા મોટા અથવા નાના ભાઈ',
     gender: 'Male',
     category: 'Immediate'
   },
   {
+    relation: 'Bhabhi',
+    gujarati: 'ભાભી / મોટી ભાભી / જેઠાણી',
+    meaning: 'મોટા ભાઈના પત્ની (મોટી ભાભી / જેઠાણી) અથવા નાના ભાઈના પત્ની (ભાભી / દેરાણી)',
+    gender: 'Female',
+    category: 'Immediate'
+  },
+  {
+    relation: 'Nephew',
+    gujarati: 'ભત્રીજો / ભાણો',
+    meaning: 'સગા ભાઈનો દીકરો (ભત્રીજો) અથવા સગી બહેનનો દીકરો (ભાણો)',
+    gender: 'Male',
+    category: 'Immediate'
+  },
+  {
+    relation: 'Niece',
+    gujarati: 'ભત્રીજી / ભાણી',
+    meaning: 'સગા ભાઈની દીકરી (ભત્રીજી) અથવા સગી બહેનની દીકરી (ભાણી)',
+    gender: 'Female',
+    category: 'Immediate'
+  },
+  {
     relation: 'Sister',
-    gujarati: 'બહેન',
+    gujarati: 'બહેન (મોટી / નાની)',
     meaning: 'પરિવારના વડાની સગી મોટી અથવા નાની બહેન',
     gender: 'Female',
     category: 'Immediate'

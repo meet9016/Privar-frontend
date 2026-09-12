@@ -43,6 +43,7 @@ export const mediaNavigation = [
 ]
 
 export const engagementNavigation = [
+  { to: '/admin/mandal', label: 'Monthly Contribution', icon: CalendarDays, title: 'Monthly Contribution', permission: 'expenses.list' },
   { to: '/admin/expenses', label: 'Expenses', icon: IndianRupee, title: 'Expenses', permission: 'expenses.list' },
   { to: '/admin/donations', label: 'Donations', icon: HeartHandshake, title: 'Donations', permission: 'donations.list' },
 ]

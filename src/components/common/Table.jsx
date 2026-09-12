@@ -177,7 +177,7 @@ export default function Table({
     );
   };
 
-  const showStatusBulk = hasStatusColumn ?? columns.some(c => c.key === 'status' || c.header?.toLowerCase()?.includes('status'));
+  const showStatusBulk = hasStatusColumn ?? columns.some(c => c.key === 'status' || (typeof c.header === 'string' && c.header.toLowerCase().includes('status')));
 
   const finalColumns = useMemo(() => {
     if (!selectable) return columns;

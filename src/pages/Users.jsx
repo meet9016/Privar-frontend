@@ -369,7 +369,7 @@ export default function Users() {
     setMembersLoading(true)
     try {
       const headId = user.parentHeadId || user.family_head?.id || user.family_head?._id || user.family_head_id || user.parent_member_id || user.id || user._id
-      const res = await api.get(MEMBER_ENDPOINTS.GET_FAMILY_MEMBERS(headId))
+      const res = await api.get(MEMBER_ENDPOINTS.GET_FAMILY_MEMBERS(headId), { params: { limit: 100 } })
       setFamilyMembers(res.data?.data || res.data || [])
     } catch (err) {
       console.error('Failed to fetch family members', err)
@@ -1110,35 +1110,62 @@ export default function Users() {
                   const head = allList.find(m => m.relation === 'Self' || m.familyHead || String(m.id || m._id) === String(viewingUser.family_head?.id || viewingUser.id)) || viewingUser
                   const others = allList.filter(m => String(m.id || m._id) !== String(head.id || head._id) && m.relation !== 'Self')
                   
-                  // Categorize relatives
-                  const grandfather = others.find(m => m.relation === 'Grandfather')
-                  const grandmother = others.find(m => m.relation === 'Grandmother')
+                  // Categorize relatives (handling multiple naming & case variations)
+                  const isMatchRelation = (rel, target) => {
+                    if (!rel) return false
+                    const clean = rel.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+                    const targetClean = target.toLowerCase().replace(/[^a-z0-9]/g, '')
+                    return clean === targetClean || clean.includes(targetClean)
+                  }
 
-                  const father = others.find(m => m.relation === 'Father')
-                  const mother = others.find(m => m.relation === 'Mother')
+                  const grandfather = others.find(m => isMatchRelation(m.relation, 'grandfather') || isMatchRelation(m.relation, 'dada') || isMatchRelation(m.relation, 'nana'))
+                  const grandmother = others.find(m => isMatchRelation(m.relation, 'grandmother') || isMatchRelation(m.relation, 'dadi') || isMatchRelation(m.relation, 'nani'))
 
-                  const uncles = others.filter(m => m.relation === 'Uncle')
-                  const aunts = others.filter(m => m.relation === 'Aunt')
+                  const father = others.find(m => isMatchRelation(m.relation, 'father') || isMatchRelation(m.relation, 'pappa') || isMatchRelation(m.relation, 'pitaji'))
+                  const mother = others.find(m => isMatchRelation(m.relation, 'mother') || isMatchRelation(m.relation, 'mummy') || isMatchRelation(m.relation, 'mataji'))
 
-                  const spouses = others.filter(m => ['Spouse', 'Wife', 'Husband'].includes(m.relation))
-                  const spouse = spouses[0] || null
+                  const uncles = others.filter(m => isMatchRelation(m.relation, 'uncle') || isMatchRelation(m.relation, 'kaka') || isMatchRelation(m.relation, 'mama') || isMatchRelation(m.relation, 'fua'))
+                  const aunts = others.filter(m => isMatchRelation(m.relation, 'aunt') || isMatchRelation(m.relation, 'kaki') || isMatchRelation(m.relation, 'mami') || isMatchRelation(m.relation, 'foi'))
 
-                  const brothers = others.filter(m => m.relation === 'Brother')
-                  const sisters = others.filter(m => m.relation === 'Sister')
-                  const cousins = others.filter(m => m.relation === 'Cousin')
-                  const nephews = others.filter(m => m.relation === 'Nephew')
-                  const nieces = others.filter(m => m.relation === 'Niece')
+                  // Spouses & In-Laws
+                  const rawSpouses = others.filter(m => ['spouse', 'wife', 'husband', 'patni', 'pati'].some(r => isMatchRelation(m.relation, r)))
+                  const bhabhis = others.filter(m => ['bhabhi', 'bhabhiji', 'sister-in-law', 'sisterinlaw'].some(r => isMatchRelation(m.relation, r)))
 
-                  const sons = others.filter(m => m.relation === 'Son')
-                  const daughters = others.filter(m => m.relation === 'Daughter')
-                  const sonsInLaw = others.filter(m => m.relation === 'Son-in-law')
-                  const daughtersInLaw = others.filter(m => m.relation === 'Daughter-in-law')
-                  const otherChildren = others.filter(m => ['Child'].includes(m.relation))
+                  const brothers = others.filter(m => isMatchRelation(m.relation, 'brother') || isMatchRelation(m.relation, 'bhai'))
+                  const sisters = others.filter(m => isMatchRelation(m.relation, 'sister') || isMatchRelation(m.relation, 'ben') || isMatchRelation(m.relation, 'bahen'))
+                  const cousins = others.filter(m => isMatchRelation(m.relation, 'cousin'))
+                  const nephews = others.filter(m => isMatchRelation(m.relation, 'nephew') || isMatchRelation(m.relation, 'bhatrijo'))
+                  const nieces = others.filter(m => isMatchRelation(m.relation, 'niece') || isMatchRelation(m.relation, 'bhatriji'))
+
+                  const sons = others.filter(m => isMatchRelation(m.relation, 'son') || isMatchRelation(m.relation, 'dikro') || isMatchRelation(m.relation, 'beta'))
+                  const daughters = others.filter(m => isMatchRelation(m.relation, 'daughter') || isMatchRelation(m.relation, 'dikri') || isMatchRelation(m.relation, 'beti'))
+                  const sonsInLaw = others.filter(m => isMatchRelation(m.relation, 'son-in-law') || isMatchRelation(m.relation, 'jamai'))
+                  const daughtersInLaw = others.filter(m => isMatchRelation(m.relation, 'daughter-in-law') || isMatchRelation(m.relation, 'vahu') || isMatchRelation(m.relation, 'bahu'))
+                  const otherChildren = others.filter(m => isMatchRelation(m.relation, 'child'))
                   const allChildren = [...sons, ...daughters, ...sonsInLaw, ...daughtersInLaw, ...otherChildren]
 
-                  const grandsons = others.filter(m => m.relation === 'Grandson')
-                  const granddaughters = others.filter(m => m.relation === 'Granddaughter')
+                  const grandsons = others.filter(m => isMatchRelation(m.relation, 'grandson') || isMatchRelation(m.relation, 'poutra') || isMatchRelation(m.relation, 'dohitra'))
+                  const granddaughters = others.filter(m => isMatchRelation(m.relation, 'granddaughter') || isMatchRelation(m.relation, 'poutri') || isMatchRelation(m.relation, 'dohitri'))
                   const allGrandchildren = [...grandsons, ...granddaughters]
+
+                  // Match Head Spouse vs Brother's Wife (Bhabhi)
+                  const headSpouseCandidates = rawSpouses.filter(s => {
+                    if (s.spouse_id && String(s.spouse_id) === String(head.id || head._id)) return true
+                    // Check if middle name matches brother
+                    const sMiddle = (s.middle_name || '').toLowerCase()
+                    const isBrotherSpouse = brothers.some(b => {
+                      const bFirst = (b.first_name || '').toLowerCase()
+                      return bFirst && sMiddle && (sMiddle.includes(bFirst) || bFirst.includes(sMiddle))
+                    })
+                    return !isBrotherSpouse
+                  })
+                  const spouse = headSpouseCandidates[0] || rawSpouses[0] || null
+
+                  // Pool of available Bhabhis (either explicitly marked Bhabhi, or extra Wife matching brother)
+                  const availableBhabhis = [
+                    ...bhabhis,
+                    ...rawSpouses.filter(s => String(s.id || s._id) !== String(spouse?.id || spouse?._id))
+                  ]
                   
                   // Uncategorized / Remaining members
                   const processedIds = new Set([
@@ -1149,7 +1176,8 @@ export default function Users() {
                     mother?.id || mother?._id,
                     ...uncles.map(u => u.id || u._id),
                     ...aunts.map(a => a.id || a._id),
-                    ...spouses.map(s => s.id || s._id),
+                    spouse?.id || spouse?._id,
+                    ...availableBhabhis.map(bh => bh.id || bh._id),
                     ...brothers.map(b => b.id || b._id),
                     ...sisters.map(s => s.id || s._id),
                     ...cousins.map(c => c.id || c._id),
@@ -1171,8 +1199,6 @@ export default function Users() {
                       .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
                       .join(' ')
                   }
-
-                  // ─── EDRAWMAX TREE NODE CARD ─────────────────────────────
                   const EdrawCard = ({ member, roleLabel, isHead = false }) => {
                     if (!member) return null
                     const fullName = member.name || [member.first_name, member.middle_name, member.last_name].filter(Boolean).join(' ') || roleLabel
@@ -1190,31 +1216,32 @@ export default function Users() {
                         (viewingUser.name && (viewingUser.name.toLowerCase() === (member.name || '').toLowerCase() || viewingUser.name.toLowerCase() === fullName.toLowerCase()))
                       )
                     )
-
                     return (
                       <div className="flex flex-col items-center">
                         <div 
                           id={isFocused ? 'focused-tree-node' : undefined}
-                          className={`w-36 sm:w-40 bg-white dark:bg-slate-900 rounded-2xl border transition-all duration-300 flex flex-col items-center select-none relative ${
-                            isFocused
-                              ? 'border-emerald-500 ring-4 ring-emerald-500/40 shadow-xl scale-105 z-30'
-                              : isHead 
-                                ? 'border-amber-400 dark:border-amber-500/80 shadow-md ring-2 ring-amber-400/30' 
-                                : 'border-slate-400/80 dark:border-slate-500/80 shadow-xs'
+                          className={`w-36 sm:w-40 bg-white dark:bg-slate-900 rounded-2xl transition-all duration-300 flex flex-col items-center select-none relative ${
+                            isFocused && isHead
+                              ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/30 shadow-2xl scale-105 z-30'
+                              : isFocused
+                                ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/35 shadow-2xl scale-105 z-30'
+                                : isHead 
+                                  ? 'border-2 border-amber-400 dark:border-amber-400/90 shadow-lg ring-2 ring-amber-400/25 z-20' 
+                                  : 'border border-slate-300 dark:border-slate-700 shadow-xs'
                           } p-2.5 hover:shadow-md`}>
                           
-                          {/* Focused Viewing Badge (Emerald) */}
+                          {/* Focused Viewing Badge (Emerald Green) */}
                           {isFocused && (
-                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg z-30 animate-bounce whitespace-nowrap ring-2 ring-white dark:ring-slate-900">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg z-30 whitespace-nowrap ring-2 ring-white dark:ring-slate-900">
                               <Eye className="w-2.5 h-2.5 fill-white" />
                               <span>Viewing</span>
                             </div>
                           )}
 
-                          {/* Head Badge (Crown) - Yellow / Golden */}
-                          {isHead && !isFocused && (
-                            <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md z-10 border border-yellow-300">
-                              <Crown className="w-3 h-3 text-yellow-100 fill-yellow-200" />
+                          {/* Head Badge (Amber / Gold) */}
+                          {isHead && (
+                            <div className={`absolute ${isFocused ? 'top-2 right-2' : '-top-3 left-1/2 -translate-x-1/2'} bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 text-[9px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md z-20 border border-yellow-300 ring-2 ring-white dark:ring-slate-900`}>
+                              <Crown className="w-2.5 h-2.5 text-yellow-100 fill-yellow-200" />
                               <span>Head</span>
                             </div>
                           )}
@@ -1263,8 +1290,6 @@ export default function Users() {
                       </div>
                     )
                   }
-
-                  // ─── UNIFIED RECURSIVE GENEALOGICAL TREE NODE (100% MATHEMATICAL ALIGNMENT) ───
                   const renderTreeNode = ({
                     member1,
                     member2 = null,
@@ -1287,7 +1312,6 @@ export default function Users() {
 
                           {member2 && (
                             <>
-                              {/* Horizontal spouse bridge with pill badge */}
                               <div className="w-12 sm:w-16 h-[2.5px] bg-[#3B5998] relative flex items-center justify-center shrink-0">
                                 <span className="px-2.5 py-0.5 rounded-full bg-[#3B5998] text-white font-semibold text-[9px] shadow-sm select-none z-20">
                                   {spouseBadge}
@@ -1297,13 +1321,9 @@ export default function Users() {
                             </>
                           )}
                         </div>
-
-                        {/* Downward Connector & Children Row with generous generation clearance */}
                         {hasChildren && (
                           <div className="flex flex-col items-center w-full">
-                            {/* Stem dropping from exact bottom center of couple/card */}
                             <div className="w-[2.5px] h-10 bg-[#3B5998]" />
-
                             {/* Children Row with Spanning Horizontal Bar */}
                             <div className="flex items-start justify-center relative pt-0">
                               {/* Children Badge pill */}
@@ -1436,48 +1456,109 @@ export default function Users() {
                     childrenBadge: pairedChildNodes.length > 0 ? 'Children' : null
                   })
 
-                  // 4. Sibling Children (Nephews / Nieces under Brother / Sister) (Level 4 under Level 3)
-                  const siblingChildren = [...nephews, ...nieces]
-                  const nephewNieceNodes = siblingChildren.map(c => (
-                    renderTreeNode({
-                      member1: c,
-                      label1: c.relation
+                  // 4. Sibling Children (Nephews / Nieces / Brother's kids under Brother / Sister) (Level 4 under Level 3)
+                  const brotherCousins = cousins.filter(c => {
+                    if (c.father_id && brothers.some(b => String(b.id || b._id) === String(c.father_id))) return true
+                    const cMiddle = (c.middle_name || '').toLowerCase()
+                    return brothers.some(b => {
+                      const bFirst = (b.first_name || '').toLowerCase()
+                      return bFirst && cMiddle && (cMiddle.includes(bFirst) || bFirst.includes(cMiddle))
                     })
-                  ))
+                  })
+                  const trueCousins = cousins.filter(c => !brotherCousins.some(bc => String(bc.id || bc._id) === String(c.id || c._id)))
+                  const siblingChildren = [...nephews, ...nieces, ...brotherCousins]
 
-                  const sisterNodes = sisters.map((s, idx) => (
-                    renderTreeNode({
-                      member1: s,
-                      label1: 'Sister',
-                      children: idx === 0 && brothers.length === 0 && nephewNieceNodes.length > 0 ? nephewNieceNodes : [],
-                      childrenBadge: idx === 0 && brothers.length === 0 && nephewNieceNodes.length > 0 ? 'Children' : null
+                  const usedBhabhiIds = new Set()
+                  const usedSiblingChildIds = new Set()
+
+                  const brotherNodes = brothers.map((b, idx) => {
+                    const bId = String(b.id || b._id)
+                    const bFirst = (b.first_name || '').toLowerCase()
+
+                    // Match bhabhi by spouse_id, name match, or sequence
+                    const pairedBhabhi = availableBhabhis.find(bh => {
+                      const bhId = String(bh.id || bh._id)
+                      if (usedBhabhiIds.has(bhId)) return false
+                      if (bh.spouse_id && String(bh.spouse_id) === bId) return true
+                      const bhMiddle = (bh.middle_name || '').toLowerCase()
+                      if (bFirst && bhMiddle && (bhMiddle.includes(bFirst) || bFirst.includes(bhMiddle))) return true
+                      return false
+                    }) || availableBhabhis.find(bh => !usedBhabhiIds.has(String(bh.id || bh._id)))
+
+                    if (pairedBhabhi) {
+                      usedBhabhiIds.add(String(pairedBhabhi.id || pairedBhabhi._id))
+                    }
+
+                    // Match children (Nephews / Nieces / Son of Brother) belonging to this brother
+                    const brotherKids = siblingChildren.filter(c => {
+                      const cId = String(c.id || c._id)
+                      if (usedSiblingChildIds.has(cId)) return false
+                      if (c.father_id && String(c.father_id) === bId) return true
+                      const cMiddle = (c.middle_name || '').toLowerCase()
+                      if (bFirst && cMiddle && (cMiddle.includes(bFirst) || bFirst.includes(cMiddle))) return true
+                      if (brothers.length === 1) return true
+                      return false
                     })
-                  ))
 
-                  const brotherNodes = brothers.map((b, idx) => (
-                    renderTreeNode({
+                    brotherKids.forEach(k => usedSiblingChildIds.add(String(k.id || k._id)))
+
+                    const kidNodes = brotherKids.map(c => (
+                      renderTreeNode({
+                        member1: c,
+                        label1: ['Son', 'Cousin'].includes(c.relation) ? 'Nephew (ભત્રીજો)' : (c.relation || 'Nephew')
+                      })
+                    ))
+
+                    if (pairedBhabhi) {
+                      return renderTreeNode({
+                        member1: b,
+                        member2: pairedBhabhi,
+                        label1: 'Brother',
+                        label2: 'Bhabhi (ભાભી)',
+                        spouseBadge: 'Married',
+                        children: kidNodes,
+                        childrenBadge: kidNodes.length > 0 ? 'Children' : null
+                      })
+                    }
+
+                    return renderTreeNode({
                       member1: b,
                       label1: 'Brother',
-                      children: idx === 0 && nephewNieceNodes.length > 0 ? nephewNieceNodes : [],
-                      childrenBadge: idx === 0 && nephewNieceNodes.length > 0 ? 'Children' : null
+                      children: kidNodes,
+                      childrenBadge: kidNodes.length > 0 ? 'Children' : null
                     })
-                  ))
+                  })
 
-                  // 5. Siblings + Head Node Array under Parents (Level 3)
-                  const siblingsAndHeadNodes = [
-                    ...sisterNodes,
-                    headCoupleNode,
-                    ...brotherNodes
-                  ]
+                  // Remaining nephew/niece nodes under sisters (if any)
+                  const sisterNodes = sisters.map((s) => {
+                    const sId = String(s.id || s._id)
+                    const sKids = siblingChildren.filter(c => {
+                      const cId = String(c.id || c._id)
+                      if (usedSiblingChildIds.has(cId)) return false
+                      if (c.mother_id && String(c.mother_id) === sId) return true
+                      return false
+                    })
+                    sKids.forEach(k => usedSiblingChildIds.add(String(k.id || k._id)))
 
-                  // 6. Uncle & Aunt Couple + Cousins (Level 2 & Level 3)
-                  const cousinNodes = cousins.map(c => (
+                    const sKidNodes = sKids.map(c => renderTreeNode({ member1: c, label1: c.relation }))
+
+                    return renderTreeNode({
+                      member1: s,
+                      label1: 'Sister',
+                      children: sKidNodes,
+                      childrenBadge: sKidNodes.length > 0 ? 'Children' : null
+                    })
+                  })
+
+                  // 5. True Cousin Nodes (Uncle's Children)
+                  const cousinNodes = trueCousins.map(c => (
                     renderTreeNode({
                       member1: c,
                       label1: 'Cousin'
                     })
                   ))
 
+                  // 6. Uncle & Aunt Couple + Cousins (Level 2 & Level 3)
                   const uncleAuntNodes = []
                   const maxUncles = Math.max(uncles.length, aunts.length)
                   for (let i = 0; i < maxUncles; i++) {
@@ -1516,9 +1597,15 @@ export default function Users() {
                       )
                     }
                   }
-                  if (uncleAuntNodes.length === 0 && cousinNodes.length > 0) {
-                    uncleAuntNodes.push(...cousinNodes)
-                  }
+
+                  // 7. Siblings + Head Node Array under Parents (Level 3)
+                  // If no Uncle/Aunt was registered, true cousins render on the sibling level (Level 3), never on Level 2 with Father!
+                  const siblingsAndHeadNodes = [
+                    ...sisterNodes,
+                    headCoupleNode,
+                    ...brotherNodes,
+                    ...(uncleAuntNodes.length === 0 ? cousinNodes : [])
+                  ]
 
                   // 7. Parents Generation Tree (Father + Mother) (Level 2)
                   const hasParents = Boolean(father || mother)

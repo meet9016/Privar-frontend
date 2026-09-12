@@ -147,6 +147,9 @@ const RELATION_GENDER_MAP = {
   Cousin: '',
   Nephew: 'Male',
   Niece: 'Female',
+  'Sister-in-law': 'Female',
+  Bhabhi: 'Female',
+  bhabhi: 'Female',
   Other: ''
 }
 
@@ -170,6 +173,10 @@ export const RELATION_GUJARATI_MAP = {
   brother: 'ભાઈ',
   Sister: 'બહેન',
   sister: 'બહેન',
+  Bhabhi: 'ભાભી',
+  bhabhi: 'ભાભી',
+  'Sister-in-law': 'ભાભી / સાળી',
+  'sister-in-law': 'ભાભી / સાળી',
   Grandfather: 'દાદા',
   grandfather: 'દાદા',
   Grandmother: 'દાદી',
@@ -198,10 +205,6 @@ export const RELATION_GUJARATI_MAP = {
   'mother-in-law': 'સાસુ',
   'Brother-in-law': 'સાળો / બનેવી',
   'brother-in-law': 'સાળો / બનેવી',
-  'Sister-in-law': 'સાળી / ભાભી / નણંદ',
-  'sister-in-law': 'સાળી / ભાભી / નણંદ',
-  Bhabhi: 'ભાભી',
-  bhabhi: 'ભાભી',
   BhabhiJi: 'ભાભી',
   Kaka: 'કાકા',
   kaka: 'કાકા',
@@ -262,8 +265,11 @@ export const RELATION_OPTIONS = [
   { name: 'Daughter', meaning: 'પરિવારના વડાની દીકરી / પુત્રી' },
   { name: 'Father', meaning: 'પરિવારના વડાના પિતાશ્રી (બાપુજી/પપ્પા)' },
   { name: 'Mother', meaning: 'પરિવારના વડાના માતુશ્રી (બા/મમ્મી)' },
-  { name: 'Brother', meaning: 'પરિવારના વડાના સગા ભાઈ' },
-  { name: 'Sister', meaning: 'પરિવારના વડાની સગી બહેન' },
+  { name: 'Brother', meaning: 'પરિવારના વડાના સગા મોટા અથવા નાના ભાઈ' },
+  { name: 'Bhabhi', meaning: 'મોટા કે નાના ભાઈના પત્ની (ભાભી / મોટી ભાભી / જેઠાણી)' },
+  { name: 'Nephew', meaning: 'સગા ભાઈનો દીકરો (ભત્રીજો) અથવા બહેનનો દીકરો (ભાણો)' },
+  { name: 'Niece', meaning: 'સગા ભાઈની દીકરી (ભત્રીજી) અથવા બહેનની દીકરી (ભાણી)' },
+  { name: 'Sister', meaning: 'પરિવારના વડાની સગી મોટી અથવા નાની બહેન' },
   { name: 'Grandfather', meaning: 'પિતાના પિતા (દાદા) અથવા માતાના પિતા (નાના)' },
   { name: 'Grandmother', meaning: 'પિતાની માતા (દાદી) અથવા માતાની માતા (નાની)' },
   { name: 'Uncle', meaning: 'કાકા, મામા, ફુવા અથવા માસા' },
@@ -610,11 +616,55 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       if (!prev) return prev
       const current = { ...prev, [field]: value }
 
-      // Auto set gender when relationship changes
+      // Auto set gender and default middle name when relationship changes
       if (field === 'relation') {
         const mappedGender = RELATION_GENDER_MAP[value]
         if (mappedGender) {
           current.gender = mappedGender
+        }
+        if (value === 'Brother' || value === 'Sister') {
+          const father = members.find((m, i) => m.relation === 'Father' && i !== expandedMemberIndex)
+          const fatherName = father?.first_name || formData.middle_name || ''
+          if (fatherName) {
+            current.middle_name = fatherName
+            if (father?._id || father?.id) {
+              current.father_id = father._id || father.id
+            }
+          }
+        } else if (value === 'Bhabhi') {
+          const brother = members.find((m, i) => m.relation === 'Brother' && i !== expandedMemberIndex)
+          if (brother && brother.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+            current.middle_name = brother.first_name
+            current.spouse_id = brother._id || brother.id
+          }
+        } else if (value === 'Daughter-in-law') {
+          const son = members.find((m, i) => m.relation === 'Son' && i !== expandedMemberIndex)
+          if (son && son.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+            current.middle_name = son.first_name
+            current.spouse_id = son._id || son.id
+          }
+        } else if (value === 'Cousin') {
+          const uncle = members.find((m, i) => m.relation === 'Uncle' && i !== expandedMemberIndex)
+          if (uncle && uncle.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+            current.middle_name = uncle.first_name
+            current.father_id = uncle._id || uncle.id
+          }
+        } else if (['Nephew', 'Niece'].includes(value)) {
+          const brother = members.find((m, i) => m.relation === 'Brother' && i !== expandedMemberIndex)
+          if (brother && brother.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+            current.middle_name = brother.first_name
+            current.father_id = brother._id || brother.id
+          }
+        } else if (['Grandson', 'Granddaughter'].includes(value)) {
+          const son = members.find((m, i) => m.relation === 'Son' && i !== expandedMemberIndex)
+          if (son && son.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+            current.middle_name = son.first_name
+            current.father_id = son._id || son.id
+          }
+        } else if (value === 'Wife' || ['Son', 'Daughter'].includes(value)) {
+          if (!current.middle_name && formData.first_name) {
+            current.middle_name = formData.first_name
+          }
         }
       }
 
@@ -625,11 +675,56 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       setMembers(prev => {
         const updated = [...prev]
         if (updated[expandedMemberIndex]) {
-          updated[expandedMemberIndex] = {
-            ...updated[expandedMemberIndex],
-            [field]: value,
-            ...(field === 'relation' && RELATION_GENDER_MAP[value] ? { gender: RELATION_GENDER_MAP[value] } : {})
+          const current = { ...updated[expandedMemberIndex], [field]: value }
+          if (field === 'relation') {
+            const mappedGender = RELATION_GENDER_MAP[value]
+            if (mappedGender) current.gender = mappedGender
+            if (value === 'Brother' || value === 'Sister') {
+              const father = prev.find((m, i) => m.relation === 'Father' && i !== expandedMemberIndex)
+              const fatherName = father?.first_name || formData.middle_name || ''
+              if (fatherName) {
+                current.middle_name = fatherName
+                if (father?._id || father?.id) {
+                  current.father_id = father._id || father.id
+                }
+              }
+            } else if (value === 'Bhabhi') {
+              const brother = prev.find((m, i) => m.relation === 'Brother' && i !== expandedMemberIndex)
+              if (brother && brother.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+                current.middle_name = brother.first_name
+                current.spouse_id = brother._id || brother.id
+              }
+            } else if (value === 'Daughter-in-law') {
+              const son = prev.find((m, i) => m.relation === 'Son' && i !== expandedMemberIndex)
+              if (son && son.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+                current.middle_name = son.first_name
+                current.spouse_id = son._id || son.id
+              }
+            } else if (value === 'Cousin') {
+              const uncle = prev.find((m, i) => m.relation === 'Uncle' && i !== expandedMemberIndex)
+              if (uncle && uncle.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+                current.middle_name = uncle.first_name
+                current.father_id = uncle._id || uncle.id
+              }
+            } else if (['Nephew', 'Niece'].includes(value)) {
+              const brother = prev.find((m, i) => m.relation === 'Brother' && i !== expandedMemberIndex)
+              if (brother && brother.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+                current.middle_name = brother.first_name
+                current.father_id = brother._id || brother.id
+              }
+            } else if (['Grandson', 'Granddaughter'].includes(value)) {
+              const son = prev.find((m, i) => m.relation === 'Son' && i !== expandedMemberIndex)
+              if (son && son.first_name && (!current.middle_name || current.middle_name === formData.first_name)) {
+                current.middle_name = son.first_name
+                current.father_id = son._id || son.id
+              }
+            } else if (value === 'Wife' || ['Son', 'Daughter'].includes(value)) {
+              if (!current.middle_name && formData.first_name) {
+                current.middle_name = formData.first_name
+              }
+            }
           }
+          updated[expandedMemberIndex] = current
         }
         return updated
       })
@@ -766,6 +861,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         last_name: capitalizeWords(m.last_name || formData.last_name),
         relation: m.relation || 'Other',
         gender: m.gender || 'Male',
+        spouse_id: m.spouse_id || null,
+        father_id: m.father_id || null,
         dob: m.dob || null,
         anniversary: m.anniversary || null,
         blood_group: m.blood_group || '',
@@ -1260,6 +1357,233 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           />
                         </div>
                       </div>
+
+                      {/* Smart Relationship Connection Helpers */}
+                      {['Brother', 'Sister'].includes(editingMember.relation) && (() => {
+                        const fatherMember = members.find((m, i) => m.relation === 'Father' && i !== expandedMemberIndex)
+                        const fatherName = fatherMember?.first_name || formData.middle_name || ''
+                        return (
+                          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <div>
+                                <span className="font-bold text-text">પિતાનું નામ (Father Name):</span>
+                                <span className="ml-1.5 font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                                  {fatherName || '(Head ના પિતાનું નામ)'}
+                                </span>
+                                <p className="text-[11px] text-text-secondary mt-0.5">
+                                  પરિવારના વડા (Head) ના પિતાનું નામ Middle Name માં આપોઆપ સેટ થઈ ગયું છે.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })()}
+
+                      {editingMember.relation === 'Bhabhi' && (() => {
+                        const brotherOptions = members.filter((m, i) => m.relation === 'Brother' && i !== expandedMemberIndex)
+                        return (
+                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                              <div>
+                                <span className="font-bold text-text">પતિ / ભાઈ (Husband / Brother):</span>
+                                <p className="text-[11px] text-text-secondary mt-0.5">
+                                  {brotherOptions.length > 0 
+                                    ? 'ક્યા ભાઈના પત્ની છે તે પસંદ કરો (Middle Name આપોઆપ આવી જશે):' 
+                                    : 'પરિવારમાં કોઈ ભાઈ લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ પતિનું નામ લખી શકો છો.'}
+                                </p>
+                              </div>
+                            </div>
+                            {brotherOptions.length > 0 && (
+                              <div className="w-full sm:w-64 shrink-0">
+                                <Select
+                                  value={editingMember.spouse_id || ''}
+                                  onChange={(val) => {
+                                    handleEditingMemberChange('spouse_id', val)
+                                    const selectedBro = members.find(m => String(m._id || m.id) === String(val))
+                                    if (selectedBro && selectedBro.first_name) {
+                                      handleEditingMemberChange('middle_name', selectedBro.first_name)
+                                    }
+                                  }}
+                                  options={[
+                                    { label: 'ભાઈ પસંદ કરો (Select Brother)...', value: '' },
+                                    ...brotherOptions.map(b => ({
+                                      label: `${b.first_name || 'Brother'} ${b.last_name || ''} (Brother)`,
+                                      value: b._id || b.id
+                                    }))
+                                  ]}
+                                  placeholder="Select Brother"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
+
+                      {editingMember.relation === 'Daughter-in-law' && (() => {
+                        const sonOptions = members.filter((m, i) => m.relation === 'Son' && i !== expandedMemberIndex)
+                        return (
+                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                              <div>
+                                <span className="font-bold text-text">પતિ / દીકરો (Husband / Son):</span>
+                                <p className="text-[11px] text-text-secondary mt-0.5">
+                                  {sonOptions.length > 0 
+                                    ? 'ક્યા દીકરાના પત્ની (પુત્રવધૂ) છે તે પસંદ કરો:' 
+                                    : 'પરિવારમાં કોઈ દીકરો લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ પતિનું નામ લખી શકો છો.'}
+                                </p>
+                              </div>
+                            </div>
+                            {sonOptions.length > 0 && (
+                              <div className="w-full sm:w-64 shrink-0">
+                                <Select
+                                  value={editingMember.spouse_id || ''}
+                                  onChange={(val) => {
+                                    handleEditingMemberChange('spouse_id', val)
+                                    const selectedSon = members.find(m => String(m._id || m.id) === String(val))
+                                    if (selectedSon && selectedSon.first_name) {
+                                      handleEditingMemberChange('middle_name', selectedSon.first_name)
+                                    }
+                                  }}
+                                  options={[
+                                    { label: 'દીકરો પસંદ કરો (Select Son)...', value: '' },
+                                    ...sonOptions.map(s => ({
+                                      label: `${s.first_name || 'Son'} ${s.last_name || ''} (Son)`,
+                                      value: s._id || s.id
+                                    }))
+                                  ]}
+                                  placeholder="Select Son"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
+
+                      {editingMember.relation === 'Cousin' && (() => {
+                        const uncleOptions = members.filter((m, i) => ['Uncle', 'Father', 'Brother'].includes(m.relation) && i !== expandedMemberIndex)
+                        return (
+                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                              <div>
+                                <span className="font-bold text-text">પિતા / કાકા / મામા (Father / Uncle):</span>
+                                <p className="text-[11px] text-text-secondary mt-0.5">
+                                  {uncleOptions.length > 0 
+                                    ? 'પિતરાઈ ભાઈ/બહેનના પિતા પસંદ કરો જેથી Middle Name આપોઆપ આવી જશે:' 
+                                    : 'પરિવારમાં કાકા/મામા લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ તેમના પિતાનું નામ લખી શકો છો.'}
+                                </p>
+                              </div>
+                            </div>
+                            {uncleOptions.length > 0 && (
+                              <div className="w-full sm:w-64 shrink-0">
+                                <Select
+                                  value={editingMember.father_id || ''}
+                                  onChange={(val) => {
+                                    handleEditingMemberChange('father_id', val)
+                                    const selectedUncle = members.find(m => String(m._id || m.id) === String(val))
+                                    if (selectedUncle && selectedUncle.first_name) {
+                                      handleEditingMemberChange('middle_name', selectedUncle.first_name)
+                                    }
+                                  }}
+                                  options={[
+                                    { label: 'પિતા પસંદ કરો...', value: '' },
+                                    ...uncleOptions.map(u => ({
+                                      label: `${u.first_name || 'Relative'} ${u.last_name || ''} (${getRelationDisplay(u.relation)})`,
+                                      value: u._id || u.id
+                                    }))
+                                  ]}
+                                  placeholder="Select Uncle / Father"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
+
+                      {['Nephew', 'Niece'].includes(editingMember.relation) && (() => {
+                        const brotherOptions = members.filter((m, i) => m.relation === 'Brother' && i !== expandedMemberIndex)
+                        return (
+                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                              <div>
+                                <span className="font-bold text-text">પિતા / ભાઈ (Father / Brother):</span>
+                                <p className="text-[11px] text-text-secondary mt-0.5">
+                                  {brotherOptions.length > 0 
+                                    ? 'ભત્રીજા/ભત્રીજીના પિતા (ભાઈ) પસંદ કરો (Middle Name આપોઆપ આવી જશે):' 
+                                    : 'પરિવારમાં કોઈ ભાઈ લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ પિતાનું નામ લખી શકો છો.'}
+                                </p>
+                              </div>
+                            </div>
+                            {brotherOptions.length > 0 && (
+                              <div className="w-full sm:w-64 shrink-0">
+                                <Select
+                                  value={editingMember.father_id || ''}
+                                  onChange={(val) => {
+                                    handleEditingMemberChange('father_id', val)
+                                    const selectedBro = members.find(m => String(m._id || m.id) === String(val))
+                                    if (selectedBro && selectedBro.first_name) {
+                                      handleEditingMemberChange('middle_name', selectedBro.first_name)
+                                    }
+                                  }}
+                                  options={[
+                                    { label: 'ભાઈ પસંદ કરો (Select Brother)...', value: '' },
+                                    ...brotherOptions.map(b => ({
+                                      label: `${b.first_name || 'Brother'} ${b.last_name || ''} (Brother)`,
+                                      value: b._id || b.id
+                                    }))
+                                  ]}
+                                  placeholder="Select Brother / Father"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
+
+                      {['Grandson', 'Granddaughter'].includes(editingMember.relation) && (() => {
+                        const sonOptions = members.filter((m, i) => m.relation === 'Son' && i !== expandedMemberIndex)
+                        return (
+                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                              <div>
+                                <span className="font-bold text-text">પિતા / દીકરો (Father / Son):</span>
+                                <p className="text-[11px] text-text-secondary mt-0.5">
+                                  {sonOptions.length > 0 
+                                    ? 'પૌત્ર/પૌત્રીના પિતા (દીકરો) પસંદ કરો (Middle Name આપોઆપ આવી જશે):' 
+                                    : 'પરિવારમાં કોઈ દીકરો લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ પિતાનું નામ લખી શકો છો.'}
+                                </p>
+                              </div>
+                            </div>
+                            {sonOptions.length > 0 && (
+                              <div className="w-full sm:w-64 shrink-0">
+                                <Select
+                                  value={editingMember.father_id || ''}
+                                  onChange={(val) => {
+                                    handleEditingMemberChange('father_id', val)
+                                    const selectedSon = members.find(m => String(m._id || m.id) === String(val))
+                                    if (selectedSon && selectedSon.first_name) {
+                                      handleEditingMemberChange('middle_name', selectedSon.first_name)
+                                    }
+                                  }}
+                                  options={[
+                                    { label: 'દીકરો પસંદ કરો (Select Son)...', value: '' },
+                                    ...sonOptions.map(s => ({
+                                      label: `${s.first_name || 'Son'} ${s.last_name || ''} (Son)`,
+                                      value: s._id || s.id
+                                    }))
+                                  ]}
+                                  placeholder="Select Son / Father"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
 
                       {/* Row 2: Gender, Date of Birth, Anniversary Date, Blood Group, Mobile Number (Balanced 5 columns or clean 2+3 layout) */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 items-start">

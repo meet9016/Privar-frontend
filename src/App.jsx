@@ -115,6 +115,7 @@ export default function App() {
           <Route path="feedback" element={<Navigate to="/admin/media?tab=feedback" replace />} />
           <Route path="festivals" element={<Navigate to="/admin/engagements?tab=festivals" replace />} />
           <Route path="donations" element={<Navigate to="/admin/engagements?tab=donations" replace />} />
+          <Route path="mandal" element={<Navigate to="/admin/engagements?tab=contribution" replace />} />
           <Route path="masters/:type" element={<MasterRoute />} />
           <Route path="bank-details" element={<PermissionRoute permission="masters.list"><ContentPage type="bank-details" /></PermissionRoute>} />
 
