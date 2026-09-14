@@ -11,7 +11,11 @@ import {
   Check,
   RefreshCw,
   Printer,
-  CheckCheck
+  CheckCheck,
+  Filter,
+  X,
+  CreditCard,
+  RotateCcw
 } from 'lucide-react'
 import api, { assetUrl, formatDate } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
@@ -19,6 +23,9 @@ import Table from '../../components/common/Table'
 import SearchInput from '../../components/common/SearchInput'
 import Select from '../../components/common/Select'
 import Button from '../../components/common/Button'
+import DatePicker from '../../components/DatePicker'
+import FilterPopover from '../../components/common/FilterPopover'
+import Modal from '../../components/Modal'
 import usePagination from '../../hooks/usePagination'
 import useDebounce from '../../hooks/useDebounce'
 import { toast } from '../../lib/toast'
@@ -26,6 +33,7 @@ import { confirm } from '../../lib/confirm'
 import RecordPaymentModal from './RecordPaymentModal'
 
 const MONTH_OPTIONS = [
+  { label: 'All Months', value: '' },
   { label: 'January', value: '01' },
   { label: 'February', value: '02' },
   { label: 'March', value: '03' },
@@ -40,30 +48,63 @@ const MONTH_OPTIONS = [
   { label: 'December', value: '12' }
 ]
 
-const currentYear = new Date().getFullYear()
+const currentYearNum = new Date().getFullYear()
 const YEAR_OPTIONS = Array.from({ length: 7 }, (_, i) => {
-  const y = String(currentYear - 3 + i)
+  const y = String(currentYearNum - 3 + i)
   return { label: y, value: y }
 })
 
-export default function MonthlyContribution({ mandalId, mandal }) {
-  const currentMonthStr = new Date().toISOString().slice(0, 7)
-  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()))
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(String(new Date().getMonth() + 1).padStart(2, '0'))
-  const selectedMonth = `${selectedYear}-${selectedMonthIndex}`
+const PAYMENT_MODE_OPTIONS = [
+  { label: 'All Payment Modes', value: 'All' },
+  { label: 'Cash', value: 'Cash' },
+  { label: 'UPI / Online', value: 'Online' },
+  { label: 'Bank Transfer', value: 'Bank' },
+  { label: 'Cheque', value: 'Cheque' }
+]
 
+export default function MonthlyContribution({ mandalId, mandal }) {
+  const currentMonthStr = new Date().toISOString().slice(0, 7) // 'YYYY-MM'
+  
+  // Active Filters
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr)
   const [statusFilter, setStatusFilter] = useState('All')
+  const [paymentModeFilter, setPaymentModeFilter] = useState('All')
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 400)
 
+  // Filter Popover State
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState({
+    month: currentMonthStr,
+    status: 'All',
+    payment_mode: 'All'
+  })
+
+  // Selection & Bulk Action State
+  const [selectedRows, setSelectedRows] = useState([])
+  const [isBulkPayModalOpen, setIsBulkPayModalOpen] = useState(false)
+  const [bulkPaymentData, setBulkPaymentData] = useState({
+    payment_mode: 'Cash',
+    payment_date: new Date().toISOString().slice(0, 10)
+  })
+  const [bulkPaidLoading, setBulkPaidLoading] = useState(false)
+
+  // Table Data & Summary
   const [contributions, setContributions] = useState([])
   const [summary, setSummary] = useState(null)
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
-  const [bulkPaidLoading, setBulkPaidLoading] = useState(false)
 
+  // Single Edit Modal
   const [activeContribution, setActiveContribution] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Active filter count
+  const activeFilterCount = [
+    selectedMonth !== currentMonthStr,
+    statusFilter !== 'All',
+    paymentModeFilter !== 'All'
+  ].filter(Boolean).length
 
   const fetchContributions = useCallback(async () => {
     setLoading(true)
@@ -73,6 +114,7 @@ export default function MonthlyContribution({ mandalId, mandal }) {
           mandal_id: mandalId,
           month: selectedMonth,
           status: statusFilter,
+          payment_mode: paymentModeFilter !== 'All' ? paymentModeFilter : undefined,
           search: debouncedSearch
         })
       })
@@ -89,11 +131,44 @@ export default function MonthlyContribution({ mandalId, mandal }) {
     } finally {
       setLoading(false)
     }
-  }, [mandalId, selectedMonth, statusFilter, debouncedSearch, page, limit, getParams, setPaginationData])
+  }, [mandalId, selectedMonth, statusFilter, paymentModeFilter, debouncedSearch, page, limit, getParams, setPaginationData])
 
   useEffect(() => {
     fetchContributions()
   }, [fetchContributions])
+
+  // Filter Popover handlers
+  const handleOpenFilter = () => {
+    setDraftFilters({
+      month: selectedMonth,
+      status: statusFilter,
+      payment_mode: paymentModeFilter
+    })
+    setIsFilterOpen(prev => !prev)
+  }
+
+  const handleApplyFilter = () => {
+    setSelectedMonth(draftFilters.month || currentMonthStr)
+    setStatusFilter(draftFilters.status || 'All')
+    setPaymentModeFilter(draftFilters.payment_mode || 'All')
+    setIsFilterOpen(false)
+    setSelectedRows([])
+    resetPage()
+  }
+
+  const handleClearFilter = () => {
+    setDraftFilters({
+      month: currentMonthStr,
+      status: 'All',
+      payment_mode: 'All'
+    })
+    setSelectedMonth(currentMonthStr)
+    setStatusFilter('All')
+    setPaymentModeFilter('All')
+    setIsFilterOpen(false)
+    setSelectedRows([])
+    resetPage()
+  }
 
   const handleOpenPayment = (contrib) => {
     setActiveContribution(contrib)
@@ -115,6 +190,43 @@ export default function MonthlyContribution({ mandalId, mandal }) {
     }
   }
 
+  // Bulk Mark Paid for Selected Members
+  const handleOpenBulkPaySelected = () => {
+    if (selectedRows.length === 0) {
+      toast.info('Please select one or more members using checkboxes first.')
+      return
+    }
+    setBulkPaymentData({
+      payment_mode: 'Cash',
+      payment_date: new Date().toISOString().slice(0, 10)
+    })
+    setIsBulkPayModalOpen(true)
+  }
+
+  const handleConfirmBulkPaySelected = async (e) => {
+    e.preventDefault()
+    if (selectedRows.length === 0) return
+
+    setBulkPaidLoading(true)
+    try {
+      const res = await api.post(MANDAL_ENDPOINTS.BULK_MARK_PAID, {
+        mandal_id: mandalId,
+        contribution_ids: selectedRows,
+        payment_mode: bulkPaymentData.payment_mode,
+        payment_date: bulkPaymentData.payment_date
+      })
+      toast.success(res.data?.message || `Marked ${selectedRows.length} member(s) as Paid`)
+      setIsBulkPayModalOpen(false)
+      setSelectedRows([])
+      fetchContributions()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to mark selected members as paid')
+    } finally {
+      setBulkPaidLoading(false)
+    }
+  }
+
+  // Bulk Mark All Pending in Month
   const handleMarkAllPaid = async () => {
     const isConfirmed = await confirm(
       `Are you sure you want to mark ALL pending members as Paid for ${selectedMonth}?`,
@@ -133,6 +245,7 @@ export default function MonthlyContribution({ mandalId, mandal }) {
         payment_date: new Date().toISOString().slice(0, 10)
       })
       toast.success(res.data?.message || 'All pending members marked as Paid')
+      setSelectedRows([])
       fetchContributions()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to mark all as paid')
@@ -217,92 +330,125 @@ export default function MonthlyContribution({ mandalId, mandal }) {
 
   return (
     <div className="space-y-4 animate-slide-up text-text">
-      {/* Unified Controls Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-card p-3 rounded-2xl border border-border shadow-xs">
-        {/* Left: Year & Month Filter */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Year Select */}
-          <div className="w-28">
-            <Select
-              value={selectedYear}
-              onChange={(val) => {
-                setSelectedYear(val)
-                resetPage()
-              }}
-              options={YEAR_OPTIONS}
-            />
-          </div>
-
-          {/* Month Select */}
-          <div className="w-36">
-            <Select
-              value={selectedMonthIndex}
-              onChange={(val) => {
-                setSelectedMonthIndex(val)
-                resetPage()
-              }}
-              options={MONTH_OPTIONS}
-            />
-          </div>
-
-          {/* Current Month button */}
-          <button
-            type="button"
-            onClick={() => {
-              const now = new Date()
-              setSelectedYear(String(now.getFullYear()))
-              setSelectedMonthIndex(String(now.getMonth() + 1).padStart(2, '0'))
-              resetPage()
-            }}
-            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
-              selectedMonth === currentMonthStr
-                ? 'bg-primary text-white border-primary shadow-xs'
-                : 'bg-surface-secondary text-text-secondary hover:text-text border-border'
-            }`}
-          >
-            Current Month
-          </button>
-        </div>
-
-        {/* Right: Search + Status Filter + Mark All Paid + Refresh */}
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Unified Action & Controls Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-card p-3 rounded-2xl border border-border shadow-xs">
+        {/* Left Side: Search + Quick Month Display */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <SearchInput
             value={search}
             onChange={(e) => { setSearch(e.target.value); resetPage(); }}
             onClear={() => { setSearch(''); resetPage(); }}
             placeholder="Search member name or number..."
-            wrapperClassName="w-52 sm:w-60"
+            wrapperClassName="w-56 sm:w-72"
           />
 
-          <div className="w-32">
-            <Select
-              value={statusFilter}
-              onChange={(val) => { setStatusFilter(val); resetPage(); }}
-              options={[
-                { label: 'All Status', value: 'All' },
-                { label: 'Paid', value: 'Paid' },
-                { label: 'Pending', value: 'Pending' }
-              ]}
-            />
+          <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl bg-surface-secondary/70 border border-border text-xs font-semibold shadow-xs">
+            <Calendar className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-text-secondary">Month:</span>
+            <span className="font-bold text-text">{selectedMonth}</span>
           </div>
+        </div>
 
-          {summary?.pending_members > 0 && (
+        {/* Right Side: Selection Actions + Filter Popover + Mark All + Refresh */}
+        <div className="flex flex-wrap items-center gap-2.5 ml-auto">
+          {/* Selected Count & Mark Paid Button */}
+          {selectedRows.length > 0 && (
+            <div className="flex items-center gap-2 h-10 bg-emerald-500/10 border border-emerald-500/30 px-3 rounded-xl animate-fade-in shadow-xs">
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                {selectedRows.length} selected
+              </span>
+              <button
+                type="button"
+                onClick={handleOpenBulkPaySelected}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Mark Paid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedRows([])}
+                className="p-1 rounded-md text-text-secondary hover:text-text hover:bg-surface transition-colors cursor-pointer"
+                title="Clear selection"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Filter Popover */}
+          <FilterPopover
+            isOpen={isFilterOpen}
+            onToggle={handleOpenFilter}
+            onClose={() => setIsFilterOpen(false)}
+            activeCount={activeFilterCount}
+            onClear={handleClearFilter}
+            onApply={handleApplyFilter}
+            title="Filter Contributions"
+            width="w-[320px]"
+          >
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">
+                  Contribution Month
+                </label>
+                <DatePicker
+                  mode="month"
+                  value={draftFilters.month}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, month: val }))}
+                  placeholder="Select Month"
+                  className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50 shadow-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">
+                  Payment Status
+                </label>
+                <Select
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  options={[
+                    { label: 'All Status', value: 'All' },
+                    { label: 'Paid', value: 'Paid' },
+                    { label: 'Pending', value: 'Pending' }
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">
+                  Payment Mode
+                </label>
+                <Select
+                  value={draftFilters.payment_mode}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, payment_mode: val }))}
+                  options={PAYMENT_MODE_OPTIONS}
+                />
+              </div>
+            </div>
+          </FilterPopover>
+
+          {/* Mark All Paid (for entire month when pending members exist) */}
+          {summary?.pending_members > 0 && selectedRows.length === 0 && (
             <button
               type="button"
               onClick={handleMarkAllPaid}
               disabled={bulkPaidLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
               title="Mark all pending members as Paid for this month"
             >
               <CheckCheck className="w-4 h-4" />
-              <span>{bulkPaidLoading ? 'Marking All...' : 'Mark All Paid'}</span>
+              <span className="hidden sm:inline">{bulkPaidLoading ? 'Marking...' : 'Mark All Paid'}</span>
+              <span className="sm:hidden">All Paid</span>
             </button>
           )}
 
+          {/* Refresh Button */}
           <button
             type="button"
             onClick={fetchContributions}
-            className="p-2.5 rounded-xl border border-border bg-input-bg hover:bg-surface-secondary text-text-secondary hover:text-text transition-colors cursor-pointer shadow-xs"
+            className="h-10 w-10 flex items-center justify-center rounded-xl border border-border bg-input-bg hover:bg-surface-secondary text-text-secondary hover:text-text transition-colors cursor-pointer shadow-xs"
             title="Refresh list"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
@@ -313,70 +459,74 @@ export default function MonthlyContribution({ mandalId, mandal }) {
       {/* Financial Summary Cards */}
       {summary && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="p-3.5 rounded-2xl bg-card border border-border shadow-xs flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-card border border-border shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-text-secondary text-[11px] font-bold uppercase tracking-wider">Total</span>
-              <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <Users className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-xl font-bold text-text mt-1.5">{summary.total_members}</p>
+            <p className="text-xl font-bold text-text mt-1">{summary.total_members}</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-xs flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-emerald-700 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-wider">Paid</span>
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                 <CheckCircle2 className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1.5">{summary.paid_members}</p>
+            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{summary.paid_members}</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/20 shadow-xs flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-amber-500/5 border border-amber-500/20 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-amber-700 dark:text-amber-400 text-[11px] font-bold uppercase tracking-wider">Pending</span>
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
                 <Clock className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1.5">{summary.pending_members}</p>
+            <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">{summary.pending_members}</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-card border border-border shadow-xs flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-card border border-border shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-text-secondary text-[11px] font-bold uppercase tracking-wider">Expected</span>
-              <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <IndianRupee className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-lg font-bold text-text mt-1.5">₹{Number(summary.expected_amount || 0).toLocaleString('en-IN')}</p>
+            <p className="text-lg font-bold text-text mt-1">₹{Number(summary.expected_amount || 0).toLocaleString('en-IN')}</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-xs flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-emerald-700 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-wider">Collected</span>
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                 <IndianRupee className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1.5">₹{Number(summary.collected_amount || 0).toLocaleString('en-IN')}</p>
+            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">₹{Number(summary.collected_amount || 0).toLocaleString('en-IN')}</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/20 shadow-xs flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-amber-500/5 border border-amber-500/20 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-amber-700 dark:text-amber-400 text-[11px] font-bold uppercase tracking-wider">Pending Amt</span>
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
                 <IndianRupee className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-lg font-bold text-amber-600 dark:text-amber-400 mt-1.5">₹{Number(summary.pending_amount || 0).toLocaleString('en-IN')}</p>
+            <p className="text-lg font-bold text-amber-600 dark:text-amber-400 mt-1">₹{Number(summary.pending_amount || 0).toLocaleString('en-IN')}</p>
           </div>
         </div>
       )}
 
-      {/* Contributions Table */}
+      {/* Contributions Table with Row Selection */}
       <Table
+        selectable={true}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        keyField="id"
         columns={[
           {
             header: 'Member',
@@ -386,7 +536,7 @@ export default function MonthlyContribution({ mandalId, mandal }) {
               const photo = u.profile_image || u.image
               return (
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                     {photo ? (
                       <img src={assetUrl(photo)} alt={c.member_name} className="w-full h-full object-cover" />
                     ) : (
@@ -405,7 +555,7 @@ export default function MonthlyContribution({ mandalId, mandal }) {
             header: 'Month',
             key: 'month',
             render: (c) => (
-              <span className="text-xs font-semibold px-2.5 py-1 bg-surface-secondary rounded-lg border border-border">
+              <span className="text-xs font-semibold px-2 py-0.5 bg-surface-secondary rounded-lg border border-border">
                 {c.month}
               </span>
             )
@@ -467,7 +617,7 @@ export default function MonthlyContribution({ mandalId, mandal }) {
             key: 'action',
             align: 'right',
             render: (c) => (
-              <div className="flex items-center justify-end gap-1.5">
+              <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                 {c.status === 'Paid' ? (
                   <button
                     type="button"
@@ -502,12 +652,11 @@ export default function MonthlyContribution({ mandalId, mandal }) {
           }
         ]}
         data={contributions}
-        keyField="id"
         loading={loading}
         emptyState={{
           icon: Calendar,
-          title: 'No contribution records',
-          description: 'Ensure you have enrolled members into the Mandal from the Members tab.'
+          title: 'No contribution records found',
+          description: 'Ensure you have enrolled members into this Mandal or check your filter criteria.'
         }}
         pagination={{
           currentPage: page,
@@ -520,7 +669,82 @@ export default function MonthlyContribution({ mandalId, mandal }) {
         }}
       />
 
-      {/* Record / Edit Payment Modal */}
+      {/* Bulk Mark Paid for Selected Members Modal */}
+      {isBulkPayModalOpen && (
+        <Modal
+          isOpen={isBulkPayModalOpen}
+          onClose={() => setIsBulkPayModalOpen(false)}
+          title={`Mark Paid for ${selectedRows.length} Selected Member(s)`}
+          maxWidth="max-w-md"
+        >
+          <form onSubmit={handleConfirmBulkPaySelected} className="space-y-4 text-text">
+            <div className="p-3 bg-surface-secondary/70 rounded-xl border border-border text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Selected Members:</span>
+                <span className="font-bold text-text">{selectedRows.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Contribution Month:</span>
+                <span className="font-bold text-primary">{selectedMonth}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Total Amount to Record:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  ₹{Number(selectedRows.length * (mandal?.monthly_amount || 500)).toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-text-secondary mb-1.5 block font-semibold">Payment Mode <span className="text-red-500">*</span></label>
+              <Select
+                value={bulkPaymentData.payment_mode}
+                onChange={(val) => setBulkPaymentData({ ...bulkPaymentData, payment_mode: val })}
+                options={[
+                  { label: 'Cash', value: 'Cash' },
+                  { label: 'UPI / Online', value: 'Online' },
+                  { label: 'Bank Transfer', value: 'Bank' },
+                  { label: 'Cheque', value: 'Cheque' }
+                ]}
+                disabled={bulkPaidLoading}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-text-secondary mb-1.5 block font-semibold">Payment Date <span className="text-red-500">*</span></label>
+              <DatePicker
+                mode="date"
+                value={bulkPaymentData.payment_date}
+                onChange={(val) => setBulkPaymentData({ ...bulkPaymentData, payment_date: val })}
+                disabled={bulkPaidLoading}
+                className="w-full bg-input-bg text-text border border-border rounded-xl py-2 px-3 text-sm outline-none focus:border-primary/50"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-4 border-t border-border">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsBulkPayModalOpen(false)}
+                disabled={bulkPaidLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={bulkPaidLoading}
+                disabled={bulkPaidLoading}
+                icon={<Check className="w-4 h-4" />}
+              >
+                {bulkPaidLoading ? 'Recording...' : `Confirm & Mark Paid (${selectedRows.length})`}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Record / Edit Single Payment Modal */}
       <RecordPaymentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -530,3 +754,4 @@ export default function MonthlyContribution({ mandalId, mandal }) {
     </div>
   )
 }
+

@@ -89,7 +89,7 @@ export default function Members() {
   return (
     <section
       id="members"
-      className="w-full px-4 sm:px-6 lg:px-8  relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
       style={{
         backgroundColor: '#FFFFFF', // User requested strictly white background
       }}
@@ -99,7 +99,7 @@ export default function Members() {
       <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-[0.03] blur-3xl pointer-events-none" style={{ backgroundColor: theme.secondaryColor }} />
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-8 sm:mb-4 relative">
+        <div className="text-center mb-8 sm:mb-10 relative">
 
 
           <div className="relative z-10 flex flex-col items-center text-center">
@@ -140,6 +140,12 @@ export default function Members() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : visibleMembers.length === 0 ? (
+          <div className="text-center py-12 px-4 bg-white rounded-2xl border border-gray-100 shadow-sm max-w-md mx-auto">
+            <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-gray-700 mb-1">No Committee Members Found</h3>
+            <p className="text-xs text-gray-500">Committee member details will appear here once added.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 px-4 py-2">

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react'
-import { API_BASE, getSubdomainTenant } from '../lib/api'
+import { API_BASE, getSubdomainTenant, getActualSubdomain } from '../lib/api'
 
 export const AuthContext = createContext()
 
@@ -172,7 +172,8 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password, tenantCode = '') => {
     const apiBase = API_BASE
-    const effectiveTenant = tenantCode || getSubdomainTenant() || localStorage.getItem('tenant_code') || ''
+    const actualSubdomain = getActualSubdomain()
+    const effectiveTenant = tenantCode || actualSubdomain || ''
     
     const headers = { 'Content-Type': 'application/json' }
     if (effectiveTenant) {
@@ -204,10 +205,10 @@ export function AuthProvider({ children }) {
     localStorage.setItem('auth_token', receivedToken)
     localStorage.setItem('auth_user', JSON.stringify(receivedUser))
     
-    const detectedTenant = effectiveTenant || payload.tenant_code || receivedUser.tenant_code || ''
+    const detectedTenant = payload.tenant_code || receivedUser.tenant_code || effectiveTenant || ''
     if (detectedTenant) {
       localStorage.setItem('tenant_code', detectedTenant)
-    } else {
+    } else if (!actualSubdomain) {
       localStorage.removeItem('tenant_code')
     }
     
@@ -223,7 +224,21 @@ export function AuthProvider({ children }) {
     setToken(null)
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
-  }, [])
+
+    // If not locked into a URL subdomain, clear tenant_code so next login starts fresh
+    const actualSubdomain = getActualSubdomain()
+    if (!actualSubdomain) {
+      localStorage.removeItem('tenant_code')
+    }
+
+    // Clear cached website theme to prevent showing old tenant's data/logo
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('web_'))
+      .forEach((k) => localStorage.removeItem(k))
+
+    setWebTheme({ webLogo: '', name: '' })
+    refreshTheme()
+  }, [refreshTheme])
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout, webTheme, refreshTheme }}>

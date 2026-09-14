@@ -56,7 +56,7 @@ export default function About() {
   return (
     <section
       id="about"
-      className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-14 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
       style={{ backgroundColor: theme.backgroundColor || '#FFFFFF' }}
     >
       {/* Dynamic Background Glowing Orbs */}

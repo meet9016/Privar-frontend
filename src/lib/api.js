@@ -31,18 +31,18 @@ export const uploadFileToDigitalks = async (file, folder = 'members') => {
 }
 
 /**
- * Extracts the tenant slug from the subdomain (e.g. 'chovatiya.parivar.me' -> 'chovatiya')
+ * Extracts the tenant slug strictly from the URL subdomain (e.g. 'chovatiya.parivar.me' -> 'chovatiya')
  */
-export const getSubdomainTenant = () => {
+export const getActualSubdomain = () => {
   if (typeof window === 'undefined') return ''
   const hostname = window.location.hostname
   if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
-    return localStorage.getItem('tenant_code') || ''
+    return ''
   }
 
   // If IP address (IPv4 or IPv6), do not treat first octet as a tenant subdomain
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':')) {
-    return localStorage.getItem('tenant_code') || ''
+    return ''
   }
 
   const parts = hostname.split('.')
@@ -62,7 +62,14 @@ export const getSubdomainTenant = () => {
     }
   }
 
-  return localStorage.getItem('tenant_code') || ''
+  return ''
+}
+
+/**
+ * Extracts the tenant slug from subdomain or local storage fallback
+ */
+export const getSubdomainTenant = () => {
+  return getActualSubdomain() || localStorage.getItem('tenant_code') || ''
 }
 
 /**

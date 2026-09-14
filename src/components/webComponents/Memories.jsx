@@ -190,66 +190,31 @@ export default function Memories() {
   return (
     <section
       id="gallery"
-      className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
       style={{ backgroundColor: theme.backgroundColor || '#FFFFFF' }}
     >
       <div className="max-w-[1600px] mx-auto">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-5">
-          <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-            {/* Badge */}
-            <div
-              className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold mb-2.5 px-3.5 py-1.5 rounded-full border bg-white shadow-sm"
-              style={{
-                color: theme.primaryColor || '#0a2342',
-                borderColor: `${theme.primaryColor || '#0a2342'}30`,
-              }}
-            >
-              <Camera className="w-4 h-4" style={{ color: theme.primaryColor || '#0a2342' }} />
-              <span>Memories &amp; Moments</span>
-            </div>
-
-            {/* Heading */}
-            <h2
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
-              style={{ color: theme.textColor || '#0a2342' }}
-            >
-              Memories That Last Forever
-            </h2>
+        <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-10">
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold mb-2.5 px-3.5 py-1.5 rounded-full border bg-white shadow-sm"
+            style={{
+              color: theme.primaryColor || '#0a2342',
+              borderColor: `${theme.primaryColor || '#0a2342'}30`,
+            }}
+          >
+            <Camera className="w-4 h-4" style={{ color: theme.primaryColor || '#0a2342' }} />
+            <span>Memories &amp; Moments</span>
           </div>
 
-          {/* Slider Prev / Next Controls */}
-          {filteredMemories.length > 1 && (
-            <div className="flex items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => scroll('left')}
-                disabled={!canScrollLeft}
-                className="w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200 shadow-sm disabled:opacity-35 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
-                style={{
-                  borderColor: `${theme.primaryColor || '#0a2342'}25`,
-                  backgroundColor: '#FFFFFF',
-                  color: theme.primaryColor || '#0a2342',
-                }}
-                aria-label="Previous photos"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scroll('right')}
-                disabled={!canScrollRight}
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm disabled:opacity-35 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
-                style={{
-                  backgroundColor: theme.primaryColor || '#0a2342',
-                  color: '#FFFFFF',
-                }}
-                aria-label="Next photos"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
+          {/* Heading */}
+          <h2
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
+            style={{ color: theme.textColor || '#0a2342' }}
+          >
+            Memories That Last Forever
+          </h2>
         </div>
 
         {/* Category Filter Tabs */}
@@ -300,6 +265,35 @@ export default function Memories() {
         ) : (
           /* Slider Container */
           <div className="relative group">
+            {filteredMemories.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => scroll('left')}
+                  disabled={!canScrollLeft}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4 z-20 w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200 shadow-md disabled:opacity-0 disabled:pointer-events-none hover:scale-105 active:scale-95 bg-white"
+                  style={{
+                    borderColor: `${theme.primaryColor || '#0a2342'}25`,
+                    color: theme.primaryColor || '#0a2342',
+                  }}
+                  aria-label="Previous photos"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scroll('right')}
+                  disabled={!canScrollRight}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4 z-20 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-md disabled:opacity-0 disabled:pointer-events-none hover:scale-105 active:scale-95 text-white"
+                  style={{
+                    backgroundColor: theme.primaryColor || '#0a2342',
+                  }}
+                  aria-label="Next photos"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
             <div
               ref={sliderRef}
               className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory py-3 px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

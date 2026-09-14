@@ -108,7 +108,7 @@ export default function App() {
           <Route path="job-vacancy" element={<Navigate to="/admin/services?tab=job-vacancy" replace />} />
           <Route path="businesses" element={<Navigate to="/admin/services?tab=businesses" replace />} />
           <Route path="students" element={<Navigate to="/admin/activities?tab=students" replace />} />
-          <Route path="expenses" element={<Navigate to="/admin/services?tab=expenses" replace />} />
+          <Route path="expenses" element={<Navigate to="/admin/engagements?tab=expenses" replace />} />
           <Route path="matrimonies" element={<Navigate to="/admin/services?tab=matrimonies" replace />} />
           <Route path="posts" element={<Navigate to="/admin/media?tab=posts" replace />} />
           <Route path="news" element={<Navigate to="/admin/media?tab=news" replace />} />

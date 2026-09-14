@@ -88,11 +88,11 @@ export default function Donors() {
   return (
     <section
       id="donors"
-      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
       style={{ backgroundColor: '#FFFFFF' }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-4 ">
+        <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-10">
           {/* Badge */}
           <div
             className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"
@@ -147,6 +147,12 @@ export default function Donors() {
             }}
           >
             {error}
+          </div>
+        ) : visibleDonors.length === 0 ? (
+          <div className="text-center py-12 px-4 bg-white rounded-2xl border border-gray-100 shadow-sm max-w-md mx-auto">
+            <HeartHandshake className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-gray-700 mb-1">No Donors Found</h3>
+            <p className="text-xs text-gray-500">Donor contributions will appear here once received.</p>
           </div>
         ) : (
           <>

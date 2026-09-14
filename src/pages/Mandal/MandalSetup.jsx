@@ -12,9 +12,10 @@ import {
   Save,
   X,
   User2,
-  Check
+  Check,
+  Clock
 } from 'lucide-react'
-import api from '../../lib/api'
+import api, { formatDate } from '../../lib/api'
 import { MANDAL_ENDPOINTS, MEMBER_ENDPOINTS } from '../../utils/endpoints'
 import Input from '../../components/common/Input'
 import Select from '../../components/common/Select'
@@ -23,6 +24,25 @@ import Button from '../../components/common/Button'
 import Loader from '../../components/common/Loader'
 import { toast } from '../../lib/toast'
 import { confirm } from '../../lib/confirm'
+
+export function getNextHaptaDate(startDateStr) {
+  if (!startDateStr) return null
+  const start = new Date(startDateStr)
+  if (isNaN(start.getTime())) return null
+
+  const startDay = start.getDate()
+  let targetYear = start.getFullYear()
+  let targetMonth = start.getMonth() + 1 // Next month
+
+  if (targetMonth > 11) {
+    targetMonth = 0
+    targetYear += 1
+  }
+
+  const daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate()
+  const finalDay = Math.min(startDay, daysInTargetMonth)
+  return new Date(targetYear, targetMonth, finalDay)
+}
 
 export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandalsChanged }) {
   const [mandals, setMandals] = useState([])
@@ -135,16 +155,22 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
       return
     }
 
+    const calculatedDueDay = new Date(formData.start_date).getDate() || 1
+    const payload = {
+      ...formData,
+      due_day: calculatedDueDay
+    }
+
     setSaving(true)
     try {
       if (modalMode === 'create') {
-        const res = await api.post(MANDAL_ENDPOINTS.CREATE_MANDAL, formData)
+        const res = await api.post(MANDAL_ENDPOINTS.CREATE_MANDAL, payload)
         toast.success('Mandal created successfully')
         if (res.data?.data?._id && onSelectMandal) {
           onSelectMandal(String(res.data.data._id))
         }
       } else {
-        await api.put(MANDAL_ENDPOINTS.UPDATE_SETUP, { ...formData, mandal_id: activeMandalId })
+        await api.put(MANDAL_ENDPOINTS.UPDATE_SETUP, { ...payload, mandal_id: activeMandalId })
         toast.success('Mandal settings updated')
       }
       setIsModalOpen(false)
@@ -164,6 +190,10 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
       value: u.id || u._id
     }))
   ]
+
+  const calculatedNextHapta = getNextHaptaDate(formData.start_date)
+  const calculatedNextHaptaStr = calculatedNextHapta ? formatDate(calculatedNextHapta) : '-'
+  const startDayNum = formData.start_date ? new Date(formData.start_date).getDate() : 1
 
   if (loading) {
     return <div className="py-12"><Loader size="lg" text="Loading Mandals..." /></div>
@@ -200,6 +230,9 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
           const id = String(m.id || m._id)
           const isSelected = String(selectedMandalId) === id
           const headName = m.mandal_head_name || (m.mandal_head_id ? `${m.mandal_head_id.first_name || ''} ${m.mandal_head_id.last_name || ''}`.trim() : 'Not assigned')
+          const cardNextHapta = getNextHaptaDate(m.start_date)
+          const cardNextHaptaStr = cardNextHapta ? formatDate(cardNextHapta) : null
+          const mDay = m.start_date ? new Date(m.start_date).getDate() : (m.due_day || 1)
 
           return (
             <div
@@ -227,11 +260,21 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
                   </span>
                 </div>
 
-                <div className="mt-3 space-y-1.5 text-xs text-text-secondary pt-3 border-t border-border/60">
+                <div className="mt-3 space-y-2 text-xs text-text-secondary pt-3 border-t border-border/60">
                   <div className="flex items-center gap-2">
                     <User2 className="w-3.5 h-3.5 shrink-0 text-text-secondary" />
                     <span>Head: <strong className="text-text font-semibold">{headName}</strong></span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                    <span>Monthly Hapta: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{mDay}th of every month</strong></span>
+                  </div>
+                  {cardNextHaptaStr && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 shrink-0 text-primary" />
+                      <span>Next Due Date: <strong className="text-text font-bold">{cardNextHaptaStr}</strong></span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Users className="w-3.5 h-3.5 shrink-0 text-text-secondary" />
                     <span>Enrolled Members: <strong className="text-primary font-bold">{m.members_count || (m.members || []).length}</strong></span>
@@ -328,6 +371,7 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
                 disabled={saving}
               />
 
+              {/* Row 2: Monthly Fixed Amount & Start Date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   type="number"
@@ -346,7 +390,9 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
                 />
 
                 <div>
-                  <label className="text-xs text-text-secondary mb-1.5 block font-semibold">Start Date <span className="text-red-500">*</span></label>
+                  <label className="text-xs text-text-secondary mb-1.5 block font-semibold">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
                   <DatePicker
                     mode="date"
                     value={formData.start_date}
@@ -357,6 +403,25 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
                 </div>
               </div>
 
+              {/* Row 3: Auto Calculated Next Month Hapta Collection Date Card */}
+              <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/25 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    First Hapta Collection Date (પહેલો હપ્તો ઉઘરાવવાની તારીખ)
+                  </span>
+                  <p className="text-xs text-text-secondary">
+                    આપોઆપ દર મહિને <strong className="text-emerald-700 dark:text-emerald-400">{startDayNum}</strong> તારીખે હપ્તો ઉઘરાવાશે.
+                  </p>
+                </div>
+                <div className="sm:text-right">
+                  <span className="text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
+                    {calculatedNextHaptaStr}
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 4: Mandal Head & Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Select
                   label="Mandal Head (Leader)"

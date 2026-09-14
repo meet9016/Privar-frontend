@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { Shield, Eye, EyeOff, Key } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { toast } from '../lib/toast'
-import { getCommunitySurname, getCommunityFullName, getDomainCommunityName, getSubdomainTenant, assetUrl } from '../lib/api'
+import { getCommunitySurname, getCommunityFullName, getDomainCommunityName, getSubdomainTenant, getActualSubdomain, assetUrl } from '../lib/api'
 
 export default function Login() {
   const { login, token } = useContext(AuthContext)
   const navigate = useNavigate()
-  const [email, setEmail] = useState('bhavik@gmail.com')
-  const [password, setPassword] = useState('123456')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -25,16 +25,18 @@ export default function Login() {
 
   useEffect(() => {
     const loadWebTheme = () => {
-      const currentSubdomain = getSubdomainTenant()
+      const actualSubdomain = getActualSubdomain()
       let name = localStorage.getItem('web_name') || ''
-      if (currentSubdomain && name && !name.toLowerCase().includes(currentSubdomain.toLowerCase())) {
-        name = `${currentSubdomain.charAt(0).toUpperCase() + currentSubdomain.slice(1)} Parivar`
+      if (actualSubdomain && name && !name.toLowerCase().includes(actualSubdomain.toLowerCase())) {
+        name = `${actualSubdomain.charAt(0).toUpperCase() + actualSubdomain.slice(1)} Parivar`
         localStorage.setItem('web_name', name)
       }
 
       setWebTheme({
         webLogo: localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || '',
-        name: getDomainCommunityName() || getCommunityFullName()
+        name: actualSubdomain
+          ? `${actualSubdomain.charAt(0).toUpperCase() + actualSubdomain.slice(1)} Parivar`
+          : (localStorage.getItem('web_name') || getDomainCommunityName() || getCommunityFullName() || 'Parivar')
       })
     }
 

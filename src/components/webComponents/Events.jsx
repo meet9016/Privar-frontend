@@ -223,11 +223,11 @@ export default function Events() {
   return (
     <section
       id="events"
-      className="w-full px-4 sm:px-6 lg:px-8 pb-10 sm:pb-12 lg:pb-14 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
       style={{ backgroundColor: '#FFFFFF' }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-4 relative">
+        <div className="text-center mb-8 sm:mb-10 relative">
         
 
           <div className="relative z-10 flex flex-col items-center text-center">

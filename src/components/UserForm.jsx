@@ -193,12 +193,12 @@ export const RELATION_GUJARATI_MAP = {
   grandson: 'પૌત્ર',
   Granddaughter: 'પૌત્રી',
   granddaughter: 'પૌત્રી',
-  Cousin: 'પિતરાઈ ભાઈ/બહેન',
-  cousin: 'પિતરાઈ ભાઈ/બહેન',
-  Nephew: 'ભત્રીજો / ભાણો',
-  nephew: 'ભત્રીજો / ભાણો',
-  Niece: 'ભત્રીજી / ભાણી',
-  niece: 'ભત્રીજી / ભાણી',
+  Cousin: 'પિતરાઈ',
+  cousin: 'પિતરાઈ',
+  Nephew: 'ભત્રીજો',
+  nephew: 'ભત્રીજો',
+  Niece: 'ભત્રીજી',
+  niece: 'ભત્રીજી',
   'Father-in-law': 'સસરા',
   'father-in-law': 'સસરા',
   'Mother-in-law': 'સાસુ',
@@ -254,7 +254,10 @@ export const getRelationDisplay = (relation, itemObj = null) => {
   if (!relation) return ''
   const cleanRel = relation === 'Spouse' ? 'Wife' : String(relation).trim()
   if (cleanRel.includes('(') && cleanRel.includes(')')) return cleanRel
-  const guj = itemObj?.gujarati_name || RELATION_GUJARATI_MAP[cleanRel] || RELATION_GUJARATI_MAP[cleanRel.toLowerCase()] || ''
+  let guj = RELATION_GUJARATI_MAP[cleanRel] || RELATION_GUJARATI_MAP[cleanRel.toLowerCase()] || itemObj?.gujarati_name || ''
+  if (cleanRel.toLowerCase() === 'cousin') {
+    guj = 'પિતરાઈ'
+  }
   return guj ? `${cleanRel} (${guj})` : cleanRel
 }
 
@@ -1200,18 +1203,18 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                     </div>
 
                     {/* Relation */}
-                    <div className="col-span-2">
+                    <div className="col-span-2 flex items-center">
                       <span
                         onClick={(e) => {
                           e.stopPropagation()
                           setActiveGuideTarget(idx)
                           setGuideModalOpen(true)
                         }}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold hover:bg-primary/20 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-bold hover:bg-primary/20 transition-colors cursor-pointer whitespace-nowrap shadow-xs"
                         title="Click to view relation explanation (સંબંધની સમજૂતી)"
                       >
                         <span>{getRelationDisplay(m.relation) || 'Relation'}</span>
-                        <HelpCircle className="w-3 h-3 opacity-70 shrink-0" />
+                        <HelpCircle className="w-3.5 h-3.5 opacity-70 shrink-0" />
                       </span>
                     </div>
 
@@ -1463,17 +1466,17 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                       })()}
 
                       {editingMember.relation === 'Cousin' && (() => {
-                        const uncleOptions = members.filter((m, i) => ['Uncle', 'Father', 'Brother'].includes(m.relation) && i !== expandedMemberIndex)
+                        const uncleOptions = members.filter((m, i) => m.relation === 'Uncle' && i !== expandedMemberIndex)
                         return (
                           <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                             <div className="flex items-center gap-2">
                               <Sparkles className="w-4 h-4 text-primary shrink-0" />
                               <div>
-                                <span className="font-bold text-text">પિતા / કાકા / મામા (Father / Uncle):</span>
+                                <span className="font-bold text-text">કાકા / મોટાબાપા / મામા (Uncle):</span>
                                 <p className="text-[11px] text-text-secondary mt-0.5">
                                   {uncleOptions.length > 0 
-                                    ? 'પિતરાઈ ભાઈ/બહેનના પિતા પસંદ કરો જેથી Middle Name આપોઆપ આવી જશે:' 
-                                    : 'પરિવારમાં કાકા/મામા લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ તેમના પિતાનું નામ લખી શકો છો.'}
+                                    ? 'પિતરાઈ ભાઈ/બહેન ક્યા કાકાના સંતાન છે તે પસંદ કરો (Middle Name આપોઆપ આવી જશે):' 
+                                    : 'પરિવારમાં કાકા (Uncle) લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ કાકાનું નામ લખી શકો છો.'}
                                 </p>
                               </div>
                             </div>
@@ -1489,13 +1492,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                                     }
                                   }}
                                   options={[
-                                    { label: 'પિતા પસંદ કરો...', value: '' },
+                                    { label: 'કાકા પસંદ કરો (Select Uncle)...', value: '' },
                                     ...uncleOptions.map(u => ({
-                                      label: `${u.first_name || 'Relative'} ${u.last_name || ''} (${getRelationDisplay(u.relation)})`,
+                                      label: `${u.first_name || 'Uncle'} ${u.last_name || ''} (કાકા / Uncle)`,
                                       value: u._id || u.id
                                     }))
                                   ]}
-                                  placeholder="Select Uncle / Father"
+                                  placeholder="Select Uncle"
                                 />
                               </div>
                             )}

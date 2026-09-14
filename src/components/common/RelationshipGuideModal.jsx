@@ -60,15 +60,15 @@ export const RELATION_GUIDE_DATA = [
   },
   {
     relation: 'Nephew',
-    gujarati: 'ભત્રીજો / ભાણો',
-    meaning: 'સગા ભાઈનો દીકરો (ભત્રીજો) અથવા સગી બહેનનો દીકરો (ભાણો)',
+    gujarati: 'ભત્રીજો (ભાઈનો દીકરો) / ભાણો',
+    meaning: 'પરિવારના વડાના સગા ભાઈનો દીકરો (ભત્રીજો) અથવા સગી બહેનનો દીકરો (ભાણો)',
     gender: 'Male',
     category: 'Immediate'
   },
   {
     relation: 'Niece',
-    gujarati: 'ભત્રીજી / ભાણી',
-    meaning: 'સગા ભાઈની દીકરી (ભત્રીજી) અથવા સગી બહેનની દીકરી (ભાણી)',
+    gujarati: 'ભત્રીજી (ભાઈની દીકરી) / ભાણી',
+    meaning: 'પરિવારના વડાના સગા ભાઈની દીકરી (ભત્રીજી) અથવા સગી બહેનની દીકરી (ભાણી)',
     gender: 'Female',
     category: 'Immediate'
   },
@@ -137,8 +137,8 @@ export const RELATION_GUIDE_DATA = [
   },
   {
     relation: 'Cousin',
-    gujarati: 'પિતરાઈ ભાઈ/બહેન',
-    meaning: 'કાકા, મામા, ફોઈ અથવા માસીના સંતાન (પિતરાઈ ભાઈ કે બહેન)',
+    gujarati: 'પિતરાઈ ભાઈ/બહેન (કાકા/બાપાના સંતાન)',
+    meaning: 'પરિવારના વડાના પિતાના ભાઈ (કાકા/મોટાબાપા) ના સંતાન અથવા મામા/ફોઈ/માસીના સંતાન (Cousin Brother / Sister)',
     gender: 'Other',
     category: 'Extended'
   },
