@@ -88,11 +88,37 @@ export default function Users() {
   }
 
   const groupedUsers = useMemo(() => {
+    const result = []
+
+    // If users has nested members attached to heads from backend
+    const hasNestedMembers = users.some(u => Array.isArray(u.members))
+
+    if (hasNestedMembers) {
+      users.forEach(head => {
+        const headId = String(head.id || head._id)
+        const headMembers = Array.isArray(head.members) ? head.members : []
+
+        result.push({
+          ...head,
+          isGroupParent: true,
+          hasChildren: headMembers.length > 0,
+          childrenCount: head.childrenCount !== undefined ? head.childrenCount : headMembers.length
+        })
+
+        headMembers.forEach(m => {
+          result.push({
+            ...m,
+            isGroupChild: true,
+            parentHeadId: headId
+          })
+        })
+      })
+      return result
+    }
+
     // Identify all heads in the list
     const heads = users.filter(u => u.familyHead || u.relation === 'Self')
     const members = users.filter(u => !u.familyHead && u.relation !== 'Self')
-
-    const result = []
     const processedMemberIds = new Set()
 
     heads.forEach(head => {
@@ -299,10 +325,10 @@ export default function Users() {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const newSelected = new Set([...selectedUsers, ...users.map(u => String(u.id || u._id))]);
+      const newSelected = new Set([...selectedUsers, ...groupedUsers.map(u => String(u.id || u._id))]);
       setSelectedUsers(Array.from(newSelected));
     } else {
-      const currentPageIds = users.map(u => String(u.id || u._id));
+      const currentPageIds = groupedUsers.map(u => String(u.id || u._id));
       setSelectedUsers(selectedUsers.filter(id => !currentPageIds.includes(id)));
     }
   }
@@ -311,21 +337,14 @@ export default function Users() {
     const targetIdStr = String(id);
     const isCurrentlySelected = selectedUsers.some(uid => String(uid) === targetIdStr);
     
-    // Find target user in user list
-    const targetUser = users.find(u => String(u.id || u._id) === targetIdStr);
-    const isHead = targetUser && (targetUser.familyHead || targetUser.relation === 'Self');
+    // Find target user in groupedUsers
+    const targetUser = groupedUsers.find(u => String(u.id || u._id) === targetIdStr);
+    const isHead = targetUser && (targetUser.familyHead || targetUser.relation === 'Self' || targetUser.isGroupParent);
     
     // If user is a head, find all family members under this head
     let relatedIds = [targetIdStr];
     if (isHead) {
-      const headMemberId = String(targetUser.member_id || '');
-      const childMembers = users.filter(m => {
-        if (String(m.id || m._id) === targetIdStr) return false;
-        const mHeadId = String(m.family_head?.id || m.family_head?._id || m.family_head_id || '');
-        const mParentId = String(m.parent_member_id || '');
-        return (mHeadId && (mHeadId === targetIdStr || mHeadId === headMemberId)) ||
-               (mParentId && (mParentId === headMemberId || mParentId === targetIdStr));
-      });
+      const childMembers = groupedUsers.filter(m => m.isGroupChild && String(m.parentHeadId) === targetIdStr);
       childMembers.forEach(m => {
         relatedIds.push(String(m.id || m._id));
       });
@@ -814,8 +833,8 @@ export default function Users() {
                 <input 
                   type="checkbox" 
                   className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary disabled:opacity-40 disabled:cursor-not-allowed"
-                  checked={users.length > 0 && users.every(u => selectedUsers.map(String).includes(String(u.id || u._id)))}
-                  disabled={loading || users.length === 0}
+                  checked={groupedUsers.length > 0 && groupedUsers.every(u => selectedUsers.map(String).includes(String(u.id || u._id)))}
+                  disabled={loading || groupedUsers.length === 0}
                   onChange={handleSelectAll}
                 />
               </div>
