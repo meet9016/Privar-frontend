@@ -139,13 +139,16 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   }
 
   useEffect(() => {
+    const india = countries.find(c => /india/i.test(c.name))
+    const gujarat = states.find(s => /gujarat/i.test(s.name))
+
     setFormData({
       business_category_id: business?.business_category_id || '',
       email: business?.email || '',
       whatsapp_number: business?.whatsapp_number || '',
       GST_number: business?.GST_number || '',
-      country_id: business?.country_id || '',
-      state_id: business?.state_id || '',
+      country_id: business?.country_id || (india ? (india._id || india.id) : ''),
+      state_id: business?.state_id || (gujarat ? (gujarat._id || gujarat.id) : ''),
       city_id: business?.city_id || '',
       location_link: business?.location_link || '',
       business_name: business?.business_name || '',
@@ -172,10 +175,22 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       (business?.gallery_images || []).filter((img) => typeof img === 'string' && img.trim())
     )
     setProfilePreview(null)
-  }, [business])
+  }, [business, countries, states])
 
   const handleFieldChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData(prev => {
+      const next = { ...prev, [field]: value }
+      if (field === 'country_id') {
+        const selCountry = countries.find(c => String(c._id || c.id) === String(value))
+        if (selCountry && /india/i.test(selCountry.name) && !prev.state_id) {
+          const gujarat = states.find(s => /gujarat/i.test(s.name))
+          if (gujarat) {
+            next.state_id = gujarat._id || gujarat.id
+          }
+        }
+      }
+      return next
+    })
     setErrors(prev => {
       const updated = { ...prev }
       const strVal = value !== undefined && value !== null ? String(value).trim() : ''

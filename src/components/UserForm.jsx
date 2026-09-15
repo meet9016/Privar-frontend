@@ -409,15 +409,22 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setVillages(cachedMasters.villages)
         setRelationOptions(mergedRelations)
 
-        // If country not yet selected, default to India
+        // If country or state not yet selected, default to India and Gujarat
         setFormData(prev => {
+          const updates = {}
           if (!prev.country_id) {
             const india = countryList.find(c => /india/i.test(c.name))
             if (india) {
-              return { ...prev, country_id: india._id || india.id }
+              updates.country_id = india._id || india.id
             }
           }
-          return prev
+          if (!prev.state_id) {
+            const gujarat = (sRes.data?.data || []).find(s => /gujarat/i.test(s.name))
+            if (gujarat) {
+              updates.state_id = gujarat._id || gujarat.id
+            }
+          }
+          return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev
         })
       } catch (err) {
         console.error(err)
@@ -513,6 +520,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       }
     } else {
       const india = countries.find(c => /india/i.test(c.name))
+      const gujarat = states.find(s => /gujarat/i.test(s.name))
       const defaultCommunityName = getCommunitySurname() || ''
 
       setFormData({
@@ -530,7 +538,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         committee_role: '',
         role_id: '',
         country_id: india ? (india._id || india.id) : '',
-        state_id: '',
+        state_id: gujarat ? (gujarat._id || gujarat.id) : '',
         city_id: '',
         village: '',
         address: '',
@@ -540,7 +548,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       setDeletedMemberIds([])
       setExpandedMemberIndex(null)
     }
-  }, [user, targetMemberId, countries])
+  }, [user, targetMemberId, countries, states])
 
   const activeRoles = useMemo(() => roles.filter((role) => Number(role.status ?? 1) === 1), [roles])
   const isEditingSelf = Boolean(user && loggedInUser && [
@@ -562,7 +570,19 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   )
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData(prev => {
+      const next = { ...prev, [field]: value }
+      if (field === 'country_id') {
+        const selCountry = countries.find(c => String(c._id || c.id) === String(value))
+        if (selCountry && /india/i.test(selCountry.name) && !prev.state_id) {
+          const gujarat = states.find(s => /gujarat/i.test(s.name))
+          if (gujarat) {
+            next.state_id = gujarat._id || gujarat.id
+          }
+        }
+      }
+      return next
+    })
     setErrors(prev => {
       const updated = { ...prev }
       if (field === 'first_name' && value.trim()) delete updated.first_name
