@@ -1,17 +1,20 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import Input from './common/Input'
 import Select from './common/Select'
 import Button from './common/Button'
-import ImageUpload from './common/ImageUpload'
 import { isValidEmail } from '../lib/validation'
-import { getCommunitySurname } from '../lib/api'
-
-const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all'
+import api, { getUsersList } from '../lib/api'
+import { User as UserIcon, Phone, Mail, ShieldCheck } from 'lucide-react'
 
 export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
+  const [userList, setUserList] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState('')
+
   const [formData, setFormData] = useState({
+    user_id: '',
     first_name: '',
     middle_name: '',
     last_name: '',
@@ -19,191 +22,240 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     email: '',
     password: '',
     role_id: '',
-    remove_image: false,
     status: 1,
-    image: null
+    image: ''
   })
   const [errors, setErrors] = useState({})
 
+  // Fetch community users for dropdown selection
   useEffect(() => {
-    const defaultCommunityName = getCommunitySurname()
-    setFormData({
-      first_name: member?.first_name || '',
-      middle_name: member?.middle_name || '',
-      last_name: member?.last_name !== undefined ? member.last_name : (getCommunitySurname() || ''),
-      number: member?.number || '',
-      email: member?.email || '',
-      password: '',
-      role_id: member?.role_id || '',
-      status: member ? Number(member.status) : 1,
-      image: member?.image
-    })
+    let isMounted = true
+    const fetchUsers = async () => {
+      setLoadingUsers(true)
+      try {
+        const res = await getUsersList({ limit: 500, flat: 'true' })
+        const raw = res.data?.data || res.data?.members || res.data || []
+        const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : [])
+        if (isMounted) setUserList(list)
+      } catch (err) {
+        console.error('Failed to load user list for committee selection:', err)
+      } finally {
+        if (isMounted) setLoadingUsers(false)
+      }
+    }
+    fetchUsers()
+    return () => { isMounted = false }
+  }, [])
+
+  // Initialize or populate form
+  useEffect(() => {
+    if (member) {
+      const existingId = member.user_id || member.member_id || member._id || member.id || ''
+      setSelectedUserId(existingId)
+      setFormData({
+        user_id: existingId,
+        first_name: member.first_name || '',
+        middle_name: member.middle_name || '',
+        last_name: member.last_name || '',
+        number: member.number || member.phone || '',
+        email: member.email || '',
+        password: '',
+        role_id: member.role_id?._id || member.role_id || '',
+        status: member.status !== undefined ? Number(member.status) : 1,
+        image: member.image || ''
+      })
+    } else {
+      setSelectedUserId('')
+      setFormData({
+        user_id: '',
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        number: '',
+        email: '',
+        password: '',
+        role_id: '',
+        status: 1,
+        image: ''
+      })
+    }
     setErrors({})
   }, [member])
 
-  const isEditingSelf = Boolean(member && loggedInUser && [
-    member._id,
-    member.id,
-    member.member_id
-  ].some((value) => value && [
-    loggedInUser._id,
-    loggedInUser.id,
-    loggedInUser.member_id
-  ].some((current) => current && String(current) === String(value))))
-  const canManageRoleFields = Boolean(
-    loggedInUser?.role === 'admin' ||
-    loggedInUser?.role === 'superadmin' ||
-    loggedInUser?.committee_role === 'President' ||
-    loggedInUser?.committee_role === 'Admin' ||
-    loggedInUser?.is_super_admin ||
-    Boolean(loggedInUser?.role_id)
-  )
+  // When a user is selected from dropdown, populate their details
+  const handleUserSelect = (userId) => {
+    setSelectedUserId(userId)
+    setErrors(prev => {
+      const u = { ...prev }
+      delete u.user_id
+      return u
+    })
 
-  const validateImage = (file) => new Promise((resolve) => {
-    if (!file || !(file instanceof File)) return resolve('')
-    if (file.size > 1024 * 1024) return resolve('Image must be 1 MB or smaller')
-
-    const image = new Image()
-    const url = URL.createObjectURL(file)
-    image.onload = () => {
-      URL.revokeObjectURL(url)
-      resolve(image.width <= 300 && image.height <= 300 ? '' : 'Image must be 300 x 300 px or smaller')
+    if (!userId) {
+      setFormData(prev => ({
+        ...prev,
+        user_id: '',
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        number: '',
+        image: ''
+      }))
+      return
     }
-    image.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve('Please select a valid image')
-    }
-    image.src = url
-  })
 
-  const validate = async () => {
-    const nextErrors = {}
-    if (!formData.first_name?.trim()) nextErrors.first_name = 'First name is required'
-    if (!formData.last_name?.trim()) nextErrors.last_name = 'Last name is required'
-    if (!formData.number?.trim()) {
-      nextErrors.number = 'Contact number is required'
-    } else if (formData.number.length < 10) {
-      nextErrors.number = 'Contact number must be 10 digits'
+    const found = userList.find(u => String(u._id || u.id || u.member_id) === String(userId))
+    if (found) {
+      const userEmail = found.email ? String(found.email).trim() : ''
+      setFormData(prev => ({
+        ...prev,
+        user_id: String(found._id || found.id || found.member_id),
+        first_name: found.first_name || '',
+        middle_name: found.middle_name || '',
+        last_name: found.last_name || '',
+        number: found.number || found.phone || '',
+        email: userEmail || prev.email || '',
+        image: found.image || found.profile_image || ''
+      }))
+      if (userEmail) {
+        setErrors(prev => {
+          const u = { ...prev }
+          delete u.email
+          return u
+        })
+      }
     }
-    if (formData.email && !isValidEmail(formData.email)) {
-      nextErrors.email = 'Please enter a valid email address (e.g. user@gmail.com)'
-    }
-    if (formData.status === '' || formData.status === undefined) nextErrors.status = 'Status is required'
-
-    const imageError = await validateImage(formData.image)
-    if (imageError) nextErrors.image = imageError
-
-    return nextErrors
   }
 
   const handleFieldChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setErrors(prev => {
       const updated = { ...prev }
-      if (field === 'first_name' && value.trim()) delete updated.first_name
-      if (field === 'last_name' && value.trim()) delete updated.last_name
-      if (field === 'number' && value.trim().length === 10) delete updated.number
       if (field === 'email') {
-        if (!value || isValidEmail(value)) delete updated.email
-        else updated.email = 'Please enter a valid email address (e.g. user@gmail.com)'
+        if (!value || !value.trim()) updated.email = 'Email address is required for committee login'
+        else if (!isValidEmail(value.trim())) updated.email = 'Please enter a valid email address (e.g. user@gmail.com)'
+        else delete updated.email
       }
+      if (field === 'role_id' && value) delete updated.role_id
       if (field === 'status' && value !== '') delete updated.status
       return updated
     })
   }
 
-  const handleSubmit = async (event) => {
+  const validate = () => {
+    const nextErrors = {}
+    if (!member && !selectedUserId && !formData.first_name) {
+      nextErrors.user_id = 'Please select a member'
+    }
+    if (!formData.email || !formData.email.trim()) {
+      nextErrors.email = 'Email address is required for committee login'
+    } else if (!isValidEmail(formData.email.trim())) {
+      nextErrors.email = 'Please enter a valid email address (e.g. user@gmail.com)'
+    }
+    if (!formData.role_id) {
+      nextErrors.role_id = 'Please assign a role'
+    }
+    if (formData.status === '' || formData.status === undefined) {
+      nextErrors.status = 'Status is required'
+    }
+    return nextErrors
+  }
+
+  const handleSubmit = (event) => {
     event.preventDefault()
-    const nextErrors = await validate()
+    const nextErrors = validate()
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
       return
     }
+
     const payload = new FormData()
     payload.append('first_name', formData.first_name)
     payload.append('middle_name', formData.middle_name)
     payload.append('last_name', formData.last_name)
     payload.append('number', formData.number)
-    payload.append('email', formData.email)
+    payload.append('email', formData.email || '')
     if (formData.password) {
       payload.append('password', formData.password)
     }
-    payload.append('role_id', formData.role_id)
-    payload.append('status', formData.status)
-    if (formData.remove_image) {
-      payload.append('remove_image', 'true')
+    if (formData.role_id) {
+      payload.append('role_id', formData.role_id)
     }
-
-    if (formData.image instanceof File) {
+    payload.append('status', formData.status)
+    if (formData.image) {
       payload.append('image', formData.image)
     }
+    if (selectedUserId) {
+      payload.append('user_id', selectedUserId)
+    }
+
     onSubmit(payload)
   }
 
-  const roleOptions = [
+  // User Dropdown Options with Full Name, Phone, and Avatar
+  const userOptions = useMemo(() => {
+    const options = [
+      { label: loadingUsers ? 'Loading members...' : 'Select a Member...', value: '' }
+    ]
+    userList.forEach(u => {
+      const id = String(u._id || u.id || u.member_id)
+      const fullName = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ')
+      const phone = u.number || u.phone || ''
+      const village = u.village || u.city || ''
+      const sub = [phone, village].filter(Boolean).join(' • ')
+      const initials = (u.first_name?.[0] || '') + (u.last_name?.[0] || '')
+
+      options.push({
+        label: fullName || 'Unnamed Member',
+        value: id,
+        sublabel: sub || undefined,
+        image: u.image || u.profile_image || undefined,
+        imagePlaceholder: !u.image && !u.profile_image ? initials.toUpperCase() || 'U' : undefined
+      })
+    })
+    return options
+  }, [userList, loadingUsers])
+
+  const roleOptions = useMemo(() => [
     { label: 'Select Assigned Role', value: '' },
     ...roles.map(r => ({ label: r.name, value: r.id || String(r._id) }))
-  ]
+  ], [roles])
+
+  const fullNameDisplay = [formData.first_name, formData.middle_name, formData.last_name].filter(Boolean).join(' ')
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-text">
-      {/* Row 1: Image (left) + First Name, Middle Name, Last Name (right) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-        <div className="md:col-span-1 flex flex-col">
-          <ImageUpload
-            label="Image (300*300 px, Max 1MB)"
-            value={formData.image}
-            onChange={(file, remove = false) => {
-              setFormData(prev => ({ ...prev, image: file, remove_image: remove }))
-              if (errors.image) setErrors(prev => ({ ...prev, image: null }))
-            }}
-            disabled={isLoading}
-            error={errors.image}
-            heightClass="h-[188px]"
+      {/* Step 1: Select User from Dropdown */}
+      {!member ? (
+        <div className="bg-surface-secondary/40 border border-border/80 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wide">
+            <UserIcon className="w-4 h-4" />
+            <span>Select Community Member *</span>
+          </div>
+          <Select
+            label=""
+            value={selectedUserId}
+            onChange={handleUserSelect}
+            options={userOptions}
+            searchable={true}
+            placeholder="Search and select community member..."
+            error={errors.user_id}
+            disabled={isLoading || loadingUsers}
           />
         </div>
-        <div className="md:col-span-2 grid grid-cols-1 gap-2.5">
-          <Input
-            label="First Name"
-            required
-            placeholder="Enter First Name"
-            value={formData.first_name}
-            onChange={(e) => handleFieldChange('first_name', e.target.value.replace(/[0-9]/g, ''))}
-            disabled={isLoading}
-            error={errors.first_name}
-          />
-          <Input
-            label="Middle Name"
-            placeholder="Enter Middle Name"
-            value={formData.middle_name}
-            onChange={(e) => handleFieldChange('middle_name', e.target.value.replace(/[0-9]/g, ''))}
-            disabled={isLoading}
-          />
-          <Input
-            label="Last Name / Surname"
-            required
-            placeholder="Enter Last Name"
-            value={formData.last_name}
-            onChange={(e) => handleFieldChange('last_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
-            disabled={isLoading}
-            error={errors.last_name}
-          />
-        </div>
-      </div>
+      ) : null}
 
-      {/* Row 2: Contact Number, Status, Assign Role */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          label="Contact Number"
+      {/* Step 2: Assign Role & Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <Select
+          label="Assign Role"
           required
-          type="tel"
-          onlyNumbers
-          maxLength={10}
-          placeholder="Enter Contact Number"
-          value={formData.number}
-          onChange={(e) => handleFieldChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
+          value={formData.role_id}
+          onChange={(val) => handleFieldChange('role_id', val)}
           disabled={isLoading}
-          error={errors.number}
+          options={roleOptions}
+          error={errors.role_id}
+          placeholder="Select Assigned Role"
         />
         <Select
           label="Status"
@@ -219,38 +271,39 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             { label: 'Inactive', value: 0 }
           ]}
         />
-        <Select
-          label="Assign Role"
-          value={formData.role_id}
-          onChange={(val) => handleFieldChange('role_id', val)}
-          disabled={isLoading}
-          options={roleOptions}
-        />
       </div>
 
-      {/* Row 3: Email, Password */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Email Address"
-          type="email"
-          placeholder="email@example.com"
-          value={formData.email}
-          onChange={(e) => handleFieldChange('email', e.target.value)}
-          disabled={isLoading}
-          error={errors.email}
-        />
-        <Input
-          label={member ? "Password (Leave blank to keep)" : "Password"}
-          type="password"
-          placeholder={member ? "Enter password to update" : "Enter login password"}
-          value={formData.password}
-          onChange={(e) => handleFieldChange('password', e.target.value)}
-          disabled={isLoading}
-          error={errors.password}
-        />
+      {/* Step 3: Login Credentials (Email & Password) */}
+      <div className="bg-surface-secondary/20 border border-border/60 rounded-xl p-3.5 space-y-3">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wide">
+          <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+          <span>Login Credentials</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <Input
+            label="Email Address"
+            required={true}
+            type="email"
+            placeholder="email@example.com"
+            value={formData.email}
+            onChange={(e) => handleFieldChange('email', e.target.value)}
+            disabled={isLoading}
+            error={errors.email}
+          />
+          <Input
+            label={member ? "Password (Leave blank to keep)" : "Password"}
+            type="password"
+            placeholder={member ? "Enter password to update" : "Enter login password"}
+            value={formData.password}
+            onChange={(e) => handleFieldChange('password', e.target.value)}
+            disabled={isLoading}
+            error={errors.password}
+          />
+        </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4">
+      {/* Footer Buttons */}
+      <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             Cancel

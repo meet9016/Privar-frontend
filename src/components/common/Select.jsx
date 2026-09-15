@@ -141,9 +141,14 @@ export default function Select({
           onClick={toggleOpen}
           tabIndex={disabled ? -1 : 0}
         >
-          <span className={selectedOption ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            {selectedOption?.image && (
+              <img src={selectedOption.image} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 border border-border" />
+            )}
+            <span className={selectedOption ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
+              {selectedOption ? selectedOption.label : placeholder}
+            </span>
+          </div>
           <ChevronDown size={16} className={`text-text-secondary shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </div>
@@ -175,19 +180,28 @@ export default function Select({
                 <div 
                   key={option.value}
                   title={option.description || option.title || option.meaning || ''}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors flex flex-col justify-center ${
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-2.5 ${
                     String(value) === String(option.value) ? 'bg-primary/5 text-primary font-semibold' : 'text-text'
                   }`}
                   onClick={() => handleSelect(option.value)}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate">{option.label}</span>
+                  {option.image ? (
+                    <img src={option.image} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 border border-border" />
+                  ) : option.imagePlaceholder ? (
+                    <div className="w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                      {option.imagePlaceholder}
+                    </div>
+                  ) : null}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate">{option.label}</span>
+                    </div>
+                    {(option.sublabel || option.description || option.meaning) && (
+                      <div className="text-[11px] text-text-secondary/80 font-normal truncate mt-0.5">
+                        {option.sublabel || option.description || option.meaning}
+                      </div>
+                    )}
                   </div>
-                  {(option.description || option.meaning) && (
-                    <span className="text-[11px] text-text-secondary/80 font-normal truncate mt-0.5">
-                      {option.description || option.meaning}
-                    </span>
-                  )}
                 </div>
               ))
             ) : (

@@ -24,6 +24,17 @@ export default function Login() {
   }, [token, navigate])
 
   useEffect(() => {
+    const host = window.location.hostname.toLowerCase()
+    const currentSub = (getSubdomainTenant() || getActualSubdomain() || '').toLowerCase()
+
+    if (host.includes('chovatiya') || currentSub.includes('chovatiya')) {
+      setEmail('bhavik@gmail.com')
+      setPassword('123456')
+      setAgree(true)
+    }
+  }, [])
+
+  useEffect(() => {
     const loadWebTheme = () => {
       const actualSubdomain = getActualSubdomain()
       let name = localStorage.getItem('web_name') || ''

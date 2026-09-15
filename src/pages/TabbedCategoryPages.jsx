@@ -48,8 +48,7 @@ export const MediaPage = () => {
   const tabs = useMemo(() => [
     { id: 'posts', label: 'Posts', icon: mediaNavigation.find(n => n.to?.includes('posts'))?.icon, permission: 'posts.list', component: (props) => <Posts {...props} /> },
     { id: 'news', label: 'News', icon: mediaNavigation.find(n => n.to?.includes('news'))?.icon, permission: 'news.list', component: (props) => <News {...props} /> },
-    { id: 'birthday', label: 'Birthdays', icon: mediaNavigation.find(n => n.to?.includes('birthday'))?.icon, permission: 'birthday.list', component: (props) => <ContentPage type="birthday" {...props} /> },
-    { id: 'feedback', label: 'Feedback', icon: mediaNavigation.find(n => n.to?.includes('feedback'))?.icon, permission: 'feedback.list', component: (props) => <ContentPage type="feedback" {...props} /> }
+    { id: 'birthday', label: 'Birthdays', icon: mediaNavigation.find(n => n.to?.includes('birthday'))?.icon, permission: 'birthday.list', component: (props) => <ContentPage type="birthday" {...props} /> }
   ].filter(t => hasPermission(user, t.permission)), [user])
 
   return tabs.length > 0 ? <TabbedPage title="Media & Content" tabs={tabs} storageKey="media" /> : null
