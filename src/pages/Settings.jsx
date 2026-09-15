@@ -13,15 +13,15 @@ import { confirm } from '../lib/confirm'
 import { compressImage } from '../lib/imageCompressor'
 
 const DEFAULT_COLORS = {
-  primaryColor: '#E65100',
-  secondaryColor: '#F4C95D',
-  backgroundColor: '#FFF8F0',
-  textColor: '#4E342E',
-  buttonColor: '#E65100',
+  primaryColor: '#1565C0',
+  secondaryColor: '#42A5F5',
+  backgroundColor: '#F7FAFD',
+  textColor: '#172B4D',
+  buttonColor: '#1976D2',
   fontColor: '#FFFFFF',
-  borderColor: '#E8D9C8',
-  gradientStart: '#E65100',
-  gradientEnd: '#7B0D1C',
+  borderColor: '#D9E7F5',
+  gradientStart: '#2196F3',
+  gradientEnd: '#0D47A1',
 }
 
 const DEFAULT_CONFIG = {
