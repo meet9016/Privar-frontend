@@ -123,7 +123,6 @@ export default function App() {
           <Route path="contact-inquiries" element={<PermissionRoute permission="contact-inquiries.list"><ContentPage type="inquiries" /></PermissionRoute>} />
           <Route path="event-registrations" element={<PermissionRoute permission="events.list"><EventRegistrations /></PermissionRoute>} />
           <Route path="settings" element={<PermissionRoute permission="settings.edit"><Settings /></PermissionRoute>} />
-          <Route path="documentation" element={<Documentation />} />
 
 
         </Route>

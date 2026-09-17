@@ -63,7 +63,7 @@ export const masterNavigation = [
 
 export const configurationNavigation = [
   { to: '/admin/settings', label: 'Theme Config', icon: Settings, title: 'Theme Customizer', permission: 'settings.edit' },
-  { to: '/admin/documentation', label: 'Tutorial', icon: BookOpen, title: 'System Tutorial' }
+  { to: '/documentation', label: 'Tutorial', icon: BookOpen, title: 'System Tutorial' }
 ]
 
 export const routeTitles = [
