@@ -96,7 +96,7 @@ const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, setIsOpen }) {
   const { user } = useContext(AuthContext)
   const [webTheme, setWebTheme] = useState({ webLogo: '', name: '' })
   const visibleCoreNavigation = coreNavigation.filter((item) => hasPermission(user, item.permission))
@@ -133,7 +133,7 @@ export default function Sidebar() {
   const visibleServicesNavigation = servicesNavigation.filter((item) => hasPermission(user, item.permission))
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col justify-between border-r border-border bg-surface px-3 py-4 shadow-glass transition-all duration-300">
+    <aside className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col justify-between border-r border-border bg-surface px-3 py-4 shadow-glass transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
 
       {/* Brand Web Logo Section at Top of Sidebar */}
       <div className="mb-4 flex shrink-0 items-center p-3 border-b border-border/50">
