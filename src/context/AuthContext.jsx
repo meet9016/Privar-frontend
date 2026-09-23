@@ -200,17 +200,17 @@ export function AuthProvider({ children }) {
       throw new Error('Invalid login response from server')
     }
 
-    setToken(receivedToken)
-    setUser(receivedUser)
-    localStorage.setItem('auth_token', receivedToken)
-    localStorage.setItem('auth_user', JSON.stringify(receivedUser))
-    
     const detectedTenant = payload.tenant_code || receivedUser.tenant_code || effectiveTenant || ''
     if (detectedTenant) {
       localStorage.setItem('tenant_code', detectedTenant)
     } else if (!actualSubdomain) {
       localStorage.removeItem('tenant_code')
     }
+
+    localStorage.setItem('auth_token', receivedToken)
+    localStorage.setItem('auth_user', JSON.stringify(receivedUser))
+    setToken(receivedToken)
+    setUser(receivedUser)
     
     // Refresh theme after login to get tenant-specific theme immediately
     await fetchWebTheme()
