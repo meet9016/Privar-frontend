@@ -36,7 +36,8 @@ export const servicesNavigation = [
 ]
 
 export const mediaNavigation = [
-  { to: '/admin/posts', label: 'Posts', icon: FileText, title: 'Post Moderator', permission: 'posts.list' },
+  // { to: '/admin/posts', label: 'Posts', icon: FileText, title: 'Post Moderator', permission: 'posts.list' },
+  { to: '/admin/festivals', label: 'Festivals', icon: CalendarDays, title: 'Festivals', permission: 'festivals.list' },
   { to: '/admin/news', label: 'News', icon: FileText, title: 'News Moderator', permission: 'news.list' },
   { to: '/admin/birthday', label: 'Birthdays', icon: CalendarDays, title: 'Member Birthdays', permission: 'birthday.list' },
 ]
