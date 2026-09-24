@@ -110,10 +110,10 @@ export default function App() {
           <Route path="students" element={<Navigate to="/admin/activities?tab=students" replace />} />
           <Route path="expenses" element={<Navigate to="/admin/engagements?tab=expenses" replace />} />
           <Route path="matrimonies" element={<Navigate to="/admin/services?tab=matrimonies" replace />} />
-          <Route path="posts" element={<Navigate to="/admin/media?tab=posts" replace />} />
+          <Route path="posts" element={<Navigate to="/admin/media?tab=festivals" replace />} />
           <Route path="news" element={<Navigate to="/admin/media?tab=news" replace />} />
           <Route path="feedback" element={<Navigate to="/admin/media?tab=feedback" replace />} />
-          <Route path="festivals" element={<Navigate to="/admin/engagements?tab=festivals" replace />} />
+          <Route path="festivals" element={<Navigate to="/admin/media?tab=festivals" replace />} />
           <Route path="donations" element={<Navigate to="/admin/engagements?tab=donations" replace />} />
           <Route path="mandal" element={<Navigate to="/admin/engagements?tab=contribution" replace />} />
           <Route path="masters/:type" element={<MasterRoute />} />
