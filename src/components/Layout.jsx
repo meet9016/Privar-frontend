@@ -20,7 +20,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background text-text overflow-x-hidden font-sans">
+    <div className="h-screen flex bg-background text-text overflow-hidden font-sans">
       {/* Decorative dynamic ambient background glows */}
       <div className="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] animate-pulse-slow pointer-events-none"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] animate-pulse-slow pointer-events-none" style={{ animationDelay: '1.5s' }}></div>
@@ -29,9 +29,12 @@ export default function Layout() {
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen pl-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col h-screen pl-64 transition-all duration-300 overflow-hidden">
+        {/* Header remains fixed at the top */}
+        <Header />
+        
+        {/* Only the page content area scrolls */}
         <main className="flex-1 overflow-y-auto animate-fade-in flex flex-col">
-          <Header />
           <div className="flex-1 px-8 pt-4 pb-8 max-w-full mx-auto space-y-6 w-full">
             <Outlet />
           </div>
