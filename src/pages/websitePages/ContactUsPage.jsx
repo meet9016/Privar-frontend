@@ -295,8 +295,13 @@ export default function ContactUsPage() {
                       <input
                         type="tel"
                         name="mobile"
+                        maxLength={10}
                         value={formData.mobile}
-                        onChange={handleChange}
+                        onChange={(e) => {
+                          const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10)
+                          setFormData((prev) => ({ ...prev, mobile: digitsOnly }))
+                          if (formError) setFormError('')
+                        }}
                         placeholder="e.g. 9876543210"
                         required
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
