@@ -42,7 +42,6 @@ const getStoredWebTheme = () => {
     return value ? { ...theme, [key]: value } : theme
   }, {})
 }
-
 export default function ContactUsPage() {
   useWebTheme()
   const [theme, setTheme] = useState(getStoredWebTheme())
@@ -103,7 +102,6 @@ export default function ContactUsPage() {
           ? `[Subject: ${formData.subject.trim()}] ${formData.note.trim()}`
           : formData.note.trim()
       }
-
       await memberApi.post('/inquiry', payload)
       setSubmitted(true)
       toast.success('Your message has been sent successfully! Our team will contact you shortly.')
@@ -122,13 +120,11 @@ export default function ContactUsPage() {
       setSubmitting(false)
     }
   }
-
   const communityTitle = theme?.name || getCommunityFullName()
   const primaryColor = theme.primaryColor || '#0a2342'
   const secondaryColor = theme.secondaryColor || theme.primaryColor || '#1e3a8a'
   const textColor = theme.textColor || '#111827'
   const buttonColor = theme.buttonColor || primaryColor
-
   return (
     <div
       className="w-full min-h-[calc(100vh-80px)] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
@@ -155,7 +151,6 @@ export default function ContactUsPage() {
             Contact Our Community
           </h1>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-5 space-y-6">
             <div
