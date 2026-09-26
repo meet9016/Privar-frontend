@@ -36,6 +36,7 @@ export default function WebFooter() {
     { label: 'Donors', href: '/donors' },
     { label: 'Matrimonial', href: '/matrimonial' },
     { label: 'Job Vacancies', href: '/jobs' },
+    { label: 'Contact Us', href: '/contact' },
   ];
 
   const socialLinks = [
@@ -137,9 +138,14 @@ export default function WebFooter() {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-sm sm:text-base font-extrabold mb-5 text-white uppercase tracking-wider border-b border-white/10 pb-2.5 inline-block">
-              Contact Us
-            </h3>
+            <Link
+              to="/contact"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="text-sm sm:text-base font-extrabold mb-5 text-white uppercase tracking-wider border-b border-white/10 pb-2.5 inline-flex items-center gap-1.5 hover:text-amber-400 transition-colors group"
+            >
+              <span>Contact Us</span>
+              <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+            </Link>
             <ul className="space-y-4">
               {theme?.phone && (
                 <li>
@@ -161,6 +167,16 @@ export default function WebFooter() {
                   </a>
                 </li>
               )}
+              <li>
+                <Link
+                  to="/contact"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all duration-200 hover:scale-105"
+                >
+                  <span>Send Message / Form</span>
+                  <ChevronRight size={14} className="text-amber-400" />
+                </Link>
+              </li>
             </ul>
           </div>
 

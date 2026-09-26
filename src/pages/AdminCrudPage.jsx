@@ -217,11 +217,30 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       setSaving(false)
       return
     }
-    if (invalidEmailField) {
-      setFieldErrors(missing)
-      setFormError(`Please enter a valid email address for ${invalidEmailField} (e.g. user@gmail.com)`)
-      setSaving(false)
-      return
+    // Check duplicate name in existing list for masters / crud tables
+    const nameField = fields.find(f => f.name === 'name' || f.name === 'category' || f.name === 'business');
+    if (nameField && formData[nameField.name]) {
+      const enteredName = String(formData[nameField.name]).trim().toLowerCase();
+      const duplicateInRows = rows.find(r => {
+        const rowId = String(r._id || r.id || '');
+        const currentSelectedId = String(selected?._id || selected?.id || '');
+        if (selected && rowId === currentSelectedId) return false;
+
+        // If parent_id exists, match in the same parent category/state
+        if (formData.parent_id && r.parent_id && String(r.parent_id) !== String(formData.parent_id)) {
+          return false;
+        }
+
+        const rName = String(r.name || r.category || r.business || r.title || '').trim().toLowerCase();
+        return rName === enteredName;
+      });
+
+      if (duplicateInRows) {
+        setFieldErrors({ [nameField.name]: true });
+        setFormError(`"${formData[nameField.name]}" already exists! Duplicate names are not allowed.`);
+        setSaving(false);
+        return;
+      }
     }
     try {
       const hasFiles = fields.some((field) => field.type === 'file' && (
