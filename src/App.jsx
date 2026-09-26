@@ -36,6 +36,7 @@ import StudentsWebPage from './pages/websitePages/StudentsWebPage'
 import DonorsWebPage from './pages/websitePages/DonorsWebPage'
 import JobVacancyWebPage from './pages/websitePages/JobVacancyWebPage'
 import MatrimonialWebPage from './pages/websitePages/MatrimonialWebPage'
+import ContactUsPage from './pages/websitePages/ContactUsPage'
 import PrivacyPolicy from './components/webComponents/PrivacyAndPolicy'
 import TermsAndConditions from './components/webComponents/TermsAndConditions'
 
@@ -69,6 +70,8 @@ export default function App() {
           <Route path="/matrimonial" element={<MatrimonialWebPage />} />
           <Route path="/jobs" element={<JobVacancyWebPage />} />
           <Route path="/job-vacancy" element={<JobVacancyWebPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/contact-us" element={<ContactUsPage />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         </Route>
