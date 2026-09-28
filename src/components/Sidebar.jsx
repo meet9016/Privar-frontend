@@ -96,7 +96,7 @@ const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const { user } = useContext(AuthContext)
   const [webTheme, setWebTheme] = useState({ webLogo: '', name: '' })
   const visibleCoreNavigation = coreNavigation.filter((item) => hasPermission(user, item.permission))
@@ -133,34 +133,47 @@ export default function Sidebar() {
   const visibleServicesNavigation = servicesNavigation.filter((item) => hasPermission(user, item.permission))
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col justify-between border-r border-border bg-surface px-3 py-4 shadow-glass transition-all duration-300">
+    <aside className={`fixed left-0 top-0 z-50 lg:z-30 flex h-screen w-64 flex-col justify-between border-r border-border bg-surface px-3 py-4 shadow-glass transition-transform duration-300 ease-in-out ${
+      isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+    }`}>
 
       {/* Brand Web Logo Section at Top of Sidebar */}
-      <div className="mb-4 flex shrink-0 items-center p-3 border-b border-border/50">
-        <img
-          src={webTheme.webLogo ? assetUrl(webTheme.webLogo) : "/parivar.png"}
-          alt={getCommunityFullName()}
-          className="h-11 w-auto max-w-full object-contain"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-            if (e.currentTarget.nextSibling) {
-              e.currentTarget.nextSibling.style.display = 'flex';
-            }
-          }}
-        />
-        <div className="ml-3">
-          <h1 className="text-1xl font-bold text-text-primary leading-tight">
-            Our Community
-          </h1>
+      <div className="mb-4 flex shrink-0 items-center justify-between p-3 border-b border-border/50">
+        <div className="flex items-center">
+          <img
+            src={webTheme.webLogo ? assetUrl(webTheme.webLogo) : "/parivar.png"}
+            alt={getCommunityFullName()}
+            className="h-11 w-auto max-w-full object-contain"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              if (e.currentTarget.nextSibling) {
+                e.currentTarget.nextSibling.style.display = 'flex';
+              }
+            }}
+          />
+          <div className="ml-3">
+            <h1 className="text-1xl font-bold text-text-primary leading-tight">
+              Our Community
+            </h1>
 
-          <p className="text-xs text-text-secondary ml-2 mt-0.5">
-            Together we grow
-          </p>
+            <p className="text-xs text-text-secondary ml-2 mt-0.5">
+              Together we grow
+            </p>
+          </div>
         </div>
-        <div className="hidden items-center justify-center">
-          <Shield className="h-9 w-9 text-primary" />
-        </div>
+        {/* Mobile close button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1 rounded-lg text-text-secondary hover:text-text hover:bg-surface-secondary lg:hidden cursor-pointer"
+          title="Close sidebar"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
+
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-1">
         {visibleCoreNavigation.map((item) => (

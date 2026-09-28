@@ -5,7 +5,13 @@ import Header from './Header'
 
 export default function Layout() {
   const location = useLocation()
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
   const isDocPage = location.pathname === '/admin/documentation'
+
+  // Close sidebar on route change on mobile
+  React.useEffect(() => {
+    setIsSidebarOpen(false)
+  }, [location.pathname, location.search])
 
   if (isDocPage) {
     return (
@@ -25,17 +31,26 @@ export default function Layout() {
       <div className="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] animate-pulse-slow pointer-events-none"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary-glow blur-[120px] animate-pulse-slow pointer-events-none" style={{ animationDelay: '1.5s' }}></div>
 
-      {/* Sidebar - fixed and styled */}
-      <Sidebar />
+      {/* Mobile Sidebar Overlay Backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-xs transition-opacity duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar - fixed on desktop, slide drawer on mobile */}
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen pl-64 transition-all duration-300 overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen lg:pl-64 transition-all duration-300 overflow-hidden w-full">
         {/* Header remains fixed at the top */}
-        <Header />
+        <Header onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
         
         {/* Only the page content area scrolls */}
         <main className="flex-1 overflow-y-auto animate-fade-in flex flex-col">
-          <div className="flex-1 px-8 pt-4 pb-8 max-w-full mx-auto space-y-6 w-full">
+          <div className="flex-1 px-3 sm:px-6 lg:px-8 pt-4 pb-8 max-w-full mx-auto space-y-4 sm:space-y-6 w-full">
             <Outlet />
           </div>
         </main>
