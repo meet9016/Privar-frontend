@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
 import { GALLERY_ENDPOINTS, BIRTHDAY_ENDPOINTS, JOB_VACANCY_ENDPOINTS, MATRIMONY_ENDPOINTS, FEEDBACK_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
@@ -7,6 +7,18 @@ import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
+import { Cake, Heart, Sparkles, PartyPopper } from 'lucide-react'
+
+export const isSameDayAndMonth = (dateStr) => {
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return false
+  const today = new Date()
+  return (
+    (d.getUTCDate() === today.getDate() && d.getUTCMonth() === today.getMonth()) ||
+    (d.getDate() === today.getDate() && d.getMonth() === today.getMonth())
+  )
+}
 
 const definitions = {
   festivals: {
@@ -144,42 +156,6 @@ const definitions = {
       { key: 'year', label: 'Year' }
     ]
   },
-  // banners: {
-  //   title: 'Banner',
-  //   subtitle: 'Control app banner slides and links',
-  //   endpoint: '/content/banners',
-  //   fields: [
-  //     { name: 'title', label: 'Title' },
-  //     { name: 'subtitle', label: 'Subtitle', type: 'textarea' },
-  //     { name: 'link', label: 'Link' },
-  //     { name: 'image', label: 'Image', type: 'file' },
-  //     { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
-  //   ],
-  //   columns: [
-  //     { key: 'image', label: 'Image', type: 'image' },
-  //     { key: 'title', label: 'Title' },
-  //     { key: 'subtitle', label: 'Subtitle' },
-  //     { key: 'status', label: 'Status', render: (row) => Number(row.status) === 1 ? 'Active' : 'Inactive' }
-  //   ]
-  // },
-  // inquiries: {
-  //   title: 'Contact Inquiry',
-  //   subtitle: 'Track and update messages from contact forms',
-  //   endpoint: '/content/contact-inquiries',
-  //   fields: [
-  //     { name: 'name', label: 'Name' },
-  //     { name: 'email', label: 'Email', type: 'email' },
-  //     { name: 'phone', label: 'Phone' },
-  //     { name: 'subject', label: 'Subject' },
-  //     { name: 'message', label: 'Message', type: 'textarea' },
-  //     { name: 'status', label: 'Status', type: 'select', defaultValue: 'new', options: [{ value: 'new', label: 'New' }, { value: 'in-progress', label: 'In Progress' }, { value: 'closed', label: 'Closed' }] }
-  //   ],
-  //   columns: [
-  //     { key: 'name', label: 'Name' },
-  //     { key: 'subject', label: 'Subject' },
-  //     { key: 'status', label: 'Status' }
-  //   ]
-  // },
   feedback: {
     title: 'Feedback',
     subtitle: 'Manage user feedback and suggestions',
@@ -199,14 +175,56 @@ const definitions = {
   },
   birthday: {
     title: 'Birthdays',
-    subtitle: 'View and manage member birthdays',
+    subtitle: 'View and manage member birthdays and anniversaries',
     endpoint: BIRTHDAY_ENDPOINTS.GET_BIRTHDAYS,
     hideAdd: true,
     hideActions: true,
     fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date', required: true }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
     columns: [
-      { key: 'name', label: 'Name' },
-      { key: 'dob', label: 'Date of Birth', render: (row) => formatDate(row.dob) },
+      {
+        key: 'name',
+        label: 'Name',
+        render: (row) => {
+          const isBday = isSameDayAndMonth(row.dob)
+          const isAnniv = isSameDayAndMonth(row.anniversary)
+          return (
+            <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
+              <span className="font-semibold text-text whitespace-nowrap">{row.name || '-'}</span>
+              {isBday && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
+                  <Cake className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Birthday Today! 🎂</span>
+                </span>
+              )}
+              {isAnniv && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
+                  <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 shrink-0" />
+                  <span>Anniversary Today! 💖</span>
+                </span>
+              )}
+            </div>
+          )
+        }
+      },
+      {
+        key: 'dob',
+        label: 'Date of Birth',
+        render: (row) => {
+          if (!row.dob) return '-'
+          const isBday = isSameDayAndMonth(row.dob)
+          return (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span>{formatDate(row.dob)}</span>
+              {isBday && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-[11px] border border-amber-500/30 shadow-2xs">
+                  <Cake className="w-3 h-3 text-amber-500" />
+                  Today!
+                </span>
+              )}
+            </div>
+          )
+        }
+      },
       {
         key: 'age',
         label: 'Age',
@@ -223,6 +241,7 @@ const definitions = {
           }
           if (months < 0) { years--; months += 12 }
           
+          const isBday = isSameDayAndMonth(row.dob)
           const parts = []
           if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
           if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
@@ -232,7 +251,11 @@ const definitions = {
           return (
             <div className="flex items-center gap-1.5 flex-wrap">
               {parts.map((p, i) => (
-                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/15 border border-primary/20 text-xs font-bold text-primary-dark whitespace-nowrap shadow-sm">
+                <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap shadow-sm ${
+                  isBday 
+                    ? 'bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300' 
+                    : 'bg-primary/15 border border-primary/20 text-primary-dark'
+                }`}>
                   <span>{p.value}</span>
                   <span className="text-[10px] opacity-75 font-semibold">{p.label}</span>
                 </span>
@@ -244,7 +267,21 @@ const definitions = {
       {
         key: 'anniversary',
         label: 'Anniversary Date',
-        render: (row) => formatDate(row.anniversary)
+        render: (row) => {
+          if (!row.anniversary) return '-'
+          const isAnniv = isSameDayAndMonth(row.anniversary)
+          return (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span>{formatDate(row.anniversary)}</span>
+              {isAnniv && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold text-[11px] border border-rose-500/30 shadow-2xs">
+                  <Heart className="w-3 h-3 fill-rose-500 text-rose-500" />
+                  Today!
+                </span>
+              )}
+            </div>
+          )
+        }
       },
       {
         key: 'married_for',
@@ -263,19 +300,24 @@ const definitions = {
           if (months < 0) { years--; months += 12 }
           if (years < 0) return '-'
           
+          const isAnniv = isSameDayAndMonth(row.anniversary)
           const parts = []
           if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
           if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
           if (days > 0) parts.push({ label: days === 1 ? 'Day' : 'Days', value: String(days).padStart(2, '0') })
           
           if (parts.length === 0) {
-            return <span className="inline-block px-2 py-0.5 rounded-md bg-success/15 border border-success/20 text-xs font-bold text-success shadow-sm">Today!</span>
+            return <span className="inline-block px-2 py-0.5 rounded-md bg-rose-500/20 border border-rose-500/30 text-xs font-bold text-rose-600 dark:text-rose-400 shadow-sm">Today! 💖</span>
           }
 
           return (
             <div className="flex items-center gap-1.5 flex-wrap">
               {parts.map((p, i) => (
-                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/15 border border-primary/20 text-xs font-bold text-primary-dark whitespace-nowrap shadow-sm">
+                <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap shadow-sm ${
+                  isAnniv 
+                    ? 'bg-rose-500/20 border border-rose-500/30 text-rose-800 dark:text-rose-300' 
+                    : 'bg-primary/15 border border-primary/20 text-primary-dark'
+                }`}>
                   <span>{p.value}</span>
                   <span className="text-[10px] opacity-75 font-semibold">{p.label}</span>
                 </span>
@@ -447,6 +489,34 @@ export default function ContentPage({ type, headerLeftContent }) {
     </div>
   ) : null
 
+  const transformData = useCallback((data) => {
+    if (type !== 'birthday') return data
+    // Sort items: today's birthdays or anniversaries first
+    return [...data].sort((a, b) => {
+      const aToday = isSameDayAndMonth(a.dob) || isSameDayAndMonth(a.anniversary)
+      const bToday = isSameDayAndMonth(b.dob) || isSameDayAndMonth(b.anniversary)
+      if (aToday && !bToday) return -1
+      if (!aToday && bToday) return 1
+      return 0
+    })
+  }, [type])
+
+  const rowClassName = useCallback((row) => {
+    if (type !== 'birthday') return ''
+    const isBday = isSameDayAndMonth(row.dob)
+    const isAnniv = isSameDayAndMonth(row.anniversary)
+    if (isBday && isAnniv) {
+      return '!bg-linear-to-r !from-amber-500/10 !via-rose-500/10 !to-transparent hover:!bg-amber-500/15 border-l-4 border-l-amber-500 font-medium'
+    }
+    if (isBday) {
+      return '!bg-amber-500/5 hover:!bg-amber-500/10 border-l-4 border-l-amber-500 font-medium'
+    }
+    if (isAnniv) {
+      return '!bg-rose-500/5 hover:!bg-rose-500/10 border-l-4 border-l-rose-500 font-medium'
+    }
+    return ''
+  }, [type])
+
   return (
     <AdminCrudPage 
       {...definitions[type]} 
@@ -462,6 +532,8 @@ export default function ContentPage({ type, headerLeftContent }) {
       onApplyFilters={type === 'birthday' ? handleApply : undefined}
       onToggleFilters={type === 'birthday' ? handleToggle : undefined}
       extraActiveFiltersCount={type === 'birthday' ? extraCount : 0}
+      transformData={type === 'birthday' ? transformData : undefined}
+      rowClassName={type === 'birthday' ? rowClassName : undefined}
     />
   )
 }

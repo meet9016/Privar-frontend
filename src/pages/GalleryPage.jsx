@@ -301,6 +301,23 @@ export default function GalleryPage({ headerLeftContent }) {
         return
       }
 
+      // Prevent creating/saving duplicate entry with the exact same category
+      const enteredCategory = titleCategory.trim().toLowerCase()
+      const duplicateGallery = rows.find(r => {
+        const rowId = String(r._id || r.id || '')
+        const selectedId = String(selected?._id || selected?.id || '')
+        if (selected && rowId === selectedId) return false
+        const rCat = String(r.category || '').trim().toLowerCase()
+        return rCat === enteredCategory
+      })
+
+      if (duplicateGallery) {
+        setFieldErrors({ category: `"${titleCategory}" already exists in gallery! Please edit existing or select another category.` })
+        setFormError(`"${titleCategory}" already exists in gallery! Duplicate categories are not allowed.`)
+        setSaving(false)
+        return
+      }
+
       let yearToSave = year
       let monthToSave = month
       if (date && date.includes('-')) {
