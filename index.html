@@ -12,6 +12,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Noto+Sans+Gujarati:wght@400;500;600;700;800&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <!-- Google Translate API -->
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <style>
+      .goog-te-banner-frame,
+      .goog-te-banner-frame.skiptranslate,
+      iframe.goog-te-banner-frame,
+      iframe[id=":1.container"],
+      #goog-gt-tt,
+      .goog-te-balloon-frame {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+      }
+      body {
+        top: 0px !important;
+        position: static !important;
+      }
+      .goog-text-highlight {
+        background: none !important;
+        box-shadow: none !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
