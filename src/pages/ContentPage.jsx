@@ -11,12 +11,29 @@ import { Cake, Heart, Sparkles, PartyPopper } from 'lucide-react'
 
 export const isSameDayAndMonth = (dateStr) => {
   if (!dateStr) return false
+  const str = String(dateStr).trim()
+  if (!str) return false
+  const today = new Date()
+  const todayDay = today.getDate()
+  const todayMonth = today.getMonth() + 1 // 1-indexed
+
+  // Handle DD/MM/YYYY format
+  if (str.includes('/')) {
+    const parts = str.split('/')
+    if (parts.length >= 2) {
+      const d = parseInt(parts[0], 10)
+      const m = parseInt(parts[1], 10)
+      return d === todayDay && m === todayMonth
+    }
+  }
+
+  // Handle YYYY-MM-DD or ISO string
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return false
-  const today = new Date()
+
   return (
-    (d.getUTCDate() === today.getDate() && d.getUTCMonth() === today.getMonth()) ||
-    (d.getDate() === today.getDate() && d.getMonth() === today.getMonth())
+    (d.getUTCDate() === todayDay && (d.getUTCMonth() + 1) === todayMonth) ||
+    (d.getDate() === todayDay && (d.getMonth() + 1) === todayMonth)
   )
 }
 
@@ -184,27 +201,9 @@ const definitions = {
       {
         key: 'name',
         label: 'Name',
-        render: (row) => {
-          const isBday = isSameDayAndMonth(row.dob)
-          const isAnniv = isSameDayAndMonth(row.anniversary)
-          return (
-            <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
-              <span className="font-semibold text-text whitespace-nowrap">{row.name || '-'}</span>
-              {isBday && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
-                  <Cake className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>Birthday Today! 🎂</span>
-                </span>
-              )}
-              {isAnniv && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
-                  <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 shrink-0" />
-                  <span>Anniversary Today! 💖</span>
-                </span>
-              )}
-            </div>
-          )
-        }
+        render: (row) => (
+          <span className="font-semibold text-text whitespace-nowrap">{row.name || '-'}</span>
+        )
       },
       {
         key: 'dob',
@@ -213,12 +212,12 @@ const definitions = {
           if (!row.dob) return '-'
           const isBday = isSameDayAndMonth(row.dob)
           return (
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
               <span>{formatDate(row.dob)}</span>
               {isBday && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-[11px] border border-amber-500/30 shadow-2xs">
-                  <Cake className="w-3 h-3 text-amber-500" />
-                  Today!
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold text-xs border border-amber-500/30 shadow-2xs whitespace-nowrap shrink-0">
+                  <Cake className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Today!</span>
                 </span>
               )}
             </div>
@@ -241,7 +240,6 @@ const definitions = {
           }
           if (months < 0) { years--; months += 12 }
           
-          const isBday = isSameDayAndMonth(row.dob)
           const parts = []
           if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
           if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
@@ -251,11 +249,7 @@ const definitions = {
           return (
             <div className="flex items-center gap-1.5 flex-wrap">
               {parts.map((p, i) => (
-                <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap shadow-sm ${
-                  isBday 
-                    ? 'bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300' 
-                    : 'bg-primary/15 border border-primary/20 text-primary-dark'
-                }`}>
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap shadow-sm bg-primary/15 border border-primary/20 text-primary-dark">
                   <span>{p.value}</span>
                   <span className="text-[10px] opacity-75 font-semibold">{p.label}</span>
                 </span>
@@ -271,12 +265,12 @@ const definitions = {
           if (!row.anniversary) return '-'
           const isAnniv = isSameDayAndMonth(row.anniversary)
           return (
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
               <span>{formatDate(row.anniversary)}</span>
               {isAnniv && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold text-[11px] border border-rose-500/30 shadow-2xs">
-                  <Heart className="w-3 h-3 fill-rose-500 text-rose-500" />
-                  Today!
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-800 dark:text-rose-300 font-bold text-xs border border-rose-500/30 shadow-2xs whitespace-nowrap shrink-0">
+                  <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 shrink-0" />
+                  <span>Today!</span>
                 </span>
               )}
             </div>
@@ -300,24 +294,19 @@ const definitions = {
           if (months < 0) { years--; months += 12 }
           if (years < 0) return '-'
           
-          const isAnniv = isSameDayAndMonth(row.anniversary)
           const parts = []
           if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
           if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
           if (days > 0) parts.push({ label: days === 1 ? 'Day' : 'Days', value: String(days).padStart(2, '0') })
           
           if (parts.length === 0) {
-            return <span className="inline-block px-2 py-0.5 rounded-md bg-rose-500/20 border border-rose-500/30 text-xs font-bold text-rose-600 dark:text-rose-400 shadow-sm">Today! 💖</span>
+            parts.push({ label: 'Days', value: '00' })
           }
 
           return (
             <div className="flex items-center gap-1.5 flex-wrap">
               {parts.map((p, i) => (
-                <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap shadow-sm ${
-                  isAnniv 
-                    ? 'bg-rose-500/20 border border-rose-500/30 text-rose-800 dark:text-rose-300' 
-                    : 'bg-primary/15 border border-primary/20 text-primary-dark'
-                }`}>
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap shadow-sm bg-primary/15 border border-primary/20 text-primary-dark">
                   <span>{p.value}</span>
                   <span className="text-[10px] opacity-75 font-semibold">{p.label}</span>
                 </span>

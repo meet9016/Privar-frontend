@@ -12,7 +12,7 @@ import { confirm } from '../lib/confirm'
 import api from '../lib/api'
 import { toast } from '../lib/toast'
 
-export default function Header({ onMenuClick }) {
+export default function Header({ onToggleSidebar }) {
   const { logout, user } = useContext(AuthContext)
   const navigate = useNavigate()
   const location = useLocation()
@@ -98,21 +98,24 @@ export default function Header({ onMenuClick }) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-6 lg:px-8 h-[85px] bg-surface border-b border-border shadow-glass-md backdrop-blur-xl">
-        {/* Title block */}
+      <header className="sticky top-0 z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 h-[70px] sm:h-[85px] bg-surface border-b border-border shadow-glass-md backdrop-blur-xl transition-all">
+        {/* Title / Left block with Mobile Drawer Toggle */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <button 
-            type="button" 
-            onClick={onMenuClick}
-            className="lg:hidden p-2 -ml-2 rounded-xl text-text-secondary hover:text-text hover:bg-surface-secondary transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {onToggleSidebar && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="p-2 rounded-xl text-text hover:bg-surface-secondary border border-border lg:hidden transition-colors cursor-pointer"
+              title="Toggle Menu"
+            >
+              <Menu className="w-5 h-5 text-primary" />
+            </button>
+          )}
           <GlobalSearch />
         </div>
 
         {/* Control bar */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <ThemePicker />
           <NotificationDropdown variant="dark" />
 

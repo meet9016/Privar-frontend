@@ -426,93 +426,33 @@ export default function Users() {
     })
   }
 
+  const [exporting, setExporting] = useState(false)
+
   const handleExportExcel = async () => {
     try {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Family Registry');
+      setExporting(true)
+      const params = { _t: Date.now() }
+      if (searchQuery) params.search = searchQuery
+      if (filterGender) params.gender = filterGender
+      if (filterStatus !== '') params.status = filterStatus
 
-      worksheet.columns = [
-        { header: 'NAME', key: 'name', width: 40 },
-        { header: 'RELATION', key: 'relation', width: 25 },
-        { header: 'MOBILE NUMBER', key: 'phone', width: 25 },
-        { header: 'EMAIL', key: 'email', width: 35 },
-        { header: 'GENDER', key: 'gender', width: 20 },
-        { header: 'STATUS', key: 'status', width: 20 }
-      ];
+      const response = await api.get(MEMBER_ENDPOINTS.EXPORT_MEMBERS, {
+        params,
+        responseType: 'blob'
+      })
 
-      // Style header
-      const headerRow = worksheet.getRow(1);
-      headerRow.eachCell((cell) => {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF818CF8' } }; // Lighter Indigo
-        cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 11 };
-        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
-        };
-      });
-
-      worksheet.autoFilter = 'A1:F1'; // Add filter to all columns
-
-      groupedUsers.forEach(user => {
-        const isHead = user.isGroupParent || user.relation === 'Self' || user.familyHead;
-        const statusText = Number(user.status ?? 1) === 1 ? 'Active' : 'Inactive';
-        const row = worksheet.addRow({
-          name: user.name || '-',
-          relation: isHead ? 'Family Head' : (user.relation || '-'),
-          phone: user.phone || user.number || '-',
-          email: user.email || '-',
-          gender: user.gender || '-',
-          status: statusText
-        });
-
-        // Formatting and borders for all cells in the row
-        row.eachCell((cell, colNumber) => {
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-            left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-            bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-            right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
-          };
-          
-          // Default alignment for data rows
-          if (colNumber > 1) {
-             cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          } else {
-             cell.alignment = { vertical: 'middle', horizontal: 'left' };
-          }
-        });
-
-        // Indent children
-        if (user.isGroupChild) {
-          row.getCell('name').alignment = { vertical: 'middle', horizontal: 'left', indent: 2 };
-        } else if (isHead) {
-          row.getCell('name').font = { bold: true };
-          row.getCell('relation').font = { bold: true };
-        }
-
-        // Status color
-        const statusCell = row.getCell('status');
-        if (statusText === 'Active') {
-          statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4EA' } }; // Light green
-          statusCell.font = { color: { argb: 'FF137333' }, bold: true };
-        } else {
-          statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE8E6' } }; // Light red
-          statusCell.font = { color: { argb: 'FFC5221F' }, bold: true };
-        }
-      });
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      saveAs(blob, `Family_Registry_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success('Excel exported successfully');
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+      saveAs(blob, `Family_Registry_${new Date().toISOString().slice(0, 10)}.xlsx`)
+      toast.success('Family registry exported successfully from server')
     } catch (err) {
-      toast.error('Failed to export Excel');
-      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to export Excel from server')
+      console.error(err)
+    } finally {
+      setExporting(false)
     }
-  };
+  }
 
 
   // ---- Bulk Import Handlers ----
@@ -783,8 +723,15 @@ export default function Users() {
               </button>
             </div>
           )}
-          <Button onClick={handleExportExcel} variant="secondary" icon={<Download className="w-4 h-4" />} className="h-10 border-border text-text hover:bg-surface-secondary">
-            Export
+          <Button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            isLoading={exporting}
+            variant="secondary"
+            icon={<Download className="w-4 h-4" />}
+            className="h-10 border-border text-text hover:bg-surface-secondary"
+          >
+            {exporting ? 'Exporting...' : 'Export'}
           </Button>
           {(!permissions.canAdd && !permissions.isSuperAdmin) ? null : (
             <Button

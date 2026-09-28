@@ -24,6 +24,7 @@ export const MEMBER_ENDPOINTS = {
   DELETE_MEMBER: (id) => `/users/${id}`,
   BULK_UPDATE_STATUS: '/users/bulk-update',
   BULK_IMPORT: '/users/bulk-import',
+  EXPORT_MEMBERS: '/users/export',
   GET_FAMILY_MEMBERS: (headId) => `/users/family/${headId}`,
   GET_ROLES: '/roles',
   MASTERS_COUNTRY: '/masters/country',

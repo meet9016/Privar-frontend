@@ -222,7 +222,7 @@ export default function Table({
   const showingTo = pagination ? Math.min(showingFrom + (pagination.limit || 15) - 1, totalRecords) : data.length;
 
   return (
-    <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col h-[calc(100vh-210px)] min-h-[540px] ${className}`}>
+    <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col min-h-[400px] sm:min-h-[500px] lg:h-[calc(100vh-210px)] ${className}`}>
       <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar" style={{ position: 'relative' }}>
         <table className="w-full min-w-full text-left border-collapse table-auto bg-white">
           <thead className={stickyHeader ? "sticky top-0 z-20 shadow-sm" : ""}>
