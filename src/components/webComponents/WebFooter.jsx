@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart, Apple, Play } from 'lucide-react';
+import { Phone, Mail, MapPin, Send, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart, Apple, Play } from 'lucide-react';
 import { assetUrl } from '../../lib/api';
 
 const getStoredWebTheme = () => {
@@ -36,7 +36,6 @@ export default function WebFooter() {
     { label: 'Donors', href: '/donors' },
     { label: 'Matrimonial', href: '/matrimonial' },
     { label: 'Job Vacancies', href: '/jobs' },
-    { label: 'Contact Us', href: '/contact' },
   ];
 
   const socialLinks = [
@@ -138,15 +137,22 @@ export default function WebFooter() {
 
           {/* Contact Info */}
           <div>
-            <Link
-              to="/contact"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="text-sm sm:text-base font-extrabold mb-5 text-white uppercase tracking-wider border-b border-white/10 pb-2.5 inline-flex items-center gap-1.5 hover:text-amber-400 transition-colors group"
-            >
-              <span>Contact Us</span>
-              <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </Link>
+            <h3 className="text-sm sm:text-base font-extrabold mb-5 text-white uppercase tracking-wider border-b border-white/10 pb-2.5 inline-block">
+              Contact Us
+            </h3>
             <ul className="space-y-4">
+              <li>
+                <Link
+                  to="/contact"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="flex items-center text-gray-300 hover:text-white transition-colors text-sm font-semibold group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mr-3 shrink-0 group-hover:bg-amber-400 group-hover:text-gray-900 transition-colors">
+                    <Send size={16} className="text-gray-300 group-hover:text-gray-900" />
+                  </div>
+                  <span>Contact &amp; Inquiries</span>
+                </Link>
+              </li>
               {theme?.phone && (
                 <li>
                   <a href={`tel:${theme.phone}`} className="flex items-center text-gray-300 hover:text-white transition-colors text-sm font-semibold group">
@@ -167,16 +173,6 @@ export default function WebFooter() {
                   </a>
                 </li>
               )}
-              <li>
-                <Link
-                  to="/contact"
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all duration-200 hover:scale-105"
-                >
-                  <span>Send Message / Form</span>
-                  <ChevronRight size={14} className="text-amber-400" />
-                </Link>
-              </li>
             </ul>
           </div>
 

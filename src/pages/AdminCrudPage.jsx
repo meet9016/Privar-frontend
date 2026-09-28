@@ -20,7 +20,7 @@ import useDebounce from '../hooks/useDebounce'
 import { transliterateText } from '../utils/transliterate'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ 
@@ -63,7 +63,9 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       const res = await api.get(endpoint, { params })
       const data = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
-      setRows(Array.isArray(data) ? data : [])
+      const rawData = Array.isArray(data) ? data : []
+      const finalData = transformData ? transformData(rawData) : rawData
+      setRows(finalData)
       setPaginationData(pg)
     } catch (err) {
       setRows([])
@@ -72,7 +74,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     } finally {
       setLoading(false)
     }
-  }, [endpoint, page, debouncedSearch, title, supportIsOwn, isOwn, getParams, setPaginationData, extraParams, appliedFilterStatus])
+  }, [endpoint, page, debouncedSearch, title, supportIsOwn, isOwn, getParams, setPaginationData, extraParams, appliedFilterStatus, transformData])
 
   useEffect(() => {
     setRows([])
@@ -499,9 +501,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 )
               ) : c.type === 'date' || c.key.includes('date') || c.key === 'dob' || c.key === 'anniversary' ? (
                 <span>{c.render ? c.render(row) : formatDate(row[c.key])}</span>
+              ) : c.render ? (
+                c.render(row)
               ) : (
                 (() => {
-                  const displayValue = c.render ? c.render(row) : (
+                  const displayValue = (
                     row[c.key + '_name'] ||
                     row[c.key?.replace(/_id$/, '_name')] ||
                     (remoteOptions[c.key] || remoteOptions['parent_id'] || []).find(opt => String(opt.id || opt._id) === String(row[c.key]))?.name ||
@@ -577,6 +581,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         data={rows}
         keyField="id"
         loading={loading}
+        rowClassName={rowClassName}
         onBulkStatus={columns.some(c => c.key === 'status') ? handleBulkStatus : undefined}
         onBulkDelete={!hideDelete ? handleBulkDelete : undefined}
         emptyState={{

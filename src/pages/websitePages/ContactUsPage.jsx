@@ -45,6 +45,7 @@ const getStoredWebTheme = () => {
 export default function ContactUsPage() {
   useWebTheme()
   const [theme, setTheme] = useState(getStoredWebTheme())
+  const [mounted, setMounted] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -61,6 +62,7 @@ export default function ContactUsPage() {
   useEffect(() => {
     const loadTheme = () => setTheme(getStoredWebTheme())
     loadTheme()
+    setMounted(true)
     window.addEventListener('storage', loadTheme)
     return () => window.removeEventListener('storage', loadTheme)
   }, [])
@@ -125,36 +127,50 @@ export default function ContactUsPage() {
   const secondaryColor = theme.secondaryColor || theme.primaryColor || '#1e3a8a'
   const textColor = theme.textColor || '#111827'
   const buttonColor = theme.buttonColor || primaryColor
+
   return (
     <div
-      className="w-full min-h-[calc(100vh-80px)] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+      className={`w-full min-h-[calc(100vh-80px)] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden transition-opacity duration-700 ease-out ${
+        mounted ? 'opacity-100' : 'opacity-0'
+      }`}
       style={{ backgroundColor: theme.backgroundColor || '#F8FAFC' }}
     >
+      {/* Subtle Ambient Background Glows */}
+      <div 
+        className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none transition-all duration-1000"
+        style={{ backgroundColor: primaryColor }}
+      />
+      <div 
+        className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-15 blur-3xl pointer-events-none transition-all duration-1000"
+        style={{ backgroundColor: secondaryColor }}
+      />
+
       <div className="max-w-6xl mx-auto relative z-10">
         {/* ── HEADER BANNER ── */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+        <div className={`text-center max-w-2xl mx-auto mb-10 sm:mb-12 transition-all duration-700 transform ${mounted ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}>
           <div
-            className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-xs"
+            className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white/90 backdrop-blur-md shadow-xs transition-transform duration-300 hover:scale-105"
             style={{
               color: primaryColor,
               borderColor: `${primaryColor}30`
             }}
           >
-            <Sparkles className="w-4 h-4" style={{ color: primaryColor }} />
+            <Sparkles className="w-4 h-4 animate-pulse" style={{ color: primaryColor }} />
             <span>Get in Touch</span>
           </div>
 
           <h1
-            className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3"
+            className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3 transition-colors duration-300"
             style={{ color: textColor }}
           >
             Contact Our Community
           </h1>
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-5 space-y-6">
+          <div className={`lg:col-span-5 space-y-6 transition-all duration-700 delay-150 transform ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
             <div
-              className="rounded-2xl p-7 sm:p-8 text-white shadow-lg relative overflow-hidden"
+              className="rounded-2xl p-7 sm:p-8 text-white shadow-xl relative overflow-hidden transition-all duration-300 hover:shadow-2xl"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
               }}
@@ -225,8 +241,8 @@ export default function ContactUsPage() {
               </p>
             </div>
           </div>
-          <div className="lg:col-span-7">
-            <div className="bg-white rounded-2xl p-7 sm:p-9 border border-gray-100 shadow-md">
+          <div className={`lg:col-span-7 transition-all duration-700 delay-300 transform ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl p-7 sm:p-9 border border-gray-100 shadow-xl transition-all duration-300 hover:shadow-2xl">
               <div className="mb-7">
                 <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
                   Send Us a Message
@@ -237,8 +253,8 @@ export default function ContactUsPage() {
               </div>
 
               {submitted ? (
-                <div className="py-12 px-6 text-center space-y-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 animate-in fade-in">
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-inner">
+                <div className="py-12 px-6 text-center space-y-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 animate-in fade-in duration-500">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-inner animate-bounce">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
                   <div className="space-y-1">
@@ -250,7 +266,7 @@ export default function ContactUsPage() {
                   <button
                     type="button"
                     onClick={() => setSubmitted(false)}
-                    className="mt-4 px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer hover:opacity-90 active:scale-95"
+                    className="mt-4 px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all duration-200 cursor-pointer hover:opacity-90 active:scale-95"
                     style={{ backgroundColor: primaryColor }}
                   >
                     Send Another Inquiry
@@ -259,7 +275,7 @@ export default function ContactUsPage() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {formError && (
-                    <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-sm text-rose-800 font-medium animate-in fade-in">
+                    <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-sm text-rose-800 font-medium animate-in fade-in duration-300">
                       <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                       <span>{formError}</span>
                     </div>
@@ -279,10 +295,7 @@ export default function ContactUsPage() {
                         onChange={handleChange}
                         placeholder="e.g. Rajeshbhai Patel"
                         required
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
-                        style={{
-                          focusRingColor: primaryColor
-                        }}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white focus:bg-white shadow-2xs"
                       />
                     </div>
 
@@ -295,11 +308,16 @@ export default function ContactUsPage() {
                       <input
                         type="tel"
                         name="mobile"
+                        maxLength={10}
                         value={formData.mobile}
-                        onChange={handleChange}
+                        onChange={(e) => {
+                          const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10)
+                          setFormData((prev) => ({ ...prev, mobile: digitsOnly }))
+                          if (formError) setFormError('')
+                        }}
                         placeholder="e.g. 9876543210"
                         required
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white focus:bg-white shadow-2xs"
                       />
                     </div>
                   </div>
@@ -317,7 +335,7 @@ export default function ContactUsPage() {
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="e.g. name@example.com"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white focus:bg-white shadow-2xs"
                       />
                     </div>
 
@@ -333,7 +351,7 @@ export default function ContactUsPage() {
                         value={formData.subject}
                         onChange={handleChange}
                         placeholder="e.g. Membership inquiry"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white focus:bg-white shadow-2xs"
                       />
                     </div>
                   </div>
@@ -350,7 +368,7 @@ export default function ContactUsPage() {
                       value={formData.note}
                       onChange={handleChange}
                       placeholder="Write your message or inquiry details here..."
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 transition-all bg-gray-50/50 hover:bg-white focus:bg-white resize-y"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white focus:bg-white resize-y shadow-2xs"
                     />
                   </div>
 
@@ -359,7 +377,7 @@ export default function ContactUsPage() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2.5 shadow-md transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                      className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2.5 shadow-lg transition-all duration-200 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
                       style={{ backgroundColor: buttonColor }}
                     >
                       {submitting ? (
