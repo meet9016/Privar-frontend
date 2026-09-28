@@ -28,7 +28,7 @@ export const ThemeProvider = ({ children }) => {
     // Set Google Translate cookie
     const domain = window.location.hostname;
     document.cookie = `googtrans=/en/${langCode}; path=/;`;
-    if (domain !== 'localhost') {
+    if (domain !== 'localhost' && !/^(\d{1,3}\.){3}\d{1,3}$/.test(domain)) {
       document.cookie = `googtrans=/en/${langCode}; domain=.${domain}; path=/;`;
     }
 
@@ -38,46 +38,29 @@ export const ThemeProvider = ({ children }) => {
       select.value = langCode;
       select.dispatchEvent(new Event('change'));
     } else {
-      // Reload page if needed to apply clean translation
       window.location.reload();
     }
   };
 
   useEffect(() => {
-    // Ensure Google Translate script is loaded
-    if (!window.googleTranslateElementInit) {
-      window.googleTranslateElementInit = () => {
-        if (window.google && window.google.translate) {
-          new window.google.translate.TranslateElement(
-            {
-              pageLanguage: 'en',
-              includedLanguages: 'en,gu,hi',
-              autoDisplay: false,
-            },
-            'google_translate_hidden_element'
-          );
-
-          // Apply initial stored language after a brief delay
-          const storedLang = localStorage.getItem('app-language');
-          if (storedLang && storedLang !== 'en') {
-            setTimeout(() => {
-              const select = document.querySelector('.goog-te-combo');
-              if (select && select.value !== storedLang) {
-                select.value = storedLang;
-                select.dispatchEvent(new Event('change'));
-              }
-            }, 500);
+    // Apply initial stored language once translation combo exists
+    const storedLang = localStorage.getItem('app-language');
+    if (storedLang && storedLang !== 'en') {
+      const interval = setInterval(() => {
+        const select = document.querySelector('.goog-te-combo');
+        if (select) {
+          if (select.value !== storedLang) {
+            select.value = storedLang;
+            select.dispatchEvent(new Event('change'));
           }
+          clearInterval(interval);
         }
+      }, 300);
+      const timer = setTimeout(() => clearInterval(interval), 5000);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timer);
       };
-
-      if (!document.getElementById('google-translate-script')) {
-        const script = document.createElement('script');
-        script.id = 'google-translate-script';
-        script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-        script.async = true;
-        document.head.appendChild(script);
-      }
     }
   }, []);
 

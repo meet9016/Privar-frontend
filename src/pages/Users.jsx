@@ -244,18 +244,17 @@ export default function Users() {
     try {
       if (selectedUser) {
         // Edit
-        await api.put(MEMBER_ENDPOINTS.UPDATE_MEMBER(selectedUser.id), formData)
+        const targetId = selectedUser.id || selectedUser._id
+        await api.put(MEMBER_ENDPOINTS.UPDATE_MEMBER(targetId), formData)
         toast.success('Member updated successfully')
-        fetchUsers() // Refresh list
       } else {
         // Create
-        const res = await api.post(MEMBER_ENDPOINTS.CREATE_MEMBER, formData)
-        const created = res.data?.data || res.data || {}
+        await api.post(MEMBER_ENDPOINTS.CREATE_MEMBER, formData)
         toast.success('Member created successfully')
-        fetchUsers() // Refresh list
       }
       setIsModalOpen(false)
       setSelectedUser(null)
+      await fetchUsers()
     } catch (err) {
       toast.error(err.response?.data?.message || err.message || 'Failed to save member')
     } finally {
