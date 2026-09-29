@@ -462,10 +462,10 @@ export default function Users() {
       const ws = wb.addWorksheet('Members Template')
 
       ws.columns = [
-        { header: 'First Name*', key: 'first_name', width: 18 },
+        { header: 'First Name', key: 'first_name', width: 18 },
         { header: 'Middle Name', key: 'middle_name', width: 18 },
         { header: 'Last Name', key: 'last_name', width: 18 },
-        { header: 'Mobile Number*', key: 'number', width: 20 },
+        { header: 'Mobile Number', key: 'number', width: 20 },
         { header: 'Email', key: 'email', width: 28 },
         { header: 'Gender', key: 'gender', width: 14 },
         { header: 'Date of Birth', key: 'dob', width: 18 },
@@ -545,6 +545,40 @@ export default function Users() {
   ]
   const REQUIRED_COLS = ['First Name', 'Mobile Number']
 
+  const extractCellValue = (cell) => {
+    if (!cell || cell.value === null || cell.value === undefined) return ''
+    const val = cell.value
+    if (typeof val === 'object') {
+      if (val.text !== undefined) return String(val.text).trim()
+      if (Array.isArray(val.richText)) return val.richText.map(t => t.text || '').join('').trim()
+      if (val.result !== undefined) return String(val.result).trim()
+      if (val instanceof Date) {
+        if (isNaN(val.getTime())) return ''
+        const d = String(val.getDate()).padStart(2, '0')
+        const m = String(val.getMonth() + 1).padStart(2, '0')
+        return `${d}-${m}-${val.getFullYear()}`
+      }
+    }
+    return String(val).trim()
+  }
+
+  const normalizeHeader = (raw) => {
+    const clean = String(raw || '').replace(/[\*:]/g, '').replace(/[\s_-]+/g, ' ').trim().toLowerCase()
+    if (clean === 'first name' || clean === 'firstname' || clean === 'first') return 'First Name'
+    if (clean === 'middle name' || clean === 'middlename' || clean === 'middle') return 'Middle Name'
+    if (clean === 'last name' || clean === 'lastname' || clean === 'surname' || clean === 'last') return 'Last Name'
+    if (clean === 'mobile number' || clean === 'mobile' || clean === 'mob' || clean === 'phone' || clean === 'number' || clean === 'contact' || clean === 'phone number') return 'Mobile Number'
+    if (clean === 'email' || clean === 'email id' || clean === 'mail') return 'Email'
+    if (clean === 'gender' || clean === 'sex') return 'Gender'
+    if (clean === 'date of birth' || clean === 'dob' || clean === 'birth date') return 'Date of Birth'
+    if (clean === 'anniversary' || clean === 'anniversary date' || clean === 'wedding date') return 'Anniversary'
+    if (clean === 'blood group' || clean === 'bloodgroup' || clean === 'blood') return 'Blood Group'
+    if (clean === 'relation' || clean === 'relationship') return 'Relation'
+    if (clean === 'address' || clean === 'full address') return 'Address'
+    if (clean === 'is family head' || clean === 'family head' || clean === 'head' || clean === 'is head') return 'Is Family Head'
+    return String(raw || '').trim()
+  }
+
   const parseImportFile = async (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -557,25 +591,57 @@ export default function Users() {
           if (!ws) return resolve({ rows: [], errors: [] })
 
           const headers = []
-          ws.getRow(1).eachCell((cell, col) => { headers[col] = (cell.value || '').toString().trim() })
+          ws.getRow(1).eachCell((cell, col) => {
+            const rawVal = extractCellValue(cell)
+            if (rawVal) {
+              headers[col] = normalizeHeader(rawVal)
+            }
+          })
 
           const rows = []
           const parseErrors = []
 
           ws.eachRow((row, rowIndex) => {
             if (rowIndex === 1) return // skip header
+
+            // Skip template notes/instructions row
+            const firstCellVal = extractCellValue(row.getCell(1))
+            if (firstCellVal.startsWith('*') && (firstCellVal.toLowerCase().includes('required') || firstCellVal.toLowerCase().includes('note'))) {
+              return
+            }
+
             const obj = {}
-            headers.forEach((h, col) => { obj[h] = (row.getCell(col).value ?? '') })
+            headers.forEach((h, col) => {
+              if (!h) return
+              let val = extractCellValue(row.getCell(col))
+              // Clean mobile number if float .0 was appended
+              if (h === 'Mobile Number') {
+                if (val.endsWith('.0')) val = val.slice(0, -2)
+                val = val.replace(/[\s-]/g, '')
+              }
+              obj[h] = val
+            })
+
+            // Set aliases for convenience
+            if (obj['First Name']) obj['first_name'] = obj['First Name']
+            if (obj['Middle Name']) obj['middle_name'] = obj['Middle Name']
+            if (obj['Last Name']) obj['last_name'] = obj['Last Name']
+            if (obj['Mobile Number']) {
+              obj['number'] = obj['Mobile Number']
+              obj['mobile'] = obj['Mobile Number']
+            }
 
             // skip completely blank rows
-            const vals = Object.values(obj).map(v => String(v || '').trim()).filter(Boolean)
+            const vals = Object.values(obj).filter(Boolean)
             if (vals.length === 0) return
 
             const rowErrors = []
-            REQUIRED_COLS.forEach(col => {
-              const val = String(obj[col] || '').trim()
-              if (!val) rowErrors.push(`${col} is required`)
-            })
+            if (!String(obj['First Name'] || '').trim()) {
+              rowErrors.push('First Name is required')
+            }
+            if (!String(obj['Mobile Number'] || '').trim()) {
+              rowErrors.push('Mobile Number is required')
+            }
 
             rows.push({ rowIndex, data: obj, errors: rowErrors })
           })
