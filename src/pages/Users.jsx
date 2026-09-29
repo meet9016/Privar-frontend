@@ -263,12 +263,21 @@ export default function Users() {
   }
 
   // Delete user
-  const handleDelete = async (userId) => {
-    if (!await confirm('Are you sure you want to delete this family member? This action is permanent.')) return
+  const handleDelete = async (userOrId) => {
+    const isHead = typeof userOrId === 'object' 
+      ? (userOrId.isGroupParent || userOrId.relation === 'Self' || userOrId.familyHead)
+      : users.find(u => String(u.id || u._id) === String(userOrId))?.familyHead;
+      
+    const confirmMsg = isHead
+      ? 'Are you sure you want to delete this Family Head? All linked family members under this head will also be deleted permanently.'
+      : 'Are you sure you want to delete this family member? This action is permanent.';
+
+    if (!await confirm(confirmMsg)) return
     try {
-      await api.delete(MEMBER_ENDPOINTS.DELETE_MEMBER(userId))
+      const id = typeof userOrId === 'object' ? (userOrId.id || userOrId._id) : userOrId;
+      await api.delete(MEMBER_ENDPOINTS.DELETE_MEMBER(id))
       await fetchUsers()
-      toast.success('Member deleted successfully')
+      toast.success(isHead ? 'Family head and all linked members deleted successfully' : 'Member deleted successfully')
     } catch (err) {
       toast.error('Failed to delete member')
     }
@@ -998,7 +1007,7 @@ export default function Users() {
                   </button>
                 )}
                 {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(user.id)} className="p-2 text-error-text hover:text-error bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete Member">
+                  <button onClick={() => handleDelete(user)} className="p-2 text-error-text hover:text-error bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete Member">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}

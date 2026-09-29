@@ -152,11 +152,11 @@ export default function Sidebar({ isOpen, onClose }) {
             }}
           />
           <div className="ml-3">
-            <h1 className="text-1xl font-bold text-text-primary leading-tight">
-              Our Community
+            <h1 className="text-sm font-bold text-text-primary leading-tight truncate max-w-[150px]" title={webTheme.name || getCommunityFullName()}>
+              {webTheme.name || getCommunityFullName() || 'Our Community'}
             </h1>
 
-            <p className="text-xs text-text-secondary ml-2 mt-0.5">
+            <p className="text-xs text-text-secondary mt-0.5">
               Together we grow
             </p>
           </div>
