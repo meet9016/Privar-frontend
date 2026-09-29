@@ -1,5 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react'
-import { API_BASE, getSubdomainTenant, getActualSubdomain } from '../lib/api'
+import { API_BASE, getSubdomainTenant, getActualSubdomain, getCommunityFullName } from '../lib/api'
 
 export const AuthContext = createContext()
 
@@ -100,6 +100,12 @@ export function AuthProvider({ children }) {
       name,
       favicon: rawFavicon
     })
+
+    // Dynamically update document title in browser tab based on domain / parivar name
+    const communityName = getCommunityFullName() || name || 'Parivar'
+    document.title = communityName.toLowerCase().includes('parivar')
+      ? `${communityName} Admin Panel`
+      : `${communityName} Parivar Admin Panel`
 
     // Dynamically update document favicon in browser tab
     if (rawFavicon) {
