@@ -3,7 +3,7 @@ import {
   Settings, Save, Sparkles, RefreshCw, Info,
   Upload, X, Globe, Smartphone, Star,
   Image as ImageIcon, Mail, Phone,
-  Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2, Languages, Check
+  Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2
 } from 'lucide-react'
 import api, { assetUrl, getSubdomainTenant } from '../lib/api'
 import Loader from '../components/common/Loader'
@@ -11,7 +11,6 @@ import { toast } from '../lib/toast'
 import { AuthContext } from '../context/AuthContext'
 import { confirm } from '../lib/confirm'
 import { compressImage } from '../lib/imageCompressor'
-import { useTheme } from '../context/ThemeContext'
 
 const DEFAULT_COLORS = {
   primaryColor: '#1565C0',
@@ -226,7 +225,6 @@ const SectionHeader = ({ icon: Icon, title }) => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function SettingsPage() {
-  const { currentLanguage, changeLanguage, languages } = useTheme()
   const [config, setConfig] = useState(DEFAULT_CONFIG)
   // New file objects (not yet uploaded)
   const [logoFiles, setLogoFiles] = useState({ appLogo: null, webLogo: null, favicon: null })
@@ -505,44 +503,6 @@ export default function SettingsPage() {
             {/* Color Form */}
             <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6 shadow-glass-sm space-y-5">
               
-              {/* Language Selection Card in Theme Config */}
-              <div className="p-4 rounded-2xl bg-surface-secondary/70 border border-border space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Languages className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-bold text-text">Default System Language / ભાષા / भाषा</span>
-                  </div>
-                  <span className="text-xs text-text-secondary font-medium">Applied across Web & Admin Panel</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {languages.map((lang) => {
-                    const isSelected = (currentLanguage || 'en') === lang.code;
-                    return (
-                      <button
-                        key={lang.code}
-                        type="button"
-                        onClick={() => changeLanguage(lang.code)}
-                        className={`flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-primary text-white border-primary shadow-sm ring-2 ring-primary/20'
-                            : 'bg-surface text-text hover:bg-surface-secondary border-border'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-xl leading-none">{lang.flag}</span>
-                          <div className="text-left">
-                            <div className="font-bold text-sm leading-tight">{lang.nativeName}</div>
-                            <div className={`text-[11px] ${isSelected ? 'text-white/80' : 'text-text-secondary'}`}>{lang.name}</div>
-                          </div>
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 text-white" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               <div className="flex items-center justify-between border-b border-border pb-4 pt-2">
                 <h3 className="text-sm font-semibold text-text flex items-center gap-2">
                   <Settings className="w-4 h-4 text-primary" /> Theme Color Tokens

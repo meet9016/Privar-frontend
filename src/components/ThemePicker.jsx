@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Palette, Check, Languages, Sparkles } from 'lucide-react';
+import { Palette, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const PRESET_COLORS = [
@@ -14,7 +14,7 @@ const PRESET_COLORS = [
 ];
 
 export default function ThemePicker() {
-  const { primaryColor, setPrimaryColor, currentLanguage, changeLanguage, languages } = useTheme();
+  const { primaryColor, setPrimaryColor } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -33,49 +33,15 @@ export default function ThemePicker() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-secondary border border-border text-text-secondary hover:text-primary hover:border-primary/30 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-        title="Theme & Language Settings"
+        title="Theme Settings"
       >
         <Palette className="w-5 h-5" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 p-4 bg-surface border border-border rounded-2xl shadow-glass-lg z-50 animate-fade-in divide-y divide-border space-y-3.5">
-          {/* Language Selection Section (English, Gujarati, Hindi) */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary">
-                <Languages className="w-3.5 h-3.5 text-primary" />
-                <span>System Language</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {languages.map((lang) => {
-                const isActive = (currentLanguage || 'en') === lang.code;
-                return (
-                  <button
-                    key={lang.code}
-                    type="button"
-                    onClick={() => changeLanguage(lang.code)}
-                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-primary text-white border-primary shadow-sm scale-102'
-                        : 'bg-surface-secondary text-text hover:bg-surface-secondary/80 border-border'
-                    }`}
-                  >
-                    <span className="text-lg leading-none mb-1">{lang.flag}</span>
-                    <span className="text-xs font-bold leading-tight">{lang.nativeName}</span>
-                    <span className={`text-[10px] ${isActive ? 'text-white/80' : 'text-text-secondary'}`}>
-                      {lang.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
+        <div className="absolute right-0 mt-2 w-64 p-4 bg-surface border border-border rounded-2xl shadow-glass-lg z-50 animate-fade-in">
           {/* Theme Color Presets */}
-          <div className="pt-3.5">
+          <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2.5">Theme Color</h3>
             
             <div className="grid grid-cols-4 gap-2 mb-3">
