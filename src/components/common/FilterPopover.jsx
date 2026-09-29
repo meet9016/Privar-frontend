@@ -36,15 +36,15 @@ export default function FilterPopover({
 
       {isOpen && (
         <>
-          {/* Backdrop Blur Overlay */}
+          {/* Backdrop Overlay to close on outside click */}
           <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-40 transition-opacity duration-200"
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity duration-200"
             onClick={onClose}
           />
 
           {/* Modern Sleek Filter Card */}
           <div
-            className={`absolute right-0 top-full mt-2 ${width} bg-surface border border-border rounded-xl shadow-xl z-50 animate-fade-in overflow-hidden`}
+            className={`absolute right-0 top-full mt-2 ${width} bg-surface border border-border rounded-xl shadow-2xl z-50 animate-fade-in overflow-hidden`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">

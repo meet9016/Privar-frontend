@@ -217,6 +217,31 @@ export default function WebHeader() {
             {/* Right Side */}
             <div className="flex items-center gap-2 sm:gap-3">
 
+              {/* Language Selector for Public Website */}
+              <div className="relative group">
+                <select
+                  aria-label="Select Language"
+                  defaultValue={localStorage.getItem('app-language') || 'en'}
+                  onChange={(e) => {
+                    const langCode = e.target.value;
+                    localStorage.setItem('app-language', langCode);
+                    document.cookie = `googtrans=/en/${langCode}; path=/;`;
+                    const select = document.querySelector('.goog-te-combo');
+                    if (select) {
+                      select.value = langCode;
+                      select.dispatchEvent(new Event('change'));
+                    } else {
+                      window.location.reload();
+                    }
+                  }}
+                  className="bg-surface-secondary text-text font-bold text-xs rounded-lg px-2.5 py-2 border border-border outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-xs"
+                >
+                  <option value="en">🇬🇧 English</option>
+                  <option value="gu">🇮🇳 ગુજરાતી</option>
+                  <option value="hi">🇮🇳 हिन्दी</option>
+                </select>
+              </div>
+
               {/* Login Button */}
               <a
                 href="/login"

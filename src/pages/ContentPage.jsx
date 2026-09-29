@@ -7,7 +7,11 @@ import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
-import { Cake, Heart, Sparkles, PartyPopper } from 'lucide-react'
+import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react'
+import { toast } from '../lib/toast'
+import { getCommunityFullName } from '../lib/api'
+import Modal from '../components/Modal'
+import Button from '../components/common/Button'
 
 export const isSameDayAndMonth = (dateStr) => {
   if (!dateStr) return false
@@ -201,9 +205,52 @@ const definitions = {
       {
         key: 'name',
         label: 'Name',
-        render: (row) => (
-          <span className="font-semibold text-text whitespace-nowrap">{row.name || '-'}</span>
-        )
+        render: (row) => {
+          const isBday = isSameDayAndMonth(row.dob)
+          const isAnniv = isSameDayAndMonth(row.anniversary)
+          const phone = row.number || row.mobile || row.phone || row.mobile_number || ''
+          const cleanPhone = String(phone).replace(/\D/g, '')
+
+          const handleSendWhatsApp = (e) => {
+            e.stopPropagation()
+            if (!cleanPhone) {
+              toast.error(`Phone number not available for ${row.name || 'this member'}`)
+              return
+            }
+            
+            const communityName = getCommunityFullName() || 'Our Parivar Community'
+            let greeting = ''
+            if (isBday && isAnniv) {
+              greeting = `🎉🎂 Wishing you a very Happy Birthday and Happy Wedding Anniversary, ${row.name}! May your life be filled with happiness, health and success. Best wishes from ${communityName}! 💐✨`
+            } else if (isBday) {
+              greeting = `🎂 Wishing you a very Happy Birthday, ${row.name}! May God bless you with abundant health, prosperity, and joy on this special day. Best wishes from ${communityName}! 💐🎉`
+            } else if (isAnniv) {
+              greeting = `💖 Wishing you a very Happy Wedding Anniversary, ${row.name}! May your bond and love grow stronger with every passing year. Best wishes from ${communityName}! 💐💑`
+            } else {
+              greeting = `Hello ${row.name}, greetings from ${communityName}!`
+            }
+
+            const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone
+            const url = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(greeting)}`
+            window.open(url, '_blank')
+          }
+
+          return (
+            <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
+              <span className="font-semibold text-text">{row.name || '-'}</span>
+              {(isBday || isAnniv) && (
+                <button
+                  type="button"
+                  onClick={handleSendWhatsApp}
+                  className="inline-flex items-center justify-center p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-95"
+                  title={cleanPhone ? `Send WhatsApp greeting to ${cleanPhone}` : 'No phone number available'}
+                >
+                  <MessageCircle className="w-3.5 h-3.5 fill-white stroke-emerald-500" />
+                </button>
+              )}
+            </div>
+          )
+        }
       },
       {
         key: 'dob',
@@ -478,8 +525,19 @@ export default function ContentPage({ type, headerLeftContent }) {
     </div>
   ) : null
 
+  // Bulk WhatsApp Wish Modal State
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false)
+  const [birthdayRows, setBirthdayRows] = useState([])
+  const [customWishMsg, setCustomWishMsg] = useState('')
+  const [sentMap, setSentMap] = useState({})
+
+  const todayCelebrants = useMemo(() => {
+    return birthdayRows.filter(r => isSameDayAndMonth(r.dob) || isSameDayAndMonth(r.anniversary))
+  }, [birthdayRows])
+
   const transformData = useCallback((data) => {
     if (type !== 'birthday') return data
+    setBirthdayRows(data)
     // Sort items: today's birthdays or anniversaries first
     return [...data].sort((a, b) => {
       const aToday = isSameDayAndMonth(a.dob) || isSameDayAndMonth(a.anniversary)
@@ -506,23 +564,198 @@ export default function ContentPage({ type, headerLeftContent }) {
     return ''
   }, [type])
 
+  const handleOpenBulkModal = () => {
+    if (todayCelebrants.length === 0) {
+      toast.info('No birthdays or anniversaries today')
+      return
+    }
+    const communityName = getCommunityFullName() || 'Our Parivar Community'
+    setCustomWishMsg(`🎉 Wishing you a wonderful and blessed day filled with happiness, good health, and success! Best wishes from ${communityName}! 💐✨`)
+    setIsBulkModalOpen(true)
+  }
+
+  const handleSendSingleWish = (member) => {
+    const phone = member.number || member.mobile || member.phone || member.mobile_number || ''
+    const cleanPhone = String(phone).replace(/\D/g, '')
+
+    if (!cleanPhone) {
+      toast.error(`Phone number not available for ${member.name || 'this member'}`)
+      return
+    }
+
+    const isBday = isSameDayAndMonth(member.dob)
+    const isAnniv = isSameDayAndMonth(member.anniversary)
+    const communityName = getCommunityFullName() || 'Our Parivar Community'
+
+    let greeting = customWishMsg
+    if (!greeting) {
+      if (isBday && isAnniv) {
+        greeting = `🎉🎂 Wishing you a very Happy Birthday and Happy Wedding Anniversary, ${member.name}! May your life be filled with happiness, health and success. Best wishes from ${communityName}! 💐✨`
+      } else if (isBday) {
+        greeting = `🎂 Wishing you a very Happy Birthday, ${member.name}! May God bless you with abundant health, prosperity, and joy on this special day. Best wishes from ${communityName}! 💐🎉`
+      } else if (isAnniv) {
+        greeting = `💖 Wishing you a very Happy Wedding Anniversary, ${member.name}! May your bond and love grow stronger with every passing year. Best wishes from ${communityName}! 💐💑`
+      } else {
+        greeting = `Hello ${member.name}, greetings from ${communityName}!`
+      }
+    } else {
+      greeting = `Dear ${member.name},\n\n${greeting}`
+    }
+
+    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone
+    const url = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(greeting)}`
+    window.open(url, '_blank')
+    setSentMap(prev => ({ ...prev, [member.id || member._id || member.name]: true }))
+  }
+
+  const customHeaderActions = type === 'birthday' ? (
+    <Button
+      onClick={handleOpenBulkModal}
+      variant="primary"
+      icon={<MessageCircle className="w-4 h-4 fill-white stroke-primary" />}
+      className="!bg-emerald-600 hover:!bg-emerald-700 text-white font-bold h-10 shadow-sm whitespace-nowrap"
+    >
+      Wish All Today {todayCelebrants.length > 0 ? `(${todayCelebrants.length})` : ''}
+    </Button>
+  ) : null
+
   return (
-    <AdminCrudPage 
-      {...definitions[type]} 
-      headerLeftContent={headerLeftContent}
-      hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
-      hideEdit={definitions[type].hideEdit || (!permissions.canEdit && !permissions.isSuperAdmin)}
-      hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))} 
-      deleteAction={type === 'birthday' ? 'clear-dob' : undefined} 
-      getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} 
-      extraParams={type === 'birthday' ? birthdayExtraParams : undefined}
-      customFilters={customFilters}
-      onClearFilters={type === 'birthday' ? handleClear : undefined}
-      onApplyFilters={type === 'birthday' ? handleApply : undefined}
-      onToggleFilters={type === 'birthday' ? handleToggle : undefined}
-      extraActiveFiltersCount={type === 'birthday' ? extraCount : 0}
-      transformData={type === 'birthday' ? transformData : undefined}
-      rowClassName={type === 'birthday' ? rowClassName : undefined}
-    />
+    <>
+      <AdminCrudPage 
+        {...definitions[type]} 
+        headerLeftContent={headerLeftContent}
+        customHeaderActions={customHeaderActions}
+        hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
+        hideEdit={definitions[type].hideEdit || (!permissions.canEdit && !permissions.isSuperAdmin)}
+        hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))} 
+        deleteAction={type === 'birthday' ? 'clear-dob' : undefined} 
+        getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} 
+        extraParams={type === 'birthday' ? birthdayExtraParams : undefined}
+        customFilters={customFilters}
+        onClearFilters={type === 'birthday' ? handleClear : undefined}
+        onApplyFilters={type === 'birthday' ? handleApply : undefined}
+        onToggleFilters={type === 'birthday' ? handleToggle : undefined}
+        extraActiveFiltersCount={type === 'birthday' ? extraCount : 0}
+        transformData={type === 'birthday' ? transformData : undefined}
+        rowClassName={type === 'birthday' ? rowClassName : undefined}
+      />
+
+      {/* Bulk WhatsApp Wish Modal */}
+      {type === 'birthday' && (
+        <Modal
+          isOpen={isBulkModalOpen}
+          title="Send WhatsApp Wishes (Today's Celebrations)"
+          onClose={() => setIsBulkModalOpen(false)}
+          maxWidth="max-w-3xl"
+        >
+          <div className="space-y-4">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-emerald-500 text-white shrink-0 mt-0.5 shadow-sm">
+                <PartyPopper className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-text">
+                  Today's Celebrations ({todayCelebrants.length} members)
+                </h4>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Aap yahan se ek-ek karke sabhi members ko personalized WhatsApp shubh-kamna sandesh bhej sakte hain.
+                </p>
+              </div>
+            </div>
+
+            {/* Custom Greeting Message Box */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1.5">
+                Message Content (Customize if needed)
+              </label>
+              <textarea
+                rows={3}
+                value={customWishMsg}
+                onChange={(e) => setCustomWishMsg(e.target.value)}
+                placeholder="Enter greeting message..."
+                className="w-full px-3.5 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all custom-scrollbar"
+              />
+            </div>
+
+            {/* Celebrants List */}
+            <div className="border border-border rounded-2xl overflow-hidden bg-card divide-y divide-border max-h-[380px] overflow-y-auto custom-scrollbar">
+              {todayCelebrants.map((member, idx) => {
+                const isBday = isSameDayAndMonth(member.dob)
+                const isAnniv = isSameDayAndMonth(member.anniversary)
+                const phone = member.number || member.mobile || member.phone || member.mobile_number || ''
+                const cleanPhone = String(phone).replace(/\D/g, '')
+                const memberKey = member.id || member._id || member.name || idx
+                const isSent = !!sentMap[memberKey]
+
+                return (
+                  <div key={memberKey} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-surface-secondary/40 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isBday ? 'bg-amber-500/10 text-amber-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                        {isBday ? <Cake className="w-5 h-5" /> : <Heart className="w-5 h-5 fill-rose-500" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-text">{member.name || '-'}</span>
+                          {isBday && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold text-[11px]">
+                              🎂 Birthday
+                            </span>
+                          )}
+                          {isAnniv && (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-800 dark:text-rose-300 font-bold text-[11px]">
+                              💖 Anniversary
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-text-secondary">
+                          {cleanPhone ? (
+                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                              <Phone className="w-3 h-3" /> +91 {cleanPhone}
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-rose-500 font-semibold">
+                              <AlertTriangle className="w-3 h-3" /> No Phone Number
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isSent && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-500/20">
+                          <CheckCircle className="w-3.5 h-3.5" /> Sent
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleSendSingleWish(member)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95 ${
+                          cleanPhone
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : 'bg-surface-secondary text-text-secondary/60 hover:bg-surface-secondary/80 border border-border'
+                        }`}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-white stroke-emerald-600" />
+                        <span>{cleanPhone ? 'Send WhatsApp' : 'No Number (Check)'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <span className="text-xs text-text-secondary">
+                Total: <span className="font-bold text-text">{todayCelebrants.length}</span> | Sent: <span className="font-bold text-emerald-600">{Object.keys(sentMap).length}</span>
+              </span>
+              <Button variant="outline" onClick={() => setIsBulkModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </>
   )
 }
