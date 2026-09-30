@@ -942,20 +942,36 @@ export default function Users() {
             }
           },
           {
-            key: 'phone',
-            header: 'Mobile Number',
-            className: 'min-w-[140px] whitespace-nowrap',
+            key: 'contact',
+            header: 'Contact Info',
+            className: 'min-w-[180px]',
             render: (user) => (
-              <div className="text-sm font-mono text-text whitespace-nowrap">{user.phone || user.number || '-'}</div>
+              <div className="flex flex-col gap-0.5">
+                <div className="text-sm font-mono font-medium text-text flex items-center gap-1.5">
+                  <Phone className="w-3 h-3 text-text-secondary opacity-70 shrink-0" />
+                  <span>{user.phone || user.number || '-'}</span>
+                </div>
+                <div className="text-xs text-text-secondary truncate max-w-[200px] flex items-center gap-1.5">
+                  <Mail className="w-3 h-3 text-text-secondary opacity-70 shrink-0" />
+                  <span className="truncate">{user.email || <span className="opacity-50 italic">No Email</span>}</span>
+                </div>
+              </div>
             )
           },
           {
-            key: 'email',
-            header: 'Email',
-            className: 'min-w-[180px]',
-            render: (user) => (
-              <div className="text-sm text-text-secondary truncate max-w-[200px]">{user.email || <span className="opacity-50">No Email</span>}</div>
-            )
+            key: 'patti_para_pargana',
+            header: 'Patti / Para / Pargana',
+            className: 'min-w-[150px]',
+            render: (user) => {
+              const val = user.patti_para_pargana || user.patti
+              return val ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                  {val}
+                </span>
+              ) : (
+                <span className="text-sm text-text-secondary opacity-50">-</span>
+              )
+            }
           },
           {
             key: 'gender',

@@ -318,9 +318,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const [states, setStates] = useState(cachedMasters ? cachedMasters.states : [])
   const [cities, setCities] = useState(cachedMasters ? cachedMasters.cities : [])
   const [villages, setVillages] = useState(cachedMasters ? cachedMasters.villages : [])
+  const [pattiOptions, setPattiOptions] = useState(cachedMasters ? cachedMasters.pattiOptions : [])
   const [relationOptions, setRelationOptions] = useState(
     cachedMasters?.relationships?.length ? cachedMasters.relationships : RELATION_OPTIONS
   )
+
+  const [pincodeLoading, setPincodeLoading] = useState(false)
+  const [pincodeMsg, setPincodeMsg] = useState('')
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -336,10 +340,12 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     is_committee: false,
     committee_role: '',
     role_id: '',
+    pincode: '',
     country_id: '',
     state_id: '',
     city_id: '',
     village: '',
+    patti_para_pargana: '',
     address: '',
     image: '',
     status: 1
@@ -362,6 +368,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setStates(cachedMasters.states)
         setCities(cachedMasters.cities)
         setVillages(cachedMasters.villages)
+        setPattiOptions(cachedMasters.pattiOptions || [])
         if (cachedMasters.relationships?.length) {
           setRelationOptions(cachedMasters.relationships)
         }
@@ -374,12 +381,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           api.get(MEMBER_ENDPOINTS.MASTERS_STATE),
           api.get(MEMBER_ENDPOINTS.MASTERS_CITY),
           api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_PATTI_PARA_PARGANA).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } }))
         ])
       }
 
       try {
-        const [cRes, sRes, ciRes, vRes, relRes] = await mastersPromise
+        const [cRes, sRes, ciRes, vRes, pRes, relRes] = await mastersPromise
         const countryList = cRes.data?.data || []
         
         // Merge backend relationships with default RELATION_OPTIONS
@@ -395,11 +403,14 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         fetchedRels.forEach(r => relMap.set(r.value.toLowerCase(), r))
         const mergedRelations = Array.from(relMap.values())
 
+        const pattiList = (pRes.data?.data || []).filter(p => p.status !== 0 && p.status !== '0')
+
         cachedMasters = {
           countries: countryList,
           states: sRes.data?.data || [],
           cities: ciRes.data?.data || [],
           villages: vRes.data?.data || [],
+          pattiOptions: pattiList,
           relationships: mergedRelations
         }
 
@@ -407,6 +418,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setStates(cachedMasters.states)
         setCities(cachedMasters.cities)
         setVillages(cachedMasters.villages)
+        setPattiOptions(cachedMasters.pattiOptions)
         setRelationOptions(mergedRelations)
 
         // If country or state not yet selected, default to India and Gujarat
@@ -460,10 +472,12 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         is_committee: user.is_committee || false,
         committee_role: user.committee_role || '',
         role_id: normalizeRoleId(user.role_id),
+        pincode: user.pincode || '',
         country_id: user.country_id || '',
         state_id: user.state_id || '',
         city_id: user.city_id || '',
         village: user.village || user.village_id || '',
+        patti_para_pargana: user.patti_para_pargana || user.patti || '',
         address: user.address || '',
         image: user.image || user.profile_image || '',
         status: user.status !== undefined ? Number(user.status) : 1
@@ -537,10 +551,12 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         is_committee: false,
         committee_role: '',
         role_id: '',
+        pincode: '',
         country_id: india ? (india._id || india.id) : '',
         state_id: gujarat ? (gujarat._id || gujarat.id) : '',
         city_id: '',
         village: '',
+        patti_para_pargana: '',
         address: '',
         status: 1
       })
@@ -568,6 +584,141 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     loggedInUser?.is_super_admin ||
     Boolean(loggedInUser?.role_id)
   )
+
+  const handlePincodeChange = async (val) => {
+    const cleanPin = val.replace(/\D/g, '').slice(0, 6)
+    handleChange('pincode', cleanPin)
+    setPincodeMsg(null)
+
+    if (cleanPin.length === 6) {
+      setPincodeLoading(true)
+      try {
+        let apiStateName = ''
+        let apiDistrictName = ''
+        let apiTalukaName = ''
+        let apiVillageName = ''
+        let localities = []
+
+        // Try Shiprocket API first
+        try {
+          const res = await fetch(`https://apiv2.shiprocket.in/v1/external/open/postcode/details?postcode=${cleanPin}`)
+          const json = await res.json()
+          if (json?.success && json?.postcode_details) {
+            const details = json.postcode_details
+            apiStateName = details.state || ''
+            apiDistrictName = details.city || ''
+            localities = Array.isArray(details.locality) ? details.locality : []
+            if (localities.length > 0) {
+              apiVillageName = localities[0]
+            }
+          }
+        } catch (e) {
+          console.warn('Shiprocket API failed, falling back to postal API:', e)
+        }
+
+        // Fallback to postalpincode.in if Shiprocket didn't return data
+        if (!apiStateName && !apiDistrictName) {
+          const res = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`)
+          const json = await res.json()
+          if (Array.isArray(json) && json[0]?.Status === 'Success' && json[0]?.PostOffice?.length > 0) {
+            const po = json[0].PostOffice[0]
+            apiStateName = po.State || ''
+            apiDistrictName = po.District || ''
+            apiTalukaName = po.Block || po.Taluk || ''
+            apiVillageName = po.Name || ''
+            localities = json[0].PostOffice.map(p => p.Name).filter(Boolean)
+          }
+        }
+
+        if (apiStateName || apiDistrictName) {
+          setPincodeMsg({ text: `${apiDistrictName}, ${apiStateName}`, type: 'success' })
+
+          // Auto-match Country (India)
+          let matchedCountryId = formData.country_id
+          const india = countries.find(c => /india/i.test(c.name))
+          if (india) {
+            matchedCountryId = india._id || india.id
+          }
+
+          // Auto-match State
+          let matchedStateId = formData.state_id
+          if (apiStateName && states.length > 0) {
+            const foundState = states.find(s =>
+              s.name.toLowerCase().trim() === apiStateName.toLowerCase().trim() ||
+              apiStateName.toLowerCase().includes(s.name.toLowerCase().trim()) ||
+              s.name.toLowerCase().includes(apiStateName.toLowerCase().trim())
+            )
+            if (foundState) {
+              matchedStateId = foundState._id || foundState.id
+            }
+          }
+
+          // Auto-match City / District
+          let matchedCityId = formData.city_id
+          if (apiDistrictName && cities.length > 0) {
+            const foundCity = cities.find(c =>
+              c.name.toLowerCase().trim() === apiDistrictName.toLowerCase().trim() ||
+              apiDistrictName.toLowerCase().includes(c.name.toLowerCase().trim()) ||
+              c.name.toLowerCase().includes(apiDistrictName.toLowerCase().trim()) ||
+              (apiTalukaName && c.name.toLowerCase().includes(apiTalukaName.toLowerCase().trim()))
+            )
+            if (foundCity) {
+              matchedCityId = foundCity._id || foundCity.id
+            }
+          }
+
+          // Auto-match Village / Area from locality list
+          let matchedVillage = formData.village
+          if (villages.length > 0 && localities.length > 0) {
+            const foundVillage = villages.find(v =>
+              localities.some(loc =>
+                loc.toLowerCase().trim() === v.name.toLowerCase().trim() ||
+                loc.toLowerCase().includes(v.name.toLowerCase().trim()) ||
+                v.name.toLowerCase().includes(loc.toLowerCase().trim())
+              )
+            )
+            if (foundVillage) {
+              matchedVillage = foundVillage.name
+            } else if (apiVillageName) {
+              matchedVillage = apiVillageName
+            }
+          } else if (apiVillageName) {
+            matchedVillage = apiVillageName
+          }
+
+          // Auto-fill area / address if empty
+          let updatedAddress = formData.address
+          if (!updatedAddress && localities.length > 0) {
+            updatedAddress = localities[0]
+          }
+
+          setFormData(prev => ({
+            ...prev,
+            country_id: matchedCountryId,
+            state_id: matchedStateId,
+            city_id: matchedCityId,
+            ...(matchedVillage ? { village: matchedVillage } : {}),
+            ...(updatedAddress ? { address: updatedAddress } : {})
+          }))
+
+          setErrors(prev => {
+            const updated = { ...prev }
+            if (matchedCountryId) delete updated.country_id
+            if (matchedStateId) delete updated.state_id
+            if (matchedCityId) delete updated.city_id
+            return updated
+          })
+        } else {
+          setPincodeMsg({ text: 'Invalid PIN code', type: 'error' })
+        }
+      } catch (err) {
+        console.warn('Pincode lookup error:', err)
+        setPincodeMsg(null)
+      } finally {
+        setPincodeLoading(false)
+      }
+    }
+  }
 
   const handleChange = (field, value) => {
     setFormData(prev => {
@@ -1030,8 +1181,32 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           )}
         </div>
 
-        {/* Row 3: Country, State, City, Village (4 inputs in 1 line) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+        {/* Row 3: Pincode, Country, State, District/City, Village (Responsive auto-fill grid) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 items-start">
+          <div className="relative">
+            <Input
+              label="Pincode"
+              placeholder="6 Digit PIN (Auto-fill)"
+              value={formData.pincode || ''}
+              onChange={(e) => handlePincodeChange(e.target.value)}
+              disabled={isLoading}
+              maxLength={6}
+            />
+            {pincodeLoading && (
+              <span className="absolute right-3 top-8 text-[11px] text-primary animate-pulse font-bold">
+                Fetching...
+              </span>
+            )}
+            {pincodeMsg && !pincodeLoading && (
+              <span
+                className={`text-[10px] font-semibold block mt-0.5 truncate ${
+                  pincodeMsg.type === 'error' ? 'text-rose-500' : 'text-emerald-600'
+                }`}
+              >
+                {pincodeMsg.text}
+              </span>
+            )}
+          </div>
           <Select
             label="Country"
             value={formData.country_id}
@@ -1053,13 +1228,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             searchable={true}
           />
           <Select
-            label="City"
+            label="District / City"
             value={formData.city_id}
             onChange={(val) => handleChange('city_id', val)}
             options={cityOptions}
             required={true}
             error={errors.city_id}
-            placeholder="Select City"
+            placeholder="Select City / District"
             searchable={true}
           />
           {villageOptions.length > 0 ? (
@@ -1067,8 +1242,20 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
               label="Village"
               value={formData.village}
               onChange={(val) => handleChange('village', val)}
+              onCreateOption={async (newVillage) => {
+                const trimmed = newVillage.trim()
+                if (!trimmed) return
+                handleChange('village', trimmed)
+                setVillages(prev => [...prev, { name: trimmed, _id: trimmed, id: trimmed }])
+                if (cachedMasters) {
+                  cachedMasters.villages = [...(cachedMasters.villages || []), { name: trimmed, _id: trimmed, id: trimmed }]
+                }
+                // Also save to master in background so it appears for all future dropdowns
+                api.post(MEMBER_ENDPOINTS.MASTERS_VILLAGE, { name: trimmed, status: 1 }).catch(() => {})
+              }}
+              createPrompt="Add Village"
               options={[{ label: 'Select Village', value: '' }, ...villageOptions]}
-              placeholder="Select Village"
+              placeholder="Select or Type Village"
               searchable={true}
               disabled={isLoading}
             />
@@ -1083,8 +1270,29 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           )}
         </div>
 
-        {/* Row 4: Date of Birth, Anniversary Date, Address, Status (4 inputs/columns) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
+        {/* Row 4: Patti / Para / Pargana, Date of Birth, Anniversary Date, Address, Status */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 items-end">
+          <Select
+            label="Patti / Para / Pargana"
+            value={formData.patti_para_pargana}
+            onChange={(val) => handleChange('patti_para_pargana', val)}
+            onCreateOption={async (newPatti) => {
+              const trimmed = newPatti.trim()
+              if (!trimmed) return
+              handleChange('patti_para_pargana', trimmed)
+              setPattiOptions(prev => [...prev, { name: trimmed, _id: trimmed, id: trimmed, status: 1 }])
+              if (cachedMasters) {
+                cachedMasters.pattiOptions = [...(cachedMasters.pattiOptions || []), { name: trimmed, _id: trimmed, id: trimmed, status: 1 }]
+              }
+              // Save to master in backend so it persists permanently in master collection
+              api.post(MEMBER_ENDPOINTS.MASTERS_PATTI_PARA_PARGANA, { name: trimmed, status: 1 }).catch(() => {})
+            }}
+            createPrompt="Add Patti / Para / Pargana"
+            options={[{ label: 'Select Patti / Para / Pargana', value: '' }, ...pattiOptions.map(p => ({ label: p.name, value: p.name }))]}
+            placeholder="Select or Type Patti"
+            searchable={true}
+            disabled={isLoading}
+          />
           <DatePicker
             label="Date of Birth"
             required

@@ -31,6 +31,7 @@ export const MEMBER_ENDPOINTS = {
   MASTERS_STATE: '/masters/state',
   MASTERS_CITY: '/masters/city',
   MASTERS_VILLAGE: '/masters/village',
+  MASTERS_PATTI_PARA_PARGANA: '/masters/patti-para-pargana',
   MASTERS_RELATIONSHIP: '/masters/relationship'
 }
 
@@ -142,6 +143,7 @@ export const MASTER_ENDPOINTS = {
   STATE: '/masters/state',
   CITY: '/masters/city',
   VILLAGE: '/masters/village',
+  PATTI_PARA_PARGANA: '/masters/patti-para-pargana',
   BLOOD_GROUP: '/masters/blood-group',
   EVENT_CATEGORY: '/masters/event-category',
   GALLERY_CATEGORY: '/masters/gallery-category',

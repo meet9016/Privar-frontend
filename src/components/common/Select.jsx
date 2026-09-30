@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, Plus } from 'lucide-react';
 
 export default function Select({
   label,
   options = [],
   value,
   onChange,
+  onCreateOption,
+  creatable = true,
+  createPrompt = 'Add',
   error,
   required,
   placeholder = 'Select an option',
@@ -48,7 +51,8 @@ export default function Select({
         position: 'fixed',
         bottom: `${window.innerHeight - rect.top + 4}px`,
         left: `${rect.left}px`,
-        width: `${rect.width}px`,
+        width: `${Math.max(rect.width, 240)}px`,
+        minWidth: `${Math.max(rect.width, 240)}px`,
         maxHeight: `${calculatedMaxHeight}px`,
         zIndex: 999999,
       });
@@ -57,7 +61,8 @@ export default function Select({
         position: 'fixed',
         top: `${rect.bottom + 4}px`,
         left: `${rect.left}px`,
-        width: `${rect.width}px`,
+        width: `${Math.max(rect.width, 240)}px`,
+        minWidth: `${Math.max(rect.width, 240)}px`,
         maxHeight: `${calculatedMaxHeight}px`,
         zIndex: 999999,
       });
@@ -120,6 +125,43 @@ export default function Select({
     setSearchTerm('');
   };
 
+  const trimmedSearch = searchTerm.trim();
+  const exactMatchExists = options.some(
+    opt => String(opt.value).toLowerCase() === trimmedSearch.toLowerCase() ||
+           String(opt.label).toLowerCase() === trimmedSearch.toLowerCase()
+  );
+  const showCreateOption = creatable && trimmedSearch.length > 0 && !exactMatchExists;
+
+  const handleCreateOption = (e) => {
+    e?.stopPropagation();
+    if (!trimmedSearch) return;
+    if (onCreateOption) {
+      onCreateOption(trimmedSearch);
+    } else {
+      onChange(trimmedSearch);
+    }
+    setIsOpen(false);
+    setSearchTerm('');
+  };
+
+  const [newOptionInput, setNewOptionInput] = useState('');
+
+  const trimmedInput = newOptionInput.trim();
+
+  const handleAddNewItem = (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (!trimmedInput) return;
+    if (onCreateOption) {
+      onCreateOption(trimmedInput);
+    } else {
+      onChange(trimmedInput);
+    }
+    setNewOptionInput('');
+    setIsOpen(false);
+    setSearchTerm('');
+  };
+
   const showSearch = searchable;
 
   return (
@@ -145,8 +187,8 @@ export default function Select({
             {selectedOption?.image && (
               <img src={selectedOption.image} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 border border-border" />
             )}
-            <span className={selectedOption ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
-              {selectedOption ? selectedOption.label : placeholder}
+            <span className={selectedOption || value ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
+              {selectedOption ? selectedOption.label : (value || placeholder)}
             </span>
           </div>
           <ChevronDown size={16} className={`text-text-secondary shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -160,11 +202,11 @@ export default function Select({
           className="bg-card border border-border rounded-xl shadow-glass-lg overflow-hidden flex flex-col transition-opacity duration-150 animate-fade-in"
         >
           {showSearch && (
-            <div className="p-2 border-b border-border bg-input-bg flex items-center gap-2 flex-shrink-0">
-              <Search size={16} className="text-text-secondary shrink-0" />
+            <div className="p-2 border-b border-border bg-surface-secondary/40 flex items-center gap-2 flex-shrink-0">
+              <Search size={15} className="text-text-secondary shrink-0" />
               <input 
                 type="text"
-                className="w-full bg-transparent text-sm outline-none text-text"
+                className="w-full bg-transparent text-sm outline-none text-text placeholder:text-text-secondary/60"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -174,14 +216,14 @@ export default function Select({
             </div>
           )}
           
-          <div className="overflow-y-auto flex-1 custom-scrollbar">
+          <div className="overflow-y-auto flex-1 custom-scrollbar max-h-48 divide-y divide-border/20">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <div 
                   key={option.value}
                   title={option.description || option.title || option.meaning || ''}
                   className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-2.5 ${
-                    String(value) === String(option.value) ? 'bg-primary/5 text-primary font-semibold' : 'text-text'
+                    String(value) === String(option.value) ? 'bg-primary/10 text-primary font-semibold' : 'text-text'
                   }`}
                   onClick={() => handleSelect(option.value)}
                 >
@@ -210,6 +252,38 @@ export default function Select({
               </div>
             )}
           </div>
+
+          {/* Bottom Custom Add Bar with Theme Colors & Responsive Layout */}
+          {creatable && (
+            <div 
+              className="p-2 border-t border-border bg-surface-secondary/70 flex items-center gap-2 flex-shrink-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Plus size={15} />
+              </div>
+              <input
+                type="text"
+                value={newOptionInput}
+                onChange={(e) => setNewOptionInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddNewItem(e);
+                  }
+                }}
+                placeholder={`Enter new ${label ? label.toLowerCase() : 'name'}...`}
+                className="flex-1 min-w-0 px-2.5 py-1.5 bg-input-bg text-text border border-border rounded-lg text-xs outline-none focus:border-primary/60 placeholder:text-text-secondary/60 transition-all"
+              />
+              <button
+                type="button"
+                onClick={handleAddNewItem}
+                disabled={!trimmedInput}
+                className="px-3.5 py-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer shrink-0"
+              >
+                Add
+              </button>
+            </div>
+          )}
         </div>,
         document.body
       )}
