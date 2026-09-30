@@ -461,8 +461,10 @@ export default function Users() {
       setExporting(true)
       const params = { _t: Date.now() }
       if (searchQuery) params.search = searchQuery
-      if (filterGender) params.gender = filterGender
-      if (filterStatus !== '') params.status = filterStatus
+      if (filters.gender) params.gender = filters.gender
+      if (filters.status !== '') params.status = filters.status
+      if (filters.city_id) params.city_id = filters.city_id
+      if (filters.patti_para_pargana) params.patti_para_pargana = filters.patti_para_pargana
 
       const response = await api.get(MEMBER_ENDPOINTS.EXPORT_MEMBERS, {
         params,
@@ -473,10 +475,20 @@ export default function Users() {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       })
       saveAs(blob, `Family_Registry_${new Date().toISOString().slice(0, 10)}.xlsx`)
-      toast.success('Family registry exported successfully from server')
+      toast.success('Family registry exported successfully')
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to export Excel from server')
-      console.error(err)
+      console.error('Export error:', err)
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text()
+          const json = JSON.parse(text)
+          toast.error(json.message || 'Failed to export Excel')
+        } catch {
+          toast.error('Failed to export Excel')
+        }
+      } else {
+        toast.error(err.response?.data?.message || err.message || 'Failed to export Excel')
+      }
     } finally {
       setExporting(false)
     }
@@ -501,6 +513,7 @@ export default function Users() {
         { header: 'Anniversary', key: 'anniversary', width: 18 },
         { header: 'Blood Group', key: 'blood_group', width: 14 },
         { header: 'Relation', key: 'relation', width: 16 },
+        { header: 'Patti / Para / Pargana', key: 'patti_para_pargana', width: 22 },
         { header: 'Address', key: 'address', width: 30 },
         { header: 'Is Family Head', key: 'is_family_head', width: 16 }
       ]
@@ -522,17 +535,17 @@ export default function Users() {
       // Example row 1 — Family Head
       ws.addRow([
         'Ramesh', 'Kumar', 'Patel', '9876543210', 'ramesh@email.com',
-        'Male', '15-08-1975', '20-11-2000', 'O+', 'Self', '123 Main Street, Surat', 'Yes'
+        'Male', '15-08-1975', '20-11-2000', 'O+', 'Self', 'Main Patti', '123 Main Street, Surat', 'Yes'
       ])
       // Example row 2 — Family Member
       ws.addRow([
         'Priya', 'Ramesh', 'Patel', '9876543211', '',
-        'Female', '05-06-1978', '', 'B+', 'Spouse', '', 'No'
+        'Female', '05-06-1978', '', 'B+', 'Spouse', 'Main Patti', '', 'No'
       ])
       // Example row 3 — Child
       ws.addRow([
         'Raj', 'Ramesh', 'Patel', '9876543212', '',
-        'Male', '12-03-2005', '', 'A+', 'Son', '', 'No'
+        'Male', '12-03-2005', '', 'A+', 'Son', 'Main Patti', '', 'No'
       ])
 
       // Style example rows
@@ -555,7 +568,7 @@ export default function Users() {
       const notesCell = ws.getCell(`A${notesRow.number}`)
       notesCell.value = '* Required fields | Relation: Self/Spouse/Son/Daughter/Father/Mother/Brother/Sister/Other | Date format: DD-MM-YYYY | Is Family Head: Yes/No'
       notesCell.font = { italic: true, color: { argb: 'FF6B7280' }, size: 9 }
-      ws.mergeCells(`A${notesRow.number}:L${notesRow.number}`)
+      ws.mergeCells(`A${notesRow.number}:M${notesRow.number}`)
 
       const buffer = await wb.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
@@ -570,7 +583,7 @@ export default function Users() {
   const IMPORT_COLUMNS = [
     'First Name', 'Middle Name', 'Last Name', 'Mobile Number',
     'Email', 'Gender', 'Date of Birth', 'Anniversary',
-    'Blood Group', 'Relation', 'Address', 'Is Family Head'
+    'Blood Group', 'Relation', 'Patti / Para / Pargana', 'Address', 'Is Family Head'
   ]
   const REQUIRED_COLS = ['First Name', 'Mobile Number']
 
@@ -603,6 +616,7 @@ export default function Users() {
     if (clean === 'anniversary' || clean === 'anniversary date' || clean === 'wedding date') return 'Anniversary'
     if (clean === 'blood group' || clean === 'bloodgroup' || clean === 'blood') return 'Blood Group'
     if (clean === 'relation' || clean === 'relationship') return 'Relation'
+    if (clean === 'patti' || clean === 'para' || clean === 'pargana' || clean === 'patti / para / pargana' || clean === 'patti/para/pargana') return 'Patti / Para / Pargana'
     if (clean === 'address' || clean === 'full address') return 'Address'
     if (clean === 'is family head' || clean === 'family head' || clean === 'head' || clean === 'is head') return 'Is Family Head'
     return String(raw || '').trim()
@@ -613,8 +627,7 @@ export default function Users() {
       const reader = new FileReader()
       reader.onload = async (e) => {
         try {
-          const XLSX = await import('exceljs')
-          const wb = new XLSX.Workbook()
+          const wb = new ExcelJS.Workbook()
           await wb.xlsx.load(e.target.result)
           const ws = wb.worksheets[0]
           if (!ws) return resolve({ rows: [], errors: [] })
@@ -2228,7 +2241,7 @@ export default function Users() {
                   <thead className="bg-surface-secondary sticky top-0 z-10">
                     <tr>
                       <th className="px-3 py-2.5 text-left font-semibold text-text-secondary border-b border-border">#</th>
-                      {['First Name', 'Middle Name', 'Last Name', 'Mobile', 'Gender', 'Relation', 'Is Head', 'Status'].map(h => (
+                      {['First Name', 'Middle Name', 'Last Name', 'Mobile', 'Gender', 'Relation', 'Patti / Para', 'Is Head', 'Status'].map(h => (
                         <th key={h} className="px-3 py-2.5 text-left font-semibold text-text-secondary border-b border-border whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -2246,6 +2259,7 @@ export default function Users() {
                           <td className="px-3 py-2 text-text-secondary">{String(d['Mobile Number'] || d['mobile'] || d['number'] || '-')}</td>
                           <td className="px-3 py-2 text-text-secondary">{String(d['Gender'] || d['gender'] || '-')}</td>
                           <td className="px-3 py-2 text-text-secondary">{String(d['Relation'] || d['relation'] || '-')}</td>
+                          <td className="px-3 py-2 text-text-secondary">{String(d['Patti / Para / Pargana'] || d['patti_para_pargana'] || d['patti'] || '-')}</td>
                           <td className="px-3 py-2 text-text-secondary">{String(d['Is Family Head'] || d['is family head'] || 'No')}</td>
                           <td className="px-3 py-2">
                             {hasError ? (
