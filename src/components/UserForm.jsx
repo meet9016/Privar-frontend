@@ -1276,6 +1276,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             label="Patti / Para / Pargana"
             value={formData.patti_para_pargana}
             onChange={(val) => handleChange('patti_para_pargana', val)}
+            creatable={true}
             onCreateOption={async (newPatti) => {
               const trimmed = newPatti.trim()
               if (!trimmed) return

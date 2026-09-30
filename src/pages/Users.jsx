@@ -36,13 +36,19 @@ export default function Users() {
   const debouncedSearch = useDebounce(searchQuery, 400)
   const [filters, setFilters] = useState({
     gender: '',
-    status: ''
+    status: '',
+    city_id: '',
+    patti_para_pargana: ''
   })
   const [draftFilters, setDraftFilters] = useState({
     gender: '',
-    status: ''
+    status: '',
+    city_id: '',
+    patti_para_pargana: ''
   })
   const [showFilters, setShowFilters] = useState(false)
+  const [filterCities, setFilterCities] = useState([])
+  const [filterPattis, setFilterPattis] = useState([])
 
   const filterGender = filters.gender || ''
   const filterStatus = filters.status || ''
@@ -215,16 +221,30 @@ export default function Users() {
   }, [fetchUsers])
 
   useEffect(() => {
-    const fetchRoles = async () => {
+    const fetchMasters = async () => {
       try {
-        const res = await api.get(MEMBER_ENDPOINTS.GET_ROLES, { params: { limit: 150 } })
-        setRoles(normalizeRoles(unwrapApiData(res)))
+        const [rolesRes, citiesRes, pattisRes] = await Promise.all([
+          api.get(MEMBER_ENDPOINTS.GET_ROLES, { params: { limit: 150 } }).catch(() => ({ data: [] })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_CITY, { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_PATTI_PARA_PARGANA, { params: { limit: 200 } }).catch(() => ({ data: { data: [] } }))
+        ])
+        setRoles(normalizeRoles(unwrapApiData(rolesRes)))
+        
+        const cList = citiesRes.data?.data || citiesRes.data || []
+        if (Array.isArray(cList)) {
+          setFilterCities(cList.filter(c => c.status !== 0 && c.status !== '0'))
+        }
+
+        const pList = pattisRes.data?.data || pattisRes.data || []
+        if (Array.isArray(pList)) {
+          setFilterPattis(pList.filter(p => p.status !== 0 && p.status !== '0'))
+        }
       } catch (err) {
-        console.error(err)
+        console.error('Error fetching filter masters:', err)
       }
     }
 
-    fetchRoles()
+    fetchMasters()
   }, [])
 
   const setSearchQuery = (value) => {
@@ -723,7 +743,7 @@ export default function Users() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <SearchInput
-            placeholder="Search by name, phone..."
+            placeholder="Search by name, phone, city, patti..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onClear={() => setSearchQuery('')}
@@ -732,15 +752,17 @@ export default function Users() {
 
           <FilterPopover
             isOpen={showFilters}
+            width="w-[320px] sm:w-[540px]"
             onToggle={() => {
               setDraftFilters(filters)
               setShowFilters(!showFilters)
             }}
             onClose={() => setShowFilters(false)}
-            activeCount={(filters.gender ? 1 : 0) + (filters.status ? 1 : 0)}
+            activeCount={(filters.gender ? 1 : 0) + (filters.status ? 1 : 0) + (filters.city_id ? 1 : 0) + (filters.patti_para_pargana ? 1 : 0)}
             onClear={() => {
-              setDraftFilters({ gender: '', status: '' })
-              setFilters({ gender: '', status: '' })
+              const resetObj = { gender: '', status: '', city_id: '', patti_para_pargana: '' }
+              setDraftFilters(resetObj)
+              setFilters(resetObj)
               setPage(1)
               setShowFilters(false)
             }}
@@ -750,32 +772,64 @@ export default function Users() {
               setShowFilters(false)
             }}
           >
-            <Select
-              label="Gender"
-              value={draftFilters.gender || ''}
-              onChange={(val) => setDraftFilters(current => ({ ...current, gender: val }))}
-              placeholder="All Genders"
-              searchable={false}
-              options={[
-                { label: 'All Genders', value: '' },
-                { label: 'Male', value: 'Male' },
-                { label: 'Female', value: 'Female' },
-                { label: 'Other', value: 'Other' }
-              ]}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <Select
+                label="City"
+                value={draftFilters.city_id || ''}
+                onChange={(val) => setDraftFilters(current => ({ ...current, city_id: val }))}
+                placeholder="All Cities"
+                searchable={true}
+                options={[
+                  { label: 'All Cities', value: '' },
+                  ...filterCities.map(c => ({
+                    label: c.city || c.name || '',
+                    value: String(c.id || c._id)
+                  }))
+                ]}
+              />
 
-            <Select
-              label="Status"
-              value={draftFilters.status || ''}
-              onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
-              placeholder="All Status"
-              searchable={false}
-              options={[
-                { label: 'All Status', value: '' },
-                { label: 'Active', value: '1' },
-                { label: 'Inactive', value: '0' }
-              ]}
-            />
+              <Select
+                label="Patti / Para / Pargana"
+                value={draftFilters.patti_para_pargana || ''}
+                onChange={(val) => setDraftFilters(current => ({ ...current, patti_para_pargana: val }))}
+                placeholder="All Patti / Para / Pargana"
+                searchable={true}
+                options={[
+                  { label: 'All Patti / Para / Pargana', value: '' },
+                  ...filterPattis.map(p => ({
+                    label: p.name || p.patti_para_pargana || '',
+                    value: p.name || p.patti_para_pargana || ''
+                  }))
+                ]}
+              />
+
+              <Select
+                label="Gender"
+                value={draftFilters.gender || ''}
+                onChange={(val) => setDraftFilters(current => ({ ...current, gender: val }))}
+                placeholder="All Genders"
+                searchable={false}
+                options={[
+                  { label: 'All Genders', value: '' },
+                  { label: 'Male', value: 'Male' },
+                  { label: 'Female', value: 'Female' },
+                  { label: 'Other', value: 'Other' }
+                ]}
+              />
+
+              <Select
+                label="Status"
+                value={draftFilters.status || ''}
+                onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
+                placeholder="All Status"
+                searchable={false}
+                options={[
+                  { label: 'All Status', value: '' },
+                  { label: 'Active', value: '1' },
+                  { label: 'Inactive', value: '0' }
+                ]}
+              />
+            </div>
           </FilterPopover>
           
           {selectedUsers.length > 0 && (

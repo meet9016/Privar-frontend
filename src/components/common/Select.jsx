@@ -8,7 +8,7 @@ export default function Select({
   value,
   onChange,
   onCreateOption,
-  creatable = true,
+  creatable = false,
   createPrompt = 'Add',
   error,
   required,
@@ -246,9 +246,35 @@ export default function Select({
                   </div>
                 </div>
               ))
+            ) : showCreateOption ? (
+              <div 
+                className="px-3 py-2.5 text-sm cursor-pointer bg-primary/5 hover:bg-primary/15 text-primary transition-colors flex items-center gap-2 font-medium"
+                onClick={handleCreateOption}
+              >
+                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Plus size={14} />
+                </div>
+                <div className="truncate">
+                  {createPrompt} <span className="font-bold">"{trimmedSearch}"</span>
+                </div>
+              </div>
             ) : (
               <div className="px-3 py-3 text-sm text-text-secondary text-center">
                 No options found
+              </div>
+            )}
+
+            {filteredOptions.length > 0 && showCreateOption && (
+              <div 
+                className="px-3 py-2 text-sm cursor-pointer bg-primary/5 hover:bg-primary/15 text-primary transition-colors flex items-center gap-2 font-medium border-t border-dashed border-primary/20"
+                onClick={handleCreateOption}
+              >
+                <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shrink-0">
+                  <Plus size={12} />
+                </div>
+                <div className="truncate text-xs">
+                  {createPrompt} <span className="font-bold">"{trimmedSearch}"</span>
+                </div>
               </div>
             )}
           </div>
@@ -271,7 +297,7 @@ export default function Select({
                     handleAddNewItem(e);
                   }
                 }}
-                placeholder={`Enter new ${label ? label.toLowerCase() : 'name'}...`}
+                placeholder={`Add new ${label ? label.toLowerCase() : 'item'}...`}
                 className="flex-1 min-w-0 px-2.5 py-1.5 bg-input-bg text-text border border-border rounded-lg text-xs outline-none focus:border-primary/60 placeholder:text-text-secondary/60 transition-all"
               />
               <button
