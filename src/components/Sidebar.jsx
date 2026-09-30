@@ -22,7 +22,6 @@ const LinkItem = ({ to, icon: Icon, label, end }) => {
           : 'border-transparent text-text-secondary/90 font-medium hover:bg-surface-secondary hover:text-text'
           }`
       }}
-      title={label}
     >
       {({ isActive }) => {
         const active = isActive || isDashboardActive
