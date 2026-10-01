@@ -401,28 +401,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setPattiOptions(pattiList)
         setRelationOptions(mergedRelations)
 
-        // If country or state not yet selected, default to India and Gujarat
-        setFormData(prev => {
-          const updates = {}
-          if (!prev.country_id) {
-            const india = countryList.find(c => /india/i.test(c.name))
-            if (india) {
-              updates.country_id = india._id || india.id
-            }
-          }
-          if (!prev.state_id) {
-            const gujarat = (sRes.data?.data || []).find(s => /gujarat/i.test(s.name))
-            if (gujarat) {
-              updates.state_id = gujarat._id || gujarat.id
-            }
-          }
-          return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev
-        })
+        // Do not default country and state - user or pincode selects them
       } catch (err) {
         console.error(err)
       }
     }
     fetchMasters()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -514,8 +499,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           .finally(() => setMembersLoading(false))
       }
     } else {
-      const india = countries.find(c => /india/i.test(c.name))
-      const gujarat = states.find(s => /gujarat/i.test(s.name))
       const defaultCommunityName = getCommunitySurname() || ''
 
       setFormData({
@@ -533,8 +516,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         committee_role: '',
         role_id: '',
         pincode: '',
-        country_id: india ? (india._id || india.id) : '',
-        state_id: gujarat ? (gujarat._id || gujarat.id) : '',
+        country_id: '',
+        state_id: '',
         district_id: '',
         city_id: '',
         village: '',
@@ -546,7 +529,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       setDeletedMemberIds([])
       setExpandedMemberIndex(null)
     }
-  }, [user, targetMemberId, countries, states])
+  }, [user, targetMemberId])
 
   const activeRoles = useMemo(() => roles.filter((role) => Number(role.status ?? 1) === 1), [roles])
   const isEditingSelf = Boolean(user && loggedInUser && [
@@ -635,83 +618,65 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             }
           }
 
-          // 3. Auto-match or Auto-create City
-          let matchedCityId = formData.city_id
-          const possibleCityNames = [apiTalukaName, apiDistrictName].filter(Boolean)
-          if (possibleCityNames.length > 0) {
-            const foundCity = cities.find(c => {
-              const cName = (c.name || '').toLowerCase().trim()
-              const matchesParent = !matchedStateId || !c.parent_id || String(c.parent_id || c.state_id) === String(matchedStateId)
-              return matchesParent && possibleCityNames.some(p => {
+          // 3. Auto-match or Auto-create District (Auto select ho jana chahiye)
+          let matchedDistrictId = formData.district_id
+          const possibleDistrictNames = [apiDistrictName, apiTalukaName].filter(Boolean)
+          if (possibleDistrictNames.length > 0) {
+            const foundDist = districts.find(d => {
+              const dName = (d.name || '').toLowerCase().trim()
+              const matchesParent = !matchedStateId || !d.state_id || !d.parent_id || String(d.state_id || d.parent_id) === String(matchedStateId)
+              return matchesParent && possibleDistrictNames.some(p => {
                 const cleanP = p.toLowerCase().trim()
-                return cName === cleanP || cleanP.includes(cName) || cName.includes(cleanP)
+                return dName === cleanP || cleanP.includes(dName) || dName.includes(cleanP)
               })
-            }) || cities.find(c => {
-              const cName = (c.name || '').toLowerCase().trim()
-              return possibleCityNames.some(p => {
+            }) || districts.find(d => {
+              const dName = (d.name || '').toLowerCase().trim()
+              return possibleDistrictNames.some(p => {
                 const cleanP = p.toLowerCase().trim()
-                return cName === cleanP || cleanP.includes(cName) || cName.includes(cleanP)
+                return dName === cleanP || cleanP.includes(dName) || dName.includes(cleanP)
               })
             })
-            if (foundCity) {
-              matchedCityId = foundCity._id || foundCity.id
+
+            if (foundDist) {
+              matchedDistrictId = foundDist._id || foundDist.id
             } else {
-              // Automatically create city in state if not already in master
-              const bestCityName = capitalizeWords(apiTalukaName || apiDistrictName)
-              const newCId = `city_${Date.now()}`
-              const newCObj = {
-                _id: newCId,
-                id: newCId,
-                name: bestCityName,
-                city: bestCityName,
-                state_id: matchedStateId || '',
+              // Automatically create district in state if not already in master
+              const bestDistrictName = capitalizeWords(apiDistrictName || apiTalukaName)
+              const newDId = `dist_${Date.now()}`
+              const newDObj = {
+                _id: newDId,
+                id: newDId,
+                name: bestDistrictName,
                 parent_id: matchedStateId || '',
+                state_id: matchedStateId || '',
                 status: 1
               }
-              setCities(prev => [...prev, newCObj])
+              setDistricts(prev => [...prev, newDObj])
               if (cachedMasters) {
-                cachedMasters.cities = [...(cachedMasters.cities || []), newCObj]
+                cachedMasters.districts = [...(cachedMasters.districts || []), newDObj]
               }
-              matchedCityId = newCId
+              matchedDistrictId = newDId
 
               // Persist to Master collection in backend
-              api.post(MEMBER_ENDPOINTS.MASTERS_CITY, {
-                name: bestCityName,
-                city: bestCityName,
+              api.post(MEMBER_ENDPOINTS.MASTERS_DISTRICT, {
+                name: bestDistrictName,
                 parent_id: matchedStateId || undefined,
                 state_id: matchedStateId || undefined,
                 status: 1
               }).then(res => {
                 const savedId = res.data?.data?._id || res.data?.data?.id
                 if (savedId) {
-                  setCities(prev => prev.map(c => c._id === newCId ? { ...c, _id: savedId, id: savedId } : c))
-                  setFormData(prev => prev.city_id === newCId ? { ...prev, city_id: savedId } : prev)
+                  setDistricts(prev => prev.map(d => d._id === newDId ? { ...d, _id: savedId, id: savedId } : d))
+                  setFormData(prev => prev.district_id === newDId ? { ...prev, district_id: savedId } : prev)
                 }
               }).catch(() => {})
             }
           }
 
-          // 4. District is kept optional (not auto-filled or auto-created unless user selects it)
-          let matchedDistrictId = formData.district_id
+          // 4. City / Taluka is NOT auto-selected as requested by user (City optional, auto select nahi hona chahiye)
+          let matchedCityId = ''
 
-          // 5. Auto-match Village / Area from locality list
-          let matchedVillage = formData.village
-          if (villages.length > 0 && localities.length > 0) {
-            const foundVillage = villages.find(v =>
-              localities.some(loc => {
-                const vName = (v.name || '').toLowerCase().trim()
-                const locClean = loc.toLowerCase().trim()
-                return locClean === vName || locClean.includes(vName) || vName.includes(locClean)
-              })
-            )
-            if (foundVillage) {
-              matchedVillage = foundVillage.name
-            } else if (apiVillageName) {
-              matchedVillage = apiVillageName
-            }
-          } else if (apiVillageName) {
-            matchedVillage = apiVillageName
-          }
+          // 5. Village is NOT auto-filled on pincode entry as requested by user
 
           // Auto-fill area / address if empty
           let updatedAddress = formData.address
@@ -724,8 +689,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             country_id: matchedCountryId || prev.country_id,
             state_id: matchedStateId || prev.state_id,
             district_id: matchedDistrictId || prev.district_id,
-            city_id: matchedCityId || prev.city_id,
-            ...(matchedVillage ? { village: matchedVillage } : {}),
+            city_id: '',
             ...(updatedAddress ? { address: updatedAddress } : {})
           }))
 
@@ -734,7 +698,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             if (matchedCountryId) delete updated.country_id
             if (matchedStateId) delete updated.state_id
             if (matchedDistrictId) delete updated.district_id
-            if (matchedCityId) delete updated.city_id
+            delete updated.city_id
             return updated
           })
         } else {
@@ -753,27 +717,21 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     setFormData(prev => {
       const next = { ...prev, [field]: value }
       if (field === 'country_id') {
-        const selCountry = countries.find(c => String(c._id || c.id) === String(value))
-        if (selCountry && /india/i.test(selCountry.name) && !prev.state_id) {
-          const gujarat = states.find(s => /gujarat/i.test(s.name))
-          if (gujarat) {
-            next.state_id = gujarat._id || gujarat.id
-          }
-        }
-        next.city_id = ''
+        next.state_id = ''
         next.district_id = ''
+        next.city_id = ''
         next.village = ''
       }
       if (field === 'state_id') {
+        next.district_id = ''
         next.city_id = ''
-        next.district_id = ''
-        next.village = ''
-      }
-      if (field === 'city_id') {
-        next.district_id = ''
         next.village = ''
       }
       if (field === 'district_id') {
+        next.city_id = ''
+        next.village = ''
+      }
+      if (field === 'city_id') {
         next.village = ''
       }
       return next
@@ -1017,7 +975,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
     if (!formData.country_id) newErrors.country_id = 'Country is required'
     if (!formData.state_id) newErrors.state_id = 'State is required'
-    if (!formData.city_id) newErrors.city_id = 'City is required'
+    if (!formData.district_id) newErrors.district_id = 'District is required'
     if (!formData.dob) newErrors.dob = 'Date of Birth is required'
 
     // Validate family members if any are added
@@ -1109,30 +1067,67 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     .filter(s => !formData.country_id || !s.parent_id || String(s.country_id || s.parent_id) === String(formData.country_id))
     .map(s => ({ label: s.name, value: s._id || s.id }))
 
-  const cityOptions = cities
-    .filter(c => !formData.state_id || !c.parent_id || String(c.state_id || c.parent_id) === String(formData.state_id))
-    .map(c => ({ label: c.name, value: c._id || c.id }))
-
   const districtOptions = districts
     .filter(d => {
-      if (formData.city_id && (d.parent_id || d.city_id)) {
-        return String(d.parent_id || d.city_id) === String(formData.city_id)
+      const dId = String(d._id || d.id)
+      if (formData.district_id && String(formData.district_id) === dId) {
+        return true
       }
-      if (formData.state_id && (d.state_id || d.parent_id)) {
-        return String(d.state_id || d.parent_id) === String(formData.state_id)
-      }
-      return true
+      return !formData.state_id || !d.parent_id || String(d.state_id || d.parent_id) === String(formData.state_id)
     })
     .map(d => ({ label: d.name, value: d._id || d.id }))
 
+  const cityOptions = cities
+    .filter(c => {
+      const cId = String(c._id || c.id)
+      if (formData.city_id && String(formData.city_id) === cId) {
+        return true
+      }
+      if (formData.district_id && (c.parent_id || c.district_id)) {
+        return String(c.parent_id || c.district_id) === String(formData.district_id)
+      }
+      if (formData.state_id && (c.state_id || c.parent_id)) {
+        return String(c.state_id || c.parent_id) === String(formData.state_id)
+      }
+      return true
+    })
+    .map(c => ({ label: c.name || c.city || 'Unnamed City', value: c._id || c.id }))
+
+  const selectedCityObj = cities.find(c => String(c._id || c.id) === String(formData.city_id))
+  const selectedDistrictObj = districts.find(d => String(d._id || d.id) === String(formData.district_id))
+
   const villageOptions = villages
     .filter(v => {
-      if (formData.district_id && (v.parent_id || v.district_id)) {
-        return String(v.parent_id || v.district_id) === String(formData.district_id)
+      const vName = v.name
+      if (formData.village && formData.village === vName) {
+        return true
       }
-      if (formData.city_id && (v.city_id || v.parent_id)) {
-        return String(v.city_id || v.parent_id) === String(formData.city_id)
+      
+      const vParent = String(v.parent_id || v.city_id || v.district_id || '').trim().toLowerCase()
+
+      if (formData.city_id) {
+        const cId = String(formData.city_id).toLowerCase()
+        const cName = String(selectedCityObj?.name || selectedCityObj?.city || '').toLowerCase().trim()
+        if (vParent === cId || (cName && vParent === cName)) {
+          return true
+        }
+        // If village parent was mapped to district instead of city
+        if (formData.district_id) {
+          const dId = String(formData.district_id).toLowerCase()
+          const dName = String(selectedDistrictObj?.name || '').toLowerCase().trim()
+          if (vParent === dId || (dName && vParent === dName)) {
+            return true
+          }
+        }
+        return false
       }
+
+      if (formData.district_id) {
+        const dId = String(formData.district_id).toLowerCase()
+        const dName = String(selectedDistrictObj?.name || '').toLowerCase().trim()
+        return vParent === dId || (dName && vParent === dName)
+      }
+
       return true
     })
     .map(v => ({ label: v.name, value: v.name }))
@@ -1157,18 +1152,27 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
               disabled={isLoading}
             />
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold">
                   <User className="w-3.5 h-3.5" />
                 </div>
-                <h3 className="text-xs font-bold text-text uppercase tracking-wide">Family Head Details</h3>
+                <span className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold">
+                  Family Head
+                </span>
               </div>
               <p className="text-[11px] text-text-secondary mt-0.5">Primary head of the family</p>
             </div>
           </div>
-          <span className="self-start sm:self-center px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold">
-            Family Head
-          </span>
+          <div className="self-start sm:self-center">
+            <Switch
+              label="Status"
+              checked={Number(formData.status ?? 1) === 1}
+              onChange={(val) => handleChange('status', val ? 1 : 0)}
+              disabled={isLoading}
+              activeLabel="Active"
+              inactiveLabel="Inactive"
+            />
+          </div>
         </div>
 
         {/* Row 1: Name & Mobile (4 inputs) */}
@@ -1256,176 +1260,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           )}
         </div>
 
-        {/* Row 3: Pincode, Country, State, City, District, Village (Cascading 6-column / responsive grid) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 items-start">
-          <div className="relative">
-            <Input
-              label="Pincode"
-              placeholder="6 Digit PIN"
-              value={formData.pincode || ''}
-              onChange={(e) => handlePincodeChange(e.target.value)}
-              disabled={isLoading}
-              maxLength={6}
-            />
-            {pincodeLoading && (
-              <span className="absolute right-3 top-8 text-[11px] text-primary animate-pulse font-bold">
-                Fetching...
-              </span>
-            )}
-            {pincodeMsg && !pincodeLoading && (
-              <span
-                className={`text-[10px] font-semibold block mt-0.5 truncate ${
-                  pincodeMsg.type === 'error' ? 'text-rose-500' : 'text-emerald-600'
-                }`}
-              >
-                {pincodeMsg.text}
-              </span>
-            )}
-          </div>
-          <Select
-            label="Country"
-            value={formData.country_id}
-            onChange={(val) => handleChange('country_id', val)}
-            options={countryOptions}
-            required={true}
-            error={errors.country_id}
-            placeholder="Select Country"
-            searchable={true}
-            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.country_id))}
-          />
-          <Select
-            label="State"
-            value={formData.state_id}
-            onChange={(val) => handleChange('state_id', val)}
-            options={stateOptions}
-            required={true}
-            error={errors.state_id}
-            placeholder="Select State"
-            searchable={true}
-            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.state_id))}
-          />
-          <Select
-            label="City"
-            value={formData.city_id}
-            onChange={(val) => handleChange('city_id', val)}
-            creatable={true}
-            onCreateOption={async (newCity) => {
-              const trimmed = newCity.trim()
-              if (!trimmed) return
-              const newCId = `city_${Date.now()}`
-              const newCObj = {
-                _id: newCId,
-                id: newCId,
-                name: trimmed,
-                city: trimmed,
-                parent_id: formData.state_id || '',
-                state_id: formData.state_id || '',
-                status: 1
-              }
-              setCities(prev => [...prev, newCObj])
-              if (cachedMasters) {
-                cachedMasters.cities = [...(cachedMasters.cities || []), newCObj]
-              }
-              handleChange('city_id', newCId)
-              api.post(MEMBER_ENDPOINTS.MASTERS_CITY, {
-                name: trimmed,
-                city: trimmed,
-                parent_id: formData.state_id || undefined,
-                state_id: formData.state_id || undefined,
-                status: 1
-              }).then(res => {
-                const savedId = res.data?.data?._id || res.data?.data?.id
-                if (savedId) {
-                  setCities(prev => prev.map(c => c._id === newCId ? { ...c, _id: savedId, id: savedId } : c))
-                  setFormData(prev => prev.city_id === newCId ? { ...prev, city_id: savedId } : prev)
-                }
-              }).catch(() => {})
-            }}
-            createPrompt="Add City"
-            options={cityOptions}
-            required={true}
-            error={errors.city_id}
-            placeholder="Select City"
-            searchable={true}
-            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.city_id))}
-          />
-          <Select
-            label="District"
-            value={formData.district_id}
-            onChange={(val) => handleChange('district_id', val)}
-            creatable={true}
-            onCreateOption={async (newDist) => {
-              const trimmed = newDist.trim()
-              if (!trimmed) return
-              const newDId = `dist_${Date.now()}`
-              const newDObj = {
-                _id: newDId,
-                id: newDId,
-                name: trimmed,
-                parent_id: formData.city_id || formData.state_id || '',
-                city_id: formData.city_id || '',
-                state_id: formData.state_id || '',
-                status: 1
-              }
-              setDistricts(prev => [...prev, newDObj])
-              if (cachedMasters) {
-                cachedMasters.districts = [...(cachedMasters.districts || []), newDObj]
-              }
-              handleChange('district_id', newDId)
-              api.post(MEMBER_ENDPOINTS.MASTERS_DISTRICT, {
-                name: trimmed,
-                parent_id: formData.city_id || formData.state_id || undefined,
-                status: 1
-              }).then(res => {
-                const savedId = res.data?.data?._id || res.data?.data?.id
-                if (savedId) {
-                  setDistricts(prev => prev.map(d => d._id === newDId ? { ...d, _id: savedId, id: savedId } : d))
-                  setFormData(prev => prev.district_id === newDId ? { ...prev, district_id: savedId } : prev)
-                }
-              }).catch(() => {})
-            }}
-            createPrompt="Add District"
-            options={[{ label: 'Select District', value: '' }, ...districtOptions]}
-            placeholder="Select District"
-            searchable={true}
-            disabled={isLoading}
-          />
-          <Select
-            label="Village"
-            value={formData.village}
-            onChange={(val) => handleChange('village', val)}
-            creatable={true}
-            onCreateOption={async (newVillage) => {
-              const trimmed = newVillage.trim()
-              if (!trimmed) return
-              handleChange('village', trimmed)
-              const newVObj = {
-                name: trimmed,
-                _id: trimmed,
-                id: trimmed,
-                parent_id: formData.district_id || formData.city_id || '',
-                status: 1
-              }
-              setVillages(prev => [...prev, newVObj])
-              if (cachedMasters) {
-                cachedMasters.villages = [...(cachedMasters.villages || []), newVObj]
-              }
-              api.post(MEMBER_ENDPOINTS.MASTERS_VILLAGE, {
-                name: trimmed,
-                parent_id: formData.district_id || formData.city_id || undefined,
-                status: 1
-              }).catch(() => {})
-            }}
-            createPrompt="Add Village"
-            options={[{ label: 'Select Village', value: '' }, ...villageOptions]}
-            placeholder="Select or Add Village"
-            searchable={true}
-            disabled={isLoading}
-          />
-        </div>
-
-        {/* Row 4: Patti / Para / Pargana, Date of Birth, Anniversary Date, Address, Status */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 items-end">
+        {/* Row 3: Patti / Para / Pargana, Date of Birth, Anniversary Date, Address (4 inputs) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
           <Select
             label="Patti / Para / Pargana"
             value={formData.patti_para_pargana}
@@ -1471,13 +1307,177 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             onChange={(e) => handleChange('address', e.target.value)}
             disabled={isLoading}
           />
-          <Switch
-            label="Status"
-            checked={Number(formData.status ?? 1) === 1}
-            onChange={(val) => handleChange('status', val ? 1 : 0)}
+        </div>
+
+        {/* Row 4: Pincode, Country, State, District, City / Taluka, Village (Cascading 6-column / responsive grid) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 items-start">
+          <div className="relative">
+            <Input
+              label="Pincode"
+              placeholder="6 Digit PIN"
+              value={formData.pincode || ''}
+              onChange={(e) => handlePincodeChange(e.target.value)}
+              disabled={isLoading}
+              maxLength={6}
+            />
+            {pincodeLoading && (
+              <span className="absolute right-3 top-8 text-[11px] text-primary animate-pulse font-bold">
+                Fetching...
+              </span>
+            )}
+            {pincodeMsg && !pincodeLoading && (
+              <span
+                className={`text-[10px] font-semibold block mt-0.5 truncate ${
+                  pincodeMsg.type === 'error' ? 'text-rose-500' : 'text-emerald-600'
+                }`}
+              >
+                {pincodeMsg.text}
+              </span>
+            )}
+          </div>
+          <Select
+            label="Country"
+            value={formData.country_id}
+            onChange={(val) => handleChange('country_id', val)}
+            options={[{ label: 'Select Country', value: '' }, ...countryOptions]}
+            required={true}
+            error={errors.country_id}
+            placeholder="Select Country"
+            searchable={true}
+            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.country_id))}
+          />
+          <Select
+            label="State"
+            value={formData.state_id}
+            onChange={(val) => handleChange('state_id', val)}
+            options={[{ label: 'Select State', value: '' }, ...stateOptions]}
+            required={true}
+            error={errors.state_id}
+            placeholder="Select State"
+            searchable={true}
+            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.state_id))}
+          />
+          <Select
+            label="District"
+            value={formData.district_id}
+            onChange={(val) => handleChange('district_id', val)}
+            creatable={true}
+            onCreateOption={async (newDist) => {
+              const trimmed = newDist.trim()
+              if (!trimmed) return
+              const newDId = `dist_${Date.now()}`
+              const newDObj = {
+                _id: newDId,
+                id: newDId,
+                name: trimmed,
+                parent_id: formData.state_id || '',
+                state_id: formData.state_id || '',
+                status: 1
+              }
+              setDistricts(prev => [...prev, newDObj])
+              if (cachedMasters) {
+                cachedMasters.districts = [...(cachedMasters.districts || []), newDObj]
+              }
+              handleChange('district_id', newDId)
+              api.post(MEMBER_ENDPOINTS.MASTERS_DISTRICT, {
+                name: trimmed,
+                parent_id: formData.state_id || undefined,
+                state_id: formData.state_id || undefined,
+                status: 1
+              }).then(res => {
+                const savedId = res.data?.data?._id || res.data?.data?.id
+                if (savedId) {
+                  setDistricts(prev => prev.map(d => d._id === newDId ? { ...d, _id: savedId, id: savedId } : d))
+                  setFormData(prev => prev.district_id === newDId ? { ...prev, district_id: savedId } : prev)
+                }
+              }).catch(() => {})
+            }}
+            createPrompt="Add District"
+            options={[{ label: 'Select District', value: '' }, ...districtOptions]}
+            placeholder="Select District"
+            searchable={true}
+            required={true}
+            error={errors.district_id}
+            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.district_id))}
+          />
+          <Select
+            label="City / Taluka"
+            value={formData.city_id}
+            onChange={(val) => handleChange('city_id', val)}
+            creatable={true}
+            onCreateOption={async (newCity) => {
+              const trimmed = newCity.trim()
+              if (!trimmed) return
+              const newCId = `city_${Date.now()}`
+              const newCObj = {
+                _id: newCId,
+                id: newCId,
+                name: trimmed,
+                city: trimmed,
+                parent_id: formData.district_id || formData.state_id || '',
+                district_id: formData.district_id || '',
+                state_id: formData.state_id || '',
+                status: 1
+              }
+              setCities(prev => [...prev, newCObj])
+              if (cachedMasters) {
+                cachedMasters.cities = [...(cachedMasters.cities || []), newCObj]
+              }
+              handleChange('city_id', newCId)
+              api.post(MEMBER_ENDPOINTS.MASTERS_CITY, {
+                name: trimmed,
+                city: trimmed,
+                parent_id: formData.district_id || formData.state_id || undefined,
+                district_id: formData.district_id || undefined,
+                state_id: formData.state_id || undefined,
+                status: 1
+              }).then(res => {
+                const savedId = res.data?.data?._id || res.data?.data?.id
+                if (savedId) {
+                  setCities(prev => prev.map(c => c._id === newCId ? { ...c, _id: savedId, id: savedId } : c))
+                  setFormData(prev => prev.city_id === newCId ? { ...prev, city_id: savedId } : prev)
+                }
+              }).catch(() => {})
+            }}
+            createPrompt="Add City / Taluka"
+            options={[{ label: 'Select City / Taluka (Optional)', value: '' }, ...cityOptions]}
+            placeholder="Select City / Taluka"
+            searchable={true}
             disabled={isLoading}
-            activeLabel="Active"
-            inactiveLabel="Inactive"
+          />
+          <Select
+            label="Village"
+            value={formData.village}
+            onChange={(val) => handleChange('village', val)}
+            creatable={true}
+            onCreateOption={async (newVillage) => {
+              const trimmed = newVillage.trim()
+              if (!trimmed) return
+              handleChange('village', trimmed)
+              const newVObj = {
+                name: trimmed,
+                _id: trimmed,
+                id: trimmed,
+                parent_id: formData.city_id || formData.district_id || '',
+                city_id: formData.city_id || '',
+                status: 1
+              }
+              setVillages(prev => [...prev, newVObj])
+              if (cachedMasters) {
+                cachedMasters.villages = [...(cachedMasters.villages || []), newVObj]
+              }
+              api.post(MEMBER_ENDPOINTS.MASTERS_VILLAGE, {
+                name: trimmed,
+                parent_id: formData.city_id || formData.district_id || undefined,
+                city_id: formData.city_id || undefined,
+                status: 1
+              }).catch(() => {})
+            }}
+            createPrompt="Add Village"
+            options={[{ label: 'Select Village', value: '' }, ...villageOptions]}
+            placeholder="Select or Add Village"
+            searchable={true}
+            disabled={isLoading}
           />
         </div>
       </div>

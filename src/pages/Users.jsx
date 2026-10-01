@@ -314,7 +314,18 @@ export default function Users() {
   const handleEdit = async (user) => {
     const isHead = user.isGroupParent || user.relation === 'Self' || user.familyHead
     if (isHead) {
-      setSelectedUser(user)
+      const headId = user.id || user._id
+      try {
+        const res = await api.get(MEMBER_ENDPOINTS.GET_MEMBER(headId))
+        const fullData = res.data?.data || res.data
+        if (fullData) {
+          setSelectedUser(fullData)
+        } else {
+          setSelectedUser(user)
+        }
+      } catch (e) {
+        setSelectedUser(user)
+      }
       setEditTargetMemberId(null)
       setIsModalOpen(true)
     } else {
@@ -322,11 +333,12 @@ export default function Users() {
       const headId = user.parentHeadId || user.family_head?.id || user.family_head?._id || user.family_head_id || user.parent_member_id
       let headUser = users.find(u => String(u.id || u._id) === String(headId) || (u.member_id && u.member_id === user.parent_member_id))
       
-      if (!headUser && headId) {
+      if (headId) {
         try {
-          // Fetch head user details if not found in current table page
+          // Fetch head user details
           const res = await api.get(MEMBER_ENDPOINTS.GET_MEMBER(headId))
-          headUser = res.data?.data || res.data
+          const fullHead = res.data?.data || res.data
+          if (fullHead) headUser = fullHead
         } catch (e) {
           console.error('Could not fetch head user', e)
         }
