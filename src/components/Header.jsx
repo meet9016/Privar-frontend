@@ -20,6 +20,7 @@ export default function Header({ onToggleSidebar }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   
+  
   // Password Form State
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
