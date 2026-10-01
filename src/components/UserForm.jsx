@@ -613,66 +613,84 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         }
 
         if (apiStateName || apiDistrictName) {
-          setPincodeMsg({ text: `${apiDistrictName}, ${apiStateName}`, type: 'success' })
+          setPincodeMsg({ text: `${apiDistrictName || apiTalukaName}, ${apiStateName}`, type: 'success' })
 
-          // Auto-match Country (India)
+          // 1. Auto-match Country (India)
           let matchedCountryId = formData.country_id
           const india = countries.find(c => /india/i.test(c.name))
           if (india) {
             matchedCountryId = india._id || india.id
           }
 
-          // Auto-match State
+          // 2. Auto-match State
           let matchedStateId = formData.state_id
           if (apiStateName && states.length > 0) {
-            const foundState = states.find(s =>
-              s.name.toLowerCase().trim() === apiStateName.toLowerCase().trim() ||
-              apiStateName.toLowerCase().includes(s.name.toLowerCase().trim()) ||
-              s.name.toLowerCase().includes(apiStateName.toLowerCase().trim())
-            )
+            const cleanApiState = apiStateName.toLowerCase().trim()
+            const foundState = states.find(s => {
+              const sName = (s.name || '').toLowerCase().trim()
+              return sName === cleanApiState || cleanApiState.includes(sName) || sName.includes(cleanApiState)
+            })
             if (foundState) {
               matchedStateId = foundState._id || foundState.id
             }
           }
 
-          // Auto-match District
+          // 3. Auto-match City (prioritize city matching from cities list)
+          let matchedCityId = formData.city_id
+          const possibleCityNames = [apiTalukaName, apiDistrictName].filter(Boolean)
+          if (cities.length > 0 && possibleCityNames.length > 0) {
+            const foundCity = cities.find(c => {
+              const cName = (c.name || '').toLowerCase().trim()
+              const matchesParent = !matchedStateId || !c.parent_id || String(c.parent_id || c.state_id) === String(matchedStateId)
+              return matchesParent && possibleCityNames.some(p => {
+                const cleanP = p.toLowerCase().trim()
+                return cName === cleanP || cleanP.includes(cName) || cName.includes(cleanP)
+              })
+            }) || cities.find(c => {
+              const cName = (c.name || '').toLowerCase().trim()
+              return possibleCityNames.some(p => {
+                const cleanP = p.toLowerCase().trim()
+                return cName === cleanP || cleanP.includes(cName) || cName.includes(cleanP)
+              })
+            })
+            if (foundCity) {
+              matchedCityId = foundCity._id || foundCity.id
+            }
+          }
+
+          // 4. Auto-match District (from districts list)
           let matchedDistrictId = formData.district_id
-          if (apiDistrictName && districts.length > 0) {
-            const foundDistrict = districts.find(d =>
-              d.name.toLowerCase().trim() === apiDistrictName.toLowerCase().trim() ||
-              apiDistrictName.toLowerCase().includes(d.name.toLowerCase().trim()) ||
-              d.name.toLowerCase().includes(apiDistrictName.toLowerCase().trim())
-            )
+          const possibleDistrictNames = [apiDistrictName, apiTalukaName].filter(Boolean)
+          if (districts.length > 0 && possibleDistrictNames.length > 0) {
+            const foundDistrict = districts.find(d => {
+              const dName = (d.name || '').toLowerCase().trim()
+              const matchesParent = (!matchedCityId || !d.parent_id || String(d.parent_id || d.city_id) === String(matchedCityId)) ||
+                                    (!matchedStateId || String(d.state_id || d.parent_id) === String(matchedStateId))
+              return matchesParent && possibleDistrictNames.some(p => {
+                const cleanP = p.toLowerCase().trim()
+                return dName === cleanP || cleanP.includes(dName) || dName.includes(cleanP)
+              })
+            }) || districts.find(d => {
+              const dName = (d.name || '').toLowerCase().trim()
+              return possibleDistrictNames.some(p => {
+                const cleanP = p.toLowerCase().trim()
+                return dName === cleanP || cleanP.includes(dName) || dName.includes(cleanP)
+              })
+            })
             if (foundDistrict) {
               matchedDistrictId = foundDistrict._id || foundDistrict.id
             }
           }
 
-          // Auto-match City
-          let matchedCityId = formData.city_id
-          if (cities.length > 0) {
-            const targetCityName = apiTalukaName || apiDistrictName
-            if (targetCityName) {
-              const foundCity = cities.find(c =>
-                c.name.toLowerCase().trim() === targetCityName.toLowerCase().trim() ||
-                targetCityName.toLowerCase().includes(c.name.toLowerCase().trim()) ||
-                c.name.toLowerCase().includes(targetCityName.toLowerCase().trim())
-              )
-              if (foundCity) {
-                matchedCityId = foundCity._id || foundCity.id
-              }
-            }
-          }
-
-          // Auto-match Village / Area from locality list
+          // 5. Auto-match Village / Area from locality list
           let matchedVillage = formData.village
           if (villages.length > 0 && localities.length > 0) {
             const foundVillage = villages.find(v =>
-              localities.some(loc =>
-                loc.toLowerCase().trim() === v.name.toLowerCase().trim() ||
-                loc.toLowerCase().includes(v.name.toLowerCase().trim()) ||
-                v.name.toLowerCase().includes(loc.toLowerCase().trim())
-              )
+              localities.some(loc => {
+                const vName = (v.name || '').toLowerCase().trim()
+                const locClean = loc.toLowerCase().trim()
+                return locClean === vName || locClean.includes(vName) || vName.includes(locClean)
+              })
             )
             if (foundVillage) {
               matchedVillage = foundVillage.name
@@ -691,10 +709,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
           setFormData(prev => ({
             ...prev,
-            country_id: matchedCountryId,
-            state_id: matchedStateId,
-            district_id: matchedDistrictId,
-            city_id: matchedCityId,
+            country_id: matchedCountryId || prev.country_id,
+            state_id: matchedStateId || prev.state_id,
+            district_id: matchedDistrictId || prev.district_id,
+            city_id: matchedCityId || prev.city_id,
             ...(matchedVillage ? { village: matchedVillage } : {}),
             ...(updatedAddress ? { address: updatedAddress } : {})
           }))
@@ -987,7 +1005,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
     if (!formData.country_id) newErrors.country_id = 'Country is required'
     if (!formData.state_id) newErrors.state_id = 'State is required'
-    if (!formData.district_id) newErrors.district_id = 'District is required'
     if (!formData.city_id) newErrors.city_id = 'City is required'
     if (!formData.dob) newErrors.dob = 'Date of Birth is required'
 
@@ -1077,19 +1094,35 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const countryOptions = countries.map(c => ({ label: c.name, value: c._id || c.id }))
   
   const stateOptions = states
-    .filter(s => !formData.country_id || String(s.country_id || s.parent_id) === String(formData.country_id))
+    .filter(s => !formData.country_id || !s.parent_id || String(s.country_id || s.parent_id) === String(formData.country_id))
     .map(s => ({ label: s.name, value: s._id || s.id }))
 
   const cityOptions = cities
-    .filter(c => !formData.state_id || String(c.state_id || c.parent_id) === String(formData.state_id))
+    .filter(c => !formData.state_id || !c.parent_id || String(c.state_id || c.parent_id) === String(formData.state_id))
     .map(c => ({ label: c.name, value: c._id || c.id }))
 
   const districtOptions = districts
-    .filter(d => !formData.city_id || String(d.parent_id || d.city_id || d.state_id) === String(formData.city_id))
+    .filter(d => {
+      if (formData.city_id && (d.parent_id || d.city_id)) {
+        return String(d.parent_id || d.city_id) === String(formData.city_id)
+      }
+      if (formData.state_id && (d.state_id || d.parent_id)) {
+        return String(d.state_id || d.parent_id) === String(formData.state_id)
+      }
+      return true
+    })
     .map(d => ({ label: d.name, value: d._id || d.id }))
 
   const villageOptions = villages
-    .filter(v => !formData.district_id || String(v.parent_id || v.district_id || v.city_id) === String(formData.district_id))
+    .filter(v => {
+      if (formData.district_id && (v.parent_id || v.district_id)) {
+        return String(v.parent_id || v.district_id) === String(formData.district_id)
+      }
+      if (formData.city_id && (v.city_id || v.parent_id)) {
+        return String(v.city_id || v.parent_id) === String(formData.city_id)
+      }
+      return true
+    })
     .map(v => ({ label: v.name, value: v.name }))
 
   const roleOptions = [
@@ -1246,6 +1279,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             error={errors.country_id}
             placeholder="Select Country"
             searchable={true}
+            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.country_id))}
           />
           <Select
             label="State"
@@ -1256,6 +1290,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             error={errors.state_id}
             placeholder="Select State"
             searchable={true}
+            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.state_id))}
           />
           <Select
             label="City"
@@ -1266,49 +1301,81 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             error={errors.city_id}
             placeholder="Select City"
             searchable={true}
+            disabled={isLoading || (pincodeMsg?.type === 'success' && Boolean(formData.city_id))}
           />
           <Select
             label="District"
             value={formData.district_id}
             onChange={(val) => handleChange('district_id', val)}
-            options={districtOptions}
-            required={true}
-            error={errors.district_id}
+            creatable={true}
+            onCreateOption={async (newDist) => {
+              const trimmed = newDist.trim()
+              if (!trimmed) return
+              const newDId = `dist_${Date.now()}`
+              const newDObj = {
+                _id: newDId,
+                id: newDId,
+                name: trimmed,
+                parent_id: formData.city_id || formData.state_id || '',
+                city_id: formData.city_id || '',
+                state_id: formData.state_id || '',
+                status: 1
+              }
+              setDistricts(prev => [...prev, newDObj])
+              if (cachedMasters) {
+                cachedMasters.districts = [...(cachedMasters.districts || []), newDObj]
+              }
+              handleChange('district_id', newDId)
+              api.post(MEMBER_ENDPOINTS.MASTERS_DISTRICT, {
+                name: trimmed,
+                parent_id: formData.city_id || formData.state_id || undefined,
+                status: 1
+              }).then(res => {
+                const savedId = res.data?.data?._id || res.data?.data?.id
+                if (savedId) {
+                  setDistricts(prev => prev.map(d => d._id === newDId ? { ...d, _id: savedId, id: savedId } : d))
+                  setFormData(prev => prev.district_id === newDId ? { ...prev, district_id: savedId } : prev)
+                }
+              }).catch(() => {})
+            }}
+            createPrompt="Add District"
+            options={[{ label: 'Select District', value: '' }, ...districtOptions]}
             placeholder="Select District"
             searchable={true}
+            disabled={isLoading}
           />
-          {villageOptions.length > 0 ? (
-            <Select
-              label="Village"
-              value={formData.village}
-              onChange={(val) => handleChange('village', val)}
-              onCreateOption={async (newVillage) => {
-                const trimmed = newVillage.trim()
-                if (!trimmed) return
-                handleChange('village', trimmed)
-                const newVObj = { name: trimmed, _id: trimmed, id: trimmed, parent_id: formData.district_id }
-                setVillages(prev => [...prev, newVObj])
-                if (cachedMasters) {
-                  cachedMasters.villages = [...(cachedMasters.villages || []), newVObj]
-                }
-                // Also save to master in background
-                api.post(MEMBER_ENDPOINTS.MASTERS_VILLAGE, { name: trimmed, parent_id: formData.district_id, status: 1 }).catch(() => {})
-              }}
-              createPrompt="Add Village"
-              options={[{ label: 'Select Village', value: '' }, ...villageOptions]}
-              placeholder="Select Village"
-              searchable={true}
-              disabled={isLoading}
-            />
-          ) : (
-            <Input
-              label="Village"
-              value={formData.village}
-              onChange={(e) => handleChange('village', e.target.value)}
-              placeholder="Enter Village"
-              disabled={isLoading}
-            />
-          )}
+          <Select
+            label="Village"
+            value={formData.village}
+            onChange={(val) => handleChange('village', val)}
+            creatable={true}
+            onCreateOption={async (newVillage) => {
+              const trimmed = newVillage.trim()
+              if (!trimmed) return
+              handleChange('village', trimmed)
+              const newVObj = {
+                name: trimmed,
+                _id: trimmed,
+                id: trimmed,
+                parent_id: formData.district_id || formData.city_id || '',
+                status: 1
+              }
+              setVillages(prev => [...prev, newVObj])
+              if (cachedMasters) {
+                cachedMasters.villages = [...(cachedMasters.villages || []), newVObj]
+              }
+              api.post(MEMBER_ENDPOINTS.MASTERS_VILLAGE, {
+                name: trimmed,
+                parent_id: formData.district_id || formData.city_id || undefined,
+                status: 1
+              }).catch(() => {})
+            }}
+            createPrompt="Add Village"
+            options={[{ label: 'Select Village', value: '' }, ...villageOptions]}
+            placeholder="Select or Add Village"
+            searchable={true}
+            disabled={isLoading}
+          />
         </div>
 
         {/* Row 4: Patti / Para / Pargana, Date of Birth, Anniversary Date, Address, Status */}
