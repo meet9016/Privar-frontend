@@ -635,10 +635,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             }
           }
 
-          // 3. Auto-match City (prioritize city matching from cities list)
+          // 3. Auto-match or Auto-create City
           let matchedCityId = formData.city_id
           const possibleCityNames = [apiTalukaName, apiDistrictName].filter(Boolean)
-          if (cities.length > 0 && possibleCityNames.length > 0) {
+          if (possibleCityNames.length > 0) {
             const foundCity = cities.find(c => {
               const cName = (c.name || '').toLowerCase().trim()
               const matchesParent = !matchedStateId || !c.parent_id || String(c.parent_id || c.state_id) === String(matchedStateId)
@@ -655,32 +655,44 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             })
             if (foundCity) {
               matchedCityId = foundCity._id || foundCity.id
+            } else {
+              // Automatically create city in state if not already in master
+              const bestCityName = capitalizeWords(apiTalukaName || apiDistrictName)
+              const newCId = `city_${Date.now()}`
+              const newCObj = {
+                _id: newCId,
+                id: newCId,
+                name: bestCityName,
+                city: bestCityName,
+                state_id: matchedStateId || '',
+                parent_id: matchedStateId || '',
+                status: 1
+              }
+              setCities(prev => [...prev, newCObj])
+              if (cachedMasters) {
+                cachedMasters.cities = [...(cachedMasters.cities || []), newCObj]
+              }
+              matchedCityId = newCId
+
+              // Persist to Master collection in backend
+              api.post(MEMBER_ENDPOINTS.MASTERS_CITY, {
+                name: bestCityName,
+                city: bestCityName,
+                parent_id: matchedStateId || undefined,
+                state_id: matchedStateId || undefined,
+                status: 1
+              }).then(res => {
+                const savedId = res.data?.data?._id || res.data?.data?.id
+                if (savedId) {
+                  setCities(prev => prev.map(c => c._id === newCId ? { ...c, _id: savedId, id: savedId } : c))
+                  setFormData(prev => prev.city_id === newCId ? { ...prev, city_id: savedId } : prev)
+                }
+              }).catch(() => {})
             }
           }
 
-          // 4. Auto-match District (from districts list)
+          // 4. District is kept optional (not auto-filled or auto-created unless user selects it)
           let matchedDistrictId = formData.district_id
-          const possibleDistrictNames = [apiDistrictName, apiTalukaName].filter(Boolean)
-          if (districts.length > 0 && possibleDistrictNames.length > 0) {
-            const foundDistrict = districts.find(d => {
-              const dName = (d.name || '').toLowerCase().trim()
-              const matchesParent = (!matchedCityId || !d.parent_id || String(d.parent_id || d.city_id) === String(matchedCityId)) ||
-                                    (!matchedStateId || String(d.state_id || d.parent_id) === String(matchedStateId))
-              return matchesParent && possibleDistrictNames.some(p => {
-                const cleanP = p.toLowerCase().trim()
-                return dName === cleanP || cleanP.includes(dName) || dName.includes(cleanP)
-              })
-            }) || districts.find(d => {
-              const dName = (d.name || '').toLowerCase().trim()
-              return possibleDistrictNames.some(p => {
-                const cleanP = p.toLowerCase().trim()
-                return dName === cleanP || cleanP.includes(dName) || dName.includes(cleanP)
-              })
-            })
-            if (foundDistrict) {
-              matchedDistrictId = foundDistrict._id || foundDistrict.id
-            }
-          }
 
           // 5. Auto-match Village / Area from locality list
           let matchedVillage = formData.village
@@ -1296,6 +1308,40 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             label="City"
             value={formData.city_id}
             onChange={(val) => handleChange('city_id', val)}
+            creatable={true}
+            onCreateOption={async (newCity) => {
+              const trimmed = newCity.trim()
+              if (!trimmed) return
+              const newCId = `city_${Date.now()}`
+              const newCObj = {
+                _id: newCId,
+                id: newCId,
+                name: trimmed,
+                city: trimmed,
+                parent_id: formData.state_id || '',
+                state_id: formData.state_id || '',
+                status: 1
+              }
+              setCities(prev => [...prev, newCObj])
+              if (cachedMasters) {
+                cachedMasters.cities = [...(cachedMasters.cities || []), newCObj]
+              }
+              handleChange('city_id', newCId)
+              api.post(MEMBER_ENDPOINTS.MASTERS_CITY, {
+                name: trimmed,
+                city: trimmed,
+                parent_id: formData.state_id || undefined,
+                state_id: formData.state_id || undefined,
+                status: 1
+              }).then(res => {
+                const savedId = res.data?.data?._id || res.data?.data?.id
+                if (savedId) {
+                  setCities(prev => prev.map(c => c._id === newCId ? { ...c, _id: savedId, id: savedId } : c))
+                  setFormData(prev => prev.city_id === newCId ? { ...prev, city_id: savedId } : prev)
+                }
+              }).catch(() => {})
+            }}
+            createPrompt="Add City"
             options={cityOptions}
             required={true}
             error={errors.city_id}
