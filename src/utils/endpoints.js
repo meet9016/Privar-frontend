@@ -19,6 +19,7 @@ export const ROLES_ENDPOINTS = {
 // Members / Family Registry Module API Endpoints
 export const MEMBER_ENDPOINTS = {
   GET_MEMBERS: '/users',
+  GET_MEMBER: (id) => `/users/${id}`,
   CREATE_MEMBER: '/users',
   UPDATE_MEMBER: (id) => `/users/${id}`,
   DELETE_MEMBER: (id) => `/users/${id}`,
