@@ -316,6 +316,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const { user: loggedInUser } = useContext(AuthContext)
   const [countries, setCountries] = useState(cachedMasters ? cachedMasters.countries : [])
   const [states, setStates] = useState(cachedMasters ? cachedMasters.states : [])
+  const [districts, setDistricts] = useState(cachedMasters ? cachedMasters.districts : [])
   const [cities, setCities] = useState(cachedMasters ? cachedMasters.cities : [])
   const [villages, setVillages] = useState(cachedMasters ? cachedMasters.villages : [])
   const [pattiOptions, setPattiOptions] = useState(cachedMasters ? cachedMasters.pattiOptions : [])
@@ -343,6 +344,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     pincode: '',
     country_id: '',
     state_id: '',
+    district_id: '',
     city_id: '',
     village: '',
     patti_para_pargana: '',
@@ -363,31 +365,17 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
   useEffect(() => {
     const fetchMasters = async () => {
-      if (cachedMasters) {
-        setCountries(cachedMasters.countries)
-        setStates(cachedMasters.states)
-        setCities(cachedMasters.cities)
-        setVillages(cachedMasters.villages)
-        setPattiOptions(cachedMasters.pattiOptions || [])
-        if (cachedMasters.relationships?.length) {
-          setRelationOptions(cachedMasters.relationships)
-        }
-        return
-      }
-
-      if (!mastersPromise) {
-        mastersPromise = Promise.all([
-          api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY),
-          api.get(MEMBER_ENDPOINTS.MASTERS_STATE),
-          api.get(MEMBER_ENDPOINTS.MASTERS_CITY),
-          api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } })),
-          api.get(MEMBER_ENDPOINTS.MASTERS_PATTI_PARA_PARGANA).catch(() => ({ data: { data: [] } })),
-          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } }))
-        ])
-      }
-
       try {
-        const [cRes, sRes, ciRes, vRes, pRes, relRes] = await mastersPromise
+        const masterParams = { params: { limit: 1000, _t: Date.now() } }
+        const [cRes, sRes, ciRes, dRes, vRes, pRes, relRes] = await Promise.all([
+          api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY, masterParams).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_STATE, masterParams).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_CITY, masterParams).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_DISTRICT, masterParams).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE, masterParams).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_PATTI_PARA_PARGANA, masterParams).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP, masterParams).catch(() => ({ data: { data: [] } }))
+        ])
         const countryList = cRes.data?.data || []
         
         // Merge backend relationships with default RELATION_OPTIONS
@@ -405,20 +393,12 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
         const pattiList = (pRes.data?.data || []).filter(p => p.status !== 0 && p.status !== '0')
 
-        cachedMasters = {
-          countries: countryList,
-          states: sRes.data?.data || [],
-          cities: ciRes.data?.data || [],
-          villages: vRes.data?.data || [],
-          pattiOptions: pattiList,
-          relationships: mergedRelations
-        }
-
-        setCountries(cachedMasters.countries)
-        setStates(cachedMasters.states)
-        setCities(cachedMasters.cities)
-        setVillages(cachedMasters.villages)
-        setPattiOptions(cachedMasters.pattiOptions)
+        setCountries(countryList)
+        setStates(sRes.data?.data || [])
+        setCities(ciRes.data?.data || [])
+        setDistricts(dRes.data?.data || [])
+        setVillages(vRes.data?.data || [])
+        setPattiOptions(pattiList)
         setRelationOptions(mergedRelations)
 
         // If country or state not yet selected, default to India and Gujarat
@@ -475,6 +455,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         pincode: user.pincode || '',
         country_id: user.country_id || '',
         state_id: user.state_id || '',
+        district_id: user.district_id || '',
         city_id: user.city_id || '',
         village: user.village || user.village_id || '',
         patti_para_pargana: user.patti_para_pargana || user.patti || '',
@@ -554,6 +535,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         pincode: '',
         country_id: india ? (india._id || india.id) : '',
         state_id: gujarat ? (gujarat._id || gujarat.id) : '',
+        district_id: '',
         city_id: '',
         village: '',
         patti_para_pargana: '',
@@ -653,17 +635,32 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             }
           }
 
-          // Auto-match City / District
-          let matchedCityId = formData.city_id
-          if (apiDistrictName && cities.length > 0) {
-            const foundCity = cities.find(c =>
-              c.name.toLowerCase().trim() === apiDistrictName.toLowerCase().trim() ||
-              apiDistrictName.toLowerCase().includes(c.name.toLowerCase().trim()) ||
-              c.name.toLowerCase().includes(apiDistrictName.toLowerCase().trim()) ||
-              (apiTalukaName && c.name.toLowerCase().includes(apiTalukaName.toLowerCase().trim()))
+          // Auto-match District
+          let matchedDistrictId = formData.district_id
+          if (apiDistrictName && districts.length > 0) {
+            const foundDistrict = districts.find(d =>
+              d.name.toLowerCase().trim() === apiDistrictName.toLowerCase().trim() ||
+              apiDistrictName.toLowerCase().includes(d.name.toLowerCase().trim()) ||
+              d.name.toLowerCase().includes(apiDistrictName.toLowerCase().trim())
             )
-            if (foundCity) {
-              matchedCityId = foundCity._id || foundCity.id
+            if (foundDistrict) {
+              matchedDistrictId = foundDistrict._id || foundDistrict.id
+            }
+          }
+
+          // Auto-match City
+          let matchedCityId = formData.city_id
+          if (cities.length > 0) {
+            const targetCityName = apiTalukaName || apiDistrictName
+            if (targetCityName) {
+              const foundCity = cities.find(c =>
+                c.name.toLowerCase().trim() === targetCityName.toLowerCase().trim() ||
+                targetCityName.toLowerCase().includes(c.name.toLowerCase().trim()) ||
+                c.name.toLowerCase().includes(targetCityName.toLowerCase().trim())
+              )
+              if (foundCity) {
+                matchedCityId = foundCity._id || foundCity.id
+              }
             }
           }
 
@@ -696,6 +693,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             ...prev,
             country_id: matchedCountryId,
             state_id: matchedStateId,
+            district_id: matchedDistrictId,
             city_id: matchedCityId,
             ...(matchedVillage ? { village: matchedVillage } : {}),
             ...(updatedAddress ? { address: updatedAddress } : {})
@@ -705,6 +703,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             const updated = { ...prev }
             if (matchedCountryId) delete updated.country_id
             if (matchedStateId) delete updated.state_id
+            if (matchedDistrictId) delete updated.district_id
             if (matchedCityId) delete updated.city_id
             return updated
           })
@@ -731,6 +730,21 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             next.state_id = gujarat._id || gujarat.id
           }
         }
+        next.city_id = ''
+        next.district_id = ''
+        next.village = ''
+      }
+      if (field === 'state_id') {
+        next.city_id = ''
+        next.district_id = ''
+        next.village = ''
+      }
+      if (field === 'city_id') {
+        next.district_id = ''
+        next.village = ''
+      }
+      if (field === 'district_id') {
+        next.village = ''
       }
       return next
     })
@@ -746,6 +760,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       }
       if (field === 'country_id' && value) delete updated.country_id
       if (field === 'state_id' && value) delete updated.state_id
+      if (field === 'district_id' && value) delete updated.district_id
       if (field === 'city_id' && value) delete updated.city_id
       if (field === 'address' && value.trim()) delete updated.address
       if (field === 'dob' && value) delete updated.dob
@@ -972,6 +987,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
     if (!formData.country_id) newErrors.country_id = 'Country is required'
     if (!formData.state_id) newErrors.state_id = 'State is required'
+    if (!formData.district_id) newErrors.district_id = 'District is required'
     if (!formData.city_id) newErrors.city_id = 'City is required'
     if (!formData.dob) newErrors.dob = 'Date of Birth is required'
 
@@ -1057,11 +1073,25 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     onSubmit(payload)
   }
 
-  // Formatting options for Select components
+  // Formatting cascading options for Select components
   const countryOptions = countries.map(c => ({ label: c.name, value: c._id || c.id }))
-  const stateOptions = states.map(s => ({ label: s.name, value: s._id || s.id }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: c._id || c.id }))
-  const villageOptions = villages.map(v => ({ label: v.name, value: v.name }))
+  
+  const stateOptions = states
+    .filter(s => !formData.country_id || String(s.country_id || s.parent_id) === String(formData.country_id))
+    .map(s => ({ label: s.name, value: s._id || s.id }))
+
+  const cityOptions = cities
+    .filter(c => !formData.state_id || String(c.state_id || c.parent_id) === String(formData.state_id))
+    .map(c => ({ label: c.name, value: c._id || c.id }))
+
+  const districtOptions = districts
+    .filter(d => !formData.city_id || String(d.parent_id || d.city_id || d.state_id) === String(formData.city_id))
+    .map(d => ({ label: d.name, value: d._id || d.id }))
+
+  const villageOptions = villages
+    .filter(v => !formData.district_id || String(v.parent_id || v.district_id || v.city_id) === String(formData.district_id))
+    .map(v => ({ label: v.name, value: v.name }))
+
   const roleOptions = [
     { label: 'Select Assigned Role (Optional)', value: '' },
     ...activeRoles.map(r => ({ label: r.name, value: r.id || String(r._id) }))
@@ -1181,12 +1211,12 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           )}
         </div>
 
-        {/* Row 3: Pincode, Country, State, District/City, Village (Responsive auto-fill grid) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 items-start">
+        {/* Row 3: Pincode, Country, State, City, District, Village (Cascading 6-column / responsive grid) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 items-start">
           <div className="relative">
             <Input
               label="Pincode"
-              placeholder="6 Digit PIN (Auto-fill)"
+              placeholder="6 Digit PIN"
               value={formData.pincode || ''}
               onChange={(e) => handlePincodeChange(e.target.value)}
               disabled={isLoading}
@@ -1228,13 +1258,23 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             searchable={true}
           />
           <Select
-            label="District / City"
+            label="City"
             value={formData.city_id}
             onChange={(val) => handleChange('city_id', val)}
             options={cityOptions}
             required={true}
             error={errors.city_id}
-            placeholder="Select City / District"
+            placeholder="Select City"
+            searchable={true}
+          />
+          <Select
+            label="District"
+            value={formData.district_id}
+            onChange={(val) => handleChange('district_id', val)}
+            options={districtOptions}
+            required={true}
+            error={errors.district_id}
+            placeholder="Select District"
             searchable={true}
           />
           {villageOptions.length > 0 ? (
@@ -1246,16 +1286,17 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                 const trimmed = newVillage.trim()
                 if (!trimmed) return
                 handleChange('village', trimmed)
-                setVillages(prev => [...prev, { name: trimmed, _id: trimmed, id: trimmed }])
+                const newVObj = { name: trimmed, _id: trimmed, id: trimmed, parent_id: formData.district_id }
+                setVillages(prev => [...prev, newVObj])
                 if (cachedMasters) {
-                  cachedMasters.villages = [...(cachedMasters.villages || []), { name: trimmed, _id: trimmed, id: trimmed }]
+                  cachedMasters.villages = [...(cachedMasters.villages || []), newVObj]
                 }
-                // Also save to master in background so it appears for all future dropdowns
-                api.post(MEMBER_ENDPOINTS.MASTERS_VILLAGE, { name: trimmed, status: 1 }).catch(() => {})
+                // Also save to master in background
+                api.post(MEMBER_ENDPOINTS.MASTERS_VILLAGE, { name: trimmed, parent_id: formData.district_id, status: 1 }).catch(() => {})
               }}
               createPrompt="Add Village"
               options={[{ label: 'Select Village', value: '' }, ...villageOptions]}
-              placeholder="Select or Type Village"
+              placeholder="Select Village"
               searchable={true}
               disabled={isLoading}
             />

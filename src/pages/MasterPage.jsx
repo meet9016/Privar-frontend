@@ -10,7 +10,8 @@ import usePermissions from '../hooks/usePermissions'
 const parentFieldsConfig = {
   state: { source: MASTER_ENDPOINTS.COUNTRY, label: 'Country', key: 'name' },
   city: { source: MASTER_ENDPOINTS.STATE, label: 'State', key: 'name' },
-  village: { source: MASTER_ENDPOINTS.CITY, label: 'City', key: 'name' }
+  district: { source: MASTER_ENDPOINTS.CITY, label: 'City', key: 'name' },
+  village: { source: MASTER_ENDPOINTS.DISTRICT, label: 'District', key: 'name' }
 }
 
 export default function MasterPage({ type, headerLeftContent }) {

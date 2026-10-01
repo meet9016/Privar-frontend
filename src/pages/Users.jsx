@@ -874,16 +874,7 @@ export default function Users() {
           >
             {exporting ? 'Exporting...' : 'Export'}
           </Button>
-          {(!permissions.canAdd && !permissions.isSuperAdmin) ? null : (
-            <Button
-              onClick={() => { setIsImportModalOpen(true); setImportStep('upload') }}
-              variant="secondary"
-              icon={<Upload className="w-4 h-4" />}
-              className="h-10 border-border text-text hover:bg-surface-secondary"
-            >
-              Import
-            </Button>
-          )}
+          {/* Import button hidden temporarily */}
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button
               onClick={handleCreate}

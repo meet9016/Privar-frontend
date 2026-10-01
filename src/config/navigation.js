@@ -55,6 +55,7 @@ export const masterNavigation = [
   { type: 'country', label: 'Country', permission: 'masters.list' },
   { type: 'state', label: 'State', permission: 'masters.list' },
   { type: 'city', label: 'City', permission: 'masters.list' },
+  { type: 'district', label: 'District', permission: 'masters.list' },
   { type: 'village', label: 'Village', permission: 'masters.list' },
   { type: 'patti-para-pargana', label: 'Patti / Para / Pargana', permission: 'masters.list' },
   { type: 'blood-group', label: 'Blood Group', permission: 'masters.list' },
