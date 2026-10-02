@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Plus } from 'lucide-react';
 
@@ -17,7 +17,8 @@ export default function Select({
   disabled = false,
   className = '',
   name,
-  placement = 'auto'
+  placement = 'auto',
+  multiple = false
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -113,16 +114,48 @@ export default function Select({
     setIsOpen(!isOpen);
   };
 
+  const isMultiple = Boolean(multiple);
+  const selectedValues = useMemo(() => {
+    if (!isMultiple) return [];
+    if (Array.isArray(value)) return value.map(String);
+    if (typeof value === 'string' && value.trim()) return value.split(',').map(s => s.trim());
+    return [];
+  }, [value, isMultiple]);
+
   const filteredOptions = options.filter(option => 
     String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedOption = options.find(opt => String(opt.value) === String(value));
+  const selectedOption = !isMultiple ? options.find(opt => String(opt.value) === String(value)) : null;
 
   const handleSelect = (val) => { 
+    if (isMultiple) {
+      const strVal = String(val);
+      if (strVal === '') {
+        onChange([]);
+        return;
+      }
+      let updated;
+      if (selectedValues.includes(strVal)) {
+        updated = selectedValues.filter(v => v !== strVal);
+      } else {
+        updated = [...selectedValues, strVal];
+      }
+      onChange(updated);
+      return;
+    }
+
     onChange(val);
     setIsOpen(false);
     setSearchTerm('');
+  };
+
+  const handleRemoveItem = (val, e) => {
+    e?.stopPropagation();
+    if (!isMultiple) return;
+    const strVal = String(val);
+    const updated = selectedValues.filter(v => v !== strVal);
+    onChange(updated);
   };
 
   const trimmedSearch = searchTerm.trim();
@@ -138,9 +171,13 @@ export default function Select({
     if (onCreateOption) {
       onCreateOption(trimmedSearch);
     } else {
-      onChange(trimmedSearch);
+      if (isMultiple) {
+        onChange([...selectedValues, trimmedSearch]);
+      } else {
+        onChange(trimmedSearch);
+      }
     }
-    setIsOpen(false);
+    if (!isMultiple) setIsOpen(false);
     setSearchTerm('');
   };
 
@@ -155,10 +192,14 @@ export default function Select({
     if (onCreateOption) {
       onCreateOption(trimmedInput);
     } else {
-      onChange(trimmedInput);
+      if (isMultiple) {
+        onChange([...selectedValues, trimmedInput]);
+      } else {
+        onChange(trimmedInput);
+      }
     }
     setNewOptionInput('');
-    setIsOpen(false);
+    if (!isMultiple) setIsOpen(false);
     setSearchTerm('');
   };
 
@@ -166,7 +207,7 @@ export default function Select({
 
   return (
     <div className={`relative ${className}`}>
-      {name && <input type="hidden" name={name} value={value ?? ''} />}
+      {name && <input type="hidden" name={name} value={Array.isArray(value) ? value.join(',') : (value ?? '')} />}
       {label && (
         <label className="block text-sm font-semibold text-text-secondary mb-1.5">
           {label} {required && <span className="text-red-500">*</span>}
@@ -175,7 +216,7 @@ export default function Select({
       
       <div className="relative w-full" ref={triggerRef}>
         <div 
-          className={`w-full px-3 py-2 bg-input-bg text-text border ${
+          className={`w-full min-h-[40px] px-3 py-1.5 bg-input-bg text-text border ${
             error ? 'border-red-500' : 'border-border focus:border-primary/50'
           } rounded-xl text-sm outline-none transition-all flex items-center justify-between cursor-pointer ${
             disabled ? 'opacity-50 cursor-not-allowed' : 'focus:ring-2 focus:ring-primary/10'
@@ -183,15 +224,43 @@ export default function Select({
           onClick={toggleOpen}
           tabIndex={disabled ? -1 : 0}
         >
-          <div className="flex items-center gap-2 min-w-0">
-            {selectedOption?.image && (
-              <img src={selectedOption.image} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 border border-border" />
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap flex-1 py-0.5">
+            {isMultiple ? (
+              selectedValues.length > 0 ? (
+                selectedValues.map(v => {
+                  const matched = options.find(o => String(o.value) === String(v));
+                  const displayLabel = matched ? matched.label : v;
+                  return (
+                    <span 
+                      key={v}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-md border border-primary/20 max-w-[160px] truncate"
+                    >
+                      <span className="truncate">{displayLabel}</span>
+                      <span
+                        role="button"
+                        onClick={(e) => handleRemoveItem(v, e)}
+                        className="hover:bg-primary/20 rounded-full p-0.5 transition-colors cursor-pointer text-primary"
+                      >
+                        &times;
+                      </span>
+                    </span>
+                  );
+                })
+              ) : (
+                <span className="text-text-secondary truncate">{placeholder}</span>
+              )
+            ) : (
+              <>
+                {selectedOption?.image && (
+                  <img src={selectedOption.image} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 border border-border" />
+                )}
+                <span className={selectedOption || value ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
+                  {selectedOption ? selectedOption.label : (value || placeholder)}
+                </span>
+              </>
             )}
-            <span className={selectedOption || value ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
-              {selectedOption ? selectedOption.label : (value || placeholder)}
-            </span>
           </div>
-          <ChevronDown size={16} className={`text-text-secondary shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown size={16} className={`text-text-secondary shrink-0 transition-transform duration-200 ml-1.5 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </div>
 
@@ -218,34 +287,48 @@ export default function Select({
           
           <div className="overflow-y-auto flex-1 custom-scrollbar max-h-48 divide-y divide-border/20">
             {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
-                <div 
-                  key={option.value}
-                  title={option.description || option.title || option.meaning || ''}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-2.5 ${
-                    String(value) === String(option.value) ? 'bg-primary/10 text-primary font-semibold' : 'text-text'
-                  }`}
-                  onClick={() => handleSelect(option.value)}
-                >
-                  {option.image ? (
-                    <img src={option.image} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 border border-border" />
-                  ) : option.imagePlaceholder ? (
-                    <div className="w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
-                      {option.imagePlaceholder}
-                    </div>
-                  ) : null}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate">{option.label}</span>
-                    </div>
-                    {(option.sublabel || option.description || option.meaning) && (
-                      <div className="text-[11px] text-text-secondary/80 font-normal truncate mt-0.5">
-                        {option.sublabel || option.description || option.meaning}
-                      </div>
+              filteredOptions.map((option) => {
+                const isSelected = isMultiple
+                  ? selectedValues.includes(String(option.value))
+                  : String(value) === String(option.value);
+
+                return (
+                  <div 
+                    key={option.value}
+                    title={option.description || option.title || option.meaning || ''}
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-2.5 ${
+                      isSelected ? 'bg-primary/10 text-primary font-semibold' : 'text-text'
+                    }`}
+                    onClick={() => handleSelect(option.value)}
+                  >
+                    {isMultiple && (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {}}
+                        className="rounded border-border text-primary focus:ring-primary h-4 w-4 pointer-events-none"
+                      />
                     )}
+                    {option.image ? (
+                      <img src={option.image} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 border border-border" />
+                    ) : option.imagePlaceholder ? (
+                      <div className="w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                        {option.imagePlaceholder}
+                      </div>
+                    ) : null}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate">{option.label}</span>
+                      </div>
+                      {(option.sublabel || option.description || option.meaning) && (
+                        <div className="text-[11px] text-text-secondary/80 font-normal truncate mt-0.5">
+                          {option.sublabel || option.description || option.meaning}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : showCreateOption ? (
               <div 
                 className="px-3 py-2.5 text-sm cursor-pointer bg-primary/5 hover:bg-primary/15 text-primary transition-colors flex items-center gap-2 font-medium"

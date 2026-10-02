@@ -37,17 +37,26 @@ export default function Users() {
   const [filters, setFilters] = useState({
     gender: '',
     status: '',
-    city_id: '',
-    patti_para_pargana: ''
+    state_id: [],
+    district_id: [],
+    city_id: [],
+    village: [],
+    patti_para_pargana: []
   })
   const [draftFilters, setDraftFilters] = useState({
     gender: '',
     status: '',
-    city_id: '',
-    patti_para_pargana: ''
+    state_id: [],
+    district_id: [],
+    city_id: [],
+    village: [],
+    patti_para_pargana: []
   })
   const [showFilters, setShowFilters] = useState(false)
+  const [filterStates, setFilterStates] = useState([])
+  const [filterDistricts, setFilterDistricts] = useState([])
   const [filterCities, setFilterCities] = useState([])
+  const [filterVillages, setFilterVillages] = useState([])
   const [filterPattis, setFilterPattis] = useState([])
 
   const filterGender = filters.gender || ''
@@ -181,7 +190,26 @@ export default function Users() {
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getUsersList({ page, limit, search: debouncedSearch, ...filters })
+      const cleanParams = { page, limit, search: debouncedSearch }
+      if (filters.gender) cleanParams.gender = filters.gender
+      if (filters.status !== undefined && filters.status !== '') cleanParams.status = filters.status
+      if (Array.isArray(filters.state_id) ? filters.state_id.length > 0 : filters.state_id) {
+        cleanParams.state_id = Array.isArray(filters.state_id) ? filters.state_id.join(',') : filters.state_id
+      }
+      if (Array.isArray(filters.district_id) ? filters.district_id.length > 0 : filters.district_id) {
+        cleanParams.district_id = Array.isArray(filters.district_id) ? filters.district_id.join(',') : filters.district_id
+      }
+      if (Array.isArray(filters.city_id) ? filters.city_id.length > 0 : filters.city_id) {
+        cleanParams.city_id = Array.isArray(filters.city_id) ? filters.city_id.join(',') : filters.city_id
+      }
+      if (Array.isArray(filters.village) ? filters.village.length > 0 : filters.village) {
+        cleanParams.village = Array.isArray(filters.village) ? filters.village.join(',') : filters.village
+      }
+      if (Array.isArray(filters.patti_para_pargana) ? filters.patti_para_pargana.length > 0 : filters.patti_para_pargana) {
+        cleanParams.patti_para_pargana = Array.isArray(filters.patti_para_pargana) ? filters.patti_para_pargana.join(',') : filters.patti_para_pargana
+      }
+
+      const res = await getUsersList(cleanParams)
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       const total = Number(pg.total || 0)
@@ -223,16 +251,34 @@ export default function Users() {
   useEffect(() => {
     const fetchMasters = async () => {
       try {
-        const [rolesRes, citiesRes, pattisRes] = await Promise.all([
+        const [rolesRes, statesRes, districtsRes, citiesRes, villagesRes, pattisRes] = await Promise.all([
           api.get(MEMBER_ENDPOINTS.GET_ROLES, { params: { limit: 150 } }).catch(() => ({ data: [] })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_STATE, { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_DISTRICT, { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_CITY, { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE, { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_PATTI_PARA_PARGANA, { params: { limit: 200 } }).catch(() => ({ data: { data: [] } }))
         ])
         setRoles(normalizeRoles(unwrapApiData(rolesRes)))
+
+        const stList = statesRes.data?.data || statesRes.data || []
+        if (Array.isArray(stList)) {
+          setFilterStates(stList.filter(s => s.status !== 0 && s.status !== '0'))
+        }
+
+        const dList = districtsRes.data?.data || districtsRes.data || []
+        if (Array.isArray(dList)) {
+          setFilterDistricts(dList.filter(d => d.status !== 0 && d.status !== '0'))
+        }
         
         const cList = citiesRes.data?.data || citiesRes.data || []
         if (Array.isArray(cList)) {
           setFilterCities(cList.filter(c => c.status !== 0 && c.status !== '0'))
+        }
+
+        const vList = villagesRes.data?.data || villagesRes.data || []
+        if (Array.isArray(vList)) {
+          setFilterVillages(vList.filter(v => v.status !== 0 && v.status !== '0'))
         }
 
         const pList = pattisRes.data?.data || pattisRes.data || []
@@ -777,15 +823,31 @@ export default function Users() {
 
           <FilterPopover
             isOpen={showFilters}
-            width="w-[320px] sm:w-[540px]"
+            width="w-[340px] sm:w-[580px]"
             onToggle={() => {
               setDraftFilters(filters)
               setShowFilters(!showFilters)
             }}
             onClose={() => setShowFilters(false)}
-            activeCount={(filters.gender ? 1 : 0) + (filters.status ? 1 : 0) + (filters.city_id ? 1 : 0) + (filters.patti_para_pargana ? 1 : 0)}
+            activeCount={
+              (filters.gender ? 1 : 0) +
+              (filters.status ? 1 : 0) +
+              (Array.isArray(filters.state_id) ? filters.state_id.length : (filters.state_id ? 1 : 0)) +
+              (Array.isArray(filters.district_id) ? filters.district_id.length : (filters.district_id ? 1 : 0)) +
+              (Array.isArray(filters.city_id) ? filters.city_id.length : (filters.city_id ? 1 : 0)) +
+              (Array.isArray(filters.village) ? filters.village.length : (filters.village ? 1 : 0)) +
+              (Array.isArray(filters.patti_para_pargana) ? filters.patti_para_pargana.length : (filters.patti_para_pargana ? 1 : 0))
+            }
             onClear={() => {
-              const resetObj = { gender: '', status: '', city_id: '', patti_para_pargana: '' }
+              const resetObj = {
+                gender: '',
+                status: '',
+                state_id: [],
+                district_id: [],
+                city_id: [],
+                village: [],
+                patti_para_pargana: []
+              }
               setDraftFilters(resetObj)
               setFilters(resetObj)
               setPage(1)
@@ -798,36 +860,77 @@ export default function Users() {
             }}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* State Multi-Select */}
+              <Select
+                label="State"
+                multiple={true}
+                value={draftFilters.state_id || []}
+                onChange={(val) => setDraftFilters(current => ({ ...current, state_id: val }))}
+                placeholder="All States"
+                searchable={true}
+                options={filterStates.map(s => ({
+                  label: s.state || s.name || '',
+                  value: String(s.id || s._id)
+                }))}
+              />
+
+              {/* District Multi-Select */}
+              <Select
+                label="District"
+                multiple={true}
+                value={draftFilters.district_id || []}
+                onChange={(val) => setDraftFilters(current => ({ ...current, district_id: val }))}
+                placeholder="All Districts"
+                searchable={true}
+                options={filterDistricts.map(d => ({
+                  label: d.district || d.name || '',
+                  value: String(d.id || d._id)
+                }))}
+              />
+
+              {/* City Multi-Select */}
               <Select
                 label="City"
-                value={draftFilters.city_id || ''}
+                multiple={true}
+                value={draftFilters.city_id || []}
                 onChange={(val) => setDraftFilters(current => ({ ...current, city_id: val }))}
                 placeholder="All Cities"
                 searchable={true}
-                options={[
-                  { label: 'All Cities', value: '' },
-                  ...filterCities.map(c => ({
-                    label: c.city || c.name || '',
-                    value: String(c.id || c._id)
-                  }))
-                ]}
+                options={filterCities.map(c => ({
+                  label: c.city || c.name || '',
+                  value: String(c.id || c._id)
+                }))}
               />
 
+              {/* Village Multi-Select */}
+              <Select
+                label="Village / Gam"
+                multiple={true}
+                value={draftFilters.village || []}
+                onChange={(val) => setDraftFilters(current => ({ ...current, village: val }))}
+                placeholder="All Villages"
+                searchable={true}
+                options={filterVillages.map(v => ({
+                  label: v.village || v.name || '',
+                  value: v.village || v.name || String(v.id || v._id)
+                }))}
+              />
+
+              {/* Patti / Para / Pargana Multi-Select */}
               <Select
                 label="Patti / Para / Pargana"
-                value={draftFilters.patti_para_pargana || ''}
+                multiple={true}
+                value={draftFilters.patti_para_pargana || []}
                 onChange={(val) => setDraftFilters(current => ({ ...current, patti_para_pargana: val }))}
                 placeholder="All Patti / Para / Pargana"
                 searchable={true}
-                options={[
-                  { label: 'All Patti / Para / Pargana', value: '' },
-                  ...filterPattis.map(p => ({
-                    label: p.name || p.patti_para_pargana || '',
-                    value: p.name || p.patti_para_pargana || ''
-                  }))
-                ]}
+                options={filterPattis.map(p => ({
+                  label: p.name || p.patti_para_pargana || '',
+                  value: p.name || p.patti_para_pargana || ''
+                }))}
               />
 
+              {/* Gender Select */}
               <Select
                 label="Gender"
                 value={draftFilters.gender || ''}
@@ -842,6 +945,7 @@ export default function Users() {
                 ]}
               />
 
+              {/* Status Select */}
               <Select
                 label="Status"
                 value={draftFilters.status || ''}
@@ -1029,17 +1133,44 @@ export default function Users() {
             )
           },
           {
-            key: 'patti_para_pargana',
-            header: 'Patti / Para / Pargana',
-            className: 'min-w-[150px]',
+            key: 'location',
+            header: 'Location (સ્થળ)',
+            className: 'min-w-[200px]',
             render: (user) => {
-              const val = user.patti_para_pargana || user.patti
-              return val ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                  {val}
-                </span>
-              ) : (
-                <span className="text-sm text-text-secondary opacity-50">-</span>
+              const village = user.village_name || user.village
+              const city = user.city_name || user.city
+              const district = user.district_name || user.district
+              const taluka = user.taluka_name || user.taluka
+              const patti = user.patti_name || user.patti_para_pargana || user.patti
+
+              const primaryPlace = [village, city].filter(Boolean).join(' / ')
+              const subPlace = [taluka, district].filter(Boolean).join(', ')
+
+              if (!primaryPlace && !subPlace && !patti) {
+                return <span className="text-sm text-text-secondary opacity-50">-</span>
+              }
+
+              return (
+                <div className="flex flex-col gap-1 text-xs">
+                  {primaryPlace && (
+                    <div className="font-semibold text-text flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span>{primaryPlace}</span>
+                    </div>
+                  )}
+                  {subPlace && (
+                    <div className="text-text-secondary pl-5 text-[11px]">
+                      {subPlace}
+                    </div>
+                  )}
+                  {patti && (
+                    <div className="pl-5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                        {patti}
+                      </span>
+                    </div>
+                  )}
+                </div>
               )
             }
           },
@@ -1984,6 +2115,7 @@ export default function Users() {
                           <th className="p-3.5">Relationship</th>
                           <th className="p-3.5">Gender</th>
                           <th className="p-3.5">Mobile Number</th>
+                          <th className="p-3.5">Location</th>
                           <th className="p-3.5 text-center">Status</th>
                         </tr>
                       </thead>
@@ -2020,6 +2152,11 @@ export default function Users() {
                             )
 
                             const isHeadMember = member.relation === 'Self' || member.familyHead
+                            const locStr = [
+                              member.village_name || member.village,
+                              member.city_name || member.city,
+                              member.district_name || member.district
+                            ].filter(Boolean).join(', ')
 
                             return (
                               <tr 
@@ -2069,13 +2206,14 @@ export default function Users() {
                                       Family Head (મુખ્ય)
                                     </span>
                                   ) : (
-                                    <span className="px-2 py-0.5 rounded-md bg-surface-secondary text-text border border-border/60 text-xs font-medium">
+                                    <span className="px-2.5 py-0.5 rounded-md bg-surface-secondary text-text border border-border/60 text-xs font-medium">
                                       {getRelationDisplay(member.relation === 'Spouse' ? 'Wife' : member.relation)}
                                     </span>
                                   )}
                                 </td>
                                 <td className="p-3.5 text-text-secondary">{member.gender || '-'}</td>
                                 <td className="p-3.5 text-text-secondary font-mono text-xs">{member.number || member.phone || '-'}</td>
+                                <td className="p-3.5 text-text-secondary text-xs">{locStr || '-'}</td>
                                 <td className="p-3.5 text-center">
                                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${Number(member.status ?? 1) === 1 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-surface-secondary text-text-secondary'}`}>
                                     {Number(member.status ?? 1) === 1 ? 'Active' : 'Inactive'}

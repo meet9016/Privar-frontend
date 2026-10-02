@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { Filter, X, Check, RotateCcw } from 'lucide-react'
 
 export default function FilterPopover({
@@ -10,11 +11,11 @@ export default function FilterPopover({
   onClear,
   onApply,
   children,
-  width = 'w-[300px]',
+  width = 'w-[320px] sm:w-[580px]',
   className = ''
 }) {
   return (
-    <div className={`relative z-30 ${className}`}>
+    <div className={`relative ${className}`}>
       {/* Trigger Button */}
       <button
         type="button"
@@ -34,20 +35,20 @@ export default function FilterPopover({
         )}
       </button>
 
-      {isOpen && (
-        <>
-          {/* Backdrop Overlay to close on outside click */}
+      {isOpen && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+          {/* Full Screen Backdrop with Blur to cover sticky header and whole body */}
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity duration-200"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-200"
             onClick={onClose}
           />
 
-          {/* Modern Sleek Filter Card */}
+          {/* Centered Modal Card */}
           <div
-            className={`absolute right-0 top-full mt-2 ${width} bg-surface border border-border rounded-xl shadow-2xl z-50 animate-fade-in overflow-hidden`}
+            className={`relative ${width} max-w-[95vw] bg-card border border-border rounded-2xl shadow-glass-xl z-50 animate-fade-in overflow-hidden flex flex-col max-h-[85vh]`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">
+            <div className="flex items-center justify-between px-5 py-3.5 bg-surface border-b border-border shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-text">{title}</span>
                 {activeCount > 0 && (
@@ -85,12 +86,12 @@ export default function FilterPopover({
             </div>
 
             {/* Filter Content */}
-            <div className="p-4 space-y-3.5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
               {children}
             </div>
 
             {/* Footer with Clear & Apply */}
-            <div className="px-4 py-3 bg-surface-secondary/40 border-t border-border flex items-center gap-2">
+            <div className="px-5 py-3.5 bg-surface-secondary/40 border-t border-border flex items-center gap-2.5 shrink-0">
               {onClear && (
                 <button
                   type="button"
@@ -101,7 +102,7 @@ export default function FilterPopover({
                       console.error('Error clearing filters:', err)
                     }
                   }}
-                  className="flex-1 py-2 px-3 text-xs font-semibold rounded-lg bg-surface hover:bg-surface-secondary border border-border text-text-secondary hover:text-text transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.99]"
+                  className="flex-1 py-2.5 px-3 text-xs font-semibold rounded-xl bg-card hover:bg-surface-secondary border border-border text-text-secondary hover:text-text transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.99]"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Clear
                 </button>
@@ -116,13 +117,14 @@ export default function FilterPopover({
                     console.error('Error applying filters:', err)
                   }
                 }}
-                className={`${onClear ? 'flex-1' : 'w-full'} py-2 px-4 text-xs font-bold rounded-lg bg-primary hover:bg-primary-hover text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]`}
+                className={`${onClear ? 'flex-1' : 'w-full'} py-2.5 px-4 text-xs font-bold rounded-xl bg-primary hover:bg-primary-hover text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]`}
               >
                 <Check className="w-3.5 h-3.5" /> Apply Filters
               </button>
             </div>
           </div>
-        </>
+        </div>,
+        document.body
       )}
     </div>
   )
