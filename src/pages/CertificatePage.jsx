@@ -321,55 +321,7 @@ async function downloadAsPDF(ref, filename, options = {}) {
     })
   }
 
-  // Method 1: Backend Puppeteer API Generation (Primary - standard API integration)
-  try {
-    const clone = rootElement.cloneNode(true)
-    
-    // Ensure all input values from the actual live DOM are correctly mapped to attributes in the clone
-    const origInputs = rootElement.querySelectorAll('input, textarea, select')
-    const cloneInputs = clone.querySelectorAll('input, textarea, select')
-    origInputs.forEach((origEl, i) => {
-      const cloneEl = cloneInputs[i]
-      if (cloneEl) {
-        if (origEl.tagName === 'TEXTAREA') {
-          cloneEl.textContent = origEl.value || ''
-        } else if (origEl.tagName === 'INPUT') {
-          cloneEl.setAttribute('value', origEl.value || '')
-        } else if (origEl.tagName === 'SELECT') {
-          cloneEl.setAttribute('value', origEl.value || '')
-        }
-      }
-    })
-
-    const response = await api.post(
-      '/certificates/generate-pdf',
-      { html: clone.outerHTML, filename: safeFilename, pageRanges: options.pageRanges },
-      { headers: { 'Content-Type': 'application/json' }, responseType: 'blob', timeout: 35000 }
-    )
-
-    if (response.data) {
-      const blob = new Blob([response.data], { type: 'application/pdf' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${safeFilename}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
-      if (guideLines && guideLines.length > 0) {
-        guideLines.forEach((el, idx) => {
-          el.style.backgroundImage = originalBgs[idx] || ''
-        })
-      }
-      return
-    }
-  } catch (backendErr) {
-    console.warn('Backend PDF API call encountered issue, switching to instant client renderer:', backendErr)
-  }
-
-  // Method 2: Fast Client-side html2canvas + jsPDF Fallback
+  // Method 1: Fast Client-side html2canvas + jsPDF (Instant 100-200ms render)
   try {
     const pageElements = rootElement.querySelectorAll('.certificate-page')
     const targets = pageElements.length > 0 ? Array.from(pageElements) : [rootElement]
@@ -396,7 +348,7 @@ async function downloadAsPDF(ref, filename, options = {}) {
         height: elHeight,
       })
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95)
+      const imgData = canvas.toDataURL('image/jpeg', 0.92)
       const pdfWidth = 210
       const pdfHeight = (elHeight / elWidth) * 210
 
@@ -419,53 +371,53 @@ async function downloadAsPDF(ref, filename, options = {}) {
     pdf.save(`${safeFilename}.pdf`)
     return
   } catch (canvasErr) {
-    console.warn('html2canvas method failed, trying html-to-image:', canvasErr)
+    console.warn('Fast canvas method failed, trying backend renderer:', canvasErr)
   }
 
-  // Method 3: html-to-image fallback
+  // Method 2: Backend Puppeteer API Fallback
   try {
-    const pageElements = rootElement.querySelectorAll('.certificate-page')
-    const targets = pageElements.length > 0 ? Array.from(pageElements) : [rootElement]
-    const fontCSS = await getCachedFontCSS(rootElement)
-
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-
-    for (let i = 0; i < targets.length; i++) {
-      const element = targets[i]
-      const elWidth = element.offsetWidth || 650
-      const elHeight = element.offsetHeight || 920
-
-      const imgData = await toJpeg(element, {
-        quality: 0.95,
-        pixelRatio: 2,
-        fontEmbedCSS: fontCSS || undefined,
-        width: elWidth,
-        height: elHeight,
-      })
-
-      const pdfWidth = 210
-      const pdfHeight = (elHeight / elWidth) * 210
-
-      if (i > 0) {
-        pdf.addPage([pdfWidth, pdfHeight], 'portrait')
-      } else {
-        pdf.deletePage(1)
-        pdf.addPage([pdfWidth, pdfHeight], 'portrait')
+    const clone = rootElement.cloneNode(true)
+    const origInputs = rootElement.querySelectorAll('input, textarea, select')
+    const cloneInputs = clone.querySelectorAll('input, textarea, select')
+    origInputs.forEach((origEl, i) => {
+      const cloneEl = cloneInputs[i]
+      if (cloneEl) {
+        if (origEl.tagName === 'TEXTAREA') {
+          cloneEl.textContent = origEl.value || ''
+        } else if (origEl.tagName === 'INPUT') {
+          cloneEl.setAttribute('value', origEl.value || '')
+        } else if (origEl.tagName === 'SELECT') {
+          cloneEl.setAttribute('value', origEl.value || '')
+        }
       }
+    })
 
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight)
+    const response = await api.post(
+      '/certificates/generate-pdf',
+      { html: clone.outerHTML, filename: safeFilename, pageRanges: options.pageRanges },
+      { headers: { 'Content-Type': 'application/json' }, responseType: 'blob', timeout: 15000 }
+    )
+
+    if (response.data) {
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${safeFilename}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      if (guideLines && guideLines.length > 0) {
+        guideLines.forEach((el, idx) => {
+          el.style.backgroundImage = originalBgs[idx] || ''
+        })
+      }
+      return
     }
-
-    if (guideLines && guideLines.length > 0) {
-      guideLines.forEach((el, idx) => {
-        el.style.backgroundImage = originalBgs[idx] || ''
-      })
-    }
-
-    pdf.save(`${safeFilename}.pdf`)
-  } catch (htmlToImgErr) {
-    console.error('All PDF download pipelines failed:', htmlToImgErr)
-    toast.error('PDF download failed. Please try again.')
+  } catch (backendErr) {
+    console.warn('Backend PDF API call encountered issue:', backendErr)
   }
 }
 
