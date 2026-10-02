@@ -311,17 +311,159 @@ async function downloadAsPDF(ref, filename, options = {}) {
   const rootElement = ref.current
   const safeFilename = filename || 'Certificate'
 
-  // Clean elements & prepare HTML for backend PDF generation
-  const guideLines = rootElement.querySelectorAll?.('.letterhead-guide-lines')
-  const originalBgs = []
-  if (guideLines && guideLines.length > 0) {
-    guideLines.forEach((el, idx) => {
-      originalBgs[idx] = el.style.backgroundImage
+  // Method 1: High-Fidelity 1:1 Vector PDF via Backend Puppeteer/Chromium (Primary)
+  try {
+    const clone = rootElement.cloneNode(true)
+
+    // 1. Convert all <img> elements in clone to embedded Base64 Data URLs so Puppeteer has zero broken/relative images
+    const origImages = rootElement.querySelectorAll('img')
+    const cloneImages = clone.querySelectorAll('img')
+    origImages.forEach((img, i) => {
+      const cloneImg = cloneImages[i]
+      if (!cloneImg || !img.src) return
+
+      if (img.src.startsWith('data:')) {
+        cloneImg.src = img.src
+        return
+      }
+
+      try {
+        if (img.complete && (img.naturalWidth > 0 || img.width > 0)) {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.naturalWidth || img.width || 120
+          canvas.height = img.naturalHeight || img.height || 120
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          cloneImg.src = canvas.toDataURL('image/png')
+          return
+        }
+      } catch (e) {
+        // Tainted canvas fallback
+      }
+
+      // Fallback: Ensure URL is fully qualified with origin so Puppeteer can reach it
+      if (img.src.startsWith('/') || !img.src.startsWith('http')) {
+        try {
+          cloneImg.src = new URL(img.getAttribute('src') || img.src, window.location.origin).href
+        } catch (_) {
+          cloneImg.src = img.src
+        }
+      } else {
+        cloneImg.src = img.src
+      }
+    })
+
+    // 2. Convert <textarea> elements into clean styled <div> blocks preserving exact typography & line breaks
+    const origTextareas = rootElement.querySelectorAll('textarea')
+    const cloneTextareas = clone.querySelectorAll('textarea')
+    origTextareas.forEach((ta, i) => {
+      const cloneTa = cloneTextareas[i]
+      if (!cloneTa) return
+      const div = document.createElement('div')
+      div.style.cssText = ta.style.cssText
+      div.style.whiteSpace = 'pre-wrap'
+      div.style.wordBreak = 'break-word'
+      div.style.display = 'block'
+      div.style.border = 'none'
+      div.style.outline = 'none'
+      div.style.background = 'transparent'
+      div.style.color = '#0f172a'
+      div.textContent = ta.value || ''
+      cloneTa.parentNode.replaceChild(div, cloneTa)
+    })
+
+    // 3. Convert <input> elements into clean styled <span> blocks preserving exact typography
+    const origInputs = rootElement.querySelectorAll('input')
+    const cloneInputs = clone.querySelectorAll('input')
+    origInputs.forEach((inp, i) => {
+      const cloneInp = cloneInputs[i]
+      if (!cloneInp) return
+      if (inp.type === 'file') {
+        cloneInp.remove()
+        return
+      }
+      const span = document.createElement('span')
+      span.style.cssText = inp.style.cssText
+      span.style.display = 'inline-flex'
+      span.style.alignItems = 'center'
+      span.style.border = 'none'
+      span.style.outline = 'none'
+      span.style.background = 'transparent'
+      span.textContent = inp.value || ''
+      cloneInp.parentNode.replaceChild(span, cloneInp)
+    })
+
+    // 4. Remove screen-only guide lines background
+    clone.querySelectorAll('.letterhead-guide-lines').forEach((el) => {
       el.style.backgroundImage = 'none'
     })
+
+    // Helper to trigger browser file download from Blob
+    const triggerBlobDownload = (blobData, downloadFilename) => {
+      const blob = blobData instanceof Blob ? blobData : new Blob([blobData], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.style.display = 'none'
+      link.href = url
+      link.setAttribute('download', `${downloadFilename}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      setTimeout(() => {
+        try {
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+        } catch (_) {}
+      }, 60000)
+    }
+
+    // Attempt 1: Fetch directly from backend generate-pdf
+    try {
+      const res = await fetch(`${API_BASE}/api/certificates/generate-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('auth_token') ? { Authorization: `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+        },
+        body: JSON.stringify({
+          html: clone.outerHTML,
+          filename: safeFilename,
+          pageRanges: options.pageRanges,
+        }),
+      })
+
+      if (res.ok) {
+        const blob = await res.blob()
+        triggerBlobDownload(blob, safeFilename)
+        return
+      }
+    } catch (fetchErr) {
+      console.warn('Direct fetch to generate-pdf failed, trying axios api instance:', fetchErr)
+    }
+
+    // Attempt 2: Axios api client
+    const response = await api.post(
+      '/certificates/generate-pdf',
+      {
+        html: clone.outerHTML,
+        filename: safeFilename,
+        pageRanges: options.pageRanges,
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+        responseType: 'blob',
+        timeout: 45000,
+      }
+    )
+
+    if (response.data) {
+      triggerBlobDownload(response.data, safeFilename)
+      return
+    }
+  } catch (backendErr) {
+    console.warn('Backend Puppeteer renderer encountered an issue, falling back to client-side generator:', backendErr)
   }
 
-  // Method 1: Fast Client-side html2canvas + jsPDF (Instant 100-200ms render)
+  // Method 2: Emergency Client-Side Fallback (only if backend is unreachable)
   try {
     const pageElements = rootElement.querySelectorAll('.certificate-page')
     const targets = pageElements.length > 0 ? Array.from(pageElements) : [rootElement]
@@ -339,7 +481,7 @@ async function downloadAsPDF(ref, filename, options = {}) {
       const elHeight = element.offsetHeight || 920
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -348,76 +490,24 @@ async function downloadAsPDF(ref, filename, options = {}) {
         height: elHeight,
       })
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.92)
+      const imgData = canvas.toDataURL('image/jpeg', 0.98)
       const pdfWidth = 210
-      const pdfHeight = (elHeight / elWidth) * 210
+      const pdfHeight = 297
 
       if (i > 0) {
-        pdf.addPage([pdfWidth, pdfHeight], 'portrait')
+        pdf.addPage('a4', 'portrait')
       } else {
         pdf.deletePage(1)
-        pdf.addPage([pdfWidth, pdfHeight], 'portrait')
+        pdf.addPage('a4', 'portrait')
       }
 
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST')
     }
 
-    if (guideLines && guideLines.length > 0) {
-      guideLines.forEach((el, idx) => {
-        el.style.backgroundImage = originalBgs[idx] || ''
-      })
-    }
-
     pdf.save(`${safeFilename}.pdf`)
-    return
   } catch (canvasErr) {
-    console.warn('Fast canvas method failed, trying backend renderer:', canvasErr)
-  }
-
-  // Method 2: Backend Puppeteer API Fallback
-  try {
-    const clone = rootElement.cloneNode(true)
-    const origInputs = rootElement.querySelectorAll('input, textarea, select')
-    const cloneInputs = clone.querySelectorAll('input, textarea, select')
-    origInputs.forEach((origEl, i) => {
-      const cloneEl = cloneInputs[i]
-      if (cloneEl) {
-        if (origEl.tagName === 'TEXTAREA') {
-          cloneEl.textContent = origEl.value || ''
-        } else if (origEl.tagName === 'INPUT') {
-          cloneEl.setAttribute('value', origEl.value || '')
-        } else if (origEl.tagName === 'SELECT') {
-          cloneEl.setAttribute('value', origEl.value || '')
-        }
-      }
-    })
-
-    const response = await api.post(
-      '/certificates/generate-pdf',
-      { html: clone.outerHTML, filename: safeFilename, pageRanges: options.pageRanges },
-      { headers: { 'Content-Type': 'application/json' }, responseType: 'blob', timeout: 15000 }
-    )
-
-    if (response.data) {
-      const blob = new Blob([response.data], { type: 'application/pdf' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${safeFilename}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
-      if (guideLines && guideLines.length > 0) {
-        guideLines.forEach((el, idx) => {
-          el.style.backgroundImage = originalBgs[idx] || ''
-        })
-      }
-      return
-    }
-  } catch (backendErr) {
-    console.warn('Backend PDF API call encountered issue:', backendErr)
+    console.error('All PDF generation methods failed:', canvasErr)
+    throw canvasErr
   }
 }
 
@@ -908,7 +998,7 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
                 paddingLeft: 8,
               }}
             >
-              🤵 ૧. દુલ્હા (વરરાજા) ની વિગત (Groom Details)
+              🤵 ૧. દુલ્હા  ની વિગત (Groom Details)
             </h3>
             <div
               style={{
@@ -1013,7 +1103,7 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
                 paddingLeft: 8,
               }}
             >
-              👰 ૨. દુલ્હન (કન્યા) ની વિગત (Bride Details)
+              👰 ૨. દુલ્હન ની વિગત (Bride Details)
             </h3>
             <div
               style={{
@@ -2453,9 +2543,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
               </div>
 
               <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ color: '#d31515', fontWeight: 900, fontSize: 12, letterSpacing: 1.5 }}>
-                  ★ બિસ્મિહી તઆલા ★
-                </div>
+     
                 <div
                   style={{
                     fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif',
@@ -2618,7 +2706,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
 
           {/* 1. Groom (દુલ્હા) Section with Photo */}
           <div style={{ background: '#ffffff', border: '1.5px solid #93c5fd', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            {sectionTitle('૧', 'દુલ્હા (વરરાજા) ની વિગત :', '#eff6ff', '#bfdbfe', '#1e40af', '#dbeafe', '#1e40af')}
+            {sectionTitle('૧', 'દુલ્હા  ની વિગત :', '#eff6ff', '#bfdbfe', '#1e40af', '#dbeafe', '#1e40af')}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -2644,7 +2732,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {underField('dulhaVatan', 1)}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું / સ્થિતિ:</span>
+                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું :</span>
                   {underField('dulhaAddress', 1)}
                   <span style={{ fontSize: 11, fontWeight: 900, color: '#15803d', background: '#dcfce7', padding: '1px 6px', borderRadius: 3 }}>
                     {data.dulhaMaritalStatus || 'પ્રથમ નિકાહ'}
@@ -2682,7 +2770,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
 
           {/* 2. Bride (દુલ્હન) Section with Photo */}
           <div style={{ background: '#ffffff', border: '1.5px solid #fca5a5', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            {sectionTitle('૨', 'દુલ્હન (કન્યા) ની વિગત :', '#fef2f2', '#fecaca', '#991b1b', '#fee2e2', '#991b1b')}
+            {sectionTitle('૨', 'દુલ્હન  ની વિગત :', '#fef2f2', '#fecaca', '#991b1b', '#fee2e2', '#991b1b')}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -2708,7 +2796,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {underField('dulhanVatan', 1)}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું / સ્થિતિ:</span>
+                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું :</span>
                   {underField('dulhanAddress', 1)}
                   <span style={{ fontSize: 11, fontWeight: 900, color: '#be123c', background: '#ffe4e6', padding: '1px 6px', borderRadius: 3 }}>
                     {data.dulhanMaritalStatus || 'પ્રથમ નિકાહ'}
@@ -2901,7 +2989,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
           {/* 7. Legal Declarations, Jamaat Constitution & Discipline Clauses */}
           <div style={{ background: '#ffffff', border: '2px solid #1b5e20', borderRadius: 6, padding: '8px 10px', fontSize: 11, lineHeight: '16.5px', color: '#111', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div style={{ color: '#991b1b', fontWeight: 900, fontSize: 12, textAlign: 'center', borderBottom: '1px solid #ddd', paddingBottom: 3, marginBottom: 5 }}>
-              ૭. કાનૂની ઘોષણા, સમાજનું બંધારણ અને શિસ્ત અંગેની શરતો
+              ૭.  સમાજનું બંધારણ અને શિસ્ત અંગેની શરતો
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div>
@@ -2911,10 +2999,10 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                 <strong style={{ color: '#166534' }}>૨. કાયદેસર પુખ્તતા:</strong> બંને પક્ષકારો ભારત સરકારના પ્રવર્તમાન લગ્ન કાયદા મુજબ લગ્નની કાયદેસર ઉંમર ધરાવે છે અને દર્શાવેલ વિગતો તથા ઓળખના પુરાવા સંપૂર્ણ સાચા છે.
               </div>
               <div>
-                <strong style={{ color: '#166534' }}>૩. જમાઅતના બંધારણનું પાલન:</strong> બંને પક્ષકારો તથા તેમના વાલીઓ 'રાધનપુર થરાદી મેમન જમાઅત' ના પ્રવર્તમાન બંધારણ, નીતિ-નિયમો, સામાજિક રિવાજો અને શિસ્તબદ્ધ નિર્ણયોનું ચુસ્તપણે પાલન કરવા સહમત થાય છે.
+                <strong style={{ color: '#166534' }}>૩. જમાઅતના બંધારણનું પાલન:</strong> બંને પક્ષકારો તથા તેમના વાલીઓ 'UTMC જમાઅત' ના પ્રવર્તમાન બંધારણ, નીતિ-નિયમો, સામાજિક રિવાજો અને શિસ્તબદ્ધ નિર્ણયોનું ચુસ્તપણે પાલન કરવા સહમત થાય છે.
               </div>
               <div>
-                <strong style={{ color: '#166534' }}>૪. વિવાદ નિવારણ અને સમાધાન:</strong> દાંપત્ય જીવન દરમિયાન જો કોઈ ગેરસમજ કે પારિવારિક મતભેદ ઉપસ્થિત થાય, તો કોઈપણ પક્ષકાર સીધા પોલીસ સ્ટેશન કે કોર્ટ-કચેરીના પગલાં ભરશે નહીં. સૌપ્રથમ 'રાધનપુર થરાદી મેમન જમાઅત' ની કારોબારી/પંચાયત સમિતિ સમક્ષ લેખિત રજૂઆત કરી આપસી સુખદ સમાધાન મેળવવા બંધાયેલા રહેશે.
+                <strong style={{ color: '#166534' }}>૪. વિવાદ નિવારણ અને સમાધાન:</strong> દાંપત્ય જીવન દરમિયાન જો કોઈ ગેરસમજ કે પારિવારિક મતભેદ ઉપસ્થિત થાય, તો કોઈપણ પક્ષકાર સીધા પોલીસ સ્ટેશન કે કોર્ટ-કચેરીના પગલાં ભરશે નહીં. સૌપ્રથમ સ્થાનિક ની કારોબારી સમિતિ સમક્ષ લેખિત રજૂઆત કરી આપસી સુખદ સમાધાન મેળવવા બંધાયેલા રહેશે.
               </div>
               <div>
                 <strong style={{ color: '#166534' }}>૫. સત્તાવાર દસ્તાવેજ:</strong> આ પ્રમાણપત્ર મુસ્લિમ પર્સનલ લો (શરીઅત) તથા 'ધ ગુજરાત રજીસ્ટ્રેશન ઓફ મેરેજીસ એક્ટ' અન્વયે જમાઅતના અધિકૃત દસ્તાવેજ તરીકે માન્ય રહેશે.
@@ -2933,12 +3021,10 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
               <div style={{ width: '30%' }}>
                 <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
                 <strong style={{ color: '#0d2366', fontSize: 12 }}>દુલ્હાની સહી</strong>
-                <div style={{ fontSize: 10, color: '#666', marginTop: 1 }}>(અથવા ડાબા હાથનો અંગૂઠો)</div>
               </div>
               <div style={{ width: '30%' }}>
                 <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
                 <strong style={{ color: '#991b1b', fontSize: 12 }}>દુલ્હનની સહી</strong>
-                <div style={{ fontSize: 10, color: '#666', marginTop: 1 }}>(અથવા ડાબા હાથનો અંગૂઠો)</div>
               </div>
               <div style={{ width: '30%' }}>
                 <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
@@ -5130,7 +5216,9 @@ export default function CertificatePage() {
   const [saveStatus, setSaveStatus] = useState(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadingRecordId, setDownloadingRecordId] = useState(null)
+  const [printingRecord, setPrintingRecord] = useState(null)
   const printRef = useRef(null)
+  const tablePrintRef = useRef(null)
 
   // Switch tab in URL
   const handleTabChange = (tabKey) => {
@@ -5312,6 +5400,7 @@ export default function CertificatePage() {
   // Exact PDF download with instant capture & view sync
   const handleDownload = async () => {
     setDownloading(true)
+    const toastId = toast.loading('Generating and downloading certificate PDF...')
     try {
       const names = {
         marriage: `Marriage-Certificate-${formData.marriage.number || 'New'}`,
@@ -5319,8 +5408,12 @@ export default function CertificatePage() {
         noc: `NOC-Certificate-${formData.noc.number || 'New'}`,
       }
       await downloadAsPDF(printRef, names[activeTab], { pageRanges: activeTab === 'letterhead' ? undefined : '1-2' })
+      toast.dismiss(toastId)
+      toast.success('Certificate PDF downloaded successfully!')
     } catch (e) {
       console.error('PDF download error:', e)
+      toast.dismiss(toastId)
+      toast.error('Download failed. Please try again.')
     } finally {
       setDownloading(false)
     }
@@ -5332,9 +5425,6 @@ export default function CertificatePage() {
     setDownloadingRecordId(record._id)
     const toastId = toast.loading(`Downloading certificate (1 of 1)...`)
     try {
-      const prevFormData = formData
-      const prevEditingId = editingRecordId
-
       let currentRecData = record.data || {}
       if (record._id && !String(record._id).startsWith('rec_')) {
         try {
@@ -5345,26 +5435,23 @@ export default function CertificatePage() {
         } catch (_) { }
       }
 
-      // Load targeted record data into state
-      setFormData((prev) => ({
-        ...prev,
-        [record.type]: { ...(defaultData[record.type] || {}), ...currentRecData },
-      }))
+      const recType = record.type || activeTab
+      const mergedData = { ...(defaultData[recType] || {}), ...currentRecData }
 
-      // Give React a tick to flush state update
-      await new Promise((r) => setTimeout(r, 60))
+      // Set target record in dedicated offscreen table printing state
+      setPrintingRecord({ type: recType, data: mergedData })
+
+      // Give React time to flush state update to DOM
+      await new Promise((r) => setTimeout(r, 120))
 
       const names = {
-        marriage: `Marriage-Certificate-${record.certificateNumber || currentRecData?.number || 'Record'}`,
-        letterhead: `Letterhead-${record.primaryName || currentRecData?.refNumber || 'Record'}`,
-        noc: `NOC-Certificate-${record.certificateNumber || currentRecData?.number || 'Record'}`,
+        marriage: `Marriage-Certificate-${record.certificateNumber || mergedData?.number || 'Record'}`,
+        letterhead: `Letterhead-${record.primaryName || mergedData?.refNumber || 'Record'}`,
+        noc: `NOC-Certificate-${record.certificateNumber || mergedData?.number || 'Record'}`,
       }
 
-      await downloadAsPDF(printRef, names[record.type] || 'Certificate', { pageRanges: record.type === 'letterhead' ? undefined : '1-2' })
+      await downloadAsPDF(tablePrintRef, names[recType] || 'Certificate', { pageRanges: recType === 'letterhead' ? undefined : '1-2' })
 
-      // Restore form state
-      setFormData(prevFormData)
-      setEditingRecordId(prevEditingId)
       toast.dismiss(toastId)
       toast.success('Certificate downloaded successfully!')
     } catch (e) {
@@ -5372,6 +5459,7 @@ export default function CertificatePage() {
       toast.dismiss(toastId)
       toast.error('Download failed, please try again.')
     } finally {
+      setPrintingRecord(null)
       setDownloadingRecordId(null)
     }
   }
@@ -5380,11 +5468,7 @@ export default function CertificatePage() {
   const handleBulkDownloadRecords = async (recordsToDownload) => {
     if (!Array.isArray(recordsToDownload) || recordsToDownload.length === 0) return
     const totalCount = recordsToDownload.length
-    const prevFormData = formData
-    const prevEditingId = editingRecordId
-
     const toastId = toast.loading(`Downloading: 0 of ${totalCount} certificates...`)
-
     let downloadedCount = 0
 
     for (let i = 0; i < totalCount; i++) {
@@ -5401,21 +5485,21 @@ export default function CertificatePage() {
           } catch (_) { }
         }
 
-        setFormData((prev) => ({
-          ...prev,
-          [rec.type]: { ...(defaultData[rec.type] || {}), ...currentRecData },
-        }))
+        const recType = rec.type || activeTab
+        const mergedData = { ...(defaultData[recType] || {}), ...currentRecData }
 
-        // Wait for React to flush state to printRef
-        await new Promise((r) => setTimeout(r, 80))
+        setPrintingRecord({ type: recType, data: mergedData })
+
+        // Wait for React to flush state to tablePrintRef
+        await new Promise((r) => setTimeout(r, 120))
 
         const names = {
-          marriage: `Marriage-Certificate-${rec.certificateNumber || currentRecData?.number || i + 1}`,
-          letterhead: `Letterhead-${rec.primaryName || currentRecData?.refNumber || i + 1}`,
-          noc: `NOC-Certificate-${rec.certificateNumber || currentRecData?.number || i + 1}`,
+          marriage: `Marriage-Certificate-${rec.certificateNumber || mergedData?.number || i + 1}`,
+          letterhead: `Letterhead-${rec.primaryName || mergedData?.refNumber || i + 1}`,
+          noc: `NOC-Certificate-${rec.certificateNumber || mergedData?.number || i + 1}`,
         }
 
-        await downloadAsPDF(printRef, names[rec.type] || `Certificate-${i + 1}`, { pageRanges: rec.type === 'letterhead' ? undefined : '1-2' })
+        await downloadAsPDF(tablePrintRef, names[recType] || `Certificate-${i + 1}`, { pageRanges: recType === 'letterhead' ? undefined : '1-2' })
         downloadedCount++
         toast.loading(`Downloading: ${downloadedCount} of ${totalCount} certificates...`, { id: toastId })
         await new Promise((r) => setTimeout(r, 150))
@@ -5424,8 +5508,7 @@ export default function CertificatePage() {
       }
     }
 
-    setFormData(prevFormData)
-    setEditingRecordId(prevEditingId)
+    setPrintingRecord(null)
     setDownloadingRecordId(null)
     toast.dismiss(toastId)
     toast.success(`Successfully downloaded ${downloadedCount} of ${totalCount} certificate(s)!`)
@@ -5597,6 +5680,47 @@ export default function CertificatePage() {
           </div>
         </div>
       </Modal>
+
+      {/* Off-screen Print Container for Table / Bulk Record Downloads */}
+      <div
+        style={{
+          position: 'fixed',
+          left: '-99999px',
+          top: '-99999px',
+          zIndex: -9999,
+          pointerEvents: 'none',
+          opacity: 0,
+          width: '650px',
+        }}
+      >
+        <div style={{ width: '650px' }}>
+          {printingRecord && (
+            <>
+              {printingRecord.type === 'marriage' && (
+                <MarriageCertificateSheet
+                  data={printingRecord.data}
+                  onChange={() => {}}
+                  printRef={tablePrintRef}
+                />
+              )}
+              {printingRecord.type === 'letterhead' && (
+                <LetterheadSheet
+                  data={printingRecord.data}
+                  onChange={() => {}}
+                  printRef={tablePrintRef}
+                />
+              )}
+              {printingRecord.type === 'noc' && (
+                <NocSheet
+                  data={printingRecord.data}
+                  onChange={() => {}}
+                  printRef={tablePrintRef}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Print Container with true dimensions for Instant Ultra-Fast PDF Generation (Off-screen, Zero Blinking) */}
       <div
