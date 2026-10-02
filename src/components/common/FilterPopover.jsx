@@ -1,5 +1,4 @@
-import React from 'react'
-import { createPortal } from 'react-dom'
+import React, { useEffect, useRef } from 'react'
 import { Filter, X, Check, RotateCcw } from 'lucide-react'
 
 export default function FilterPopover({
@@ -14,8 +13,25 @@ export default function FilterPopover({
   width = 'w-[320px] sm:w-[580px]',
   className = ''
 }) {
+  const containerRef = useRef(null)
+
+  // Handle ESC key to close
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen && onClose) {
+        onClose()
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose])
+
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} ref={containerRef}>
       {/* Trigger Button */}
       <button
         type="button"
@@ -35,17 +51,17 @@ export default function FilterPopover({
         )}
       </button>
 
-      {isOpen && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-          {/* Full Screen Backdrop with Blur to cover sticky header and whole body */}
+      {isOpen && (
+        <>
+          {/* Click Outside Overlay */}
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-200"
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
             onClick={onClose}
           />
 
-          {/* Centered Modal Card */}
+          {/* Popover anchored directly below the filter button */}
           <div
-            className={`relative ${width} max-w-[95vw] bg-card border border-border rounded-2xl shadow-glass-xl z-50 animate-fade-in overflow-hidden flex flex-col max-h-[85vh]`}
+            className={`absolute top-full right-0 mt-2.5 ${width} max-w-[92vw] bg-card border border-border/90 rounded-2xl shadow-2xl z-50 animate-fade-in overflow-hidden flex flex-col max-h-[85vh]`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3.5 bg-surface border-b border-border shrink-0">
@@ -123,8 +139,7 @@ export default function FilterPopover({
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </>
       )}
     </div>
   )

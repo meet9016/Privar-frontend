@@ -231,10 +231,6 @@ export default function Users() {
         hasPrevPage: Boolean(pg.hasPrevPage ?? currentPage > 1),
         hasNextPage: Boolean(pg.hasNextPage ?? currentPage < totalPages)
       })
-
-      if (currentPage !== page) {
-        setPage(currentPage)
-      }
     } catch (err) {
       setUsers([])
       setPagination({ page, totalPages: 1, total: 0, limit, hasPrevPage: false, hasNextPage: false })

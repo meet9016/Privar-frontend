@@ -365,8 +365,19 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
   useEffect(() => {
     const fetchMasters = async () => {
+      if (cachedMasters) {
+        setCountries(cachedMasters.countries || [])
+        setStates(cachedMasters.states || [])
+        setCities(cachedMasters.cities || [])
+        setDistricts(cachedMasters.districts || [])
+        setVillages(cachedMasters.villages || [])
+        setPattiOptions(cachedMasters.pattiOptions || [])
+        setRelationOptions(cachedMasters.relationOptions || RELATION_OPTIONS)
+        return
+      }
+
       try {
-        const masterParams = { params: { limit: 1000, _t: Date.now() } }
+        const masterParams = { params: { limit: 1000 } }
         const [cRes, sRes, ciRes, dRes, vRes, pRes, relRes] = await Promise.all([
           api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY, masterParams).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_STATE, masterParams).catch(() => ({ data: { data: [] } })),
@@ -392,16 +403,28 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         const mergedRelations = Array.from(relMap.values())
 
         const pattiList = (pRes.data?.data || []).filter(p => p.status !== 0 && p.status !== '0')
+        const stateList = sRes.data?.data || []
+        const cityList = ciRes.data?.data || []
+        const distList = dRes.data?.data || []
+        const villageList = vRes.data?.data || []
+
+        cachedMasters = {
+          countries: countryList,
+          states: stateList,
+          cities: cityList,
+          districts: distList,
+          villages: villageList,
+          pattiOptions: pattiList,
+          relationOptions: mergedRelations
+        }
 
         setCountries(countryList)
-        setStates(sRes.data?.data || [])
-        setCities(ciRes.data?.data || [])
-        setDistricts(dRes.data?.data || [])
-        setVillages(vRes.data?.data || [])
+        setStates(stateList)
+        setCities(cityList)
+        setDistricts(distList)
+        setVillages(villageList)
         setPattiOptions(pattiList)
         setRelationOptions(mergedRelations)
-
-        // Do not default country and state - user or pincode selects them
       } catch (err) {
         console.error(err)
       }
