@@ -20,7 +20,7 @@ import useDebounce from '../hooks/useDebounce'
 import { transliterateText } from '../utils/transliterate'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customRowActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ 
@@ -545,6 +545,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               const canDeleteRow = isRowDeletable ? isRowDeletable(row) : true
               return (
                 <div className="flex items-center justify-start gap-2">
+                  {customRowActions && customRowActions(row)}
                   {!hideEdit && (
                     <button
                       onClick={() => canEditRow && openEdit(row)}

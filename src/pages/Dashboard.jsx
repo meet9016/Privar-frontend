@@ -325,7 +325,7 @@ export default function Dashboard() {
       {/* ── Page Header ── */}
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h2 className="text-2xl font-bold text-text tracking-tight mb-1">Dashboardsss</h2>
+          <h2 className="text-2xl font-bold text-text tracking-tight mb-1">Dashboard</h2>
           <p className="text-sm text-text-secondary">Here's an overview of your community.</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-sm font-semibold shadow-sm text-emerald-600 dark:text-emerald-400">

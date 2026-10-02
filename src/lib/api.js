@@ -186,6 +186,8 @@ const setupInterceptors = (axiosInstance) => {
           delete config.headers['Content-Type']
           delete config.headers['content-type']
         }
+      } else if (config.data && !(config.data instanceof FormData)) {
+        config.headers['Content-Type'] = 'application/json'
       }
       return config
     },

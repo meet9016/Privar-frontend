@@ -19,6 +19,7 @@ import ContentPage from './pages/ContentPage'
 import Events from './pages/Events'
 import EventRegistrations from './pages/EventRegistration'
 import MasterPage from './pages/MasterPage'
+import CertificatePage from './pages/CertificatePage'
 import News from './pages/News'
 import Documentation from './pages/Documentation'
 import { hasPermission } from './lib/permissions'
@@ -121,6 +122,7 @@ export default function App() {
           <Route path="mandal" element={<Navigate to="/admin/engagements?tab=contribution" replace />} />
           <Route path="masters/:type" element={<MasterRoute />} />
           <Route path="bank-details" element={<PermissionRoute permission="masters.list"><ContentPage type="bank-details" /></PermissionRoute>} />
+          <Route path="certificates" element={<CertificatePage />} />
 
           {/* Other standalone routes */}
           <Route path="contact-inquiries" element={<PermissionRoute permission="contact-inquiries.list"><ContentPage type="inquiries" /></PermissionRoute>} />

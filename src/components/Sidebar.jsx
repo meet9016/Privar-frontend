@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Shield, Database, Layers, Activity, CalendarDays, Briefcase } from 'lucide-react'
+import { Shield, Database, Layers, Activity, CalendarDays, Briefcase, Award } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { configurationNavigation, coreNavigation, masterNavigation, mediaNavigation, engagementNavigation, activityNavigation, servicesNavigation } from '../config/navigation'
 import { hasPermission } from '../lib/permissions'
@@ -42,8 +42,13 @@ const LinkItem = ({ to, icon: Icon, label, end }) => {
 
 const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
   const location = useLocation()
+  const currentFullUrl = location.pathname + location.search
+
   const isChildActive = items.some(item => {
     const itemPath = item.to || `${parentPath}/${item.type}`
+    if (itemPath.includes('?')) {
+      return currentFullUrl === itemPath
+    }
     return location.pathname === itemPath || location.pathname.startsWith(`${itemPath}/`)
   })
   const [isOpen, setIsOpen] = useState(isChildActive)
@@ -77,11 +82,15 @@ const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
         <div className="pl-11 pr-2 py-1.5 space-y-1.5">
           {items.map(item => {
             const itemPath = item.to || `${parentPath}/${item.type}`
+            const isActiveLink = itemPath.includes('?')
+              ? currentFullUrl === itemPath
+              : (location.pathname === itemPath && (!location.search || location.search === '?type=marriage'))
+
             return (
               <NavLink
                 key={item.type || item.to}
                 to={itemPath}
-                className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-[13px] transition-colors ${isActive || location.pathname === itemPath
+                className={() => `block px-3 py-1.5 rounded-lg text-[13px] transition-colors ${isActiveLink
                   ? 'bg-primary text-white font-semibold shadow-sm'
                   : 'text-text-secondary hover:text-text hover:bg-surface-secondary font-medium'
                   }`}
@@ -203,6 +212,18 @@ export default function Sidebar({ isOpen, onClose }) {
             <LinkItem to="/admin/engagements" label="Expense & Donations" icon={Activity} />
           </div>
         )}
+
+        {/* Certificate Section (Right above Masters) */}
+        <CollapsibleFolder
+          icon={Award}
+          label="Certificates"
+          items={[
+            { to: '/admin/certificates', label: 'Marriage Certificate', type: 'marriage' },
+            { to: '/admin/certificates?type=letterhead', label: 'Letterhead', type: 'letterhead' },
+            { to: '/admin/certificates?type=noc', label: 'NOC Certificate', type: 'noc' }
+          ]}
+          parentPath="/admin/certificates"
+        />
 
         {visibleMasterNavigation.length > 0 && (
           <CollapsibleFolder

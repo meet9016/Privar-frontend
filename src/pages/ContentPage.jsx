@@ -12,6 +12,8 @@ import { toast } from '../lib/toast'
 import { getCommunityFullName } from '../lib/api'
 import Modal from '../components/Modal'
 import Button from '../components/common/Button'
+import NocCertificateModal from '../components/NocCertificateModal'
+import { FileCheck } from 'lucide-react'
 
 export const isSameDayAndMonth = (dateStr) => {
   if (!dateStr) return false
@@ -619,12 +621,33 @@ export default function ContentPage({ type, headerLeftContent }) {
     </Button>
   ) : null
 
+  // Marriage NOC Certificate State
+  const [nocModalOpen, setNocModalOpen] = useState(false)
+  const [selectedNocMember, setSelectedNocMember] = useState(null)
+
+  const handleOpenNocModal = (row) => {
+    setSelectedNocMember(row)
+    setNocModalOpen(true)
+  }
+
+  const matrimonyRowActions = type === 'matrimonies' ? (row) => (
+    <button
+      type="button"
+      onClick={() => handleOpenNocModal(row)}
+      className="p-2 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
+      title="લગ્ન ના-વાંધા પ્રમાણપત્ર (Generate Marriage NOC)"
+    >
+      <FileCheck className="w-3.5 h-3.5" />
+    </button>
+  ) : undefined
+
   return (
     <>
       <AdminCrudPage 
         {...definitions[type]} 
         headerLeftContent={headerLeftContent}
         customHeaderActions={customHeaderActions}
+        customRowActions={matrimonyRowActions}
         hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
         hideEdit={definitions[type].hideEdit || (!permissions.canEdit && !permissions.isSuperAdmin)}
         hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))} 
@@ -639,6 +662,15 @@ export default function ContentPage({ type, headerLeftContent }) {
         transformData={type === 'birthday' ? transformData : undefined}
         rowClassName={type === 'birthday' ? rowClassName : undefined}
       />
+
+      {/* Marriage NOC Certificate Modal */}
+      {type === 'matrimonies' && (
+        <NocCertificateModal
+          isOpen={nocModalOpen}
+          onClose={() => { setNocModalOpen(false); setSelectedNocMember(null); }}
+          initialData={selectedNocMember}
+        />
+      )}
 
       {/* Bulk WhatsApp Wish Modal */}
       {type === 'birthday' && (

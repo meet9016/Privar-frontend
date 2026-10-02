@@ -21,6 +21,8 @@ import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
 import ImagePreviewModal from '../components/common/ImagePreviewModal'
 import RelationshipGuideModal from '../components/common/RelationshipGuideModal'
+import NocCertificateModal from '../components/NocCertificateModal'
+import { FileCheck } from 'lucide-react'
 
 export default function Users() {
   const { user: currentUser } = useContext(AuthContext)
@@ -58,6 +60,8 @@ export default function Users() {
   const [selectedUsers, setSelectedUsers] = useState([])
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [viewingUser, setViewingUser] = useState(null)
+  const [isNocModalOpen, setIsNocModalOpen] = useState(false)
+  const [selectedNocMember, setSelectedNocMember] = useState(null)
   const [familyMembers, setFamilyMembers] = useState([])
   const [membersLoading, setMembersLoading] = useState(false)
   const [collapsedHeads, setCollapsedHeads] = useState([])
@@ -923,6 +927,25 @@ export default function Users() {
             header: 'Actions',
             align: 'left',
             render: user=> ( <div className="flex items-center justify-start gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNocMember({
+                      full_name: user.name,
+                      gender: user.gender,
+                      birthdate: user.dob,
+                      father_name: user.father_name,
+                      mother_name: user.mother_name,
+                      marital_status: user.marital_status || 'Single',
+                      aadhaar_card: user.aadhaar_card || user.aadhar_number || user.aadhaar_number
+                    })
+                    setIsNocModalOpen(true)
+                  }}
+                  className="p-2 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
+                  title="લગ્ન ના-વાંધા પ્રમાણપત્ર (Marriage NOC)"
+                >
+                  <FileCheck className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => handleView(user)} className="p-2 text-indigo-500 hover:text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all" title="View Profile">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
@@ -1947,6 +1970,13 @@ export default function Users() {
         isOpen={Boolean(guideRelation)}
         onClose={() => setGuideRelation(null)}
         selectedRelation={guideRelation}
+      />
+
+      {/* Marriage NOC Certificate Modal */}
+      <NocCertificateModal
+        isOpen={isNocModalOpen}
+        onClose={() => { setIsNocModalOpen(false); setSelectedNocMember(null); }}
+        initialData={selectedNocMember}
       />
 
 
