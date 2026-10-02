@@ -47,15 +47,7 @@ import Modal from '../components/Modal'
 let fontEmbedCSSCache = null
 
 async function getCachedFontCSS(element) {
-  if (fontEmbedCSSCache) return fontEmbedCSSCache
-  try {
-    if (element) {
-      fontEmbedCSSCache = await getFontEmbedCSS(element)
-    }
-  } catch (err) {
-    console.warn('Font CSS prefetch failed:', err)
-  }
-  return fontEmbedCSSCache
+  return null
 }
 
 /* ─── Date & Age Utility Helpers ────────────────────────────── */
@@ -269,33 +261,9 @@ function sanitizeData(data) {
   return data
 }
 
-/* ─── Load/Save helpers ─────────────────────────────────────── */
+/* ─── Load/Save helpers (Exclusively DB) ─────────────────────── */
 function loadSavedData() {
   const today = getTodayDateParts()
-  try {
-    const raw = localStorage.getItem(SAVE_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      const data = {
-        marriage: {
-          ...defaultData.marriage,
-          dateDay: today.day,
-          dateMonth: today.month,
-          dateYear: today.year,
-          ...parsed.marriage,
-        },
-        letterhead: { ...defaultData.letterhead, ...parsed.letterhead },
-        noc: {
-          ...defaultData.noc,
-          dateDay: today.day,
-          dateMonth: today.month,
-          dateYear: today.year,
-          ...parsed.noc,
-        },
-      }
-      return sanitizeData(data)
-    }
-  } catch (_) { }
   return {
     ...defaultData,
     marriage: {
@@ -330,31 +298,11 @@ function sanitizeRecords(records) {
 }
 
 function loadSavedRecords() {
-  try {
-    const saved = localStorage.getItem('parivar_certificate_records_list')
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return sanitizeRecords(parsed)
-      }
-    }
-  } catch (_) { }
   return []
 }
 
 function saveData(data) {
-  try {
-    const clone = { ...data }
-    if (clone.marriage) {
-      const m = { ...clone.marriage }
-      if (m.dulhaPhoto && m.dulhaPhoto.length > 50000) m.dulhaPhoto = ''
-      if (m.dulhanPhoto && m.dulhanPhoto.length > 50000) m.dulhanPhoto = ''
-      clone.marriage = m
-    }
-    localStorage.setItem(SAVE_KEY, JSON.stringify(clone))
-  } catch (e) {
-    console.warn('LocalStorage save error (quota exceeded):', e)
-  }
+  // No localStorage save - records are stored in MongoDB
 }
 
 async function downloadAsPDF(ref, filename, options = {}) {
@@ -5240,53 +5188,31 @@ export default function CertificatePage() {
 
   // Fetch certificate details & saved records list from backend API
   const fetchRecords = useCallback(async () => {
-    // Only show full loader if we have zero records in memory
-    if (!recordsList || recordsList.length === 0) {
-      setLoadingRecords(true)
-    }
-    let backendSuccess = false
+    setLoadingRecords(true)
     try {
-      const res = await api.get('/certificates')
-      if (res.data?.data) {
-        const { list } = res.data.data
-        if (Array.isArray(list)) {
-          const sanitized = sanitizeRecords(list)
-          setRecordsList(sanitized)
-          try {
-            localStorage.setItem('parivar_certificate_records_list', JSON.stringify(sanitized.slice(0, 100)))
-          } catch (_) { }
-          backendSuccess = true
-        }
-      }
+      // Dedicated endpoints: /certificates/marriage, /certificates/noc, /certificates/letterhead
+      const endpoint = activeTab === 'marriage' ? '/certificates/marriage' : (activeTab === 'noc' ? '/certificates/noc' : '/certificates/letterhead')
+      const res = await api.get(endpoint)
+      const dataPayload = res.data?.data
+      const rawList = Array.isArray(dataPayload)
+        ? dataPayload
+        : (Array.isArray(dataPayload?.list) ? dataPayload.list : [])
+
+      setRecordsList(sanitizeRecords(rawList))
     } catch (err) {
-      console.warn('Could not load records from backend, falling back to local storage:', err?.message)
+      console.warn('Could not load records from backend:', err?.message)
+      setRecordsList([])
     } finally {
       setLoadingRecords(false)
     }
-
-    if (!backendSuccess) {
-      try {
-        const saved = localStorage.getItem('parivar_certificate_records_list')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setRecordsList(sanitizeRecords(parsed))
-          }
-        }
-      } catch (_) { }
-    }
-  }, [])
+  }, [activeTab])
 
   useEffect(() => {
     fetchRecords()
   }, [fetchRecords])
 
   // Preload web fonts cache for instantaneous PDF generation
-  useEffect(() => {
-    if (printRef.current) {
-      getCachedFontCSS(printRef.current)
-    }
-  }, [activeTab])
+
 
   const handleChange = useCallback((section, field, value) => {
     setFormData((prev) => ({
@@ -5296,10 +5222,9 @@ export default function CertificatePage() {
     setSaveStatus(null)
   }, [])
 
-  // Save or Update record into MongoDB Database Table with local offline sync
+  // Save or Update record into MongoDB Database Table
   const handleSaveRecord = async () => {
     setSaving(true)
-    saveData(formData)
     const currentData = formData[activeTab] || {}
 
     let certificateNumber = ''
@@ -5323,85 +5248,32 @@ export default function CertificatePage() {
       secondaryName = currentData.letterTitle || ''
     }
 
-    const localRecord = {
-      _id: editingRecordId || `rec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      type: activeTab,
-      certificateNumber,
-      primaryName,
-      secondaryName,
-      issuedDate,
-      data: currentData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
     try {
-      let savedRecord = null
       const jsonCfg = { headers: { 'Content-Type': 'application/json' } }
       if (editingRecordId && !String(editingRecordId).startsWith('rec_')) {
-        const res = await api.put(
+        await api.put(
           `/certificates/records/${editingRecordId}`,
           { type: activeTab, data: currentData },
           jsonCfg
         )
-        savedRecord = res.data?.data
         setSaveStatus('updated')
         toast.success('Certificate updated successfully!')
       } else {
-        const res = await api.post(
+        await api.post(
           '/certificates/records',
           { type: activeTab, data: currentData },
           jsonCfg
         )
-        savedRecord = res.data?.data
         setSaveStatus('created')
         toast.success('Certificate saved to table successfully!')
       }
 
-      const rec = savedRecord || localRecord
-      setRecordsList((prev) => {
-        const safePrev = Array.isArray(prev) ? prev.filter(Boolean) : []
-        const filtered = safePrev.filter((r) => r && String(r._id) !== String(editingRecordId) && String(r._id) !== String(rec._id))
-        const updated = sanitizeRecords([rec, ...filtered])
-
-        // Safely backup offline without quota crashes
-        try {
-          const compact = updated.slice(0, 50).map((r) => {
-            if (!r) return null
-            const { data, ...rest } = r
-            let cleanData = data
-            if (data && typeof data === 'object') {
-              const { dulhaPhoto, dulhanPhoto, ...otherData } = data
-              cleanData = otherData
-            }
-            return { ...rest, data: cleanData }
-          }).filter(Boolean)
-          localStorage.setItem('parivar_certificate_records_list', JSON.stringify(compact))
-        } catch (e) {
-          console.warn('LocalStorage backup skipped (quota limit):', e)
-        }
-
-        return updated
-      })
-
-      // Close modal / return to table view
+      await fetchRecords()
       setIsFormModalOpen(false)
       setActiveView('records')
     } catch (err) {
-      console.warn('Backend save notice, saving locally:', err?.message)
-      setRecordsList((prev) => {
-        const safePrev = Array.isArray(prev) ? prev.filter(Boolean) : []
-        const filtered = safePrev.filter((r) => r && String(r._id) !== String(localRecord._id) && String(r._id) !== String(editingRecordId))
-        const updated = sanitizeRecords([localRecord, ...filtered])
-        try {
-          localStorage.setItem('parivar_certificate_records_list', JSON.stringify(updated.slice(0, 50)))
-        } catch (_) { }
-        return updated
-      })
-      setSaveStatus('created')
-      toast.success('Certificate saved to table locally!')
-      setIsFormModalOpen(false)
-      setActiveView('records')
+      console.error('Backend save error:', err?.message)
+      toast.error('Error saving certificate: ' + (err.response?.data?.message || err.message))
     } finally {
       setSaving(false)
       setTimeout(() => setSaveStatus(null), 3000)
@@ -5409,8 +5281,22 @@ export default function CertificatePage() {
   }
 
   // Edit an existing record from history table
-  const handleEditRecord = (record) => {
+  const handleEditRecord = async (record) => {
     setEditingRecordId(record._id)
+    try {
+      if (record._id && !String(record._id).startsWith('rec_')) {
+        const res = await api.get(`/certificates/records/${record._id}`)
+        if (res.data?.data) {
+          const fullRec = res.data.data
+          setFormData((prev) => ({
+            ...prev,
+            [fullRec.type || record.type]: { ...(defaultData[fullRec.type || record.type] || {}), ...(fullRec.data || {}) },
+          }))
+          setIsFormModalOpen(true)
+          return
+        }
+      }
+    } catch (_) { }
     setFormData((prev) => ({
       ...prev,
       [record.type]: { ...(defaultData[record.type] || {}), ...(record.data || {}) },
@@ -5429,13 +5315,7 @@ export default function CertificatePage() {
       if (!String(id).startsWith('rec_')) {
         await api.delete(`/certificates/records/${id}`)
       }
-      setRecordsList((prev) => {
-        const updated = (Array.isArray(prev) ? prev : []).filter((r) => r && r._id !== id)
-        try {
-          localStorage.setItem('parivar_certificate_records_list', JSON.stringify(updated))
-        } catch (_) { }
-        return updated
-      })
+      setRecordsList((prev) => (Array.isArray(prev) ? prev : []).filter((r) => r && r._id !== id))
       toast.success('Certificate record deleted successfully')
     } catch (err) {
       toast.error('Error deleting record: ' + (err.message || 'Server error'))
@@ -5443,8 +5323,22 @@ export default function CertificatePage() {
   }
 
   // View specific record directly in 1:1 Live Sheet view
-  const handleViewRecord = (record) => {
+  const handleViewRecord = async (record) => {
     setEditingRecordId(record._id)
+    try {
+      if (record._id && !String(record._id).startsWith('rec_')) {
+        const res = await api.get(`/certificates/records/${record._id}`)
+        if (res.data?.data) {
+          const fullRec = res.data.data
+          setFormData((prev) => ({
+            ...prev,
+            [fullRec.type || record.type]: { ...(defaultData[fullRec.type || record.type] || {}), ...(fullRec.data || {}) },
+          }))
+          setIsPreviewModalOpen(true)
+          return
+        }
+      }
+    } catch (_) { }
     setFormData((prev) => ({
       ...prev,
       [record.type]: { ...(defaultData[record.type] || {}), ...(record.data || {}) },
@@ -5484,23 +5378,34 @@ export default function CertificatePage() {
   const handleDownloadRecord = async (record) => {
     if (!record) return
     setDownloadingRecordId(record._id)
+    const toastId = toast.loading(`Downloading certificate (1 of 1)...`)
     try {
       const prevFormData = formData
       const prevEditingId = editingRecordId
 
+      let currentRecData = record.data || {}
+      if (record._id && !String(record._id).startsWith('rec_')) {
+        try {
+          const res = await api.get(`/certificates/records/${record._id}`)
+          if (res.data?.data?.data) {
+            currentRecData = res.data.data.data
+          }
+        } catch (_) { }
+      }
+
       // Load targeted record data into state
       setFormData((prev) => ({
         ...prev,
-        [record.type]: { ...(defaultData[record.type] || {}), ...(record.data || {}) },
+        [record.type]: { ...(defaultData[record.type] || {}), ...currentRecData },
       }))
 
       // Give React a tick to flush state update
       await new Promise((r) => setTimeout(r, 60))
 
       const names = {
-        marriage: `Marriage-Certificate-${record.certificateNumber || record.data?.number || 'Record'}`,
-        letterhead: `Letterhead-${record.primaryName || record.data?.refNumber || 'Record'}`,
-        noc: `NOC-Certificate-${record.certificateNumber || record.data?.number || 'Record'}`,
+        marriage: `Marriage-Certificate-${record.certificateNumber || currentRecData?.number || 'Record'}`,
+        letterhead: `Letterhead-${record.primaryName || currentRecData?.refNumber || 'Record'}`,
+        noc: `NOC-Certificate-${record.certificateNumber || currentRecData?.number || 'Record'}`,
       }
 
       await downloadAsPDF(printRef, names[record.type] || 'Certificate', { pageRanges: record.type === 'letterhead' ? undefined : '1-2' })
@@ -5508,43 +5413,60 @@ export default function CertificatePage() {
       // Restore form state
       setFormData(prevFormData)
       setEditingRecordId(prevEditingId)
+      toast.dismiss(toastId)
       toast.success('Certificate downloaded successfully!')
     } catch (e) {
       console.error('Direct table PDF download error:', e)
+      toast.dismiss(toastId)
       toast.error('Download failed, please try again.')
     } finally {
       setDownloadingRecordId(null)
     }
   }
 
-  // Bulk download multiple certificates as individual PDFs
+  // Bulk download multiple certificates with live count progress toaster
   const handleBulkDownloadRecords = async (recordsToDownload) => {
     if (!Array.isArray(recordsToDownload) || recordsToDownload.length === 0) return
+    const totalCount = recordsToDownload.length
     const prevFormData = formData
     const prevEditingId = editingRecordId
 
-    toast.info(`Preparing ${recordsToDownload.length} certificate PDF(s)...`)
+    const toastId = toast.loading(`Downloading: 0 of ${totalCount} certificates...`)
 
-    for (let i = 0; i < recordsToDownload.length; i++) {
+    let downloadedCount = 0
+
+    for (let i = 0; i < totalCount; i++) {
       const rec = recordsToDownload[i]
       setDownloadingRecordId(rec._id)
       try {
+        let currentRecData = rec.data || {}
+        if (rec._id && !String(rec._id).startsWith('rec_')) {
+          try {
+            const res = await api.get(`/certificates/records/${rec._id}`)
+            if (res.data?.data?.data) {
+              currentRecData = res.data.data.data
+            }
+          } catch (_) { }
+        }
+
         setFormData((prev) => ({
           ...prev,
-          [rec.type]: { ...(defaultData[rec.type] || {}), ...(rec.data || {}) },
+          [rec.type]: { ...(defaultData[rec.type] || {}), ...currentRecData },
         }))
 
         // Wait for React to flush state to printRef
         await new Promise((r) => setTimeout(r, 80))
 
         const names = {
-          marriage: `Marriage-Certificate-${rec.certificateNumber || rec.data?.number || i + 1}`,
-          letterhead: `Letterhead-${rec.primaryName || rec.data?.refNumber || i + 1}`,
-          noc: `NOC-Certificate-${rec.certificateNumber || rec.data?.number || i + 1}`,
+          marriage: `Marriage-Certificate-${rec.certificateNumber || currentRecData?.number || i + 1}`,
+          letterhead: `Letterhead-${rec.primaryName || currentRecData?.refNumber || i + 1}`,
+          noc: `NOC-Certificate-${rec.certificateNumber || currentRecData?.number || i + 1}`,
         }
 
         await downloadAsPDF(printRef, names[rec.type] || `Certificate-${i + 1}`, { pageRanges: rec.type === 'letterhead' ? undefined : '1-2' })
-        await new Promise((r) => setTimeout(r, 200))
+        downloadedCount++
+        toast.loading(`Downloading: ${downloadedCount} of ${totalCount} certificates...`, { id: toastId })
+        await new Promise((r) => setTimeout(r, 150))
       } catch (err) {
         console.error(`Error downloading certificate ${rec._id}:`, err)
       }
@@ -5553,7 +5475,8 @@ export default function CertificatePage() {
     setFormData(prevFormData)
     setEditingRecordId(prevEditingId)
     setDownloadingRecordId(null)
-    toast.success(`Successfully downloaded ${recordsToDownload.length} certificate(s)!`)
+    toast.dismiss(toastId)
+    toast.success(`Successfully downloaded ${downloadedCount} of ${totalCount} certificate(s)!`)
   }
 
   // Delete multiple records
