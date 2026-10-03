@@ -139,7 +139,7 @@ const defaultData = {
     hijriYear: '',
     hijriMonth: '',
     nikahVenue: '',
-    
+
     // 1. Groom (દુલ્હા)
     dulhaName: '',
     dulhaFatherName: '',
@@ -223,7 +223,7 @@ const defaultData = {
     candidateDob: '',
     candidateAge: '',
     candidateAadhaar: '',
-    candidateMaritalStatus: 'કુંવારા',
+    candidateMaritalStatus: '',
     apniJamatGram: '',
     apniTaluka: '',
     apniJila: '',
@@ -233,7 +233,7 @@ const defaultData = {
     apniCandidateDob: '',
     apniCandidateAge: '',
     apniCandidateAadhaar: '',
-    apniCandidateMaritalStatus: 'કુંવારા',
+    apniCandidateMaritalStatus: '',
     engDateDay: '',
     engDateMonth: '',
     engDateYear: '',
@@ -439,7 +439,7 @@ async function downloadAsPDF(ref, filename, options = {}) {
         try {
           document.body.removeChild(link)
           window.URL.revokeObjectURL(url)
-        } catch (_) {}
+        } catch (_) { }
       }, 60000)
     }
 
@@ -880,58 +880,60 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
         }}
       >
         <div>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
             📝{' '}
             {activeTab === 'marriage'
-              ? 'લગ્ન પ્રમાણપત્ર ફોર્મ (Marriage Certificate Form)'
+              ? 'લગ્ન પ્રમાણપત્ર ફોર્મ'
               : activeTab === 'noc'
-                ? 'N.O.C. પ્રમાણપત્ર ફોર્મ (NOC Certificate Form)'
-                : 'લેટરહેડ ફોર્મ (Letterhead Form)'}
+                ? 'N.O.C. પ્રમાણપત્ર ફોર્મ'
+                : 'લેટરહેડ ફોર્મ'}
           </h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
+          <p style={{ margin: '3px 0 0', fontSize: 12.5, color: '#64748b' }}>
             નીચેની વિગતો સામાન્ય ફોર્મમાં દાખલ કરો — લાઈવ સર્ટિફિકેટમાં ઓટોમેટિક અપડેટ થઈ જશે.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
             type="button"
             onClick={onSwitchToSheet}
             style={{
-              padding: '8px 16px',
-              borderRadius: 8,
+              padding: '6px 14px',
+              borderRadius: 7,
               background: '#f8fafc',
-              border: '1.5px solid #cbd5e1',
+              border: '1.2px solid #cbd5e1',
               color: '#334155',
               fontWeight: 700,
-              fontSize: 13,
+              fontSize: 12.5,
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 5,
+              transition: 'all 0.15s ease',
             }}
           >
-            <Eye size={16} /> સર્ટિફિકેટ જુઓ (Live Sheet)
+            <Eye size={15} /> સર્ટિફિકેટ જુઓ
           </button>
           <button
             type="button"
             onClick={onSaveRecord}
             disabled={saving}
             style={{
-              padding: '8px 20px',
-              borderRadius: 8,
+              padding: '6px 16px',
+              borderRadius: 7,
               background: '#16a34a',
               border: 'none',
               color: '#fff',
               fontWeight: 700,
-              fontSize: 13,
+              fontSize: 12.5,
               cursor: saving ? 'wait' : 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
-              boxShadow: '0 2px 4px rgba(22, 163, 74, 0.25)',
+              gap: 5,
+              boxShadow: '0 1px 3px rgba(22, 163, 74, 0.25)',
+              transition: 'all 0.15s ease',
             }}
           >
-            <Save size={16} /> {saving ? 'સેવ થાય છે...' : isEditing ? 'અપડેટ કરો (Update)' : 'ટેબલમાં સેવ કરો (Save to Table)'}
+            <Save size={15} /> {saving ? 'સેવ થાય છે...' : isEditing ? 'અપડેટ કરો' : 'સેવ કરો'}
           </button>
         </div>
       </div>
@@ -2308,7 +2310,7 @@ const RecordsHistoryTable = memo(function RecordsHistoryTable({
                   const isSelected = selectedIds.includes(rowId)
                   const isThisDownloading = downloadingId === rowId
                   const d = row.data || {}
-                  
+
                   // Extract certificate details
                   const regNo = activeTab === 'marriage'
                     ? (d.number || row.certificateNumber || '—')
@@ -2320,9 +2322,8 @@ const RecordsHistoryTable = memo(function RecordsHistoryTable({
                   return (
                     <tr
                       key={rowId}
-                      className={`hover:bg-surface-secondary/50 transition-colors ${
-                        isSelected ? 'bg-primary/5' : ''
-                      }`}
+                      className={`hover:bg-surface-secondary/50 transition-colors ${isSelected ? 'bg-primary/5' : ''
+                        }`}
                     >
                       <td className="pl-4 pr-2 py-3.5 text-center">
                         <div className="flex items-center justify-center">
@@ -2569,31 +2570,31 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
           padding: '9px 10px 8px',
           position: 'relative',
         }}>
-        {/* Corner Ornaments */}
-        {[['0','0','border-top','border-left'],['0','auto','border-top','border-right'],['auto','0','border-bottom','border-left'],['auto','auto','border-bottom','border-right']].map(([t,r,b1,b2],i)=>(
-          <div key={i} style={{ position:'absolute', top:t!=='auto'?4:undefined, right:r!=='auto'?4:undefined, bottom:t==='auto'?4:undefined, left:r==='auto'?4:undefined, width:14, height:14, borderTop: i<2?'2.5px solid #1b5e20':undefined, borderBottom: i>=2?'2.5px solid #1b5e20':undefined, borderLeft: r==='auto'?'2.5px solid #1b5e20':undefined, borderRight: r!=='auto'?'2.5px solid #1b5e20':undefined, pointerEvents:'none', zIndex:2 }} />
-        ))}
-        {/* ── MAIN CONTENT PAGE 1 ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, padding: '0 2px' }}>
-          {/* 1. Header: Logos + Title + Address */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '0 4px' }}>
-              <div style={{ width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <img src={letterpadLogo} alt="RMJ" style={{ width: '100%', height: '100%', objectFit: 'contain' }} crossOrigin="anonymous" />
-              </div>
+          {/* Corner Ornaments */}
+          {[['0', '0', 'border-top', 'border-left'], ['0', 'auto', 'border-top', 'border-right'], ['auto', '0', 'border-bottom', 'border-left'], ['auto', 'auto', 'border-bottom', 'border-right']].map(([t, r, b1, b2], i) => (
+            <div key={i} style={{ position: 'absolute', top: t !== 'auto' ? 4 : undefined, right: r !== 'auto' ? 4 : undefined, bottom: t === 'auto' ? 4 : undefined, left: r === 'auto' ? 4 : undefined, width: 14, height: 14, borderTop: i < 2 ? '2.5px solid #1b5e20' : undefined, borderBottom: i >= 2 ? '2.5px solid #1b5e20' : undefined, borderLeft: r === 'auto' ? '2.5px solid #1b5e20' : undefined, borderRight: r !== 'auto' ? '2.5px solid #1b5e20' : undefined, pointerEvents: 'none', zIndex: 2 }} />
+          ))}
+          {/* ── MAIN CONTENT PAGE 1 ── */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, padding: '0 2px' }}>
+            {/* 1. Header: Logos + Title + Address */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '0 4px' }}>
+                <div style={{ width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <img src={letterpadLogo} alt="RMJ" style={{ width: '100%', height: '100%', objectFit: 'contain' }} crossOrigin="anonymous" />
+                </div>
 
-              <div style={{ flex: 1, textAlign: 'center' }}>
-     
-                <div
-                  style={{
-                    fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif',
-                    fontSize: 27,
-                    fontWeight: 900,
-                    color: '#ffffff',
-                    whiteSpace: 'nowrap',
-                    lineHeight: 1.2,
-                    marginTop: 1,
-                    textShadow: `
+                <div style={{ flex: 1, textAlign: 'center' }}>
+
+                  <div
+                    style={{
+                      fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif',
+                      fontSize: 27,
+                      fontWeight: 900,
+                      color: '#ffffff',
+                      whiteSpace: 'nowrap',
+                      lineHeight: 1.2,
+                      marginTop: 1,
+                      textShadow: `
                       -2px -2px 0 #0f4614,
                        0px -2px 0 #0f4614,
                        2px -2px 0 #0f4614,
@@ -2604,330 +2605,330 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                        2px  2px 0 #0f4614,
                        3px  4px 4px rgba(0,0,0,0.6)
                     `,
-                  }}
-                >
-                  {m.communityName}
+                    }}
+                  >
+                    {m.communityName}
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 900, color: '#111', marginTop: 1 }}>{m.trustLine}</div>
                 </div>
-                <div style={{ fontSize: 10, fontWeight: 900, color: '#111', marginTop: 1 }}>{m.trustLine}</div>
+
+                <div style={{ width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <img src={letterpadLogo} alt="RMJ" style={{ width: '100%', height: '100%', objectFit: 'contain' }} crossOrigin="anonymous" />
+                </div>
               </div>
 
-              <div style={{ width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <img src={letterpadLogo} alt="RMJ" style={{ width: '100%', height: '100%', objectFit: 'contain' }} crossOrigin="anonymous" />
+              {/* Clean Address Line (No Badge) */}
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: '#b71c1c',
+                  fontSize: 11.5,
+                  fontWeight: 900,
+                  marginTop: 3,
+                  marginBottom: 4,
+                  borderBottom: '1px solid #e0e0e0',
+                  paddingBottom: 4,
+                  letterSpacing: 0.3,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {m.address}
               </div>
             </div>
 
-            {/* Clean Address Line (No Badge) */}
+            {/* Royal Ornamental Certificate Title (Text Only, No Square Box, No Background) */}
             <div
               style={{
-                textAlign: 'center',
-                color: '#b71c1c',
-                fontSize: 11.5,
-                fontWeight: 900,
-                marginTop: 3,
-                marginBottom: 4,
-                borderBottom: '1px solid #e0e0e0',
-                paddingBottom: 4,
-                letterSpacing: 0.3,
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                margin: '5px 0 6px',
               }}
             >
-              {m.address}
-            </div>
-          </div>
-
-          {/* Royal Ornamental Certificate Title (Text Only, No Square Box, No Background) */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              margin: '5px 0 6px',
-            }}
-          >
-            {/* Left Heraldic Wing */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, transparent, #800000)' }} />
-              <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
-              <div style={{ width: 18, height: 2, background: '#800000', borderRadius: 1 }} />
-            </div>
-
-            {/* Title Text Only */}
-            <span
-              style={{
-                color: '#800000',
-                fontWeight: 900,
-                fontSize: 18,
-                fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-                letterSpacing: 0.8,
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              નિકાહ નામા / MARRIAGE CERTIFICATE
-            </span>
-
-            {/* Right Heraldic Wing */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 18, height: 2, background: '#800000', borderRadius: 1 }} />
-              <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
-              <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, #800000, transparent)' }} />
-            </div>
-          </div>
-
-          {/* Registration, Date, Hijri & Venue Bar */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #2e7d32', borderRadius: 6, padding: '6px 10px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 4, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center' }}>નિકાહ રજીસ્ટ્રેશન નં.:</strong>
-                {underField('number', null, '110px')}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <strong style={{ color: '#0d2366', display: 'inline-flex', alignItems: 'center', height: 22, fontSize: 12 }}>તારીખ (ઈ.સ.):</strong>
-                <div style={{ width: 22, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CertInput section="marriage" field="dateDay" value={data.dateDay} onChange={onChange} textAlign="center" placeholder="DD" style={{ fontSize: 12.5, fontWeight: 600, height: '100%', padding: 0 }} />
-                </div>
-                <span style={{ fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: 1, color: '#475569' }}>/</span>
-                <div style={{ width: 22, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CertInput section="marriage" field="dateMonth" value={data.dateMonth} onChange={onChange} textAlign="center" placeholder="MM" style={{ fontSize: 12.5, fontWeight: 600, height: '100%', padding: 0 }} />
-                </div>
-                <span style={{ fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: 1, color: '#475569' }}>/</span>
-                <div style={{ width: 36, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <input
-                    type="text"
-                    value={data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : ''}
-                    onChange={(e) => {
-                      const v = toGujaratiDigits(e.target.value).replace(/[^૦-૯]/g, '').slice(0, 4)
-                      // store 4 digits or 2 digits consistently
-                      onChange('marriage', 'dateYear', v.length === 4 ? v.slice(2) : v)
-                    }}
-                    placeholder="૨૦૨૬"
-                    maxLength={4}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      border: 'none',
-                      outline: 'none',
-                      background: 'transparent',
-                      fontWeight: 600,
-                      fontSize: 12.5,
-                      color: '#111',
-                      textAlign: 'center',
-                      padding: 0,
-                      margin: 0,
-                      fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center' }}>જમાઅત રજીસ્ટર પાના નં.:</strong>
-                {underField('regNumber', null, '90px', 'left')}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center' }}>હિજરી સન:</strong>
-                {underField('hijriYear', null, '75px', 'left', '૧૪૪૬')}
-                <strong style={{ color: '#0d2366', marginLeft: 4, display: 'flex', alignItems: 'center' }}>માહ:</strong>
-                {underField('hijriMonth', null, '90px', 'left', 'શવ્વાલ')}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <strong style={{ color: '#0d2366', flexShrink: 0, display: 'flex', alignItems: 'center' }}>નિકાહનું સ્થળ (સરનામું):</strong>
-              {underField('nikahVenue', 1)}
-            </div>
-          </div>
-
-          {/* 1. Groom (દુલ્હા) Section with Photo */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #93c5fd', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            {sectionTitle('૧', 'દુલ્હા  ની વિગત :', '#eff6ff', '#bfdbfe', '#1e40af', '#dbeafe', '#1e40af')}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• પૂરું નામ :</span>
-                  {underField('dulhaName', 1)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• પિતા/વાલી :</span>
-                  {underField('dulhaFatherName', 1)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 800, color: '#111' }}>• જન્મ તારીખ:</span>
-                  {underField('dulhaDob', null, '85px', 'center', 'DD/MM/YYYY')}
-                  <span style={{ fontWeight: 800, color: '#111' }}>ઉંમર:</span>
-                  {underField('dulhaAge', null, '35px', 'center')} વર્ષ
-                  <span style={{ fontWeight: 800, color: '#111', marginLeft: 4 }}>મો.:</span>
-                  {underField('dulhaMobile', null, '105px')}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• આધાર કાર્ડ નં.:</span>
-                  {underField('dulhaAadhaar', null, '130px')}
-                  <span style={{ fontWeight: 800, color: '#111', marginLeft: 4, flexShrink: 0 }}>વતન:</span>
-                  {underField('dulhaVatan', 1)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું :</span>
-                  {underField('dulhaAddress', 1)}
-                  
-                </div>
-              </div>
-
-              {/* Groom Photo Box */}
-              <input type="file" ref={fileGroomRef} onChange={(e) => handlePhotoUpload('dulhaPhoto', e)} accept="image/*" style={{ display: 'none' }} />
-              <div
-                onClick={() => fileGroomRef.current?.click()}
-                style={{
-                  width: 78,
-                  height: 96,
-                  border: '1.5px dashed #3b82f6',
-                  borderRadius: 4,
-                  background: '#eff6ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  overflow: 'hidden',
-                  textAlign: 'center',
-                }}
-              >
-                {data.dulhaPhoto ? (
-                  <img src={data.dulhaPhoto} alt="Groom" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} crossOrigin="anonymous" />
-                ) : (
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#1e40af', lineHeight: 1.2 }}>દુલ્હાનો ફોટો<br />(પાસપોર્ટ)</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Bride (દુલ્હન) Section with Photo */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #fca5a5', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            {sectionTitle('૨', 'દુલ્હન  ની વિગત :', '#fef2f2', '#fecaca', '#991b1b', '#fee2e2', '#991b1b')}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• પૂરું નામ :</span>
-                  {underField('dulhanFullName', 1)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• પિતા/વાલી :</span>
-                  {underField('dulhanFatherName', 1)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 800, color: '#111' }}>• જન્મ તારીખ:</span>
-                  {underField('dulhanDob', null, '85px', 'center', 'DD/MM/YYYY')}
-                  <span style={{ fontWeight: 800, color: '#111' }}>ઉંમર:</span>
-                  {underField('dulhanAge', null, '35px', 'center')} વર્ષ
-                  <span style={{ fontWeight: 800, color: '#111', marginLeft: 4 }}>મો.:</span>
-                  {underField('dulhanMobile', null, '105px')}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• આધાર કાર્ડ નં.:</span>
-                  {underField('dulhanAadhaar', null, '130px')}
-                  <span style={{ fontWeight: 800, color: '#111', marginLeft: 4, flexShrink: 0 }}>વતન:</span>
-                  {underField('dulhanVatan', 1)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું :</span>
-                  {underField('dulhanAddress', 1)}
-                  
-                </div>
-              </div>
-
-              {/* Bride Photo Box */}
-              <input type="file" ref={fileBrideRef} onChange={(e) => handlePhotoUpload('dulhanPhoto', e)} accept="image/*" style={{ display: 'none' }} />
-              <div
-                onClick={() => fileBrideRef.current?.click()}
-                style={{
-                  width: 78,
-                  height: 96,
-                  border: '1.5px dashed #f87171',
-                  borderRadius: 4,
-                  background: '#fff1f2',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  overflow: 'hidden',
-                  textAlign: 'center',
-                }}
-              >
-                {data.dulhanPhoto ? (
-                  <img src={data.dulhanPhoto} alt="Bride" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} crossOrigin="anonymous" />
-                ) : (
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#991b1b', lineHeight: 1.2 }}>દુલ્હનનો ફોટો<br />(પાસપોર્ટ)</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Vakil / Vali Details */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #86efac', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            {sectionTitle('૩', 'વકીલ / વાલીની વિગત :', '#f0fdf4', '#bbf7d0', '#166534', '#dcfce7', '#166534')}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                <strong style={{ color: '#166534' }}>દુલ્હનના વકીલ:</strong>
-                {underField('dulhanVakilName', 1)}
-                <span>પિતા:</span>
-                {underField('dulhanVakilFather', 1)}
-                <span>ગામ:</span>
-                {underField('dulhanVakilVillage', null, '80px')}
-                <span>મો.:</span>
-                {underField('dulhanVakilMo', null, '85px')}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                <strong style={{ color: '#166534' }}>દુલ્હાના વાલી/વકીલ:</strong>
-                {underField('dulhaValiName', 1)}
-                <span>પિતા:</span>
-                {underField('dulhaValiFather', 1)}
-                <span>ગામ:</span>
-                {underField('dulhaValiVillage', null, '80px')}
-                <span>મો.:</span>
-                {underField('dulhaValiMo', null, '85px')}
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Meher Details */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #fde047', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            {sectionTitle('૪', 'મહેર (MEHER) ની વિગત :', '#fefce8', '#fef08a', '#854d0e', '#fef9c3', '#854d0e')}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
+              {/* Left Heraldic Wing */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <strong style={{ color: '#854d0e', flexShrink: 0 }}>• મહેરની રકમ:</strong>
-                <span>અંકે રૂ.</span>
-                {underField('maherRakam', null, '110px')}
-                <span>(શબ્દોમાં:</span>
-                {underField('maherRakamWords', 1)}
-                <span>)</span>
+                <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, transparent, #800000)' }} />
+                <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
+                <div style={{ width: 18, height: 2, background: '#800000', borderRadius: 1 }} />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                <strong style={{ color: '#854d0e', flexShrink: 0 }}>• સોના/ચાંદીના દાગીના:</strong>
-                {underField('maherGoldDetails', 1)}
-                <span>વજન:</span>
-                {underField('maherGram', null, '70px')}
-                <span>ગ્રામ</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 1 }}>
-                <strong style={{ color: '#854d0e' }}>• ચૂકવણીનો પ્રકાર:</strong>
-                <span style={{ fontWeight: 800, color: '#166534', background: '#fef08a', padding: '1px 8px', borderRadius: 4 }}>
-                  {data.maherType || 'મોઅજ્જલ (નકદ / રોકડ - સ્થળ પર જ ચૂકવી આપેલ છે)'}
-                </span>
+
+              {/* Title Text Only */}
+              <span
+                style={{
+                  color: '#800000',
+                  fontWeight: 900,
+                  fontSize: 18,
+                  fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
+                  letterSpacing: 0.8,
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                નિકાહ નામા / MARRIAGE CERTIFICATE
+              </span>
+
+              {/* Right Heraldic Wing */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 18, height: 2, background: '#800000', borderRadius: 1 }} />
+                <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
+                <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, #800000, transparent)' }} />
               </div>
             </div>
-          </div>
 
-          {/* Page 1 Bottom Indicator */}
-          <div style={{ textAlign: 'center', fontSize: 11, color: '#166534', fontWeight: 800, fontStyle: 'italic', marginTop: 3 }}>
-            [ પૃષ્ઠ ૧ / ૨ &bull; પાછળ સાક્ષીઓ, કાનૂની શરતો અને સહીઓ જુઓ ]
+            {/* Registration, Date, Hijri & Venue Bar */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #2e7d32', borderRadius: 6, padding: '6px 10px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 4, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center' }}>નિકાહ રજીસ્ટ્રેશન નં.:</strong>
+                  {underField('number', null, '110px')}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <strong style={{ color: '#0d2366', display: 'inline-flex', alignItems: 'center', height: 22, fontSize: 12 }}>તારીખ (ઈ.સ.):</strong>
+                  <div style={{ width: 22, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CertInput section="marriage" field="dateDay" value={data.dateDay} onChange={onChange} textAlign="center" placeholder="DD" style={{ fontSize: 12.5, fontWeight: 600, height: '100%', padding: 0 }} />
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: 1, color: '#475569' }}>/</span>
+                  <div style={{ width: 22, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CertInput section="marriage" field="dateMonth" value={data.dateMonth} onChange={onChange} textAlign="center" placeholder="MM" style={{ fontSize: 12.5, fontWeight: 600, height: '100%', padding: 0 }} />
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: 1, color: '#475569' }}>/</span>
+                  <div style={{ width: 36, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <input
+                      type="text"
+                      value={data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : ''}
+                      onChange={(e) => {
+                        const v = toGujaratiDigits(e.target.value).replace(/[^૦-૯]/g, '').slice(0, 4)
+                        // store 4 digits or 2 digits consistently
+                        onChange('marriage', 'dateYear', v.length === 4 ? v.slice(2) : v)
+                      }}
+                      placeholder="૨૦૨૬"
+                      maxLength={4}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontWeight: 600,
+                        fontSize: 12.5,
+                        color: '#111',
+                        textAlign: 'center',
+                        padding: 0,
+                        margin: 0,
+                        fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center' }}>જમાઅત રજીસ્ટર પાના નં.:</strong>
+                  {underField('regNumber', null, '90px', 'left')}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center' }}>હિજરી સન:</strong>
+                  {underField('hijriYear', null, '75px', 'left', '૧૪૪૬')}
+                  <strong style={{ color: '#0d2366', marginLeft: 4, display: 'flex', alignItems: 'center' }}>માહ:</strong>
+                  {underField('hijriMonth', null, '90px', 'left', 'શવ્વાલ')}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <strong style={{ color: '#0d2366', flexShrink: 0, display: 'flex', alignItems: 'center' }}>નિકાહનું સ્થળ (સરનામું):</strong>
+                {underField('nikahVenue', 1)}
+              </div>
+            </div>
+
+            {/* 1. Groom (દુલ્હા) Section with Photo */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #93c5fd', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              {sectionTitle('૧', 'દુલ્હા  ની વિગત :', '#eff6ff', '#bfdbfe', '#1e40af', '#dbeafe', '#1e40af')}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• પૂરું નામ :</span>
+                    {underField('dulhaName', 1)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• પિતા/વાલી :</span>
+                    {underField('dulhaFatherName', 1)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, color: '#111' }}>• જન્મ તારીખ:</span>
+                    {underField('dulhaDob', null, '85px', 'center', '')}
+                    <span style={{ fontWeight: 800, color: '#111' }}>ઉંમર:</span>
+                    {underField('dulhaAge', null, '35px', 'center')} વર્ષ
+                    <span style={{ fontWeight: 800, color: '#111', marginLeft: 4 }}>મો.:</span>
+                    {underField('dulhaMobile', null, '105px')}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• આધાર કાર્ડ નં.:</span>
+                    {underField('dulhaAadhaar', null, '130px')}
+                    <span style={{ fontWeight: 800, color: '#111', marginLeft: 4, flexShrink: 0 }}>વતન:</span>
+                    {underField('dulhaVatan', 1)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું :</span>
+                    {underField('dulhaAddress', 1)}
+
+                  </div>
+                </div>
+
+                {/* Groom Photo Box */}
+                <input type="file" ref={fileGroomRef} onChange={(e) => handlePhotoUpload('dulhaPhoto', e)} accept="image/*" style={{ display: 'none' }} />
+                <div
+                  onClick={() => fileGroomRef.current?.click()}
+                  style={{
+                    width: 78,
+                    height: 96,
+                    border: '1.5px dashed #3b82f6',
+                    borderRadius: 4,
+                    background: '#eff6ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    textAlign: 'center',
+                  }}
+                >
+                  {data.dulhaPhoto ? (
+                    <img src={data.dulhaPhoto} alt="Groom" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} crossOrigin="anonymous" />
+                  ) : (
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#1e40af', lineHeight: 1.2 }}>દુલ્હાનો ફોટો<br />(પાસપોર્ટ)</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Bride (દુલ્હન) Section with Photo */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #fca5a5', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              {sectionTitle('૨', 'દુલ્હન  ની વિગત :', '#fef2f2', '#fecaca', '#991b1b', '#fee2e2', '#991b1b')}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• પૂરું નામ :</span>
+                    {underField('dulhanFullName', 1)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• પિતા/વાલી :</span>
+                    {underField('dulhanFatherName', 1)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, color: '#111' }}>• જન્મ તારીખ:</span>
+                    {underField('dulhanDob', null, '85px', 'center', '')}
+                    <span style={{ fontWeight: 800, color: '#111' }}>ઉંમર:</span>
+                    {underField('dulhanAge', null, '35px', 'center')} વર્ષ
+                    <span style={{ fontWeight: 800, color: '#111', marginLeft: 4 }}>મો.:</span>
+                    {underField('dulhanMobile', null, '105px')}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• આધાર કાર્ડ નં.:</span>
+                    {underField('dulhanAadhaar', null, '130px')}
+                    <span style={{ fontWeight: 800, color: '#111', marginLeft: 4, flexShrink: 0 }}>વતન:</span>
+                    {underField('dulhanVatan', 1)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું :</span>
+                    {underField('dulhanAddress', 1)}
+
+                  </div>
+                </div>
+
+                {/* Bride Photo Box */}
+                <input type="file" ref={fileBrideRef} onChange={(e) => handlePhotoUpload('dulhanPhoto', e)} accept="image/*" style={{ display: 'none' }} />
+                <div
+                  onClick={() => fileBrideRef.current?.click()}
+                  style={{
+                    width: 78,
+                    height: 96,
+                    border: '1.5px dashed #f87171',
+                    borderRadius: 4,
+                    background: '#fff1f2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    textAlign: 'center',
+                  }}
+                >
+                  {data.dulhanPhoto ? (
+                    <img src={data.dulhanPhoto} alt="Bride" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} crossOrigin="anonymous" />
+                  ) : (
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#991b1b', lineHeight: 1.2 }}>દુલ્હનનો ફોટો<br />(પાસપોર્ટ)</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Vakil / Vali Details */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #86efac', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              {sectionTitle('૩', 'વકીલ / વાલીની વિગત :', '#f0fdf4', '#bbf7d0', '#166534', '#dcfce7', '#166534')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                  <strong style={{ color: '#166534' }}>દુલ્હનના વકીલ:</strong>
+                  {underField('dulhanVakilName', 1)}
+                  <span>પિતા:</span>
+                  {underField('dulhanVakilFather', 1)}
+                  <span>ગામ:</span>
+                  {underField('dulhanVakilVillage', null, '80px')}
+                  <span>મો.:</span>
+                  {underField('dulhanVakilMo', null, '85px')}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                  <strong style={{ color: '#166534' }}>દુલ્હાના વાલી/વકીલ:</strong>
+                  {underField('dulhaValiName', 1)}
+                  <span>પિતા:</span>
+                  {underField('dulhaValiFather', 1)}
+                  <span>ગામ:</span>
+                  {underField('dulhaValiVillage', null, '80px')}
+                  <span>મો.:</span>
+                  {underField('dulhaValiMo', null, '85px')}
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Meher Details */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #fde047', borderRadius: 6, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              {sectionTitle('૪', 'મહેર (MEHER) ની વિગત :', '#fefce8', '#fef08a', '#854d0e', '#fef9c3', '#854d0e')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5, fontSize: 11.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <strong style={{ color: '#854d0e', flexShrink: 0 }}>• મહેરની રકમ:</strong>
+                  <span>અંકે રૂ.</span>
+                  {underField('maherRakam', null, '110px')}
+                  <span>(શબ્દોમાં:</span>
+                  {underField('maherRakamWords', 1)}
+                  <span>)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                  <strong style={{ color: '#854d0e', flexShrink: 0 }}>• સોના/ચાંદીના દાગીના:</strong>
+                  {underField('maherGoldDetails', 1)}
+                  <span>વજન:</span>
+                  {underField('maherGram', null, '70px')}
+                  <span>ગ્રામ</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 1 }}>
+                  <strong style={{ color: '#854d0e' }}>• ચૂકવણીનો પ્રકાર:</strong>
+                  <span style={{ fontWeight: 800, color: '#166534', background: '#fef08a', padding: '1px 8px', borderRadius: 4 }}>
+                    {data.maherType || 'મોઅજ્જલ (નકદ / રોકડ - સ્થળ પર જ ચૂકવી આપેલ છે)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Page 1 Bottom Indicator */}
+            <div style={{ textAlign: 'center', fontSize: 11, color: '#166534', fontWeight: 800, fontStyle: 'italic', marginTop: 3 }}>
+              [ પૃષ્ઠ ૧ / ૨ &bull; પાછળ સાક્ષીઓ, કાનૂની શરતો અને સહીઓ જુઓ ]
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -2966,165 +2967,165 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
           padding: '9px 10px 8px',
           position: 'relative',
         }}>
-        {[['0','0'],['0','auto'],['auto','0'],['auto','auto']].map(([t,r],i)=>(
-          <div key={i} style={{ position:'absolute', top:t!=='auto'?4:undefined, right:r!=='auto'?4:undefined, bottom:t==='auto'?4:undefined, left:r==='auto'?4:undefined, width:14, height:14, borderTop: i<2?'2.5px solid #1b5e20':undefined, borderBottom: i>=2?'2.5px solid #1b5e20':undefined, borderLeft: r==='auto'?'2.5px solid #1b5e20':undefined, borderRight: r!=='auto'?'2.5px solid #1b5e20':undefined, pointerEvents:'none', zIndex:2 }} />
-        ))}
-        {/* ── MAIN CONTENT PAGE 2 ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, padding: '2px 4px' }}>
-          {/* Page 2 Header Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f1f5f9', border: '1.2px solid #cbd5e1', color: '#0f172a', padding: '5px 12px', borderRadius: 4, fontSize: 12, fontWeight: 900, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            <div style={{ color: '#0f172a' }}>નિકાહ રજીસ્ટ્રેશન નં.: <span style={{ color: '#1e40af' }}>{data.number || '........'}</span></div>
-            <div style={{ color: '#854d0e', fontWeight: 900 }}>પૃષ્ઠ ૨ : સાક્ષીઓ,  નિકાહના અને સહીઓ</div>
-            <div style={{ color: '#0f172a' }}>તા.: {data.dateDay || 'DD'}/{data.dateMonth || 'MM'}/{data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : '૨૦૨૬'}</div>
-          </div>
+          {[['0', '0'], ['0', 'auto'], ['auto', '0'], ['auto', 'auto']].map(([t, r], i) => (
+            <div key={i} style={{ position: 'absolute', top: t !== 'auto' ? 4 : undefined, right: r !== 'auto' ? 4 : undefined, bottom: t === 'auto' ? 4 : undefined, left: r === 'auto' ? 4 : undefined, width: 14, height: 14, borderTop: i < 2 ? '2.5px solid #1b5e20' : undefined, borderBottom: i >= 2 ? '2.5px solid #1b5e20' : undefined, borderLeft: r === 'auto' ? '2.5px solid #1b5e20' : undefined, borderRight: r !== 'auto' ? '2.5px solid #1b5e20' : undefined, pointerEvents: 'none', zIndex: 2 }} />
+          ))}
+          {/* ── MAIN CONTENT PAGE 2 ── */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, padding: '2px 4px' }}>
+            {/* Page 2 Header Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f1f5f9', border: '1.2px solid #cbd5e1', color: '#0f172a', padding: '5px 12px', borderRadius: 4, fontSize: 12, fontWeight: 900, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ color: '#0f172a' }}>નિકાહ રજીસ્ટ્રેશન નં.: <span style={{ color: '#1e40af' }}>{data.number || '........'}</span></div>
+              <div style={{ color: '#854d0e', fontWeight: 900 }}>પૃષ્ઠ ૨ : સાક્ષીઓ,  નિકાહના અને સહીઓ</div>
+              <div style={{ color: '#0f172a' }}>તા.: {data.dateDay || 'DD'}/{data.dateMonth || 'MM'}/{data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : '૨૦૨૬'}</div>
+            </div>
 
-          {/* 5. Witnesses (સાક્ષીઓ) Section */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #86efac', borderRadius: 6, padding: '8px 10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            {sectionTitle('૫', 'સાક્ષીઓ (ગવાહ) ની વિગત :', '#f0fdf4', '#bbf7d0', '#15803d', '#dcfce7', '#15803d')}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 11.5, marginTop: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                <strong style={{ color: '#15803d' }}>(૧) સાક્ષી નં. ૧:</strong>
-                <span>નામ:</span>
-                {underField('sakshi1Name', 1)}
-                <span>પિતા:</span>
-                {underField('sakshi1Father', 1)}
-                <span>ગામ:</span>
-                {underField('sakshi1Village', null, '80px')}
-                <span>આધાર:</span>
-                {underField('sakshi1Aadhaar', null, '90px')}
-                <span>મો.:</span>
-                {underField('sakshi1Mo', null, '85px')}
+            {/* 5. Witnesses (સાક્ષીઓ) Section */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #86efac', borderRadius: 6, padding: '8px 10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              {sectionTitle('૫', 'સાક્ષીઓ (ગવાહ) ની વિગત :', '#f0fdf4', '#bbf7d0', '#15803d', '#dcfce7', '#15803d')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 11.5, marginTop: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                  <strong style={{ color: '#15803d' }}>(૧) સાક્ષી નં. ૧:</strong>
+                  <span>નામ:</span>
+                  {underField('sakshi1Name', 1)}
+                  <span>પિતા:</span>
+                  {underField('sakshi1Father', 1)}
+                  <span>ગામ:</span>
+                  {underField('sakshi1Village', null, '80px')}
+                  <span>આધાર:</span>
+                  {underField('sakshi1Aadhaar', null, '90px')}
+                  <span>મો.:</span>
+                  {underField('sakshi1Mo', null, '85px')}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                  <strong style={{ color: '#15803d' }}>(૨) સાક્ષી નં. ૨:</strong>
+                  <span>નામ:</span>
+                  {underField('sakshi2Name', 1)}
+                  <span>પિતા:</span>
+                  {underField('sakshi2Father', 1)}
+                  <span>ગામ:</span>
+                  {underField('sakshi2Village', null, '80px')}
+                  <span>આધાર:</span>
+                  {underField('sakshi2Aadhaar', null, '90px')}
+                  <span>મો.:</span>
+                  {underField('sakshi2Mo', null, '85px')}
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                <strong style={{ color: '#15803d' }}>(૨) સાક્ષી નં. ૨:</strong>
-                <span>નામ:</span>
-                {underField('sakshi2Name', 1)}
-                <span>પિતા:</span>
-                {underField('sakshi2Father', 1)}
-                <span>ગામ:</span>
-                {underField('sakshi2Village', null, '80px')}
-                <span>આધાર:</span>
-                {underField('sakshi2Aadhaar', null, '90px')}
-                <span>મો.:</span>
-                {underField('sakshi2Mo', null, '85px')}
+            </div>
+
+            {/* 6. Kazi Saheb Details */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #7dd3fc', borderRadius: 6, padding: '7px 10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              {sectionTitle('૬', 'નિકાહ પઢાવનાર કાઝી સાહેબની વિગત :', '#f0f9ff', '#bae6fd', '#0284c7', '#e0f2fe', '#0284c7')}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, marginTop: 3 }}>
+                <strong style={{ color: '#0369a1', flexShrink: 0 }}>• કાઝી સાહેબનું નામ:</strong>
+                {underField('kaziName', 1)}
+                <strong style={{ color: '#0369a1', flexShrink: 0, marginLeft: 8 }}>• સરનામું / મો. નં.:</strong>
+                {underField('kaziContact', 1)}
               </div>
+            </div>
+
+            {/* 7. Legal Declarations, Jamaat Constitution & Discipline Clauses */}
+            <div style={{ background: '#ffffff', border: '2px solid #1b5e20', borderRadius: 6, padding: '8px 10px', fontSize: 11, lineHeight: '16.5px', color: '#111', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ color: '#991b1b', fontWeight: 900, fontSize: 12, textAlign: 'center', borderBottom: '1px solid #ddd', paddingBottom: 3, marginBottom: 5 }}>
+                ૭.  સમાજનું બંધારણ અને શિસ્ત અંગેની શરતો
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div>
+                  <strong style={{ color: '#166534' }}>૧. સ્વતંત્ર સંમતિ (Consent):</strong> દુલ્હા તથા દુલ્હને સંપૂર્ણ શુદ્ધિબુદ્ધિમાં, કોઈપણ પ્રકારના ડર, દબાણ, ધાકધમકી કે પ્રલોભન વગર, પોતાની મુક્ત અને રાજીખુશીથી શરીઅતે મુહમ્મદી મુજબ શરઈ સાક્ષીઓની હાજરીમાં ઇજાબ-ઓ-કુબૂલ (કબૂલાત) કરેલ છે.
+                </div>
+                <div>
+                  <strong style={{ color: '#166534' }}>૨. કાયદેસર પુખ્તતા:</strong> બંને પક્ષકારો ભારત સરકારના પ્રવર્તમાન લગ્ન કાયદા મુજબ લગ્નની કાયદેસર ઉંમર ધરાવે છે અને દર્શાવેલ વિગતો તથા ઓળખના પુરાવા સંપૂર્ણ સાચા છે.
+                </div>
+                <div>
+                  <strong style={{ color: '#166534' }}>૩. જમાઅતના બંધારણનું પાલન:</strong> બંને પક્ષકારો તથા તેમના વાલીઓ 'UTMC જમાઅત' ના પ્રવર્તમાન બંધારણ, નીતિ-નિયમો, સામાજિક રિવાજો અને શિસ્તબદ્ધ નિર્ણયોનું ચુસ્તપણે પાલન કરવા સહમત થાય છે.
+                </div>
+                <div>
+                  <strong style={{ color: '#166534' }}>૪. વિવાદ નિવારણ અને સમાધાન:</strong> દાંપત્ય જીવન દરમિયાન જો કોઈ ગેરસમજ કે પારિવારિક મતભેદ ઉપસ્થિત થાય, તો કોઈપણ પક્ષકાર સીધા પોલીસ સ્ટેશન કે કોર્ટ-કચેરીના પગલાં ભરશે નહીં. સૌપ્રથમ સ્થાનિક જમાઅત ની કારોબારી સમિતિ સમક્ષ લેખિત રજૂઆત કરી આપસી સુખદ સમાધાન મેળવવા બંધાયેલા રહેશે.
+                </div>
+                <div>
+                  <strong style={{ color: '#166534' }}>૫. સત્તાવાર દસ્તાવેજ:</strong> આ પ્રમાણપત્ર મુસ્લિમ પર્સનલ લો (શરીઅત) તથા 'ધ ગુજરાત રજીસ્ટ્રેશન ઓફ મેરેજીસ એક્ટ' અન્વયે જમાઅતના અધિકૃત દસ્તાવેજ તરીકે માન્ય રહેશે.
+                </div>
+              </div>
+            </div>
+
+            {/* 8. Signatures Block */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #2e7d32', borderRadius: 6, padding: '10px 14px', marginTop: 3, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ color: '#8b0000', fontWeight: 900, fontSize: 13, textAlign: 'center', marginBottom: 12 }}>
+                ૮. સહીઓ અને પ્રમાણીકરણ
+              </div>
+
+              {/* Row 1: Groom, Bride, Vakil */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center', fontSize: 11.5, marginBottom: 20 }}>
+                <div style={{ width: '30%' }}>
+                  <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
+                  <strong style={{ color: '#0d2366', fontSize: 12 }}>દુલ્હાની સહી</strong>
+                </div>
+                <div style={{ width: '30%' }}>
+                  <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
+                  <strong style={{ color: '#991b1b', fontSize: 12 }}>દુલ્હનની સહી</strong>
+                </div>
+                <div style={{ width: '30%' }}>
+                  <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
+                  <strong style={{ color: '#166534', fontSize: 12 }}>દુલ્હનના વકીલની સહી</strong>
+                </div>
+              </div>
+
+              {/* Row 2: Witness 1, Witness 2, Kazi */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center', fontSize: 11.5, marginBottom: 16 }}>
+                <div style={{ width: '30%' }}>
+                  <div style={{ borderBottom: '1.5px dashed #444', height: 30, marginBottom: 6 }}></div>
+                  <strong style={{ color: '#111', fontSize: 12 }}>સાક્ષી (૧) ની સહી</strong>
+                </div>
+                <div style={{ width: '30%' }}>
+                  <div style={{ borderBottom: '1.5px dashed #444', height: 30, marginBottom: 6 }}></div>
+                  <strong style={{ color: '#111', fontSize: 12 }}>સાક્ષી (૨) ની સહી</strong>
+                </div>
+                <div style={{ width: '30%' }}>
+                  <div style={{ borderBottom: '1.5px dashed #444', height: 30, marginBottom: 6 }}></div>
+                  <strong style={{ color: '#0369a1', fontSize: 12 }}>કાઝી સાહેબની સહી</strong>
+                </div>
+              </div>
+
+              {/* Row 3: Jamaat Seal + Pramukh + Secretary */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: '1.2px solid #e5e7eb' }}>
+                <div style={{ textAlign: 'center', width: '35%' }}>
+                  <div style={{ borderBottom: '1.5px solid #8b0000', height: 28, marginBottom: 6 }}></div>
+                  <strong style={{ color: '#8b0000', fontSize: 12.5 }}>પ્રમુખશ્રી</strong>
+                  <div style={{ fontSize: 10.5, color: '#333', fontWeight: 700, marginTop: 1 }}>રાધનપુર થરાદી મેમન જમાઅત</div>
+                </div>
+
+                {/* Jamaat Stamp Box */}
+                <div
+                  style={{
+                    width: 76,
+                    height: 76,
+                    border: '2px dashed #1b5e20',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 10.5,
+                    fontWeight: 900,
+                    color: '#1b5e20',
+                    textAlign: 'center',
+                    lineHeight: 1.25,
+                    background: 'rgba(27, 94, 32, 0.04)',
+                  }}
+                >
+                  જમાઅતની<br />સત્તાવાર મોહર<br />(STAMP)
+                </div>
+
+                <div style={{ textAlign: 'center', width: '35%' }}>
+                  <div style={{ borderBottom: '1.5px solid #8b0000', height: 28, marginBottom: 6 }}></div>
+                  <strong style={{ color: '#8b0000', fontSize: 12.5 }}> સેક્રેટરી</strong>
+                  <div style={{ fontSize: 10.5, color: '#333', fontWeight: 700, marginTop: 1 }}>રાધનપુર થરાદી મેમન જમાઅત</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center', fontSize: 10.5, color: '#166534', fontWeight: 800, marginTop: 2 }}>
+              પૃષ્ઠ ૨ / ૨ &bull; રાધનપુર થરાદી મેમન જમાઅત — નિકાહ નામા / MARRIAGE CERTIFICATE
             </div>
           </div>
-
-          {/* 6. Kazi Saheb Details */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #7dd3fc', borderRadius: 6, padding: '7px 10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            {sectionTitle('૬', 'નિકાહ પઢાવનાર કાઝી સાહેબની વિગત :', '#f0f9ff', '#bae6fd', '#0284c7', '#e0f2fe', '#0284c7')}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, marginTop: 3 }}>
-              <strong style={{ color: '#0369a1', flexShrink: 0 }}>• કાઝી સાહેબનું નામ:</strong>
-              {underField('kaziName', 1)}
-              <strong style={{ color: '#0369a1', flexShrink: 0, marginLeft: 8 }}>• સરનામું / મો. નં.:</strong>
-              {underField('kaziContact', 1)}
-            </div>
-          </div>
-
-          {/* 7. Legal Declarations, Jamaat Constitution & Discipline Clauses */}
-          <div style={{ background: '#ffffff', border: '2px solid #1b5e20', borderRadius: 6, padding: '8px 10px', fontSize: 11, lineHeight: '16.5px', color: '#111', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            <div style={{ color: '#991b1b', fontWeight: 900, fontSize: 12, textAlign: 'center', borderBottom: '1px solid #ddd', paddingBottom: 3, marginBottom: 5 }}>
-              ૭.  સમાજનું બંધારણ અને શિસ્ત અંગેની શરતો
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div>
-                <strong style={{ color: '#166534' }}>૧. સ્વતંત્ર સંમતિ (Consent):</strong> દુલ્હા તથા દુલ્હને સંપૂર્ણ શુદ્ધિબુદ્ધિમાં, કોઈપણ પ્રકારના ડર, દબાણ, ધાકધમકી કે પ્રલોભન વગર, પોતાની મુક્ત અને રાજીખુશીથી શરીઅતે મુહમ્મદી મુજબ શરઈ સાક્ષીઓની હાજરીમાં ઇજાબ-ઓ-કુબૂલ (કબૂલાત) કરેલ છે.
-              </div>
-              <div>
-                <strong style={{ color: '#166534' }}>૨. કાયદેસર પુખ્તતા:</strong> બંને પક્ષકારો ભારત સરકારના પ્રવર્તમાન લગ્ન કાયદા મુજબ લગ્નની કાયદેસર ઉંમર ધરાવે છે અને દર્શાવેલ વિગતો તથા ઓળખના પુરાવા સંપૂર્ણ સાચા છે.
-              </div>
-              <div>
-                <strong style={{ color: '#166534' }}>૩. જમાઅતના બંધારણનું પાલન:</strong> બંને પક્ષકારો તથા તેમના વાલીઓ 'UTMC જમાઅત' ના પ્રવર્તમાન બંધારણ, નીતિ-નિયમો, સામાજિક રિવાજો અને શિસ્તબદ્ધ નિર્ણયોનું ચુસ્તપણે પાલન કરવા સહમત થાય છે.
-              </div>
-              <div>
-                <strong style={{ color: '#166534' }}>૪. વિવાદ નિવારણ અને સમાધાન:</strong> દાંપત્ય જીવન દરમિયાન જો કોઈ ગેરસમજ કે પારિવારિક મતભેદ ઉપસ્થિત થાય, તો કોઈપણ પક્ષકાર સીધા પોલીસ સ્ટેશન કે કોર્ટ-કચેરીના પગલાં ભરશે નહીં. સૌપ્રથમ સ્થાનિક જમાઅત ની કારોબારી સમિતિ સમક્ષ લેખિત રજૂઆત કરી આપસી સુખદ સમાધાન મેળવવા બંધાયેલા રહેશે.
-              </div>
-              <div>
-                <strong style={{ color: '#166534' }}>૫. સત્તાવાર દસ્તાવેજ:</strong> આ પ્રમાણપત્ર મુસ્લિમ પર્સનલ લો (શરીઅત) તથા 'ધ ગુજરાત રજીસ્ટ્રેશન ઓફ મેરેજીસ એક્ટ' અન્વયે જમાઅતના અધિકૃત દસ્તાવેજ તરીકે માન્ય રહેશે.
-              </div>
-            </div>
-          </div>
-
-          {/* 8. Signatures Block */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #2e7d32', borderRadius: 6, padding: '10px 14px', marginTop: 3, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            <div style={{ color: '#8b0000', fontWeight: 900, fontSize: 13, textAlign: 'center', marginBottom: 12 }}>
-              ૮. સહીઓ અને પ્રમાણીકરણ
-            </div>
-
-            {/* Row 1: Groom, Bride, Vakil */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center', fontSize: 11.5, marginBottom: 20 }}>
-              <div style={{ width: '30%' }}>
-                <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
-                <strong style={{ color: '#0d2366', fontSize: 12 }}>દુલ્હાની સહી</strong>
-              </div>
-              <div style={{ width: '30%' }}>
-                <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
-                <strong style={{ color: '#991b1b', fontSize: 12 }}>દુલ્હનની સહી</strong>
-              </div>
-              <div style={{ width: '30%' }}>
-                <div style={{ borderBottom: '1.5px dashed #444', height: 32, marginBottom: 6 }}></div>
-                <strong style={{ color: '#166534', fontSize: 12 }}>દુલ્હનના વકીલની સહી</strong>
-              </div>
-            </div>
-
-            {/* Row 2: Witness 1, Witness 2, Kazi */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center', fontSize: 11.5, marginBottom: 16 }}>
-              <div style={{ width: '30%' }}>
-                <div style={{ borderBottom: '1.5px dashed #444', height: 30, marginBottom: 6 }}></div>
-                <strong style={{ color: '#111', fontSize: 12 }}>સાક્ષી (૧) ની સહી</strong>
-              </div>
-              <div style={{ width: '30%' }}>
-                <div style={{ borderBottom: '1.5px dashed #444', height: 30, marginBottom: 6 }}></div>
-                <strong style={{ color: '#111', fontSize: 12 }}>સાક્ષી (૨) ની સહી</strong>
-              </div>
-              <div style={{ width: '30%' }}>
-                <div style={{ borderBottom: '1.5px dashed #444', height: 30, marginBottom: 6 }}></div>
-                <strong style={{ color: '#0369a1', fontSize: 12 }}>કાઝી સાહેબની સહી</strong>
-              </div>
-            </div>
-
-            {/* Row 3: Jamaat Seal + Pramukh + Secretary */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: '1.2px solid #e5e7eb' }}>
-              <div style={{ textAlign: 'center', width: '35%' }}>
-                <div style={{ borderBottom: '1.5px solid #8b0000', height: 28, marginBottom: 6 }}></div>
-                <strong style={{ color: '#8b0000', fontSize: 12.5 }}>પ્રમુખશ્રી</strong>
-                <div style={{ fontSize: 10.5, color: '#333', fontWeight: 700, marginTop: 1 }}>રાધનપુર થરાદી મેમન જમાઅત</div>
-              </div>
-
-              {/* Jamaat Stamp Box */}
-              <div
-                style={{
-                  width: 76,
-                  height: 76,
-                  border: '2px dashed #1b5e20',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10.5,
-                  fontWeight: 900,
-                  color: '#1b5e20',
-                  textAlign: 'center',
-                  lineHeight: 1.25,
-                  background: 'rgba(27, 94, 32, 0.04)',
-                }}
-              >
-                જમાઅતની<br />સત્તાવાર મોહર<br />(STAMP)
-              </div>
-
-              <div style={{ textAlign: 'center', width: '35%' }}>
-                <div style={{ borderBottom: '1.5px solid #8b0000', height: 28, marginBottom: 6 }}></div>
-                <strong style={{ color: '#8b0000', fontSize: 12.5 }}> સેક્રેટરી</strong>
-                <div style={{ fontSize: 10.5, color: '#333', fontWeight: 700, marginTop: 1 }}>રાધનપુર થરાદી મેમન જમાઅત</div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', fontSize: 10.5, color: '#166534', fontWeight: 800, marginTop: 2 }}>
-            પૃષ્ઠ ૨ / ૨ &bull; રાધનપુર થરાદી મેમન જમાઅત — નિકાહ નામા / MARRIAGE CERTIFICATE
-          </div>
-        </div>
         </div>
       </div>
     </div>
@@ -3508,7 +3509,7 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
         }}
       >
         <div style={{ fontWeight: 900, fontSize: 10, color: '#0d2366', marginBottom: 2, textAlign: 'center', fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif' }}>
-          પત્ર સંબંધી નિયમો અને કાનૂની શરતો (Terms &amp; Conditions)
+          પત્ર સંબંધી નિયમો અને સામાજિક શરતો (Terms &amp; Conditions)
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <div><strong style={{ color: '#8b0000' }}>૧. અધિકૃતતા:</strong> જમાતના હોદ્દેદારો (પ્રમુખ/સેક્રેટરી) અને સત્તાવાર સહી-સિક્કા વિના આ પત્ર માન્ય ગણાશે નહીં. ફોટોકોપી, ડિજિટલ સ્કેન અથવા અનધિકૃત સહી ધરાવતો પત્ર સંપૂર્ણ અમાન્ય ઠરશે.</div>
@@ -3819,90 +3820,90 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
           position: 'relative',
           boxSizing: 'border-box',
         }}>
-        {[['0','0'],['0','auto'],['auto','0'],['auto','auto']].map(([t,r],i)=>(
-          <div key={i} style={{ position:'absolute', top:t!=='auto'?4:undefined, right:r!=='auto'?4:undefined, bottom:t==='auto'?4:undefined, left:r==='auto'?4:undefined, width:14, height:14, borderTop: i<2?'2.5px solid #1b5e20':undefined, borderBottom: i>=2?'2.5px solid #1b5e20':undefined, borderLeft: r==='auto'?'2.5px solid #1b5e20':undefined, borderRight: r!=='auto'?'2.5px solid #1b5e20':undefined, pointerEvents:'none', zIndex:2 }} />
-        ))}
-        {/* ── MAIN CONTENT WRAPPER ── */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 7,
-            padding: '1px 3px',
-          }}
-        >
-          {/* 1. Header Block with RMJ Logos & 3D Title */}
-          <div style={{ marginBottom: 6, paddingTop: 2 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 8,
-                padding: '2px 4px',
-              }}
-            >
-              {/* Left RMJ Logo */}
+          {[['0', '0'], ['0', 'auto'], ['auto', '0'], ['auto', 'auto']].map(([t, r], i) => (
+            <div key={i} style={{ position: 'absolute', top: t !== 'auto' ? 4 : undefined, right: r !== 'auto' ? 4 : undefined, bottom: t === 'auto' ? 4 : undefined, left: r === 'auto' ? 4 : undefined, width: 14, height: 14, borderTop: i < 2 ? '2.5px solid #1b5e20' : undefined, borderBottom: i >= 2 ? '2.5px solid #1b5e20' : undefined, borderLeft: r === 'auto' ? '2.5px solid #1b5e20' : undefined, borderRight: r !== 'auto' ? '2.5px solid #1b5e20' : undefined, pointerEvents: 'none', zIndex: 2 }} />
+          ))}
+          {/* ── MAIN CONTENT WRAPPER ── */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 7,
+              padding: '1px 3px',
+            }}
+          >
+            {/* 1. Header Block with RMJ Logos & 3D Title */}
+            <div style={{ marginBottom: 6, paddingTop: 2 }}>
               <div
                 style={{
-                  width: 76,
-                  height: 76,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  padding: '2px 4px',
                 }}
               >
-                <img
-                  src={letterpadLogo}
-                  alt="RMJ"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                  onError={(e) => {
-                    if (e.target.src !== memonLogo) {
-                      e.target.src = memonLogo
-                    }
-                  }}
-                />
-              </div>
-
-              {/* Center 5 Lines */}
-              <div
-                style={{
-                  flex: 1,
-                  textAlign: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1.5,
-                }}
-              >
-                <div style={{ color: '#b71c1c', fontWeight: 900, fontSize: 11.5, lineHeight: 1.2 }}>
-                  {n.quoteLine}
-                </div>
-                <div style={{ fontSize: 9.5, fontWeight: 900, color: '#111', marginTop: 1, lineHeight: 1.2 }}>
-                  {n.trustLine}
-                </div>
-                <div style={{ fontSize: 9, color: '#8b0000', fontWeight: 800, marginTop: 1, lineHeight: 1.2 }}>
-                  {n.ayatLine1}
-                </div>
-                <div style={{ fontSize: 8.5, color: '#4a154b', fontWeight: 700, marginTop: 1, lineHeight: 1.2 }}>
-                  {n.ayatLine2}
-                </div>
-
-                {/* 3D Community Title */}
+                {/* Left RMJ Logo */}
                 <div
                   style={{
-                    fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif',
-                    fontSize: 27,
-                    fontWeight: 900,
-                    color: '#ffffff',
-                    whiteSpace: 'nowrap',
-                    lineHeight: 1.15,
-                    marginTop: 3,
-                    marginBottom: 2,
-                    letterSpacing: 0.5,
-                    textShadow: `
+                    width: 76,
+                    height: 76,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <img
+                    src={letterpadLogo}
+                    alt="RMJ"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                    onError={(e) => {
+                      if (e.target.src !== memonLogo) {
+                        e.target.src = memonLogo
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Center 5 Lines */}
+                <div
+                  style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1.5,
+                  }}
+                >
+                  <div style={{ color: '#b71c1c', fontWeight: 900, fontSize: 11.5, lineHeight: 1.2 }}>
+                    {n.quoteLine}
+                  </div>
+                  <div style={{ fontSize: 9.5, fontWeight: 900, color: '#111', marginTop: 1, lineHeight: 1.2 }}>
+                    {n.trustLine}
+                  </div>
+                  <div style={{ fontSize: 9, color: '#8b0000', fontWeight: 800, marginTop: 1, lineHeight: 1.2 }}>
+                    {n.ayatLine1}
+                  </div>
+                  <div style={{ fontSize: 8.5, color: '#4a154b', fontWeight: 700, marginTop: 1, lineHeight: 1.2 }}>
+                    {n.ayatLine2}
+                  </div>
+
+                  {/* 3D Community Title */}
+                  <div
+                    style={{
+                      fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif',
+                      fontSize: 27,
+                      fontWeight: 900,
+                      color: '#ffffff',
+                      whiteSpace: 'nowrap',
+                      lineHeight: 1.15,
+                      marginTop: 3,
+                      marginBottom: 2,
+                      letterSpacing: 0.5,
+                      textShadow: `
                       -2px -2px 0 #0a3d12,
                        0px -2px 0 #0a3d12,
                        2px -2px 0 #0a3d12,
@@ -3913,847 +3914,847 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                        2px  2px 0 #0a3d12,
                        3px  4px 3px rgba(0,0,0,0.5)
                     `,
+                    }}
+                  >
+                    {n.communityName}
+                  </div>
+                </div>
+
+                {/* Right RMJ Logo */}
+                <div
+                  style={{
+                    width: 76,
+                    height: 76,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
-                  {n.communityName}
+                  <img
+                    src={letterpadLogo}
+                    alt="RMJ"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                    onError={(e) => {
+                      if (e.target.src !== memonLogo) {
+                        e.target.src = memonLogo
+                      }
+                    }}
+                  />
                 </div>
               </div>
 
-              {/* Right RMJ Logo */}
+              {/* Slogan Line below Header */}
               <div
                 style={{
-                  width: 76,
-                  height: 76,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
+                  textAlign: 'center',
+                  fontSize: 12.5,
+                  fontWeight: 900,
+                  color: '#111',
+                  marginTop: 3,
+                  lineHeight: 1.2,
                 }}
               >
-                <img
-                  src={letterpadLogo}
-                  alt="RMJ"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                  onError={(e) => {
-                    if (e.target.src !== memonLogo) {
-                      e.target.src = memonLogo
-                    }
+                {n.slogan}
+              </div>
+
+              {/* Clean Address Line (No Badge) */}
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: '#b71c1c',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  marginTop: 3,
+                  marginBottom: 4,
+                  borderBottom: '1px solid #e0e0e0',
+                  paddingBottom: 4,
+                  letterSpacing: 0.3,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {n.address}
+              </div>
+            </div>
+
+            {/* 2. Number + Date Row (Separated with empty space in between, strictly aligned and centered) */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 2px',
+                height: 26,
+              }}
+            >
+              {/* Number on Left */}
+              <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                <div
+                  style={{
+                    background: '#eff6ff',
+                    border: '1.2px solid #bfdbfe',
+                    borderRight: 'none',
+                    color: '#1e40af',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    padding: '0 10px',
+                    borderRadius: '4px 0 0 4px',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                    boxSizing: 'border-box',
                   }}
-                />
+                >
+                  {n.numberLabel}
+                </div>
+                <div
+                  style={{
+                    background: '#fff',
+                    border: '1.2px solid #bfdbfe',
+                    borderRadius: '0 4px 4px 0',
+                    height: '100%',
+                    width: 130,
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 6px',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <CertInput section="noc" field="number" value={data.number} onChange={onChange} style={{ fontWeight: 800, fontSize: 12.5, color: '#1e40af' }} />
+                </div>
+              </div>
+
+              {/* Date on Right */}
+              <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                <div
+                  style={{
+                    background: '#eff6ff',
+                    border: '1.2px solid #bfdbfe',
+                    borderRight: 'none',
+                    color: '#1e40af',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    padding: '0 10px',
+                    borderRadius: '4px 0 0 4px',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {n.dateLabel}
+                </div>
+                <div
+                  style={{
+                    background: '#fff',
+                    border: '1.2px solid #bfdbfe',
+                    borderRadius: '0 4px 4px 0',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 4px',
+                    gap: 1,
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <div style={{ width: 22, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CertInput
+                      section="noc"
+                      field="dateDay"
+                      value={data.dateDay}
+                      onChange={onChange}
+                      textAlign="center"
+                      placeholder="DD"
+                      style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1, padding: 0 }}
+                    />
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1, color: '#475569', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>/</span>
+                  <div style={{ width: 22, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CertInput
+                      section="noc"
+                      field="dateMonth"
+                      value={data.dateMonth}
+                      onChange={onChange}
+                      textAlign="center"
+                      placeholder="MM"
+                      style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1, padding: 0 }}
+                    />
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1, color: '#475569', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>/</span>
+                  <div style={{ width: 36, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <input
+                      type="text"
+                      value={data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : ''}
+                      onChange={(e) => {
+                        const v = toGujaratiDigits(e.target.value).replace(/[^૦-૯]/g, '').slice(0, 4)
+                        onChange('noc', 'dateYear', v.length === 4 ? v.slice(2) : v)
+                      }}
+                      placeholder="૨૦૨૬"
+                      maxLength={4}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontWeight: 600,
+                        fontSize: 12.5,
+                        color: '#111',
+                        padding: 0,
+                        margin: 0,
+                        textAlign: 'center',
+                        lineHeight: 1,
+                        verticalAlign: 'middle',
+                        fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Slogan Line below Header */}
+            {/* Royal Ornamental Certificate Title (Text Only, No Square Box, No Background) */}
             <div
               style={{
-                textAlign: 'center',
-                fontSize: 12.5,
-                fontWeight: 900,
-                color: '#111',
-                marginTop: 3,
-                lineHeight: 1.2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                margin: '6px 0 5px',
               }}
             >
-              {n.slogan}
-            </div>
+              {/* Left Heraldic Wing */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, transparent, #800000)' }} />
+                <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
+                <div style={{ width: 18, height: 2, background: '#800000', borderRadius: 1 }} />
+              </div>
 
-            {/* Clean Address Line (No Badge) */}
-            <div
-              style={{
-                textAlign: 'center',
-                color: '#b71c1c',
-                fontSize: 11,
-                fontWeight: 900,
-                marginTop: 3,
-                marginBottom: 4,
-                borderBottom: '1px solid #e0e0e0',
-                paddingBottom: 4,
-                letterSpacing: 0.3,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {n.address}
-            </div>
-          </div>
-
-          {/* 2. Number + Date Row (Separated with empty space in between, strictly aligned and centered) */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 2px',
-              height: 26,
-            }}
-          >
-            {/* Number on Left */}
-            <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-              <div
+              {/* Title Text Only */}
+              <span
                 style={{
-                  background: '#eff6ff',
-                  border: '1.2px solid #bfdbfe',
-                  borderRight: 'none',
-                  color: '#1e40af',
+                  color: '#800000',
                   fontWeight: 900,
-                  fontSize: 12.5,
-                  padding: '0 10px',
-                  borderRadius: '4px 0 0 4px',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  lineHeight: 1,
-                  boxSizing: 'border-box',
+                  fontSize: 19,
+                  fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
+                  letterSpacing: 0.8,
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {n.numberLabel}
-              </div>
-              <div
-                style={{
-                  background: '#fff',
-                  border: '1.2px solid #bfdbfe',
-                  borderRadius: '0 4px 4px 0',
-                  height: '100%',
-                  width: 130,
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0 6px',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <CertInput section="noc" field="number" value={data.number} onChange={onChange} style={{ fontWeight: 800, fontSize: 12.5, color: '#1e40af' }} />
+                {n.certificateTitle}
+              </span>
+
+              {/* Right Heraldic Wing */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 18, height: 2, background: '#800000', borderRadius: 1 }} />
+                <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
+                <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, #800000, transparent)' }} />
               </div>
             </div>
 
-            {/* Date on Right */}
-            <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            {/* 4. First Party Details */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#111', display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+              {/* Salutation */}
               <div
                 style={{
-                  background: '#eff6ff',
-                  border: '1.2px solid #bfdbfe',
-                  borderRight: 'none',
-                  color: '#1e40af',
+                  color: '#d81b60',
                   fontWeight: 900,
-                  fontSize: 12.5,
-                  padding: '0 10px',
-                  borderRadius: '4px 0 0 4px',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  lineHeight: 1,
-                  boxSizing: 'border-box',
-                }}
-              >
-                {n.dateLabel}
-              </div>
-              <div
-                style={{
-                  background: '#fff',
-                  border: '1.2px solid #bfdbfe',
-                  borderRadius: '0 4px 4px 0',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0 4px',
-                  gap: 1,
-                  boxSizing: 'border-box',
-                }}
-              >
-                <div style={{ width: 22, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CertInput
-                    section="noc"
-                    field="dateDay"
-                    value={data.dateDay}
-                    onChange={onChange}
-                    textAlign="center"
-                    placeholder="DD"
-                    style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1, padding: 0 }}
-                  />
-                </div>
-                <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1, color: '#475569', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>/</span>
-                <div style={{ width: 22, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CertInput
-                    section="noc"
-                    field="dateMonth"
-                    value={data.dateMonth}
-                    onChange={onChange}
-                    textAlign="center"
-                    placeholder="MM"
-                    style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1, padding: 0 }}
-                  />
-                </div>
-                <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1, color: '#475569', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>/</span>
-                <div style={{ width: 36, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <input
-                    type="text"
-                    value={data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : ''}
-                    onChange={(e) => {
-                      const v = toGujaratiDigits(e.target.value).replace(/[^૦-૯]/g, '').slice(0, 4)
-                      onChange('noc', 'dateYear', v.length === 4 ? v.slice(2) : v)
-                    }}
-                    placeholder="૨૦૨૬"
-                    maxLength={4}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      border: 'none',
-                      outline: 'none',
-                      background: 'transparent',
-                      fontWeight: 600,
-                      fontSize: 12.5,
-                      color: '#111',
-                      padding: 0,
-                      margin: 0,
-                      textAlign: 'center',
-                      lineHeight: 1,
-                      verticalAlign: 'middle',
-                      fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-                      boxSizing: 'border-box',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Royal Ornamental Certificate Title (Text Only, No Square Box, No Background) */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              margin: '6px 0 5px',
-            }}
-          >
-            {/* Left Heraldic Wing */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, transparent, #800000)' }} />
-              <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
-              <div style={{ width: 18, height: 2, background: '#800000', borderRadius: 1 }} />
-            </div>
-
-            {/* Title Text Only */}
-            <span
-              style={{
-                color: '#800000',
-                fontWeight: 900,
-                fontSize: 19,
-                fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-                letterSpacing: 0.8,
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {n.certificateTitle}
-            </span>
-
-            {/* Right Heraldic Wing */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 18, height: 2, background: '#800000', borderRadius: 1 }} />
-              <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
-              <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, #800000, transparent)' }} />
-            </div>
-          </div>
-
-          {/* 4. First Party Details */}
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#111', display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-            {/* Salutation */}
-            <div
-              style={{
-                color: '#d81b60',
-                fontWeight: 900,
-                fontSize: 14,
-                textShadow: `
+                  fontSize: 14,
+                  textShadow: `
                   -1px -1px 0 #ffffff,
                    1px -1px 0 #ffffff,
                   -1px  1px 0 #ffffff,
                    1px  1px 0 #ffffff
                 `,
-              }}
-            >
-              {n.salutation}
-            </div>
+                }}
+              >
+                {n.salutation}
+              </div>
 
-            {/* Pramukh Saheb / Secretary Saheb & Local Jamat */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  paddingLeft: 36,
-                  textShadow: `
+              {/* Pramukh Saheb / Secretary Saheb & Local Jamat */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    paddingLeft: 36,
+                    textShadow: `
                     -1px -1px 0 #ffffff,
                      1px -1px 0 #ffffff,
                     -1px  1px 0 #ffffff,
                      1px  1px 0 #ffffff
                   `,
-                }}
-              >
-                {n.pramukhLineLabel}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                {underlineField('localJamat', '150px')}
-                <span
-                  style={{
-                    color: '#d81b60',
-                    fontWeight: 900,
-                    fontSize: 13,
-                    marginLeft: 4,
-                    textShadow: `
+                  }}
+                >
+                  {n.pramukhLineLabel}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  {underlineField('localJamat', '150px')}
+                  <span
+                    style={{
+                      color: '#d81b60',
+                      fontWeight: 900,
+                      fontSize: 13,
+                      marginLeft: 4,
+                      textShadow: `
                       -1px -1px 0 #ffffff,
                        1px -1px 0 #ffffff,
                       -1px  1px 0 #ffffff,
                        1px  1px 0 #ffffff
                     `,
+                    }}
+                  >
+                    {n.localJamatLabel}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mukam, Taluka, Jila */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
                   }}
                 >
-                  {n.localJamatLabel}
+                  {n.muqamLabel}
                 </span>
+                {underlineField('muqam', '180px')}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    marginLeft: 6,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.talukaLabel}
+                </span>
+                {underlineField('taluka', '150px')}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    marginLeft: 6,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.jilaLabel}
+                </span>
+                {underlineField('jila', 'auto', 1)}
+              </div>
+
+              {/* Assalamo Alaykum */}
+              <div
+                style={{
+                  color: '#d81b60',
+                  fontWeight: 900,
+                  textShadow: `
+                  -1px -1px 0 #ffffff,
+                   1px -1px 0 #ffffff,
+                  -1px  1px 0 #ffffff,
+                   1px  1px 0 #ffffff
+                `,
+                }}
+              >
+                {n.assalam}
+              </div>
+
+              {/* Salam baad gram haale */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.salamText}
+                </span>
+                {underlineField('gram', 'auto', 1)}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    marginLeft: 6,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.haale}
+                </span>
+              </div>
+
+              {/* Janaab (Member Name) */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.janaab}
+                </span>
+                {underlineField('memberName', 'auto', 1)}
+              </div>
+
+              {/* Rehvasi , na */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.rehvaasi}
+                </span>
+                {underlineField('rehvasi', 'auto', 1)}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    margin: '0 4px',
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  ,
+                </span>
+                {underlineField('have', '120px')}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    marginLeft: 4,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  ના
+                </span>
+              </div>
+
+              {/* Candidate 3 Detailed Lines */}
+              {/* Line 1: * વર / કન્યાનું પૂરું નામ: */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginTop: 1 }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  * વર / દીકરા પૂરું નામ:
+                </span>
+                {underlineField('dikraDikri', 'auto', 1)}
+              </div>
+
+              {/* Line 2: * જન્મ તારીખ / ઉંમર: ........... આધાર કાર્ડ નં.: ........... */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  * જન્મ તારીખ / ઉંમર:
+                </span>
+                {underlineField('candidateDob', 'auto', 1, 'left', data.candidateAge ? `${data.candidateAge} વર્ષ` : '')}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    flexShrink: 0,
+                    marginLeft: 8,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  આધાર કાર્ડ નં.:
+                </span>
+                {underlineField('candidateAadhaar', 'auto', 1)}
+              </div>
+
+              {/* Line 3: * વૈવાહિક સ્થિતિ: (Dynamic) */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  * વૈવાહિક સ્થિતિ:
+                </span>
+                {underlineField('candidateMaritalStatus', '180px', null, 'left', '')}
               </div>
             </div>
 
-            {/* Mukam, Taluka, Jila */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.muqamLabel}
-              </span>
-              {underlineField('muqam', '180px')}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  marginLeft: 6,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.talukaLabel}
-              </span>
-              {underlineField('taluka', '150px')}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  marginLeft: 6,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.jilaLabel}
-              </span>
-              {underlineField('jila', 'auto', 1)}
-            </div>
-
-            {/* Assalamo Alaykum */}
+            {/* 5. Center Title 1 (Text Only, No Box, No Background) */}
             <div
               style={{
-                color: '#d81b60',
-                fontWeight: 900,
-                textShadow: `
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                margin: '6px 0 5px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, transparent, #0d2366)' }} />
+                <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
+                <div style={{ width: 18, height: 2, background: '#0d2366', borderRadius: 1 }} />
+              </div>
+
+              <span
+                style={{
+                  color: '#0d2366',
+                  fontWeight: 900,
+                  fontSize: 15.5,
+                  fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
+                  letterSpacing: 0.6,
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {n.niNikahSection}
+              </span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 18, height: 2, background: '#0d2366', borderRadius: 1 }} />
+                <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
+                <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, #0d2366, transparent)' }} />
+              </div>
+            </div>
+
+            {/* 6. Second Party Details */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#111', display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+              {/* Aapni jamat gram, taluka, jila */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%', flexWrap: 'nowrap' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.aapniJamatText}
+                </span>
+                {underlineField('apniJamatGram', 'auto', 1)}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    marginLeft: 4,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.talukaLabel}
+                </span>
+                {underlineField('apniTaluka', 'auto', 1)}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    marginLeft: 4,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.jilaLabel}
+                </span>
+                {underlineField('apniJila', 'auto', 1)}
+              </div>
+
+              {/* Janaab */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.janaab}
+                </span>
+                {underlineField('apniJawab', 'auto', 1)}
+              </div>
+
+              {/* Rehvasi na */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'flex-end' }}>
+                {underlineField('apniRehvasi', 'auto', 1)}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    marginLeft: 6,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  {n.rehvaasi} ના
+                </span>
+              </div>
+
+              {/* Second Party Candidate 3 Detailed Lines */}
+              {/* Line 1: * વર / કન્યાનું પૂરું નામ: */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginTop: 1 }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  * દુલ્હન / દીકરી પૂરું નામ:
+                </span>
+                {underlineField('apniDikraDikri', 'auto', 1)}
+              </div>
+
+              {/* Line 2: * જન્મ તારીખ / ઉંમર: ........... આધાર કાર્ડ નં.: ........... */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  * જન્મ તારીખ / ઉંમર:
+                </span>
+                {underlineField('apniCandidateDob', 'auto', 1, 'left', data.apniCandidateAge ? `${data.apniCandidateAge} વર્ષ` : '')}
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    flexShrink: 0,
+                    marginLeft: 8,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  આધાર કાર્ડ નં.:
+                </span>
+                {underlineField('apniCandidateAadhaar', 'auto', 1)}
+              </div>
+
+              {/* Line 3: * વૈવાહિક સ્થિતિ: (Dynamic) */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    fontSize: 12.5,
+                    flexShrink: 0,
+                    textShadow: `
+                    -1px -1px 0 #ffffff,
+                     1px -1px 0 #ffffff,
+                    -1px  1px 0 #ffffff,
+                     1px  1px 0 #ffffff
+                  `,
+                  }}
+                >
+                  * વૈવાહિક સ્થિતિ:
+                </span>
+                {underlineField('apniCandidateMaritalStatus', '180px', null, 'left', '')}
+              </div>
+
+              {/* Insha Allah line */}
+              <div
+                style={{
+                  color: '#d81b60',
+                  fontWeight: 900,
+                  fontSize: 12.5,
+                  marginTop: 1,
+                  textShadow: `
                   -1px -1px 0 #ffffff,
                    1px -1px 0 #ffffff,
                   -1px  1px 0 #ffffff,
                    1px  1px 0 #ffffff
                 `,
-              }}
-            >
-              {n.assalam}
+                }}
+              >
+                {n.inshaAllah}
+              </div>
             </div>
 
-            {/* Salam baad gram haale */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.salamText}
-              </span>
-              {underlineField('gram', 'auto', 1)}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  marginLeft: 6,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.haale}
-              </span>
-            </div>
-
-            {/* Janaab (Member Name) */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.janaab}
-              </span>
-              {underlineField('memberName', 'auto', 1)}
-            </div>
-
-            {/* Rehvasi , na */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.rehvaasi}
-              </span>
-              {underlineField('rehvasi', 'auto', 1)}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  margin: '0 4px',
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                ,
-              </span>
-              {underlineField('have', '120px')}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  marginLeft: 4,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                ના
-              </span>
-            </div>
-
-            {/* Candidate 3 Detailed Lines */}
-            {/* Line 1: * વર / કન્યાનું પૂરું નામ: */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginTop: 1 }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                * દુલ્હન / દીકરી પૂરું નામ:
-              </span>
-              {underlineField('dikraDikri', 'auto', 1)}
-            </div>
-
-            {/* Line 2: * જન્મ તારીખ / ઉંમર: ........... આધાર કાર્ડ નં.: ........... */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                * જન્મ તારીખ / ઉંમર:
-              </span>
-              {underlineField('candidateDob', 'auto', 1, 'left', data.candidateAge ? `${data.candidateAge} વર્ષ` : '')}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                  marginLeft: 8,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                આધાર કાર્ડ નં.:
-              </span>
-              {underlineField('candidateAadhaar', 'auto', 1)}
-            </div>
-
-            {/* Line 3: * વૈવાહિક સ્થિતિ: કુંવારા / પુનર્લગ્ન */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                * વૈવાહિક સ્થિતિ:
-              </span>
-              {underlineField('candidateMaritalStatus', '180px', null, 'left', 'કુંવારા / પુનર્લગ્ન')}
-            </div>
-          </div>
-
-          {/* 5. Center Title 1 (Text Only, No Box, No Background) */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              margin: '6px 0 5px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, transparent, #0d2366)' }} />
-              <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
-              <div style={{ width: 18, height: 2, background: '#0d2366', borderRadius: 1 }} />
-            </div>
-
-            <span
-              style={{
-                color: '#0d2366',
-                fontWeight: 900,
-                fontSize: 15.5,
-                fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-                letterSpacing: 0.6,
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {n.niNikahSection}
-            </span>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 18, height: 2, background: '#0d2366', borderRadius: 1 }} />
-              <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
-              <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, #0d2366, transparent)' }} />
-            </div>
-          </div>
-
-          {/* 6. Second Party Details */}
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#111', display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-            {/* Aapni jamat gram, taluka, jila */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%', flexWrap: 'nowrap' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.aapniJamatText}
-              </span>
-              {underlineField('apniJamatGram', 'auto', 1)}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  marginLeft: 4,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.talukaLabel}
-              </span>
-              {underlineField('apniTaluka', 'auto', 1)}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  marginLeft: 4,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.jilaLabel}
-              </span>
-              {underlineField('apniJila', 'auto', 1)}
-            </div>
-
-            {/* Janaab */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.janaab}
-              </span>
-              {underlineField('apniJawab', 'auto', 1)}
-            </div>
-
-            {/* Rehvasi na */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'flex-end' }}>
-              {underlineField('apniRehvasi', 'auto', 1)}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  marginLeft: 6,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                {n.rehvaasi} ના
-              </span>
-            </div>
-
-            {/* Second Party Candidate 3 Detailed Lines */}
-            {/* Line 1: * વર / કન્યાનું પૂરું નામ: */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginTop: 1 }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                * વર / દીકરા પૂરું નામ:
-              </span>
-              {underlineField('apniDikraDikri', 'auto', 1)}
-            </div>
-
-            {/* Line 2: * જન્મ તારીખ / ઉંમર: ........... આધાર કાર્ડ નં.: ........... */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                * જન્મ તારીખ / ઉંમર:
-              </span>
-              {underlineField('apniCandidateDob', 'auto', 1, 'left', data.apniCandidateAge ? `${data.apniCandidateAge} વર્ષ` : '')}
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                  marginLeft: 8,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                આધાર કાર્ડ નં.:
-              </span>
-              {underlineField('apniCandidateAadhaar', 'auto', 1)}
-            </div>
-
-            {/* Line 3: * વૈવાહિક સ્થિતિ: કુંવારા / પુનર્લગ્ન */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                  textShadow: `
-                    -1px -1px 0 #ffffff,
-                     1px -1px 0 #ffffff,
-                    -1px  1px 0 #ffffff,
-                     1px  1px 0 #ffffff
-                  `,
-                }}
-              >
-                * વૈવાહિક સ્થિતિ:
-              </span>
-              {underlineField('apniCandidateMaritalStatus', '180px', null, 'left', 'કુંવારા / પુનર્લગ્ન')}
-            </div>
-
-            {/* Insha Allah line */}
+            {/* 7. Center Title 2 (Text Only, No Box, No Background) */}
             <div
               style={{
-                color: '#d81b60',
-                fontWeight: 900,
-                fontSize: 12.5,
-                marginTop: 1,
-                textShadow: `
-                  -1px -1px 0 #ffffff,
-                   1px -1px 0 #ffffff,
-                  -1px  1px 0 #ffffff,
-                   1px  1px 0 #ffffff
-                `,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                margin: '6px 0 5px',
               }}
             >
-              {n.inshaAllah}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, transparent, #0d2366)' }} />
+                <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
+                <div style={{ width: 18, height: 2, background: '#0d2366', borderRadius: 1 }} />
+              </div>
+
+              <span
+                style={{
+                  color: '#0d2366',
+                  fontWeight: 900,
+                  fontSize: 15.5,
+                  fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
+                  letterSpacing: 0.6,
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {n.programTitle}
+              </span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 18, height: 2, background: '#0d2366', borderRadius: 1 }} />
+                <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
+                <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, #0d2366, transparent)' }} />
+              </div>
             </div>
-          </div>
 
-          {/* 7. Center Title 2 (Text Only, No Box, No Background) */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              margin: '6px 0 5px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, transparent, #0d2366)' }} />
-              <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
-              <div style={{ width: 18, height: 2, background: '#0d2366', borderRadius: 1 }} />
-            </div>
-
-            <span
-              style={{
-                color: '#0d2366',
-                fontWeight: 900,
-                fontSize: 15.5,
-                fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-                letterSpacing: 0.6,
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {n.programTitle}
-            </span>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 18, height: 2, background: '#0d2366', borderRadius: 1 }} />
-              <span style={{ color: '#d97706', fontSize: 13, lineHeight: 1 }}>❖</span>
-              <div style={{ width: 45, height: 1.5, background: 'linear-gradient(90deg, #0d2366, transparent)' }} />
-            </div>
-          </div>
-
-          {/* 8. Program Details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+            {/* 8. Program Details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
               <div style={{ display: 'flex', alignItems: 'center', width: '100%', fontSize: 12.5, fontWeight: 700, height: 22 }}>
                 <span
                   style={{
@@ -4849,64 +4850,64 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                 {underlineField('engDayName', 'auto', 1, 'left', 'દા.ત. રવિવાર')}
               </div>
 
-            {/* Mukam Place */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%', fontSize: 12.5, fontWeight: 700, paddingLeft: 40, marginBottom: 10 }}>
-              <span
-                style={{
-                  color: '#d81b60',
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  textShadow: `
+              {/* Mukam Place */}
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%', fontSize: 12.5, fontWeight: 700, paddingLeft: 40, marginBottom: 10 }}>
+                <span
+                  style={{
+                    color: '#d81b60',
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    textShadow: `
                     -1px -1px 0 #ffffff,
                      1px -1px 0 #ffffff,
                     -1px  1px 0 #ffffff,
                      1px  1px 0 #ffffff
                   `,
-                }}
-              >
-                {n.muqamLine}
-              </span>
-              {underlineField('muqamPlace', '380px')}
+                  }}
+                >
+                  {n.muqamLine}
+                </span>
+                {underlineField('muqamPlace', '380px')}
+              </div>
+            </div>
+
+            {/* Bold Closing Declaration */}
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                lineHeight: '18px',
+                textAlign: 'center',
+                color: '#000000',
+                padding: '6px 10px',
+                background: 'rgba(255, 255, 255, 0.7)',
+                borderRadius: 6,
+                border: '1px solid #bbf7d0',
+                marginTop: 10,
+                marginBottom: 4,
+              }}
+            >
+              {n.bodyText}
+            </div>
+
+            {/* 11. Page 1 Bottom Indicator */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '4px 10px',
+                fontSize: 10.5,
+                color: '#2e7d32',
+                fontWeight: 800,
+                fontStyle: 'italic',
+                textAlign: 'center',
+                marginTop: 'auto',
+              }}
+            >
+              [ પૃષ્ઠ ૧ / ૨ &bull; પાછળ કાનૂની શરતો તથા સંમતિ પત્ર જુઓ ]
             </div>
           </div>
-
-          {/* Bold Closing Declaration */}
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 800,
-              lineHeight: '18px',
-              textAlign: 'center',
-              color: '#000000',
-              padding: '6px 10px',
-              background: 'rgba(255, 255, 255, 0.7)',
-              borderRadius: 6,
-              border: '1px solid #bbf7d0',
-              marginTop: 10,
-              marginBottom: 4,
-            }}
-          >
-            {n.bodyText}
-          </div>
-
-          {/* 11. Page 1 Bottom Indicator */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '4px 10px',
-              fontSize: 10.5,
-              color: '#2e7d32',
-              fontWeight: 800,
-              fontStyle: 'italic',
-              textAlign: 'center',
-              marginTop: 'auto',
-            }}
-          >
-            [ પૃષ્ઠ ૧ / ૨ &bull; પાછળ કાનૂની શરતો તથા સંમતિ પત્ર જુઓ ]
-          </div>
-        </div>
         </div>
       </div>
 
@@ -4946,215 +4947,215 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
           position: 'relative',
           boxSizing: 'border-box',
         }}>
-        {[['0','0'],['0','auto'],['auto','0'],['auto','auto']].map(([t,r],i)=>(
-          <div key={i} style={{ position:'absolute', top:t!=='auto'?4:undefined, right:r!=='auto'?4:undefined, bottom:t==='auto'?4:undefined, left:r==='auto'?4:undefined, width:14, height:14, borderTop: i<2?'2.5px solid #1b5e20':undefined, borderBottom: i>=2?'2.5px solid #1b5e20':undefined, borderLeft: r==='auto'?'2.5px solid #1b5e20':undefined, borderRight: r!=='auto'?'2.5px solid #1b5e20':undefined, pointerEvents:'none', zIndex:2 }} />
-        ))}
-        {/* ── MAIN CONTENT WRAPPER PAGE 2 ── */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            padding: '1px 3px',
-          }}
-        >
-          {/* Reference & Page Badge Bar (Page 2) */}
+          {[['0', '0'], ['0', 'auto'], ['auto', '0'], ['auto', 'auto']].map(([t, r], i) => (
+            <div key={i} style={{ position: 'absolute', top: t !== 'auto' ? 4 : undefined, right: r !== 'auto' ? 4 : undefined, bottom: t === 'auto' ? 4 : undefined, left: r === 'auto' ? 4 : undefined, width: 14, height: 14, borderTop: i < 2 ? '2.5px solid #1b5e20' : undefined, borderBottom: i >= 2 ? '2.5px solid #1b5e20' : undefined, borderLeft: r === 'auto' ? '2.5px solid #1b5e20' : undefined, borderRight: r !== 'auto' ? '2.5px solid #1b5e20' : undefined, pointerEvents: 'none', zIndex: 2 }} />
+          ))}
+          {/* ── MAIN CONTENT WRAPPER PAGE 2 ── */}
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: '#f1f5f9',
-              border: '1.2px solid #cbd5e1',
-              color: '#0f172a',
-              padding: '5px 12px',
-              borderRadius: 4,
-              fontSize: 12,
-              fontWeight: 900,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            }}
-          >
-            <div>NOC નં.: <span style={{ color: '#1e40af' }}>{data.number || '........'}</span></div>
-            <div style={{ color: '#854d0e', fontWeight: 900 }}>પૃષ્ઠ ૨ : ખાતરી, પરવાનગી તથા કાનૂની સંમતિ પત્ર</div>
-            <div>તા.: {data.dateDay || 'DD'}/{data.dateMonth || 'MM'}/૨૦{data.dateYear || 'YY'}</div>
-          </div>
-
-          {/* 4 Legal & Social Undertaking Clauses Box */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1.5px solid #1b5e20',
-              borderRadius: 6,
-              padding: '8px 12px',
-              fontSize: 11,
-              lineHeight: '16px',
-              color: '#111',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              gap: 3.5,
+              gap: 8,
+              padding: '1px 3px',
             }}
           >
-            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૧.</div>
-              <div>
-                <strong style={{ color: '#8b0000' }}>કોઈ લેણદેણ / વાંધો નથી:</strong> સદર નિકાહખ્વાની બાબતે અમારી જમાઅતના સભ્ય (આસામી) સામે કોઈ સામાજિક વાંધો, તકરાર અને જમાઅતનું કોઈ લ્હેણું બાકી નથી.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૨.</div>
-              <div>
-                <strong style={{ color: '#8b0000' }}>પુખ્ત વયની કાનૂની ખાતરી:</strong> બાળવિવાહ પ્રતિબંધક કાયદા અંતર્ગત બંને પક્ષકારો કાયદેસર લગ્ન વય (દીકરો  છ પરગણા થરાદી ૨૧ વર્ષ કે તેથી વધુ અને દીકરી ૧૮ વર્ષ કે તેથી વધુ) ધરાવે છે અને આ નિકાહ બંને પક્ષકારોની મુક્ત અને પરસ્પર સંમતિથી થાય છે.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૩.</div>
-              <div>
-                <strong style={{ color: '#8b0000' }}>સમાજના બંધારણ અને શિસ્તનું ચુસ્ત પાલન:</strong> UMTC મેમન જમાઅતના બંધારણ મુજબ લગ્ન પ્રસંગના તમામ સામાજિક નિયમો અને શિસ્ત (વરઘોડામાં ડીજે, ફટાકડા, બિનજરૂરી દેખાડો કે કુરિવાજો પરનો પ્રતિબંધ) માન્ય રાખવાના રહેશે. જો કોઈ સભ્ય નિયમભંગ કરશે તો સમાજના બંધારણ મુજબ કડક પગલાં લેવાશે.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૪.</div>
-              <div>
-                <strong style={{ color: '#8b0000' }}>હેતુ અને મર્યાદા:</strong> આ પ્રમાણપત્ર માત્ર સામાજિક શિસ્ત, ઓળખ અને અધિકૃત લગ્ન નોંધણીના હેતુ માટે આપવામાં આવેલ છે.
-              </div>
-            </div>
-          </div>
-
-          {/* Purple Note Banner */}
-          <div
-            style={{
-              background: '#5c1044',
-              color: '#ffffff',
-              borderRadius: 6,
-              padding: '4px 10px',
-              fontSize: 10.5,
-              fontWeight: 800,
-              textAlign: 'center',
-              lineHeight: '15px',
-              boxSizing: 'border-box',
-            }}
-          >
-            <div>
-              <span style={{ color: '#ffd600' }}>{n.noteTitle || 'નોંધ :-'} </span>
-              UMTC મેમન જમાઅતના બંધારણ મુજબ શાદી પ્રસંગના નિયમોનું ચુસ્તપણે પાલન કરવાની સમાજના દરેક સભ્યની નૈતિક ફરજમાં આવે છે.
-            </div>
-          </div>
-
-          {/* Legal Disclaimer Box */}
-          <div
-            style={{
-              background: '#fff9c4',
-              border: '1.5px solid #fbc02d',
-              borderLeft: '5px solid #e65100',
-              borderRadius: 6,
-              padding: '7px 12px',
-              fontSize: 11.5,
-              lineHeight: '16px',
-              color: '#795548',
-              fontWeight: 700,
-            }}
-          >
-            <span style={{ color: '#b71c1c', fontWeight: 900 }}>કાનૂની જવાબદારી મુક્તિ નોંધ (Legal Disclaimer): </span>
-            "આ એન.ઓ.સી. (N.O.C.) માત્ર સામાજિક ઓળખ, શિસ્ત અને જમાતના બંધારણ પૂરતી મર્યાદિત છે. પક્ષકારોના અંગત વ્યવહાર, આપ-લે (દહેજ વગેરે) કે ભવિષ્યના કોઈ પારિવારિક વિવાદ માટે રાધનપુર થરાદી મેમન જમાઅત કાનૂની રીતે જવાબદાર રહેશે નહીં."
-          </div>
-
-          {/* Member / Guardian Undertaking & Signature Section */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1.5px solid #2e7d32',
-              borderRadius: 8,
-              padding: '12px 14px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-            }}
-          >
-            <div style={{ color: '#1b5e20', fontWeight: 900, fontSize: 12.5, borderBottom: '1.2px solid #e0e0e0', paddingBottom: 3, marginBottom: 4 }}>
-              આસામી / વાલી તથા વર-કન્યાની સંમતિ અને કબૂલાત:
-            </div>
-            <div style={{ fontSize: 11.5, color: '#222', lineHeight: '17px', fontWeight: 600 }}>
-              અમે નીચે સહી કરનાર ખાતરી આપીએ છીએ કે ઉપર જણાવેલ તમામ વિગતો સાચી છે અને અમે રાધનપુર થરાદી મેમન જમાઅતના તમામ સામાજિક નિયમો અને બંધારણનું પાલન કરવા સંપૂર્ણ બંધાયેલા છીએ.
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 24, padding: '0 10px' }}>
-              <div style={{ textAlign: 'center', width: '45%' }}>
-                <div style={{ borderTop: '1.2px dashed #444', paddingTop: 3, fontSize: 12, fontWeight: 900, color: '#111' }}>
-                  આસામી / વાલીની સહી
-                </div>
-                <div style={{ fontSize: 11, color: '#555', fontWeight: 700, marginTop: 1 }}>
-                  ({data.memberName || 'વાલીનું નામ'})
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'center', width: '45%' }}>
-                <div style={{ borderTop: '1.2px dashed #444', paddingTop: 3, fontSize: 12, fontWeight: 900, color: '#111' }}>
-                  વર / કન્યાની સહી
-                </div>
-                <div style={{ fontSize: 11, color: '#555', fontWeight: 700, marginTop: 1 }}>
-                  ({data.dikraDikri || 'ઉમેદવારનું નામ'})
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Official Seal & Jamaat Signatures Footer */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-end',
-              padding: '8px 18px 2px',
-              fontSize: 13,
-              fontWeight: 900,
-              color: '#8b0000',
-            }}
-          >
-            {/* Secretary Signature */}
-            <div style={{ textAlign: 'center', minWidth: 140 }}>
-              <div style={{ borderTop: '1.5px solid #8b0000', paddingTop: 3, marginBottom: 2 }}>
-                {n.secretarySign}
-              </div>
-              <div style={{ fontSize: 11, color: '#111', fontWeight: 800 }}>{n.footerCommunity}</div>
-            </div>
-
-            {/* Official Jamaat Seal Circle */}
+            {/* Reference & Page Badge Bar (Page 2) */}
             <div
               style={{
-                width: 72,
-                height: 72,
-                border: '2px dashed #1b5e20',
-                borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10.5,
+                justifyContent: 'space-between',
+                background: '#f1f5f9',
+                border: '1.2px solid #cbd5e1',
+                color: '#0f172a',
+                padding: '5px 12px',
+                borderRadius: 4,
+                fontSize: 12,
                 fontWeight: 900,
-                color: '#1b5e20',
-                textAlign: 'center',
-                lineHeight: 1.2,
-                background: 'rgba(27, 94, 32, 0.05)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
             >
-              જમાઅત<br />સિક્કો
+              <div>NOC નં.: <span style={{ color: '#1e40af' }}>{data.number || '........'}</span></div>
+              <div style={{ color: '#854d0e', fontWeight: 900 }}>પૃષ્ઠ ૨ : ખાતરી, પરવાનગી તથા કાનૂની સંમતિ પત્ર</div>
+              <div>તા.: {data.dateDay || 'DD'}/{data.dateMonth || 'MM'}/૨૦{data.dateYear || 'YY'}</div>
             </div>
 
-            {/* Pramukh Signature */}
-            <div style={{ textAlign: 'center', minWidth: 140 }}>
-              <div style={{ borderTop: '1.5px solid #8b0000', paddingTop: 3, marginBottom: 2 }}>
-                {n.pramukhSign}
+            {/* 4 Legal & Social Undertaking Clauses Box */}
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1.5px solid #1b5e20',
+                borderRadius: 6,
+                padding: '8px 12px',
+                fontSize: 11,
+                lineHeight: '16px',
+                color: '#111',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3.5,
+              }}
+            >
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૧.</div>
+                <div>
+                  <strong style={{ color: '#8b0000' }}>કોઈ લેણદેણ / વાંધો નથી:</strong> સદર નિકાહખ્વાની બાબતે અમારી જમાઅતના સભ્ય (આસામી) સામે કોઈ સામાજિક વાંધો, તકરાર અને જમાઅતનું કોઈ લ્હેણું બાકી નથી.
+                </div>
               </div>
-              <div style={{ fontSize: 11, color: '#111', fontWeight: 800 }}>{n.footerCommunity}</div>
+
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૨.</div>
+                <div>
+                  <strong style={{ color: '#8b0000' }}>પુખ્ત વયની કાનૂની ખાતરી:</strong> બાળવિવાહ પ્રતિબંધક કાયદા અંતર્ગત બંને પક્ષકારો કાયદેસર લગ્ન વય (દીકરો  ૨૧ વર્ષ કે તેથી વધુ અને દીકરી ૧૮ વર્ષ કે તેથી વધુ) ધરાવે છે અને આ નિકાહ બંને પક્ષકારોની મુક્ત અને પરસ્પર સંમતિથી થાય છે.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૩.</div>
+                <div>
+                  <strong style={{ color: '#8b0000' }}>સમાજના બંધારણ અને શિસ્તનું ચુસ્ત પાલન:</strong> U T M C મેમન જમાઅતના બંધારણ મુજબ લગ્ન પ્રસંગના તમામ સામાજિક નિયમો અને U T M C જમાઅત  (વરઘોડામાં ડીજે, ફટાકડા, બિનજરૂરી દેખાડો કે કુરિવાજો પરનો પ્રતિબંધ) માન્ય રાખવાના રહેશે. જો કોઈ સભ્ય નિયમભંગ કરશે તો સમાજના બંધારણ મુજબ કડક પગલાં લેવાશે.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૪.</div>
+                <div>
+                  <strong style={{ color: '#8b0000' }}>હેતુ અને મર્યાદા:</strong> આ પ્રમાણપત્ર માત્ર સામાજિક શિસ્ત, ઓળખ અને અધિકૃત લગ્ન નોંધણીના હેતુ માટે આપવામાં આવેલ છે.
+                </div>
+              </div>
+            </div>
+
+            {/* Purple Note Banner */}
+            <div
+              style={{
+                background: '#5c1044',
+                color: '#ffffff',
+                borderRadius: 6,
+                padding: '4px 10px',
+                fontSize: 10.5,
+                fontWeight: 800,
+                textAlign: 'center',
+                lineHeight: '15px',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div>
+                <span style={{ color: '#ffd600' }}>{n.noteTitle || 'નોંધ :-'} </span>
+                U T M C મેમન જમાઅતના બંધારણ મુજબ શાદી પ્રસંગના નિયમોનું ચુસ્તપણે પાલન કરવાની સમાજના દરેક સભ્યની નૈતિક ફરજમાં આવે છે.
+              </div>
+            </div>
+
+            {/* Legal Disclaimer Box */}
+            <div
+              style={{
+                background: '#fff9c4',
+                border: '1.5px solid #fbc02d',
+                borderLeft: '5px solid #e65100',
+                borderRadius: 6,
+                padding: '7px 12px',
+                fontSize: 11.5,
+                lineHeight: '16px',
+                color: '#795548',
+                fontWeight: 700,
+              }}
+            >
+              <span style={{ color: '#b71c1c', fontWeight: 900 }}>કાનૂની જવાબદારી મુક્તિ નોંધ (Legal Disclaimer): </span>
+              "આ એન.ઓ.સી. (N.O.C.) માત્ર સામાજિક ઓળખ, શિસ્ત અને જમાતના બંધારણ પૂરતી મર્યાદિત છે. પક્ષકારોના અંગત વ્યવહાર, આપ-લે (દહેજ વગેરે) કે ભવિષ્યના કોઈ પારિવારિક વિવાદ માટે રાધનપુર થરાદી મેમન જમાઅત કાનૂની રીતે જવાબદાર રહેશે નહીં."
+            </div>
+
+            {/* Member / Guardian Undertaking & Signature Section */}
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1.5px solid #2e7d32',
+                borderRadius: 8,
+                padding: '12px 14px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+              }}
+            >
+              <div style={{ color: '#1b5e20', fontWeight: 900, fontSize: 12.5, borderBottom: '1.2px solid #e0e0e0', paddingBottom: 3, marginBottom: 4 }}>
+                આસામી / વાલી તથા વર-કન્યાની સંમતિ અને કબૂલાત:
+              </div>
+              <div style={{ fontSize: 11.5, color: '#222', lineHeight: '17px', fontWeight: 600 }}>
+                અમે નીચે સહી કરનાર ખાતરી આપીએ છીએ કે ઉપર જણાવેલ તમામ વિગતો સાચી છે અને અમે રાધનપુર થરાદી મેમન જમાઅતના તમામ સામાજિક નિયમો અને બંધારણનું પાલન કરવા સંપૂર્ણ બંધાયેલા છીએ.
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 24, padding: '0 10px' }}>
+                <div style={{ textAlign: 'center', width: '45%' }}>
+                  <div style={{ borderTop: '1.2px dashed #444', paddingTop: 3, fontSize: 12, fontWeight: 900, color: '#111' }}>
+                    આસામી / વાલીની સહી
+                  </div>
+                  <div style={{ fontSize: 11, color: '#555', fontWeight: 700, marginTop: 1 }}>
+                    ({data.memberName || 'વાલીનું નામ'})
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'center', width: '45%' }}>
+                  <div style={{ borderTop: '1.2px dashed #444', paddingTop: 3, fontSize: 12, fontWeight: 900, color: '#111' }}>
+                    વર / કન્યાની સહી
+                  </div>
+                  <div style={{ fontSize: 11, color: '#555', fontWeight: 700, marginTop: 1 }}>
+                    ({data.dikraDikri || 'ઉમેદવારનું નામ'})
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Official Seal & Jamaat Signatures Footer */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                padding: '8px 18px 2px',
+                fontSize: 13,
+                fontWeight: 900,
+                color: '#8b0000',
+              }}
+            >
+              {/* Secretary Signature */}
+              <div style={{ textAlign: 'center', minWidth: 140 }}>
+                <div style={{ borderTop: '1.5px solid #8b0000', paddingTop: 3, marginBottom: 2 }}>
+                  {n.secretarySign}
+                </div>
+                <div style={{ fontSize: 11, color: '#111', fontWeight: 800 }}>{n.footerCommunity}</div>
+              </div>
+
+              {/* Official Jamaat Seal Circle */}
+              <div
+                style={{
+                  width: 72,
+                  height: 72,
+                  border: '2px dashed #1b5e20',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 10.5,
+                  fontWeight: 900,
+                  color: '#1b5e20',
+                  textAlign: 'center',
+                  lineHeight: 1.2,
+                  background: 'rgba(27, 94, 32, 0.05)',
+                }}
+              >
+                જમાઅત<br />સિક્કો
+              </div>
+
+              {/* Pramukh Signature */}
+              <div style={{ textAlign: 'center', minWidth: 140 }}>
+                <div style={{ borderTop: '1.5px solid #8b0000', paddingTop: 3, marginBottom: 2 }}>
+                  {n.pramukhSign}
+                </div>
+                <div style={{ fontSize: 11, color: '#111', fontWeight: 800 }}>{n.footerCommunity}</div>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center', fontSize: 10.5, color: '#2e7d32', fontWeight: 800, marginTop: 'auto' }}>
+              પૃષ્ઠ ૨ / ૨ &bull; રાધનપુર થરાદી મેમન જમાઅત N.O.C. પ્રમાણપત્ર
             </div>
           </div>
-
-          <div style={{ textAlign: 'center', fontSize: 10.5, color: '#2e7d32', fontWeight: 800, marginTop: 'auto' }}>
-            પૃષ્ઠ ૨ / ૨ &bull; રાધનપુર થરાદી મેમન જમાઅત N.O.C. પ્રમાણપત્ર
-          </div>
-        </div>
         </div>
       </div>
     </div>
@@ -5670,21 +5671,21 @@ export default function CertificatePage() {
               {printingRecord.type === 'marriage' && (
                 <MarriageCertificateSheet
                   data={printingRecord.data}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   printRef={tablePrintRef}
                 />
               )}
               {printingRecord.type === 'letterhead' && (
                 <LetterheadSheet
                   data={printingRecord.data}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   printRef={tablePrintRef}
                 />
               )}
               {printingRecord.type === 'noc' && (
                 <NocSheet
                   data={printingRecord.data}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   printRef={tablePrintRef}
                 />
               )}
