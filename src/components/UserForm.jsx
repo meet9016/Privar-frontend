@@ -297,6 +297,13 @@ const GENDER_OPTIONS = [
   { label: 'Other', value: 'Other' },
 ]
 
+export const PETA_JATI_OPTIONS = [
+  'પાયા',
+  'ખાગડા',
+  'વાઘડા',
+  'કાળની'
+]
+
 export const capitalizeWords = (str) => {
   if (!str) return ''
   return str
@@ -320,6 +327,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const [cities, setCities] = useState(cachedMasters ? cachedMasters.cities : [])
   const [villages, setVillages] = useState(cachedMasters ? cachedMasters.villages : [])
   const [pattiOptions, setPattiOptions] = useState(cachedMasters ? cachedMasters.pattiOptions : [])
+  const [subCasteOptions, setSubCasteOptions] = useState(
+    cachedMasters?.subCasteOptions?.length ? cachedMasters.subCasteOptions : PETA_JATI_OPTIONS.map(opt => ({ name: opt, _id: opt, id: opt }))
+  )
   const [relationOptions, setRelationOptions] = useState(
     cachedMasters?.relationships?.length ? cachedMasters.relationships : RELATION_OPTIONS
   )
@@ -331,6 +341,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     first_name: '',
     middle_name: '',
     last_name: '',
+    peta_jati: '',
     email: '',
     number: '',
     gender: 'Male',
@@ -372,20 +383,22 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setDistricts(cachedMasters.districts || [])
         setVillages(cachedMasters.villages || [])
         setPattiOptions(cachedMasters.pattiOptions || [])
+        setSubCasteOptions(cachedMasters.subCasteOptions || PETA_JATI_OPTIONS.map(opt => ({ name: opt, _id: opt, id: opt })))
         setRelationOptions(cachedMasters.relationOptions || RELATION_OPTIONS)
         return
       }
 
       try {
         const masterParams = { params: { limit: 1000 } }
-        const [cRes, sRes, ciRes, dRes, vRes, pRes, relRes] = await Promise.all([
+        const [cRes, sRes, ciRes, dRes, vRes, pRes, relRes, scRes] = await Promise.all([
           api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY, masterParams).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_STATE, masterParams).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_CITY, masterParams).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_DISTRICT, masterParams).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE, masterParams).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_PATTI_PARA_PARGANA, masterParams).catch(() => ({ data: { data: [] } })),
-          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP, masterParams).catch(() => ({ data: { data: [] } }))
+          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP, masterParams).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_SUB_CASTE, masterParams).catch(() => ({ data: { data: [] } }))
         ])
         const countryList = cRes.data?.data || []
         
@@ -403,6 +416,12 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         const mergedRelations = Array.from(relMap.values())
 
         const pattiList = (pRes.data?.data || []).filter(p => p.status !== 0 && p.status !== '0')
+        const fetchedSubCastes = (scRes.data?.data || []).filter(sc => sc.status !== 0 && sc.status !== '0')
+        const subCasteMap = new Map()
+        PETA_JATI_OPTIONS.forEach(opt => subCasteMap.set(opt.toLowerCase(), { name: opt, _id: opt, id: opt }))
+        fetchedSubCastes.forEach(sc => subCasteMap.set((sc.name || '').toLowerCase(), sc))
+        const mergedSubCastes = Array.from(subCasteMap.values())
+
         const stateList = sRes.data?.data || []
         const cityList = ciRes.data?.data || []
         const distList = dRes.data?.data || []
@@ -415,6 +434,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           districts: distList,
           villages: villageList,
           pattiOptions: pattiList,
+          subCasteOptions: mergedSubCastes,
           relationOptions: mergedRelations
         }
 
@@ -424,6 +444,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setDistricts(distList)
         setVillages(villageList)
         setPattiOptions(pattiList)
+        setSubCasteOptions(mergedSubCastes)
         setRelationOptions(mergedRelations)
       } catch (err) {
         console.error(err)
@@ -450,6 +471,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         first_name: user.first_name || '',
         middle_name: user.middle_name || '',
         last_name: user.last_name !== undefined ? user.last_name : (getCommunitySurname() || ''),
+        peta_jati: user.peta_jati || '',
         email: user.email || '',
         number: user.number || '',
         gender: user.gender || 'Male',
@@ -496,6 +518,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                 first_name: m.first_name || '',
                 middle_name: m.middle_name || '',
                 last_name: m.last_name || '',
+                peta_jati: m.peta_jati !== undefined ? m.peta_jati : (user.peta_jati || ''),
                 relation: m.relation === 'Spouse' ? 'Wife' : (m.relation || 'Wife'),
                 gender: m.gender || 'Male',
                 dob: mDob,
@@ -528,6 +551,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         first_name: '',
         middle_name: '',
         last_name: defaultCommunityName,
+        peta_jati: '',
         email: '',
         number: '',
         gender: 'Male',
@@ -1052,6 +1076,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       first_name: capitalizeWords(formData.first_name),
       middle_name: capitalizeWords(formData.middle_name),
       last_name: capitalizeWords(formData.last_name),
+      peta_jati: (formData.peta_jati || '').trim(),
       familyHead: true,
       relation: 'Self',
       members: currentMembers.map(m => ({
@@ -1059,6 +1084,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         first_name: capitalizeWords(m.first_name),
         middle_name: capitalizeWords(m.middle_name),
         last_name: capitalizeWords(m.last_name || formData.last_name),
+        peta_jati: (m.peta_jati !== undefined ? m.peta_jati : (formData.peta_jati || '')).trim(),
         relation: m.relation || 'Other',
         gender: m.gender || 'Male',
         spouse_id: m.spouse_id || null,
@@ -1198,8 +1224,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           </div>
         </div>
 
-        {/* Row 1: Name & Mobile (4 inputs) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+        {/* Row 1: Name, Peta Jati & Mobile (5 inputs) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
           <Input
             label="First Name"
             placeholder="Head First Name"
@@ -1226,6 +1252,30 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             disabled={isLoading}
             required={true}
             error={errors.last_name}
+          />
+          <Select
+            label="Sub-Caste (પેટા જાતિ)"
+            placeholder="Select or Type Peta Jati"
+            value={formData.peta_jati || ''}
+            onChange={(val) => handleChange('peta_jati', val)}
+            options={[
+              { label: 'Select / Type Sub-Caste (પેટા જાતિ)', value: '' },
+              ...subCasteOptions.map(opt => ({ label: opt.name || opt, value: opt.name || opt }))
+            ]}
+            creatable={true}
+            createPrompt="Use custom Sub-Caste"
+            onCreateOption={(newVal) => {
+              const trimmed = newVal.trim()
+              if (!trimmed) return
+              handleChange('peta_jati', trimmed)
+              setSubCasteOptions(prev => [...prev, { name: trimmed, _id: trimmed, id: trimmed, status: 1 }])
+              if (cachedMasters) {
+                cachedMasters.subCasteOptions = [...(cachedMasters.subCasteOptions || []), { name: trimmed, _id: trimmed, id: trimmed, status: 1 }]
+              }
+              api.post(MEMBER_ENDPOINTS.MASTERS_SUB_CASTE, { name: trimmed, status: 1 }).catch(() => {})
+            }}
+            searchable={true}
+            disabled={isLoading}
           />
           <Input
             label="Mobile Number"
@@ -1713,8 +1763,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                         </Button>
                       </div>
 
-                      {/* Row 1: First Name, Middle Name, Last Name, Relationship (4 inputs) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-start">
+                      {/* Row 1: First Name, Middle Name, Last Name, Peta Jati, Relationship (5 inputs) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-start">
                         <Input
                           label="First Name"
                           placeholder="First Name"
@@ -1736,6 +1786,30 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           placeholder="Surname"
                           value={editingMember.last_name || ''}
                           onChange={(e) => handleEditingMemberChange('last_name', e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\u0900-\u097F\s.'-]/g, ''))}
+                          disabled={isLoading}
+                        />
+                        <Select
+                          label="Sub-Caste (પેટા જાતિ)"
+                          placeholder="Peta Jati"
+                          value={editingMember.peta_jati || ''}
+                          onChange={(val) => handleEditingMemberChange('peta_jati', val)}
+                          options={[
+                            { label: 'Select / Type Sub-Caste (પેટા જાતિ)', value: '' },
+                            ...subCasteOptions.map(opt => ({ label: opt.name || opt, value: opt.name || opt }))
+                          ]}
+                          creatable={true}
+                          createPrompt="Use custom Sub-Caste"
+                          onCreateOption={(newVal) => {
+                            const trimmed = newVal.trim()
+                            if (!trimmed) return
+                            handleEditingMemberChange('peta_jati', trimmed)
+                            setSubCasteOptions(prev => [...prev, { name: trimmed, _id: trimmed, id: trimmed, status: 1 }])
+                            if (cachedMasters) {
+                              cachedMasters.subCasteOptions = [...(cachedMasters.subCasteOptions || []), { name: trimmed, _id: trimmed, id: trimmed, status: 1 }]
+                            }
+                            api.post(MEMBER_ENDPOINTS.MASTERS_SUB_CASTE, { name: trimmed, status: 1 }).catch(() => {})
+                          }}
+                          searchable={true}
                           disabled={isLoading}
                         />
                         <div className="flex flex-col">

@@ -36,7 +36,7 @@ export default function MasterPage({ type, headerLeftContent }) {
 
   const fields = useMemo(() => [
     ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*', className: 'sm:col-span-2' }] : []),
-    { name: 'name', label: `${label} Name (English)`, required: true, placeholder: type === 'relationship' ? 'e.g. Son-in-law, Sister' : `${label} Name` },
+    { name: 'name', label: `${label} Name`, required: true, placeholder: type === 'relationship' ? 'e.g. Son-in-law, Sister' : (type === 'sub-caste' ? 'દા.ત. પાયા, ખાગડા, વાઘડા' : `${label} Name`), transliterate: type === 'sub-caste' ? 'gu' : undefined },
     ...(type === 'relationship' ? [
       { name: 'gujarati_name', label: 'Gujarati Name (ગુજરાતી નામ)', required: false, placeholder: 'દા.ત. જમાઈ, બહેન', transliterate: 'gu' },
       { name: 'hindi_name', label: 'Hindi Name (हिंदी नाम - Optional)', required: false, placeholder: 'દા.ત. दामाद, बहन', transliterate: 'hi' },

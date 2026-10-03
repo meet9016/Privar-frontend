@@ -58,6 +58,7 @@ export const masterNavigation = [
   { type: 'city', label: 'City', permission: 'masters.list' },
   { type: 'village', label: 'Village', permission: 'masters.list' },
   { type: 'patti-para-pargana', label: 'Patti / Para / Pargana', permission: 'masters.list' },
+  { type: 'sub-caste', label: 'Sub Caste', permission: 'masters.list' },
   { type: 'blood-group', label: 'Blood Group', permission: 'masters.list' },
   { type: 'event-category', label: 'Event Category', permission: 'masters.list' },
   { type: 'gallery-category', label: 'Gallery Category', permission: 'masters.list' },

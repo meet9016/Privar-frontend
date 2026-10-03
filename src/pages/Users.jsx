@@ -560,6 +560,7 @@ export default function Users() {
         { header: 'First Name', key: 'first_name', width: 18 },
         { header: 'Middle Name', key: 'middle_name', width: 18 },
         { header: 'Last Name', key: 'last_name', width: 18 },
+        { header: 'Peta Jati', key: 'peta_jati', width: 18 },
         { header: 'Mobile Number', key: 'number', width: 20 },
         { header: 'Email', key: 'email', width: 28 },
         { header: 'Gender', key: 'gender', width: 14 },
@@ -575,7 +576,7 @@ export default function Users() {
       // Style header row
       const headerRow = ws.getRow(1)
       headerRow.eachCell((cell, colNum) => {
-        const isRequired = [1, 4].includes(colNum)
+        const isRequired = [1, 5].includes(colNum)
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isRequired ? 'FF4F46E5' : 'FF818CF8' } }
         cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 11 }
         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
@@ -588,17 +589,17 @@ export default function Users() {
 
       // Example row 1 — Family Head
       ws.addRow([
-        'Ramesh', 'Kumar', 'Patel', '9876543210', 'ramesh@email.com',
+        'Ramesh', 'Kumar', 'Choudhary', 'પાયા', '9876543210', 'ramesh@email.com',
         'Male', '15-08-1975', '20-11-2000', 'O+', 'Self', 'Main Patti', '123 Main Street, Surat', 'Yes'
       ])
       // Example row 2 — Family Member
       ws.addRow([
-        'Priya', 'Ramesh', 'Patel', '9876543211', '',
+        'Priya', 'Ramesh', 'Choudhary', 'પાયા', '9876543211', '',
         'Female', '05-06-1978', '', 'B+', 'Spouse', 'Main Patti', '', 'No'
       ])
       // Example row 3 — Child
       ws.addRow([
-        'Raj', 'Ramesh', 'Patel', '9876543212', '',
+        'Raj', 'Ramesh', 'Choudhary', 'પાયા', '9876543212', '',
         'Male', '12-03-2005', '', 'A+', 'Son', 'Main Patti', '', 'No'
       ])
 
@@ -620,9 +621,9 @@ export default function Users() {
       // Notes row
       const notesRow = ws.addRow([])
       const notesCell = ws.getCell(`A${notesRow.number}`)
-      notesCell.value = '* Required fields | Relation: Self/Spouse/Son/Daughter/Father/Mother/Brother/Sister/Other | Date format: DD-MM-YYYY | Is Family Head: Yes/No'
+      notesCell.value = '* Required fields | Relation: Self/Spouse/Son/Daughter/Father/Mother/Brother/Sister/Other | Date format: DD-MM-YYYY | Is Family Head: Yes/No | Peta Jati: પાયા / ખાગડા / વાઘડા / કાળની / Any custom'
       notesCell.font = { italic: true, color: { argb: 'FF6B7280' }, size: 9 }
-      ws.mergeCells(`A${notesRow.number}:M${notesRow.number}`)
+      ws.mergeCells(`A${notesRow.number}:N${notesRow.number}`)
 
       const buffer = await wb.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
@@ -635,7 +636,7 @@ export default function Users() {
   }
 
   const IMPORT_COLUMNS = [
-    'First Name', 'Middle Name', 'Last Name', 'Mobile Number',
+    'First Name', 'Middle Name', 'Last Name', 'Peta Jati', 'Mobile Number',
     'Email', 'Gender', 'Date of Birth', 'Anniversary',
     'Blood Group', 'Relation', 'Patti / Para / Pargana', 'Address', 'Is Family Head'
   ]
@@ -663,6 +664,7 @@ export default function Users() {
     if (clean === 'first name' || clean === 'firstname' || clean === 'first') return 'First Name'
     if (clean === 'middle name' || clean === 'middlename' || clean === 'middle') return 'Middle Name'
     if (clean === 'last name' || clean === 'lastname' || clean === 'surname' || clean === 'last') return 'Last Name'
+    if (clean === 'peta jati' || clean === 'petajati' || clean === 'sub caste' || clean === 'subcaste' || clean === 'પેટા જાતિ' || clean === 'પેટાજાતિ') return 'Peta Jati'
     if (clean === 'mobile number' || clean === 'mobile' || clean === 'mob' || clean === 'phone' || clean === 'number' || clean === 'contact' || clean === 'phone number') return 'Mobile Number'
     if (clean === 'email' || clean === 'email id' || clean === 'mail') return 'Email'
     if (clean === 'gender' || clean === 'sex') return 'Gender'
@@ -1084,6 +1086,11 @@ export default function Users() {
                       )}
                     </div>
                     <span className="font-semibold text-text capitalize">{user.name}</span>
+                    {user.peta_jati && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 font-bold shrink-0">
+                        {user.peta_jati}
+                      </span>
+                    )}
                     {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium shrink-0">
                         <span>Family Head (મુખ્ય)</span>
@@ -2108,6 +2115,7 @@ export default function Users() {
                         <tr className="bg-surface-secondary/70 text-text-secondary text-[11px] uppercase tracking-wider font-bold border-b border-border">
                           <th className="p-3.5 text-center w-12">#</th>
                           <th className="p-3.5">Member Name</th>
+                          <th className="p-3.5">Sub-Caste (પેટા જાતિ)</th>
                           <th className="p-3.5">Relationship</th>
                           <th className="p-3.5">Gender</th>
                           <th className="p-3.5">Mobile Number</th>
@@ -2195,6 +2203,9 @@ export default function Users() {
                                       )}
                                     </div>
                                   </div>
+                                </td>
+                                <td className="p-3.5 text-xs font-semibold text-primary">
+                                  {member.peta_jati || viewingUser?.peta_jati || '-'}
                                 </td>
                                 <td className="p-3.5 text-text-secondary capitalize">
                                   {isHeadMember ? (
@@ -2336,7 +2347,7 @@ export default function Users() {
             <div className="rounded-xl border border-border bg-surface-secondary/30 p-4">
               <p className="text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">Required Column Headers</p>
               <div className="flex flex-wrap gap-2">
-                {['First Name*', 'Middle Name', 'Last Name', 'Mobile Number*', 'Email', 'Gender', 'Date of Birth', 'Anniversary', 'Blood Group', 'Relation', 'Address', 'Is Family Head'].map(col => (
+                {['First Name*', 'Middle Name', 'Last Name', 'Peta Jati', 'Mobile Number*', 'Email', 'Gender', 'Date of Birth', 'Anniversary', 'Blood Group', 'Relation', 'Patti / Para / Pargana', 'Address', 'Is Family Head'].map(col => (
                   <span key={col} className={`text-xs px-2.5 py-1 rounded-lg font-medium border ${col.includes('*') ? 'bg-red-50 text-red-500 border-red-200' : 'bg-surface-secondary text-text-secondary border-border'}`}>
                     {col}
                   </span>
