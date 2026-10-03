@@ -229,19 +229,23 @@ export default function Roles() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <SearchInput
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            onClear={() => handleSearch('')}
-            placeholder="Search roles..."
-            wrapperClassName="relative w-[240px]"
-          />
-          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
-            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
-              Add Role
-            </Button>
-          )}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+          <div className="w-full sm:w-[240px]">
+            <SearchInput
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              onClear={() => handleSearch('')}
+              placeholder="Search roles..."
+              wrapperClassName="relative w-full"
+            />
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto hide-scrollbar pb-1 sm:pb-0">
+            {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+              <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10 whitespace-nowrap">
+                Add Role
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -335,6 +339,66 @@ export default function Roles() {
           onPageChange: setPage,
           limit,
           onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+        renderMobileCard={(role) => {
+          const isSystemRole = role.name === 'admin' || role.name === 'UserRole';
+          const isActive = Number(role.status ?? 1) === 1;
+
+          return (
+            <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-text text-base leading-tight">{role.name}</div>
+                    {role.description && <div className="text-xs text-text-secondary mt-0.5 line-clamp-1">{role.description}</div>}
+                  </div>
+                </div>
+                <div>
+                  <label className="relative inline-flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={isActive}
+                      onChange={async () => {
+                        const newStatus = isActive ? 0 : 1;
+                        try {
+                          await api.put(ROLES_ENDPOINTS.UPDATE_ROLE(role.id || role._id), { status: newStatus, name: role.name, permissions: role.permissions });
+                          toast.success('Status updated successfully');
+                          fetchAll();
+                        } catch (err) {
+                          console.error('Status update failed:', err);
+                        }
+                      }}
+                    />
+                    <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-sm bg-surface-secondary/20 p-2.5 rounded-lg border border-border/50">
+                <span className="text-text-secondary text-xs">Permissions</span>
+                <span className="font-medium text-text text-xs bg-surface-secondary px-2 py-0.5 rounded-md border border-border">{role.permission_count || 0} selected</span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                {(!permissions.canEdit && !permissions.isSuperAdmin) ? null : (
+                  <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`flex-1 justify-center p-2 border rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                )}
+                {(!permissions.canDelete && !permissions.isSuperAdmin) ? null : (
+                  <button onClick={() => handleDelete(role)} disabled={isSystemRole} className={`flex-1 justify-center p-2 border rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-error-text bg-error-bg hover:bg-error/20 border-error-border'}`} title="Delete">
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                )}
+              </div>
+            </div>
+          );
         }}
       />
 

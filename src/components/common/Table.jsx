@@ -141,7 +141,8 @@ export default function Table({
   onSelectionChange,
   onBulkStatus,
   onBulkDelete,
-  hasStatusColumn
+  hasStatusColumn,
+  renderMobileCard
 }) {
   const skeletonRows = [1, 2, 3, 4, 5];
 
@@ -223,7 +224,7 @@ export default function Table({
 
   return (
     <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col min-h-[400px] sm:min-h-[500px] lg:h-[calc(100vh-210px)] ${className}`}>
-      <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar" style={{ position: 'relative' }}>
+      <div className={`flex-1 overflow-x-auto overflow-y-auto custom-scrollbar ${renderMobileCard ? 'hidden md:block' : ''}`} style={{ position: 'relative' }}>
         <table className="w-full min-w-full text-left border-collapse table-auto bg-white">
           <thead className={stickyHeader ? "sticky top-0 z-20 shadow-sm" : ""}>
             <tr className="border-b border-primary/20 text-text text-xs uppercase tracking-wider font-bold bg-white">
@@ -324,6 +325,31 @@ export default function Table({
           </tbody>
         </table>
       </div>
+
+      {renderMobileCard && (
+        <div className="md:hidden flex-1 overflow-y-auto p-4 space-y-4 bg-surface-secondary/10">
+          {loading && data.length === 0 ? (
+            showSkeleton ? (
+              skeletonRows.map((n) => <div key={n} className="h-32 bg-surface-secondary rounded-xl animate-pulse" />)
+            ) : (
+              <div className="py-12 text-center text-text-secondary text-sm font-medium">Loading...</div>
+            )
+          ) : data.length === 0 ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center">
+               <FolderOpen className="w-8 h-8 text-primary/50 mb-3" />
+               <p className="text-text font-semibold">{emptyState?.title || 'No records found'}</p>
+               <p className="text-text-secondary text-xs mt-1">{emptyState?.description}</p>
+            </div>
+          ) : (
+            data.map((row, i) => (
+              <div key={getRowId(row) || i}>
+                {renderMobileCard(row, i)}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {effectiveSelected.length > 0 && (
         <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-primary/10 border-t border-primary/20 animate-fade-in text-text">
           <div className="flex items-center gap-2 text-xs font-semibold">
