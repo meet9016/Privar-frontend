@@ -35,6 +35,14 @@ export const uploadFileToDigitalks = async (file, folder = 'members') => {
  */
 export const getActualSubdomain = () => {
   if (typeof window === 'undefined') return ''
+  try {
+    const searchParams = new URLSearchParams(window.location.search)
+    const tenantParam = searchParams.get('tenant') || searchParams.get('subdomain')
+    if (tenantParam) {
+      return tenantParam.toLowerCase().trim()
+    }
+  } catch (_) {}
+
   const hostname = window.location.hostname
   if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
     return ''
