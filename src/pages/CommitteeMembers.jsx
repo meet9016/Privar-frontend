@@ -332,65 +332,69 @@ export default function CommitteeMembers() {
         <div>
           <h2 className="text-2xl font-bold text-text tracking-tight">Committee Members</h2>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <SearchInput
-            placeholder="Search committee..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClear={() => setSearch('')}
-          />
-          <FilterPopover
-            isOpen={showFilters}
-            onToggle={() => {
-              setDraftFilters(filters)
-              setShowFilters(!showFilters)
-            }}
-            onClose={() => setShowFilters(false)}
-            activeCount={(filters.status ? 1 : 0) + (filters.role ? 1 : 0)}
-            onClear={() => {
-              setDraftFilters({ status: '', role: '' })
-              setFilters({ status: '', role: '' })
-              setPage(1)
-              setShowFilters(false)
-            }}
-            onApply={() => {
-              setFilters(draftFilters)
-              setPage(1)
-              setShowFilters(false)
-            }}
-          >
-            <Select
-              label="Status"
-              value={draftFilters.status}
-              onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
-              placeholder="All Status"
-              searchable={false}
-              options={[
-                { label: 'All Status', value: '' },
-                { label: 'Active', value: '1' },
-                { label: 'Inactive', value: '0' }
-              ]}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+          <div className="w-full sm:w-[250px]">
+            <SearchInput
+              placeholder="Search committee..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClear={() => setSearch('')}
             />
-            <Select
-              label="Committee Role"
-              value={draftFilters.role}
-              onChange={(val) => setDraftFilters(current => ({ ...current, role: val }))}
-              placeholder="All Roles"
-              searchable={false}
-              options={[
-                { label: 'All Roles', value: '' },
-                ...roles.map(r => ({ label: r.name, value: r.name }))
-              ]}
-            />
-          </FilterPopover>
-          <Button onClick={handleExportExcel} variant="secondary" icon={<Download className="w-4 h-4" />} className="h-10 border-primary text-primary hover:bg-primary hover:text-white">
-            Export
-          </Button>
-          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
-            <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
-              Add Member
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto hide-scrollbar pb-1 sm:pb-0">
+            <FilterPopover
+              isOpen={showFilters}
+              onToggle={() => {
+                setDraftFilters(filters)
+                setShowFilters(!showFilters)
+              }}
+              onClose={() => setShowFilters(false)}
+              activeCount={(filters.status ? 1 : 0) + (filters.role ? 1 : 0)}
+              onClear={() => {
+                setDraftFilters({ status: '', role: '' })
+                setFilters({ status: '', role: '' })
+                setPage(1)
+                setShowFilters(false)
+              }}
+              onApply={() => {
+                setFilters(draftFilters)
+                setPage(1)
+                setShowFilters(false)
+              }}
+            >
+              <Select
+                label="Status"
+                value={draftFilters.status}
+                onChange={(val) => setDraftFilters(current => ({ ...current, status: val }))}
+                placeholder="All Status"
+                searchable={false}
+                options={[
+                  { label: 'All Status', value: '' },
+                  { label: 'Active', value: '1' },
+                  { label: 'Inactive', value: '0' }
+                ]}
+              />
+              <Select
+                label="Committee Role"
+                value={draftFilters.role}
+                onChange={(val) => setDraftFilters(current => ({ ...current, role: val }))}
+                placeholder="All Roles"
+                searchable={false}
+                options={[
+                  { label: 'All Roles', value: '' },
+                  ...roles.map(r => ({ label: r.name, value: r.name }))
+                ]}
+              />
+            </FilterPopover>
+            <Button onClick={handleExportExcel} variant="secondary" icon={<Download className="w-4 h-4" />} className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap">
+              Export
             </Button>
-          )}
+            {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+              <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10 whitespace-nowrap">
+                Add Member
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -505,6 +509,79 @@ export default function CommitteeMembers() {
           onPageChange: setPage,
           limit,
           onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
+        }}
+        renderMobileCard={(member) => {
+          const roleName = member.role_name || (roles.find(r => String(r.id || r._id) === String(member.role_id))?.name) || '-';
+          const isActive = Number(member.status ?? 1) === 1;
+          
+          return (
+            <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {member.image ? (
+                    <img src={member.image} alt="" className="h-12 w-12 rounded-lg object-cover border border-border" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-lg bg-surface-secondary flex items-center justify-center text-lg font-semibold text-text-secondary">{member.first_name?.slice(0, 1) || 'CM'}</div>
+                  )}
+                  <div>
+                    <div className="font-semibold text-text text-base">{member.first_name} {member.middle_name} {member.last_name || ''}</div>
+                    <span className={`inline-flex items-center mt-1 gap-1 px-2 py-0.5 rounded-md border font-semibold text-[10px] uppercase tracking-wider ${getRoleBadgeColor(roleName)}`}>
+                      {roleName}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="relative inline-flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={isActive}
+                      onChange={async () => {
+                        const newStatus = isActive ? 0 : 1;
+                        try {
+                          await api.put(COMMITTEE_ENDPOINTS.UPDATE_MEMBER(member.id), { status: newStatus });
+                          toast.success('Status updated successfully');
+                          fetchCommitteeMembers();
+                        } catch (err) {
+                          console.error('Status update failed:', err);
+                        }
+                      }}
+                    />
+                    <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 mt-1 text-sm bg-surface-secondary/20 p-3 rounded-lg border border-border/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-text-secondary text-xs">Contact</span>
+                  <span className="font-medium text-text text-right">{member.number || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-text-secondary text-xs">Email</span>
+                  <span className="font-medium text-text text-right truncate max-w-[200px]">{member.email || '-'}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                {(!permissions.canEdit && !permissions.isSuperAdmin) ? null : (
+                  <button onClick={() => openEdit(member)} className="flex-1 justify-center p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold" title="Edit">
+                    <Edit2 className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                )}
+                {(!permissions.canDelete && !permissions.isSuperAdmin) ? null : (
+                  <button
+                    onClick={() => handleDelete(member.id)}
+                    className="flex-1 justify-center p-2 text-error bg-error/10 hover:bg-error/20 border border-error/20 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold" title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                )}
+              </div>
+            </div>
+          );
         }}
       />
 

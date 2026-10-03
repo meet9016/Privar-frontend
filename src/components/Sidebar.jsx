@@ -6,7 +6,7 @@ import { configurationNavigation, coreNavigation, masterNavigation, mediaNavigat
 import { hasPermission } from '../lib/permissions'
 import { getCommunitySurname, getCommunityFullName, getSubdomainTenant, assetUrl } from '../lib/api'
 
-const LinkItem = ({ to, icon: Icon, label, end }) => {
+const LinkItem = ({ to, icon: Icon, label, end, onClick }) => {
   const location = useLocation()
   const isDashboardActive = (to === '/admin' || to === '/admin/dashboard') &&
     (location.pathname === '/admin' || location.pathname === '/admin/' || location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/')
@@ -15,6 +15,7 @@ const LinkItem = ({ to, icon: Icon, label, end }) => {
     <NavLink
       to={to}
       end={end}
+      onClick={onClick}
       className={({ isActive }) => {
         const active = isActive || isDashboardActive
         return `group flex min-h-10 w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13.5px] transition-all duration-200 ${active
@@ -39,7 +40,7 @@ const LinkItem = ({ to, icon: Icon, label, end }) => {
   )
 }
 
-const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
+const CollapsibleFolder = ({ icon: Icon, label, items, parentPath, onItemClick }) => {
   const location = useLocation()
   const isChildActive = items.some(item => {
     const itemPath = item.to || `${parentPath}/${item.type}`
@@ -80,6 +81,7 @@ const CollapsibleFolder = ({ icon: Icon, label, items, parentPath }) => {
               <NavLink
                 key={item.type || item.to}
                 to={itemPath}
+                onClick={onItemClick}
                 className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-[13px] transition-colors ${isActive || location.pathname === itemPath
                   ? 'bg-primary text-white font-semibold shadow-sm'
                   : 'text-text-secondary hover:text-text hover:bg-surface-secondary font-medium'
@@ -131,6 +133,10 @@ export default function Sidebar({ isOpen, onClose }) {
   const visibleActivityNavigation = activityNavigation.filter((item) => hasPermission(user, item.permission))
   const visibleServicesNavigation = servicesNavigation.filter((item) => hasPermission(user, item.permission))
 
+  const handleLinkClick = () => {
+    if (onClose) onClose()
+  }
+
   return (
     <aside className={`fixed left-0 top-0 z-50 lg:z-30 flex h-screen w-64 flex-col justify-between border-r border-border bg-surface px-3 py-4 shadow-glass transition-transform duration-300 ease-in-out ${
       isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -176,30 +182,30 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-1">
         {visibleCoreNavigation.map((item) => (
-          <LinkItem key={item.to} {...item} />
+          <LinkItem key={item.to} {...item} onClick={handleLinkClick} />
         ))}
 
         {visibleServicesNavigation.length > 0 && (
           <div className="space-y-1">
-            <LinkItem to="/admin/services" label="Services" icon={Briefcase} />
+            <LinkItem to="/admin/services" label="Services" icon={Briefcase} onClick={handleLinkClick} />
           </div>
         )}
 
         {visibleActivityNavigation.length > 0 && (
           <div className="space-y-1">
-            <LinkItem to="/admin/activities" label="Activities" icon={CalendarDays} />
+            <LinkItem to="/admin/activities" label="Activities" icon={CalendarDays} onClick={handleLinkClick} />
           </div>
         )}
 
         {visibleMediaNavigation.length > 0 && (
           <div className="space-y-1">
-            <LinkItem to="/admin/media" label="Media & Content" icon={Layers} />
+            <LinkItem to="/admin/media" label="Media & Content" icon={Layers} onClick={handleLinkClick} />
           </div>
         )}
 
         {visibleEngagementNavigation.length > 0 && (
           <div className="space-y-1">
-            <LinkItem to="/admin/engagements" label="Expense & Donations" icon={Activity} />
+            <LinkItem to="/admin/engagements" label="Expense & Donations" icon={Activity} onClick={handleLinkClick} />
           </div>
         )}
 
@@ -209,13 +215,14 @@ export default function Sidebar({ isOpen, onClose }) {
             label="Masters"
             items={visibleMasterNavigation}
             parentPath="/admin/masters"
+            onItemClick={handleLinkClick}
           />
         )}
 
         {visibleConfigurationNavigation.length > 0 && (
           <div className="space-y-1">
             {visibleConfigurationNavigation.map((item) => (
-              <LinkItem key={item.to} {...item} />
+              <LinkItem key={item.to} {...item} onClick={handleLinkClick} />
             ))}
           </div>
         )}
