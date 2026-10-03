@@ -13,7 +13,7 @@ export default function NocCertificateModal({ isOpen, onClose, initialData = {} 
     certificate_no: '',
     issue_date: new Date().toISOString().slice(0, 10),
     valid_till_date: '',
-    
+
     // Jamaat Authority Details
     jamaat_name: 'રાધનપુર થરાદી મેમન જમાઅત',
     trust_reg_no: 'ટ્રસ્ટ રજી. નં. બી-૫૨૯-મહેસાણા, તા. ૩૦-૯-૧૯૫૫',
@@ -68,7 +68,7 @@ export default function NocCertificateModal({ isOpen, onClose, initialData = {} 
       const candName = initialData.full_name || initialData.name || ''
       const fName = initialData.father_name || initialData.middle_name || ''
       const mName = initialData.mother_name || ''
-      
+
       let birthDateStr = ''
       let calculatedAge = ''
       if (initialData.birthdate || initialData.dob) {
@@ -529,7 +529,7 @@ export default function NocCertificateModal({ isOpen, onClose, initialData = {} 
                   <div>મુકામ: <span class="highlight">${recipient_mukam || '........................'}</span> &nbsp;|&nbsp; તાલુકો: <span class="highlight">${recipient_taluko || '........................'}</span> &nbsp;|&nbsp; જિલ્લો: <span class="highlight">${recipient_district || '........................'}</span></div>
                 </div>
 
-                <div class="salutation">અસ્સલામો અલયકુમ વ.વ.</div>
+                <div class="salutation">અસ્સલામુ અલૈય  કુમ વ.વ..</div>
 
                 <div class="body-p">
                   સલામ બાદ જણાવવાનું કે અમારી જમાઅતના સભ્ય (આસામી) જનાબ <span class="highlight">${party1_asami_name || '................................................'}</span>, રહેવાસી: <span class="highlight">${party1_residence || 'રાધનપુર'}</span> ના <strong>${party1_role}</strong>:
@@ -636,9 +636,9 @@ export default function NocCertificateModal({ isOpen, onClose, initialData = {} 
                 <div class="clause-box">
                   <div class="clause-title">ખાતરી તથા પરવાનગીના મુખ્ય મુદ્દાઓ:</div>
                   <ol class="clause-ol">
-                    <li><strong>કોઈ લેણદેણ / વાંધો નથી:</strong> સદર નિકાહખ્વાની બાબતે અમારી જમાઅતના સભ્ય (આસામી) સામે કોઈ સામાજિક વાંધો, તકરાર કે જમાઅતનું કોઈ લ્હેણું બાકી નથી.</li>
-                    <li><strong>પુખ્ત વયની કાનૂની ખાતરી:</strong> બાળવિવાહ પ્રતિબંધક કાયદા અંતર્ગત બંને પક્ષકારો કાયદેસર લગ્ન વય (વર ૨૧ વર્ષ કે તેથી વધુ અને કન્યા ૧૮ વર્ષ કે તેથી વધુ) ધરાવે છે અને આ નિકાહ બંને પક્ષકારોની મુક્ત અને પરસ્પર સંમતિથી થાય છે.</li>
-                    <li><strong>સમાજના બંધારણ અને શિસ્તનું ચુસ્ત પાલન:</strong> છ પરગણા થરાદી મેમન જમાઅતના બંધારણ મુજબ લગ્ન પ્રસંગના તમામ સામાજિક નિયમો અને શિસ્ત (જેમ કે વરઘોડામાં ડીજે, ફટાકડા, બિનજરૂરી દેખાડો કે કુરિવાજો પરનો પ્રતિબંધ) માન્ય રાખવાના રહેશે. જો કોઈ સભ્ય નિયમભંગ કરશે તો સમાજના બંધારણ મુજબ પગલાં લેવાશે.</li>
+                    <li><strong>કોઈ લેણદેણ / વાંધો નથી:</strong> સદર નિકાહખ્વાની બાબતે અમારી જમાઅતના સભ્ય (આસામી) સામે કોઈ સામાજિક વાંધો, તકરાર અને જમાઅતનું કોઈ લ્હેણું બાકી નથી.</li>
+                    <li><strong>પુખ્ત વયની કાનૂની ખાતરી:</strong> બાળવિવાહ પ્રતિબંધક કાયદા અંતર્ગત બંને પક્ષકારો કાયદેસર લગ્ન વય (દીકરો ૨૧ વર્ષ કે તેથી વધુ અને દીકરી ૧૮ વર્ષ કે તેથી વધુ) ધરાવે છે અને આ નિકાહ બંને પક્ષકારોની મુક્ત અને પરસ્પર સંમતિથી થાય છે.</li>
+                    <li><strong>સમાજના બંધારણ અને શિસ્તનું ચુસ્ત પાલન:</strong>UMTC મેમન જમાઅતના બંધારણ મુજબ લગ્ન પ્રસંગના તમામ સામાજિક નિયમો અને શિસ્ત (જેમ કે વરઘોડામાં ડીજે, ફટાકડા, બિનજરૂરી દેખાડો કે કુરિવાજો પરનો પ્રતિબંધ) માન્ય રાખવાના રહેશે. જો કોઈ સભ્ય નિયમભંગ કરશે તો સમાજના બંધારણ મુજબ કડક પગલાં લેવાશે.</li>
                     <li><strong>હેતુ અને મર્યાદા:</strong> આ પ્રમાણપત્ર માત્ર સામાજિક શિસ્ત, ઓળખ અને અધિકૃત લગ્ન નોંધણીના હેતુ માટે આપવામાં આવેલ છે.</li>
                   </ol>
                 </div>
@@ -813,22 +813,20 @@ export default function NocCertificateModal({ isOpen, onClose, initialData = {} 
               <button
                 type="button"
                 onClick={() => handleInputChange('party1_role', 'સુપુત્ર')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  formData.party1_role === 'સુપુત્ર'
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${formData.party1_role === 'સુપુત્ર'
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'bg-surface-secondary text-text-secondary hover:text-text'
-                }`}
+                  }`}
               >
                 વર (સુપુત્ર)
               </button>
               <button
                 type="button"
                 onClick={() => handleInputChange('party1_role', 'સુપુત્રી')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  formData.party1_role === 'સુપુત્રી'
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${formData.party1_role === 'સુપુત્રી'
                     ? 'bg-pink-600 text-white shadow-xs'
                     : 'bg-surface-secondary text-text-secondary hover:text-text'
-                }`}
+                  }`}
               >
                 કન્યા (સુપુત્રી)
               </button>

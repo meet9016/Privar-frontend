@@ -246,17 +246,44 @@ const defaultData = {
 function sanitizeData(data) {
   if (!data) return data
   const sanitizeDigits = (val) => (val ? toGujaratiDigits(val).replace(/[^૦-૯]/g, '') : '')
+  const sanitizeDigitsOrEmpty = (val) => (val ? toGujaratiDigits(val) : '')
+
   if (data.marriage) {
     if (data.marriage.number) data.marriage.number = sanitizeDigits(data.marriage.number)
     if (data.marriage.dateDay) data.marriage.dateDay = sanitizeDigits(data.marriage.dateDay).slice(0, 2)
     if (data.marriage.dateMonth) data.marriage.dateMonth = sanitizeDigits(data.marriage.dateMonth).slice(0, 2)
     if (data.marriage.dateYear) data.marriage.dateYear = sanitizeDigits(data.marriage.dateYear).slice(0, 2)
+    if (data.marriage.dulhaAge) data.marriage.dulhaAge = sanitizeDigits(data.marriage.dulhaAge)
+    if (data.marriage.dulhaMobile) data.marriage.dulhaMobile = sanitizeDigits(data.marriage.dulhaMobile).slice(0, 10)
+    if (data.marriage.dulhaAadhaar) data.marriage.dulhaAadhaar = sanitizeDigits(data.marriage.dulhaAadhaar)
+    if (data.marriage.dulhanAge) data.marriage.dulhanAge = sanitizeDigits(data.marriage.dulhanAge)
+    if (data.marriage.dulhanMobile) data.marriage.dulhanMobile = sanitizeDigits(data.marriage.dulhanMobile).slice(0, 10)
+    if (data.marriage.dulhanAadhaar) data.marriage.dulhanAadhaar = sanitizeDigits(data.marriage.dulhanAadhaar)
+    if (data.marriage.dulhanVakilAadhaar) data.marriage.dulhanVakilAadhaar = sanitizeDigits(data.marriage.dulhanVakilAadhaar)
+    if (data.marriage.dulhanVakilMo) data.marriage.dulhanVakilMo = sanitizeDigits(data.marriage.dulhanVakilMo).slice(0, 10)
+    if (data.marriage.dulhaValiAadhaar) data.marriage.dulhaValiAadhaar = sanitizeDigits(data.marriage.dulhaValiAadhaar)
+    if (data.marriage.dulhaValiMo) data.marriage.dulhaValiMo = sanitizeDigits(data.marriage.dulhaValiMo).slice(0, 10)
+    if (data.marriage.sakshi1Aadhaar) data.marriage.sakshi1Aadhaar = sanitizeDigits(data.marriage.sakshi1Aadhaar)
+    if (data.marriage.sakshi1Mo) data.marriage.sakshi1Mo = sanitizeDigits(data.marriage.sakshi1Mo).slice(0, 10)
+    if (data.marriage.sakshi2Aadhaar) data.marriage.sakshi2Aadhaar = sanitizeDigits(data.marriage.sakshi2Aadhaar)
+    if (data.marriage.sakshi2Mo) data.marriage.sakshi2Mo = sanitizeDigits(data.marriage.sakshi2Mo).slice(0, 10)
+    if (data.marriage.hijriYear) data.marriage.hijriYear = sanitizeDigitsOrEmpty(data.marriage.hijriYear)
+    if (data.marriage.regNumber) data.marriage.regNumber = sanitizeDigitsOrEmpty(data.marriage.regNumber)
+    if (data.marriage.maherRakam) data.marriage.maherRakam = sanitizeDigitsOrEmpty(data.marriage.maherRakam)
+    if (data.marriage.maherGram) data.marriage.maherGram = sanitizeDigitsOrEmpty(data.marriage.maherGram)
   }
   if (data.noc) {
     if (data.noc.number) data.noc.number = sanitizeDigits(data.noc.number)
     if (data.noc.dateDay) data.noc.dateDay = sanitizeDigits(data.noc.dateDay).slice(0, 2)
     if (data.noc.dateMonth) data.noc.dateMonth = sanitizeDigits(data.noc.dateMonth).slice(0, 2)
     if (data.noc.dateYear) data.noc.dateYear = sanitizeDigits(data.noc.dateYear).slice(0, 2)
+    if (data.noc.candidateAge) data.noc.candidateAge = sanitizeDigits(data.noc.candidateAge)
+    if (data.noc.candidateAadhaar) data.noc.candidateAadhaar = sanitizeDigits(data.noc.candidateAadhaar)
+    if (data.noc.apniCandidateAge) data.noc.apniCandidateAge = sanitizeDigits(data.noc.apniCandidateAge)
+    if (data.noc.apniCandidateAadhaar) data.noc.apniCandidateAadhaar = sanitizeDigits(data.noc.apniCandidateAadhaar)
+    if (data.noc.engDateDay) data.noc.engDateDay = sanitizeDigits(data.noc.engDateDay).slice(0, 2)
+    if (data.noc.engDateMonth) data.noc.engDateMonth = sanitizeDigits(data.noc.engDateMonth).slice(0, 2)
+    if (data.noc.engDateYear) data.noc.engDateYear = sanitizeDigits(data.noc.engDateYear).slice(0, 2)
   }
   return data
 }
@@ -636,6 +663,45 @@ const FormDatePicker = memo(function FormDatePicker({
   )
 })
 
+/* ─── Standard Form Select Field ─────────────────────────────── */
+const FormSelect = memo(function FormSelect({
+  label,
+  value,
+  onChange,
+  options = [],
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <label style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', minHeight: 38, display: 'flex', alignItems: 'flex-end', lineHeight: 1.3 }}>
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          border: '1.5px solid #cbd5e1',
+          borderRadius: 8,
+          padding: '8px 12px',
+          fontSize: 14,
+          outline: 'none',
+          background: '#fff',
+          fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", "Noto Sans", Arial, sans-serif',
+          boxSizing: 'border-box',
+          width: '100%',
+          height: 38,
+          cursor: 'pointer',
+        }}
+      >
+        {options.map((opt) => (
+          <option key={opt.value || opt} value={opt.value || opt}>
+            {opt.label || opt}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+})
+
 /* ─── Fast Inline Input inside Certificate Sheet ─────────────── */
 const CertInput = memo(function CertInput({
   section,
@@ -939,7 +1005,7 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
                 isNumber
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>હિજરી માહ (મહિનો)</label>
+                <label style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', minHeight: 38, display: 'flex', alignItems: 'flex-end', lineHeight: 1.3 }}>હિજરી માહ (મહિનો)</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
@@ -957,6 +1023,7 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
                       fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", "Noto Sans", Arial, sans-serif',
                       boxSizing: 'border-box',
                       width: '100%',
+                      height: 38,
                     }}
                   />
                   <datalist id="hijri-months-list">
@@ -1069,25 +1136,16 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
                 value={data.dulhaAddress}
                 onChange={(v) => handleField('dulhaAddress', v)}
               />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>વૈવાહિક સ્થિતિ</label>
-                <select
-                  value={data.dulhaMaritalStatus || 'પ્રથમ નિકાહ (કુવારા)'}
-                  onChange={(e) => handleField('dulhaMaritalStatus', e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    border: '1px solid #cbd5e1',
-                    fontSize: 14,
-                    background: '#fff',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="પ્રથમ નિકાહ (કુવારા)">પ્રથમ નિકાહ (કુવારા)</option>
-                  <option value="તલાકશુદા">તલાકશુદા</option>
-                  <option value="વિધુર">વિધુર</option>
-                </select>
-              </div>
+              <FormSelect
+                label="વૈવાહિક સ્થિતિ"
+                value={data.dulhaMaritalStatus || 'પ્રથમ નિકાહ (કુવારા)'}
+                onChange={(v) => handleField('dulhaMaritalStatus', v)}
+                options={[
+                  'પ્રથમ નિકાહ (કુવારા)',
+                  'તલાકશુદા',
+                  'વિધુર',
+                ]}
+              />
             </div>
           </div>
 
@@ -1174,25 +1232,16 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
                 value={data.dulhanAddress}
                 onChange={(v) => handleField('dulhanAddress', v)}
               />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>વૈવાહિક સ્થિતિ</label>
-                <select
-                  value={data.dulhanMaritalStatus || 'પ્રથમ નિકાહ (કુવારી)'}
-                  onChange={(e) => handleField('dulhanMaritalStatus', e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    border: '1px solid #cbd5e1',
-                    fontSize: 14,
-                    background: '#fff',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="પ્રથમ નિકાહ (કુવારી)">પ્રથમ નિકાહ (કુવારી)</option>
-                  <option value="તલાકશુદા">તલાકશુદા</option>
-                  <option value="વિધવા">વિધવા</option>
-                </select>
-              </div>
+              <FormSelect
+                label="વૈવાહિક સ્થિતિ"
+                value={data.dulhanMaritalStatus || 'પ્રથમ નિકાહ (કુવારી)'}
+                onChange={(v) => handleField('dulhanMaritalStatus', v)}
+                options={[
+                  'પ્રથમ નિકાહ (કુવારી)',
+                  'તલાકશુદા',
+                  'વિધવા',
+                ]}
+              />
             </div>
           </div>
 
@@ -1505,24 +1554,15 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
                 onChange={(v) => handleField('maherGram', v)}
                 placeholder="દા.ત. ૨૫ ગ્રામ"
               />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>મહેર ચૂકવણીનો પ્રકાર</label>
-                <select
-                  value={data.maherType || 'મોઅજ્જલ'}
-                  onChange={(e) => handleField('maherType', e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    border: '1px solid #cbd5e1',
-                    fontSize: 14,
-                    background: '#fff',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="મોઅજ્જલ">મોઅજ્જલ (નકદ / રોકડ - સ્થળ પર જ ચૂકવી આપેલ)</option>
-                  <option value="મુવજ્જલ">મુવજ્જલ (મુદતી / ઉધાર - ભવિષ્યમાં માંગણી થયે ચૂકવવાપાત્ર)</option>
-                </select>
-              </div>
+              <FormSelect
+                label="મહેર ચૂકવણીનો પ્રકાર"
+                value={data.maherType || 'મોઅજ્જલ'}
+                onChange={(v) => handleField('maherType', v)}
+                options={[
+                  { value: 'મોઅજ્જલ', label: 'મોઅજ્જલ (નકદ / રોકડ - સ્થળ પર જ ચૂકવી આપેલ)' },
+                  { value: 'મુવજ્જલ', label: 'મુવજ્જલ (મુદતી / ઉધાર - ભવિષ્યમાં માંગણી થયે ચૂકવવાપાત્ર)' },
+                ]}
+              />
             </div>
           </div>
 
@@ -2642,17 +2682,17 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                 <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center' }}>નિકાહ રજીસ્ટ્રેશન નં.:</strong>
                 {underField('number', null, '110px')}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <strong style={{ color: '#0d2366', display: 'inline-flex', alignItems: 'center', height: 22, fontSize: 12 }}>તારીખ (ઈ.સ.):</strong>
-                <div style={{ width: 28, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CertInput section="marriage" field="dateDay" value={data.dateDay} onChange={onChange} textAlign="center" placeholder="DD" style={{ fontSize: 12.5, fontWeight: 600, height: '100%' }} />
+                <div style={{ width: 22, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CertInput section="marriage" field="dateDay" value={data.dateDay} onChange={onChange} textAlign="center" placeholder="DD" style={{ fontSize: 12.5, fontWeight: 600, height: '100%', padding: 0 }} />
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: '22px' }}>/</span>
-                <div style={{ width: 28, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CertInput section="marriage" field="dateMonth" value={data.dateMonth} onChange={onChange} textAlign="center" placeholder="MM" style={{ fontSize: 12.5, fontWeight: 600, height: '100%' }} />
+                <span style={{ fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: 1, color: '#475569' }}>/</span>
+                <div style={{ width: 22, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CertInput section="marriage" field="dateMonth" value={data.dateMonth} onChange={onChange} textAlign="center" placeholder="MM" style={{ fontSize: 12.5, fontWeight: 600, height: '100%', padding: 0 }} />
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: '22px' }}>/</span>
-                <div style={{ width: 44, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: 1, color: '#475569' }}>/</span>
+                <div style={{ width: 36, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <input
                     type="text"
                     value={data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : ''}
@@ -2734,9 +2774,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું :</span>
                   {underField('dulhaAddress', 1)}
-                  <span style={{ fontSize: 11, fontWeight: 900, color: '#15803d', background: '#dcfce7', padding: '1px 6px', borderRadius: 3 }}>
-                    {data.dulhaMaritalStatus || 'પ્રથમ નિકાહ'}
-                  </span>
+                  
                 </div>
               </div>
 
@@ -2798,9 +2836,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontWeight: 800, color: '#111', width: 95, flexShrink: 0 }}>• સરનામું :</span>
                   {underField('dulhanAddress', 1)}
-                  <span style={{ fontSize: 11, fontWeight: 900, color: '#be123c', background: '#ffe4e6', padding: '1px 6px', borderRadius: 3 }}>
-                    {data.dulhanMaritalStatus || 'પ્રથમ નિકાહ'}
-                  </span>
+                  
                 </div>
               </div>
 
@@ -2938,7 +2974,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
           {/* Page 2 Header Badge */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f1f5f9', border: '1.2px solid #cbd5e1', color: '#0f172a', padding: '5px 12px', borderRadius: 4, fontSize: 12, fontWeight: 900, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div style={{ color: '#0f172a' }}>નિકાહ રજીસ્ટ્રેશન નં.: <span style={{ color: '#1e40af' }}>{data.number || '........'}</span></div>
-            <div style={{ color: '#854d0e', fontWeight: 900 }}>પૃષ્ઠ ૨ : સાક્ષીઓ, કાનૂની શરતો અને સહીઓ</div>
+            <div style={{ color: '#854d0e', fontWeight: 900 }}>પૃષ્ઠ ૨ : સાક્ષીઓ,  નિકાહના અને સહીઓ</div>
             <div style={{ color: '#0f172a' }}>તા.: {data.dateDay || 'DD'}/{data.dateMonth || 'MM'}/{data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : '૨૦૨૬'}</div>
           </div>
 
@@ -3002,7 +3038,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                 <strong style={{ color: '#166534' }}>૩. જમાઅતના બંધારણનું પાલન:</strong> બંને પક્ષકારો તથા તેમના વાલીઓ 'UTMC જમાઅત' ના પ્રવર્તમાન બંધારણ, નીતિ-નિયમો, સામાજિક રિવાજો અને શિસ્તબદ્ધ નિર્ણયોનું ચુસ્તપણે પાલન કરવા સહમત થાય છે.
               </div>
               <div>
-                <strong style={{ color: '#166534' }}>૪. વિવાદ નિવારણ અને સમાધાન:</strong> દાંપત્ય જીવન દરમિયાન જો કોઈ ગેરસમજ કે પારિવારિક મતભેદ ઉપસ્થિત થાય, તો કોઈપણ પક્ષકાર સીધા પોલીસ સ્ટેશન કે કોર્ટ-કચેરીના પગલાં ભરશે નહીં. સૌપ્રથમ સ્થાનિક ની કારોબારી સમિતિ સમક્ષ લેખિત રજૂઆત કરી આપસી સુખદ સમાધાન મેળવવા બંધાયેલા રહેશે.
+                <strong style={{ color: '#166534' }}>૪. વિવાદ નિવારણ અને સમાધાન:</strong> દાંપત્ય જીવન દરમિયાન જો કોઈ ગેરસમજ કે પારિવારિક મતભેદ ઉપસ્થિત થાય, તો કોઈપણ પક્ષકાર સીધા પોલીસ સ્ટેશન કે કોર્ટ-કચેરીના પગલાં ભરશે નહીં. સૌપ્રથમ સ્થાનિક જમાઅત ની કારોબારી સમિતિ સમક્ષ લેખિત રજૂઆત કરી આપસી સુખદ સમાધાન મેળવવા બંધાયેલા રહેશે.
               </div>
               <div>
                 <strong style={{ color: '#166534' }}>૫. સત્તાવાર દસ્તાવેજ:</strong> આ પ્રમાણપત્ર મુસ્લિમ પર્સનલ લો (શરીઅત) તથા 'ધ ગુજરાત રજીસ્ટ્રેશન ઓફ મેરેજીસ એક્ટ' અન્વયે જમાઅતના અધિકૃત દસ્તાવેજ તરીકે માન્ય રહેશે.
@@ -3079,7 +3115,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
 
               <div style={{ textAlign: 'center', width: '35%' }}>
                 <div style={{ borderBottom: '1.5px solid #8b0000', height: 28, marginBottom: 6 }}></div>
-                <strong style={{ color: '#8b0000', fontSize: 12.5 }}>માનદ મંત્રીશ્રી</strong>
+                <strong style={{ color: '#8b0000', fontSize: 12.5 }}> સેક્રેટરી</strong>
                 <div style={{ fontSize: 10.5, color: '#333', fontWeight: 700, marginTop: 1 }}>રાધનપુર થરાદી મેમન જમાઅત</div>
               </div>
             </div>
@@ -3224,7 +3260,10 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
             }}
           >
             <div>ટ્રસ્ટ રજીસ્ટ્રેશન નં.: બી-૫૨૯ (મહેસાણા), તા. ૩૦-૦૯-૧૯૫૫</div>
-            <div>ઈ-મેઇલ: info.radhanpurmemonjamat@gmail.com</div>
+            <div style={{ textAlign: 'right' }}>
+              <div>ઈ-મેઇલ: info.radhanpurmemonjamat@gmail.com</div>
+              <div style={{ marginTop: 2 }}>વેબસાઇટ: https://memon.parivar.me/</div>
+            </div>
           </div>
 
           {/* Main Title: RADHANPUR MEMON JAMAT */}
@@ -3253,8 +3292,8 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 12,
-              marginTop: 4,
-              marginBottom: 4,
+              marginTop: 6,
+              marginBottom: 6,
               padding: '0 4px',
             }}
           >
@@ -3793,14 +3832,14 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
           }}
         >
           {/* 1. Header Block with RMJ Logos & 3D Title */}
-          <div>
+          <div style={{ marginBottom: 6, paddingTop: 2 }}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 8,
-                padding: '0 4px',
+                padding: '2px 4px',
               }}
             >
               {/* Left RMJ Logo */}
@@ -3835,6 +3874,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  gap: 1.5,
                 }}
               >
                 <div style={{ color: '#b71c1c', fontWeight: 900, fontSize: 11.5, lineHeight: 1.2 }}>
@@ -3859,7 +3899,8 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                     color: '#ffffff',
                     whiteSpace: 'nowrap',
                     lineHeight: 1.15,
-                    marginTop: 1,
+                    marginTop: 3,
+                    marginBottom: 2,
                     letterSpacing: 0.5,
                     textShadow: `
                       -2px -2px 0 #0a3d12,
@@ -3909,7 +3950,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                 fontSize: 12.5,
                 fontWeight: 900,
                 color: '#111',
-                marginTop: 1,
+                marginTop: 3,
                 lineHeight: 1.2,
               }}
             >
@@ -3923,10 +3964,10 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                 color: '#b71c1c',
                 fontSize: 11,
                 fontWeight: 900,
-                marginTop: 2,
-                marginBottom: 3,
+                marginTop: 3,
+                marginBottom: 4,
                 borderBottom: '1px solid #e0e0e0',
-                paddingBottom: 3,
+                paddingBottom: 4,
                 letterSpacing: 0.3,
                 whiteSpace: 'nowrap',
               }}
@@ -4015,12 +4056,12 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '0 6px',
-                  gap: 2,
+                  padding: '0 4px',
+                  gap: 1,
                   boxSizing: 'border-box',
                 }}
               >
-                <div style={{ width: 28, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 22, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <CertInput
                     section="noc"
                     field="dateDay"
@@ -4028,11 +4069,11 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                     onChange={onChange}
                     textAlign="center"
                     placeholder="DD"
-                    style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1 }}
+                    style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1, padding: 0 }}
                   />
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 12.5, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>/</span>
-                <div style={{ width: 28, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1, color: '#475569', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>/</span>
+                <div style={{ width: 22, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <CertInput
                     section="noc"
                     field="dateMonth"
@@ -4040,11 +4081,11 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                     onChange={onChange}
                     textAlign="center"
                     placeholder="MM"
-                    style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1 }}
+                    style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1, padding: 0 }}
                   />
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 12.5, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>/</span>
-                <div style={{ width: 44, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1, color: '#475569', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>/</span>
+                <div style={{ width: 36, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <input
                     type="text"
                     value={data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : ''}
@@ -4087,7 +4128,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
-              margin: '2px 0 3px',
+              margin: '6px 0 5px',
             }}
           >
             {/* Left Heraldic Wing */}
@@ -4373,7 +4414,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                   `,
                 }}
               >
-                * વર / કન્યાનું પૂરું નામ:
+                * દુલ્હન / દીકરી પૂરું નામ:
               </span>
               {underlineField('dikraDikri', 'auto', 1)}
             </div>
@@ -4446,7 +4487,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
-              margin: '2px 0',
+              margin: '6px 0 5px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -4590,7 +4631,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                   `,
                 }}
               >
-                * વર / કન્યાનું પૂરું નામ:
+                * વર / દીકરા પૂરું નામ:
               </span>
               {underlineField('apniDikraDikri', 'auto', 1)}
             </div>
@@ -4681,7 +4722,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
-              margin: '2px 0',
+              margin: '6px 0 5px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -4732,7 +4773,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                 >
                   {n.engDateLabel}
                 </span>
-                <div style={{ width: 28, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginLeft: 4 }}>
+                <div style={{ width: 22, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginLeft: 2 }}>
                   <CertInput
                     section="noc"
                     field="engDateDay"
@@ -4740,11 +4781,11 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                     onChange={onChange}
                     textAlign="center"
                     placeholder="DD"
-                    style={{ fontSize: 12.5, fontWeight: 600, height: '100%' }}
+                    style={{ fontSize: 12.5, fontWeight: 600, height: '100%', padding: 0 }}
                   />
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 12.5, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: '22px', margin: '0 2px' }}>/</span>
-                <div style={{ width: 28, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: 1, color: '#475569', margin: '0 1px' }}>/</span>
+                <div style={{ width: 22, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <CertInput
                     section="noc"
                     field="engDateMonth"
@@ -4752,11 +4793,11 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
                     onChange={onChange}
                     textAlign="center"
                     placeholder="MM"
-                    style={{ fontSize: 12.5, fontWeight: 600, height: '100%' }}
+                    style={{ fontSize: 12.5, fontWeight: 600, height: '100%', padding: 0 }}
                   />
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 12.5, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: '22px', margin: '0 2px' }}>/</span>
-                <div style={{ width: 44, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 22, lineHeight: 1, color: '#475569', margin: '0 1px' }}>/</span>
+                <div style={{ width: 36, borderBottom: '1.2px solid #555', height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <input
                     type="text"
                     value={data.engDateYear ? (data.engDateYear.length === 2 ? `૨૦${data.engDateYear}` : data.engDateYear) : ''}
@@ -4809,7 +4850,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
               </div>
 
             {/* Mukam Place */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%', fontSize: 12.5, fontWeight: 700, paddingLeft: 40, marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', fontSize: 12.5, fontWeight: 700, paddingLeft: 40, marginBottom: 10 }}>
               <span
                 style={{
                   color: '#d81b60',
@@ -4829,89 +4870,23 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
             </div>
           </div>
 
-          {/* 9. 4 Legal & Social Undertaking Clauses Box (Moved from Page 2) */}
+          {/* Bold Closing Declaration */}
           <div
             style={{
-              background: '#ffffff',
-              border: '1.5px solid #1b5e20',
-              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 800,
+              lineHeight: '18px',
+              textAlign: 'center',
+              color: '#000000',
               padding: '6px 10px',
-              fontSize: 11,
-              lineHeight: '16px',
-              color: '#111',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 3.5,
-              marginTop: 4,
+              background: 'rgba(255, 255, 255, 0.7)',
+              borderRadius: 6,
+              border: '1px solid #bbf7d0',
+              marginTop: 10,
+              marginBottom: 4,
             }}
           >
-            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૧.</div>
-              <div>
-                <strong style={{ color: '#8b0000' }}>કોઈ લેણદેણ / વાંધો નથી:</strong> સદર નિકાહખ્વાની બાબતે અમારી જમાઅતના સભ્ય (આસામી) સામે કોઈ સામાજિક વાંધો, તકરાર કે જમાઅતનું કોઈ લ્હેણું બાકી નથી.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૨.</div>
-              <div>
-                <strong style={{ color: '#8b0000' }}>પુખ્ત વયની કાનૂની ખાતરી:</strong> બાળવિવાહ પ્રતિબંધક કાયદા અંતર્ગત બંને પક્ષકારો કાયદેસર લગ્ન વય (વર ૨૧ વર્ષ કે તેથી વધુ અને કન્યા ૧૮ વર્ષ કે તેથી વધુ) ધરાવે છે અને આ નિકાહ બંને પક્ષકારોની મુક્ત અને પરસ્પર સંમતિથી થાય છે.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૩.</div>
-              <div>
-                <strong style={{ color: '#8b0000' }}>સમાજના બંધારણ અને શિસ્તનું ચુસ્ત પાલન:</strong> છ પરગણા થરાદી મેમન જમાઅતના બંધારણ મુજબ લગ્ન પ્રસંગના તમામ સામાજિક નિયમો અને શિસ્ત (વરઘોડામાં ડીજે, ફટાકડા, બિનજરૂરી દેખાડો કે કુરિવાજો પરનો પ્રતિબંધ) માન્ય રાખવાના રહેશે. જો કોઈ સભ્ય નિયમભંગ કરશે તો સમાજના બંધારણ મુજબ પગલાં લેવાશે.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૪.</div>
-              <div>
-                <strong style={{ color: '#8b0000' }}>હેતુ અને મર્યાદા:</strong> આ પ્રમાણપત્ર માત્ર સામાજિક શિસ્ત, ઓળખ અને અધિકૃત લગ્ન નોંધણીના હેતુ માટે આપવામાં આવેલ છે.
-              </div>
-            </div>
-          </div>
-
-          {/* 10. Purple Note Banner */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <div
-              style={{
-                background: '#5c1044',
-                color: '#ffffff',
-                borderRadius: 8,
-                padding: '3px 10px',
-                fontSize: 10.5,
-                fontWeight: 800,
-                textAlign: 'center',
-                lineHeight: '15px',
-                boxSizing: 'border-box',
-              }}
-            >
-              <div>
-                <span style={{ color: '#ffd600' }}>{n.noteTitle || 'નોંધ :-'} </span>
-                છ પરગણા થરાદી મેમન જમાઅતના બંધારણ મુજબ
-              </div>
-              <div>
-                શાદી પ્રસંગના નિયમોનું ચુસ્તપણે પાલન કરવાની સમાજના દરેક સભ્યની નૈતિક ફરજમાં આવે છે.
-              </div>
-            </div>
-
-            {/* Bold Closing Declaration */}
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 800,
-                lineHeight: '16px',
-                textAlign: 'center',
-                color: '#000000',
-                padding: '0 6px',
-              }}
-            >
-              {n.bodyText}
-            </div>
+            {n.bodyText}
           </div>
 
           {/* 11. Page 1 Bottom Indicator */}
@@ -4920,12 +4895,13 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '3px 10px',
-              fontSize: 10,
+              padding: '4px 10px',
+              fontSize: 10.5,
               color: '#2e7d32',
               fontWeight: 800,
               fontStyle: 'italic',
               textAlign: 'center',
+              marginTop: 'auto',
             }}
           >
             [ પૃષ્ઠ ૧ / ૨ &bull; પાછળ કાનૂની શરતો તથા સંમતિ પત્ર જુઓ ]
@@ -4933,6 +4909,7 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
         </div>
         </div>
       </div>
+
 
 
       {/* ══════════════════════════════════════════════════════════════
@@ -4978,99 +4955,93 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            gap: 12,
+            gap: 8,
             padding: '1px 3px',
           }}
         >
-          {/* Header Block Page 2 */}
-          <div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 8,
-                padding: '0 4px',
-              }}
-            >
-              <div style={{ width: 62, height: 62, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <img
-                  src={letterpadLogo}
-                  alt="RMJ"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                  onError={(e) => {
-                    if (e.target.src !== memonLogo) {
-                      e.target.src = memonLogo
-                    }
-                  }}
-                />
-              </div>
+          {/* Reference & Page Badge Bar (Page 2) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#f1f5f9',
+              border: '1.2px solid #cbd5e1',
+              color: '#0f172a',
+              padding: '5px 12px',
+              borderRadius: 4,
+              fontSize: 12,
+              fontWeight: 900,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}
+          >
+            <div>NOC નં.: <span style={{ color: '#1e40af' }}>{data.number || '........'}</span></div>
+            <div style={{ color: '#854d0e', fontWeight: 900 }}>પૃષ્ઠ ૨ : ખાતરી, પરવાનગી તથા કાનૂની સંમતિ પત્ર</div>
+            <div>તા.: {data.dateDay || 'DD'}/{data.dateMonth || 'MM'}/૨૦{data.dateYear || 'YY'}</div>
+          </div>
 
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ color: '#b71c1c', fontWeight: 900, fontSize: 11.5, lineHeight: 1.2 }}>
-                  {n.quoteLine}
-                </div>
-                <div
-                  style={{
-                    fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif',
-                    fontSize: 24,
-                    fontWeight: 900,
-                    color: '#ffffff',
-                    whiteSpace: 'nowrap',
-                    lineHeight: 1.15,
-                    marginTop: 1,
-                    textShadow: `
-                      -2px -2px 0 #0a3d12,
-                       0px -2px 0 #0a3d12,
-                       2px -2px 0 #0a3d12,
-                      -2px  0px 0 #0a3d12,
-                       2px  0px 0 #0a3d12,
-                      -2px  2px 0 #0a3d12,
-                       0px  2px 0 #0a3d12,
-                       2px  2px 0 #0a3d12,
-                       3px  4px 3px rgba(0,0,0,0.5)
-                    `,
-                  }}
-                >
-                  {n.communityName}
-                </div>
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#222' }}>{n.trustLine}</div>
-              </div>
-
-              <div style={{ width: 62, height: 62, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <img
-                  src={letterpadLogo}
-                  alt="RMJ"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                  onError={(e) => {
-                    if (e.target.src !== memonLogo) {
-                      e.target.src = memonLogo
-                    }
-                  }}
-                />
+          {/* 4 Legal & Social Undertaking Clauses Box */}
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1.5px solid #1b5e20',
+              borderRadius: 6,
+              padding: '8px 12px',
+              fontSize: 11,
+              lineHeight: '16px',
+              color: '#111',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3.5,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૧.</div>
+              <div>
+                <strong style={{ color: '#8b0000' }}>કોઈ લેણદેણ / વાંધો નથી:</strong> સદર નિકાહખ્વાની બાબતે અમારી જમાઅતના સભ્ય (આસામી) સામે કોઈ સામાજિક વાંધો, તકરાર અને જમાઅતનું કોઈ લ્હેણું બાકી નથી.
               </div>
             </div>
 
-            {/* Reference & Page Badge Bar */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: '#f1f5f9',
-                border: '1.2px solid #cbd5e1',
-                color: '#0f172a',
-                padding: '4px 12px',
-                borderRadius: 4,
-                marginTop: 4,
-                fontSize: 12,
-                fontWeight: 900,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              }}
-            >
-              <div>NOC નં.: <span style={{ color: '#1e40af' }}>{data.number || '........'}</span></div>
-              <div style={{ color: '#854d0e', fontWeight: 900 }}>પૃષ્ઠ ૨ : ખાતરી, પરવાનગી તથા કાનૂની સંમતિ પત્ર</div>
-              <div>તા.: {data.dateDay || 'DD'}/{data.dateMonth || 'MM'}/૨૦{data.dateYear || 'YY'}</div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૨.</div>
+              <div>
+                <strong style={{ color: '#8b0000' }}>પુખ્ત વયની કાનૂની ખાતરી:</strong> બાળવિવાહ પ્રતિબંધક કાયદા અંતર્ગત બંને પક્ષકારો કાયદેસર લગ્ન વય (દીકરો  છ પરગણા થરાદી ૨૧ વર્ષ કે તેથી વધુ અને દીકરી ૧૮ વર્ષ કે તેથી વધુ) ધરાવે છે અને આ નિકાહ બંને પક્ષકારોની મુક્ત અને પરસ્પર સંમતિથી થાય છે.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૩.</div>
+              <div>
+                <strong style={{ color: '#8b0000' }}>સમાજના બંધારણ અને શિસ્તનું ચુસ્ત પાલન:</strong> UMTC મેમન જમાઅતના બંધારણ મુજબ લગ્ન પ્રસંગના તમામ સામાજિક નિયમો અને શિસ્ત (વરઘોડામાં ડીજે, ફટાકડા, બિનજરૂરી દેખાડો કે કુરિવાજો પરનો પ્રતિબંધ) માન્ય રાખવાના રહેશે. જો કોઈ સભ્ય નિયમભંગ કરશે તો સમાજના બંધારણ મુજબ કડક પગલાં લેવાશે.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div style={{ color: '#1b5e20', fontWeight: 900, minWidth: 14 }}>૪.</div>
+              <div>
+                <strong style={{ color: '#8b0000' }}>હેતુ અને મર્યાદા:</strong> આ પ્રમાણપત્ર માત્ર સામાજિક શિસ્ત, ઓળખ અને અધિકૃત લગ્ન નોંધણીના હેતુ માટે આપવામાં આવેલ છે.
+              </div>
+            </div>
+          </div>
+
+          {/* Purple Note Banner */}
+          <div
+            style={{
+              background: '#5c1044',
+              color: '#ffffff',
+              borderRadius: 6,
+              padding: '4px 10px',
+              fontSize: 10.5,
+              fontWeight: 800,
+              textAlign: 'center',
+              lineHeight: '15px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div>
+              <span style={{ color: '#ffd600' }}>{n.noteTitle || 'નોંધ :-'} </span>
+              UMTC મેમન જમાઅતના બંધારણ મુજબ શાદી પ્રસંગના નિયમોનું ચુસ્તપણે પાલન કરવાની સમાજના દરેક સભ્યની નૈતિક ફરજમાં આવે છે.
             </div>
           </div>
 
@@ -5081,9 +5052,9 @@ const NocSheet = memo(function NocSheet({ data, onChange, printRef }) {
               border: '1.5px solid #fbc02d',
               borderLeft: '5px solid #e65100',
               borderRadius: 6,
-              padding: '10px 14px',
-              fontSize: 12,
-              lineHeight: '18px',
+              padding: '7px 12px',
+              fontSize: 11.5,
+              lineHeight: '16px',
               color: '#795548',
               fontWeight: 700,
             }}
