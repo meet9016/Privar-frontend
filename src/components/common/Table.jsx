@@ -141,7 +141,9 @@ export default function Table({
   onSelectionChange,
   onBulkStatus,
   onBulkDelete,
-  hasStatusColumn
+  hasStatusColumn,
+  renderMobileCard,
+  disableMobileCard = false
 }) {
   const skeletonRows = [1, 2, 3, 4, 5];
 
@@ -223,7 +225,8 @@ export default function Table({
 
   return (
     <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col min-h-[400px] sm:min-h-[500px] lg:h-[calc(100vh-210px)] ${className}`}>
-      <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar" style={{ position: 'relative' }}>
+      {/* Desktop & Tablet Table View (Always displayed when disableMobileCard is true) */}
+      <div className={`${disableMobileCard ? 'block' : 'hidden md:block'} flex-1 overflow-x-auto overflow-y-auto custom-scrollbar`} style={{ position: 'relative' }}>
         <table className="w-full min-w-full text-left border-collapse table-auto bg-white">
           <thead className={stickyHeader ? "sticky top-0 z-20 shadow-sm" : ""}>
             <tr className="border-b border-primary/20 text-text text-xs uppercase tracking-wider font-bold bg-white">
@@ -324,6 +327,114 @@ export default function Table({
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Responsive Cards View */}
+      {!disableMobileCard && (
+        <div className="md:hidden flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-3.5 bg-surface-secondary/15">
+          {loading && data.length === 0 ? (
+            showSkeleton ? (
+              skeletonRows.map((n) => <div key={n} className="h-36 bg-surface rounded-2xl border border-border animate-pulse" />)
+            ) : (
+              <div className="py-16 text-center">
+                <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-surface border border-border shadow-sm mb-2">
+                  <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                </div>
+                <p className="text-text font-semibold text-xs uppercase tracking-wider">Loading...</p>
+              </div>
+            )
+          ) : data.length === 0 ? (
+          <div className="py-12 flex flex-col items-center justify-center text-center p-6 bg-surface rounded-2xl border border-border shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-3">
+              {emptyState?.icon ? (
+                React.createElement(emptyState.icon, { className: 'w-6 h-6 text-primary' })
+              ) : (
+                <FolderOpen className="w-6 h-6 text-primary" />
+              )}
+            </div>
+            <p className="text-text font-bold text-sm">{emptyState?.title || 'No records found'}</p>
+            <p className="text-text-secondary text-xs mt-1">{emptyState?.description}</p>
+            {emptyState?.onAction && (
+              <button
+                type="button"
+                onClick={emptyState.onAction}
+                className="mt-3.5 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold shadow-sm"
+              >
+                <span>+</span>
+                <span>{emptyState.actionLabel || 'Add New'}</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          data.map((row, i) => {
+            if (renderMobileCard) {
+              return (
+                <div key={getRowId(row) || i}>
+                  {renderMobileCard(row, i)}
+                </div>
+              );
+            }
+
+            // Automatic clean card view matching reference
+            const isSelected = effectiveSelected.includes(getRowId(row));
+            const firstCol = columns[0];
+            const actionCol = columns.find(c => c.key === 'actions' || c.key === 'action');
+            const statusCol = columns.find(c => c.key === 'status' || (typeof c.header === 'string' && c.header.toLowerCase().includes('status')));
+            const otherCols = columns.filter(c => c !== firstCol && c !== actionCol && c !== statusCol && c.key !== 'select' && c.key !== '__table_selection_col');
+
+            return (
+              <div
+                key={getRowId(row) || i}
+                className={`bg-white border rounded-2xl p-4 shadow-sm space-y-3 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
+              >
+                {/* Card Top: Primary Title / Identity + Status / Checkbox */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {firstCol ? (firstCol.render ? firstCol.render(row, i) : <span className="font-bold text-text text-base">{row[firstCol.key]}</span>) : null}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {selectable && (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleRow(getRowId(row))}
+                        className="w-4.5 h-4.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer"
+                      />
+                    )}
+                    {statusCol && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {statusCol.render ? statusCol.render(row, i) : row[statusCol.key]}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Middle: Key-Value Pairs List */}
+                {otherCols.length > 0 && (
+                  <div className="flex flex-col gap-2 text-xs bg-surface-secondary/40 p-3 rounded-xl border border-border/60">
+                    {otherCols.map((col, cIdx) => (
+                      <div key={col.key || cIdx} className="flex items-center justify-between gap-2">
+                        <span className="text-text-secondary font-medium shrink-0">{col.header || col.key}</span>
+                        <div className="font-semibold text-text text-right truncate max-w-[65%]">
+                          {col.render ? col.render(row, i) : (row[col.key] ?? '—')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Card Bottom: Action Buttons */}
+                {actionCol && (
+                  <div className="pt-2 border-t border-border/60 flex items-center justify-end gap-2">
+                    {actionCol.render ? actionCol.render(row, i) : row[actionCol.key]}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+      )}
+
       {effectiveSelected.length > 0 && (
         <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-primary/10 border-t border-primary/20 animate-fade-in text-text">
           <div className="flex items-center gap-2 text-xs font-semibold">

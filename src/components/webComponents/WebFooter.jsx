@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Send, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart, Apple, Play } from 'lucide-react';
-import { assetUrl } from '../../lib/api';
+import { assetUrl, memberApi } from '../../lib/api';
 
 const getStoredWebTheme = () => {
   const colorKeys = [
     'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
     'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
     'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp',
+    'android_app_link', 'ios_app_link', 'playstore_url', 'appstore_url',
   ];
   const loadedTheme = {};
   colorKeys.forEach((key) => {
@@ -23,7 +24,30 @@ export default function WebFooter() {
   useEffect(() => {
     const loadTheme = () => setTheme(getStoredWebTheme());
     window.addEventListener('storage', loadTheme);
-    return () => window.removeEventListener('storage', loadTheme);
+    window.addEventListener('web-theme-updated', loadTheme);
+
+    // Also fetch latest configuration to stay up to date
+    (async () => {
+      try {
+        const res = await memberApi.get('/get_app_theme');
+        const data = res.data?.data || res.data;
+        if (data) {
+          setTheme(prev => ({
+            ...prev,
+            ...data,
+            android_app_link: data.android_app_link || data.playstore_url || prev?.android_app_link,
+            ios_app_link: data.ios_app_link || data.appstore_url || prev?.ios_app_link,
+          }));
+        }
+      } catch (e) {
+        // silent fail to fallback to cached localStorage
+      }
+    })();
+
+    return () => {
+      window.removeEventListener('storage', loadTheme);
+      window.removeEventListener('web-theme-updated', loadTheme);
+    };
   }, []);
 
   const navigationLinks = [
@@ -47,6 +71,8 @@ export default function WebFooter() {
   ].filter(link => link.href); // Only show social links that are provided
 
   const primaryBg = theme?.primaryColor || '#0a2342';
+  const playStoreUrl = theme?.android_app_link || theme?.playstore_url || 'https://play.google.com/store/apps/details?id=com.digitalks.parivar';
+  const appStoreUrl = theme?.ios_app_link || theme?.appstore_url || '';
 
   return (
     <footer
@@ -63,7 +89,7 @@ export default function WebFooter() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-8 items-start">
 
           {/* Brand & App Download */}
-          <div className="space-y-4 flex flex-col items-center sm:items-start text-center sm:text-left">
+          <div className="space-y-4 flex flex-col items-center sm:text-left">
             <Link to="/" className="inline-block group">
               {theme?.webLogo ? (
                 <div className="w-28 h-28 sm:w-32 sm:h-32 p-2 bg-white rounded-2xl shadow-xl border border-white/20 transition-transform group-hover:scale-105 flex items-center justify-center overflow-hidden">
@@ -81,36 +107,47 @@ export default function WebFooter() {
             </Link>
 
             {/* App Download Buttons */}
-            <div className="flex flex-col gap-2 pt-2 items-center sm:items-start">
-              <p className="text-xs font-bold text-white uppercase tracking-wider">Download Our App</p>
-              <div className="flex flex-row items-center gap-3">
-                <a
-                  href="https://play.google.com/store/apps/details?id=com.digitalks.parivar"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="transition-transform hover:scale-105 shrink-0 block"
-                >
-                  <img
-                    src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-                    alt="Get it on Google Play"
-                    className="h-[54px] w-auto object-contain -my-2 -ml-2"
-                  />
-                </a>
+            {(playStoreUrl || appStoreUrl) && (
+              <div className="flex flex-col gap-2 pt-2 items-center sm:items-start">
+                <p className="text-xs font-bold text-white uppercase tracking-wider">Download Our App</p>
+                <div className="flex flex-row items-center gap-3">
+                  {playStoreUrl && (
+                    <a
+                      href={playStoreUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="transition-transform hover:scale-105 shrink-0 block"
+                      title="Get it on Google Play"
+                    >
+                      <img
+                        src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                        alt="Get it on Google Play"
+                        className="h-[54px] w-auto object-contain -my-2 -ml-2"
+                      />
+                    </a>
+                  )}
 
-                <a
-                  href="#"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="transition-transform hover:scale-105 shrink-0 block"
-                >
-                  <img
-                    src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
-                    alt="Download on the App Store"
-                    className="h-[36px] w-auto object-contain"
-                  />
-                </a>
+                  <a
+                    href={appStoreUrl || '#'}
+                    target={appStoreUrl ? "_blank" : undefined}
+                    rel={appStoreUrl ? "noreferrer" : undefined}
+                    onClick={(e) => {
+                      if (!appStoreUrl) {
+                        e.preventDefault();
+                      }
+                    }}
+                    className={`transition-transform hover:scale-105 shrink-0 block ${!appStoreUrl ? 'opacity-80' : ''}`}
+                    title={appStoreUrl ? "Download on the App Store" : "Coming soon on App Store"}
+                  >
+                    <img
+                      src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+                      alt="Download on the App Store"
+                      className="h-[36px] w-auto object-contain"
+                    />
+                  </a>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Quick Links */}

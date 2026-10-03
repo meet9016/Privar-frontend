@@ -17,6 +17,7 @@ const initialState = {
   whatsapp_number: '',
   email: '',
   GST_number: '',
+  pincode: '',
   country_id: '',
   state_id: '',
   city_id: '',
@@ -52,6 +53,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   const [cities, setCities] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [pincodeLoading, setPincodeLoading] = useState(false)
   const [profilePreview, setProfilePreview] = useState(null)
   const [galleryPreviews, setGalleryPreviews] = useState([])
 
@@ -147,6 +149,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       email: business?.email || '',
       whatsapp_number: business?.whatsapp_number || '',
       GST_number: business?.GST_number || '',
+      pincode: business?.pincode || '',
       country_id: business?.country_id || (india ? (india._id || india.id) : ''),
       state_id: business?.state_id || (gujarat ? (gujarat._id || gujarat.id) : ''),
       city_id: business?.city_id || '',
@@ -176,6 +179,66 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     )
     setProfilePreview(null)
   }, [business, countries, states])
+
+  const handlePincodeChange = async (pinValue) => {
+    const cleanPin = pinValue.replace(/\D/g, '').slice(0, 6)
+    handleFieldChange('pincode', cleanPin)
+
+    if (cleanPin.length === 6) {
+      try {
+        setPincodeLoading(true)
+        const response = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`)
+        const data = await response.json()
+        if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+          const po = data[0].PostOffice[0]
+          const postalState = (po.State || '').trim().toLowerCase()
+          const postalDistrict = (po.District || '').trim().toLowerCase()
+          const postalName = (po.Name || '').trim().toLowerCase()
+
+          // Match country to India
+          const india = countries.find(c => /india/i.test(c.name))
+          const matchedCountryId = india ? (india._id || india.id) : formData.country_id
+
+          // Match state
+          const matchedState = states.find(s => {
+            const sName = (s.name || '').trim().toLowerCase()
+            return sName === postalState || postalState.includes(sName) || sName.includes(postalState)
+          })
+
+          // Match city
+          const matchedCity = cities.find(c => {
+            const cName = (c.name || '').trim().toLowerCase()
+            return (
+              cName === postalDistrict ||
+              cName === postalName ||
+              postalDistrict.includes(cName) ||
+              postalName.includes(cName)
+            )
+          })
+
+          setFormData(prev => ({
+            ...prev,
+            pincode: cleanPin,
+            country_id: matchedCountryId || prev.country_id,
+            state_id: matchedState ? (matchedState._id || matchedState.id) : prev.state_id,
+            city_id: matchedCity ? (matchedCity._id || matchedCity.id) : prev.city_id
+          }))
+
+          setErrors(prev => {
+            const updated = { ...prev }
+            if (matchedCountryId) delete updated.country_id
+            if (matchedState) delete updated.state_id
+            if (matchedCity) delete updated.city_id
+            return updated
+          })
+        }
+      } catch (err) {
+        console.error('Failed to auto-fetch pincode details:', err)
+      } finally {
+        setPincodeLoading(false)
+      }
+    }
+  }
 
   const handleFieldChange = (field, value) => {
     setFormData(prev => {
@@ -243,8 +306,9 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   return (
     <form onSubmit={handleSubmit} className="space-y-5 text-text" noValidate>
 
-      {/* Main Details: 4 Inputs Per Row */}
+      {/* Main Details: 4 Inputs Per Row - Perfectly Balanced Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Row 1 */}
         <Input
           label="Business Name"
           required
@@ -279,6 +343,8 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           disabled={isLoading}
           error={errors.number}
         />
+
+        {/* Row 2 */}
         <Input
           label="WhatsApp Number"
           value={formData.whatsapp_number}
@@ -294,6 +360,20 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           onChange={(e) => setFormData(prev => ({ ...prev, GST_number: e.target.value }))}
           disabled={isLoading}
         />
+        <div className="relative">
+          <Input
+            label="Pincode"
+            placeholder="Enter Pincode"
+            value={formData.pincode}
+            onChange={(e) => handlePincodeChange(e.target.value)}
+            disabled={isLoading}
+          />
+          {pincodeLoading && (
+            <div className="absolute right-3 top-[38px] flex items-center gap-1 text-xs text-primary font-medium animate-pulse">
+              <span>Fetching...</span>
+            </div>
+          )}
+        </div>
         <Select
           label="Country"
           required
@@ -303,6 +383,8 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           options={countries.map(c => ({ label: c.name, value: c._id || c.id }))}
           error={errors.country_id}
         />
+
+        {/* Row 3 */}
         <Select
           label="State"
           required
@@ -321,7 +403,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           options={cities.map(c => ({ label: c.name, value: c._id || c.id }))}
           error={errors.city_id}
         />
-        <div className="sm:col-span-2 md:col-span-3">
+        <div className="sm:col-span-2 md:col-span-2">
           <Input
             label="Location Link (Google Maps)"
             required
