@@ -132,7 +132,7 @@ export default function Businesses({ headerLeftContent }) {
       // Append all text fields
       const textFields = [
         'business_category_id','business_name','number','whatsapp_number',
-        'GST_number','email','country_id','state_id','city_id','address',
+        'GST_number','email','country_id','state_id','city_id','pincode','address',
         'location_link','about_us','website','facebook','instagram',
         'pinterest','youtube','status'
       ]
