@@ -721,23 +721,15 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           }
 
           // 4. City / Taluka is NOT auto-selected as requested by user (City optional, auto select nahi hona chahiye)
-          let matchedCityId = ''
-
           // 5. Village is NOT auto-filled on pincode entry as requested by user
-
-          // Auto-fill area / address if empty
-          let updatedAddress = formData.address
-          if (!updatedAddress && localities.length > 0) {
-            updatedAddress = localities[0]
-          }
+          // 6. Address is NOT auto-filled on pincode entry as requested by user (Address user khud manually fill karega)
 
           setFormData(prev => ({
             ...prev,
             country_id: matchedCountryId || prev.country_id,
             state_id: matchedStateId || prev.state_id,
             district_id: matchedDistrictId || prev.district_id,
-            city_id: '',
-            ...(updatedAddress ? { address: updatedAddress } : {})
+            city_id: ''
           }))
 
           setErrors(prev => {
