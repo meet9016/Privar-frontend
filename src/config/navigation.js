@@ -13,11 +13,13 @@ import {
   GraduationCap,
   HeartHandshake,
   IndianRupee,
-  BookOpen
+  BookOpen,
+  UserPlus
 } from 'lucide-react'
 
 export const coreNavigation = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: Home, end: false, title: 'System Overview', permission: 'dashboard.view' },
+  { to: '/admin/registrations', label: 'New Registrations', icon: UserPlus, title: 'New Member Registrations', permission: 'members.list' },
   { to: '/admin/committee', label: 'Committee Members', icon: UserCog, title: 'Committee Members', permission: 'committee.list' },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheck, title: 'Roles & Permissions', permission: 'roles.list' },
   { to: '/admin/users', label: 'Members', icon: Users, title: 'Member Directory', permission: 'members.list' }

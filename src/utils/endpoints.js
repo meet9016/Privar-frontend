@@ -174,6 +174,15 @@ export const MANDAL_ENDPOINTS = {
   GET_HISTORY: '/mandal/history'
 }
 
+// Mobile Registration Portal API Endpoints
+export const REGISTRATION_ENDPOINTS = {
+  GET_LIST: '/mobile-registration/admin/list',
+  GET_DETAILS: (id) => `/mobile-registration/admin/${id}`,
+  APPROVE: (id) => `/mobile-registration/admin/${id}/approve`,
+  REJECT: (id) => `/mobile-registration/admin/${id}/reject`,
+  REQUEST_CORRECTION: (id) => `/mobile-registration/admin/${id}/request-correction`
+}
+
 export default {
   COMMITTEE: COMMITTEE_ENDPOINTS,
   ROLES: ROLES_ENDPOINTS,
@@ -191,6 +200,7 @@ export default {
   EXPENSE: EXPENSE_ENDPOINTS,
   DONATION: DONATION_ENDPOINTS,
   MANDAL: MANDAL_ENDPOINTS,
-  MASTER: MASTER_ENDPOINTS
+  MASTER: MASTER_ENDPOINTS,
+  REGISTRATION: REGISTRATION_ENDPOINTS
 }
 
