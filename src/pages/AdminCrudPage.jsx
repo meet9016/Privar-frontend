@@ -603,7 +603,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       />
       <Modal isOpen={isModalOpen} maxWidth={fields.length > 10 ? 'max-w-7xl' : fields.length > 5 ? 'max-w-5xl' : 'max-w-3xl'} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-3.5 text-text" noValidate>
-          <div className={`grid grid-cols-1 ${gridCols || (fields.some(f => f.className) ? 'md:grid-cols-2' : fields.length > 10 ? 'sm:grid-cols-2 md:grid-cols-4' : fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2')} gap-3.5`} style={{ overflow: 'visible' }}>
+          <div className={`grid grid-cols-1 ${gridCols || (fields.length > 10 ? 'sm:grid-cols-2 md:grid-cols-4' : fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2')} gap-3.5`} style={{ overflow: 'visible' }}>
             {fields.map((field, fieldIdx) => {
               const isFullRow = field.type === 'textarea' || (field.type === 'file' && field.multiple);
               const colSpanClass = field.className || (isFullRow 
@@ -692,10 +692,14 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                       if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
                     }} 
                     disabled={saving}
-                    options={(remoteOptions[field.name] || []).map((option) => ({
-                      label: option.name || option.country || option.state || option.city || option.business || 'Unnamed',
-                      value: option.id || option._id
-                    }))}
+                    options={(remoteOptions[field.name] || []).map((option) => {
+                      const label = field.labelKey ? option[field.labelKey] : (option.name || option.country || option.state || option.city || option.village || option.business || 'Unnamed')
+                      const val = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
+                      return {
+                        label: label || 'Unnamed',
+                        value: val
+                      }
+                    })}
                     error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 ) : field.type === 'file' ? (

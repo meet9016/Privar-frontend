@@ -171,7 +171,9 @@ export default function MatrimonialWebPage() {
 
                       <p className="text-xs font-bold text-gray-700 flex items-center gap-1 mt-1">
                         <MapPin className="w-3.5 h-3.5 text-gray-600 shrink-0" />
-                        <span className="truncate">{profile.city || profile.address || 'Gujarat'}</span>
+                        <span className="truncate">
+                          {[profile.village, profile.city, profile.district, profile.state].filter(Boolean).join(', ') || profile.address || 'Gujarat'}
+                        </span>
                       </p>
                     </div>
                   </div>

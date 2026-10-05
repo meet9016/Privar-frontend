@@ -86,6 +86,7 @@ const definitions = {
     endpoint: MATRIMONY_ENDPOINTS.GET_MATRIMONIES,
     hideFilter: true,
     fields: [
+      // Row 1: Basic Info (4 fields)
       { name: 'full_name', label: 'Full Name', required: true },
       { name: 'middle_name', label: 'Middle Name', required: true },
       {
@@ -99,6 +100,8 @@ const definitions = {
         ]
       },
       { name: 'birthdate', label: 'Birthdate', type: 'date' },
+
+      // Row 2: Physical & Contact (4 fields)
       {
         name: 'marital_status',
         label: 'Marital Status',
@@ -114,11 +117,20 @@ const definitions = {
       { name: 'height', label: 'Height' },
       { name: 'weight', label: 'Weight' },
       { name: 'mobile_number', label: 'Mobile Number' },
-      { name: 'city', label: 'City', required: true },
+
+      // Row 3: Location Info (4 fields)
+      { name: 'state', label: 'State', type: 'select-remote', source: MASTER_ENDPOINTS.STATE, labelKey: 'name', valueKey: 'name' },
+      { name: 'district', label: 'District', type: 'select-remote', source: MASTER_ENDPOINTS.DISTRICT, labelKey: 'name', valueKey: 'name' },
+      { name: 'city', label: 'City', type: 'select-remote', source: MASTER_ENDPOINTS.CITY, labelKey: 'name', valueKey: 'name', required: true },
+      { name: 'village', label: 'Village', type: 'select-remote', source: MASTER_ENDPOINTS.VILLAGE, labelKey: 'name', valueKey: 'name' },
+
+      // Row 4: Education & Parents (4 fields)
       { name: 'education', label: 'Education', required: true },
       { name: 'occupation', label: 'Occupation', required: true },
       { name: 'father_name', label: 'Father Name', required: true },
       { name: 'mother_name', label: 'Mother Name', required: true },
+
+      // Row 5: Community & Status (4 fields)
       {
         name: 'complexion',
         label: 'Complexion',
@@ -139,10 +151,14 @@ const definitions = {
           { value: 'Nuclear Family', label: 'Nuclear Family' }
         ]
       },
-      { name: 'about', label: 'About', type: 'textarea' },
-      { name: 'biodata', label: 'Biodata (PDF/Image)', type: 'file', accept: 'image/*,application/pdf', className: 'md:col-span-1' },
-      { name: 'person_image', label: 'Person Image', type: 'file', className: 'md:col-span-1' },
-      { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Approved' }, { value: 0, label: 'Inactive' }], className: 'md:col-span-2' }
+      { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Approved' }, { value: 0, label: 'Inactive' }] },
+
+      // Row 6: About (Full 4-column row)
+      { name: 'about', label: 'About', type: 'textarea', className: 'sm:col-span-2 md:col-span-4' },
+
+      // Row 7: Files (2 columns each)
+      { name: 'biodata', label: 'Biodata (PDF/Image)', type: 'file', accept: 'image/*,application/pdf', className: 'sm:col-span-1 md:col-span-2' },
+      { name: 'person_image', label: 'Person Image', type: 'file', className: 'sm:col-span-1 md:col-span-2' }
     ],
     columns: [
       { key: 'person_image', label: 'Photo', type: 'image' },
@@ -157,7 +173,7 @@ const definitions = {
         return `${day}/${month}/${d.getFullYear()}`
       }},
       { key: 'marital_status', label: 'Status' },
-      { key: 'city', label: 'City' },
+      { key: 'location', label: 'Location', render: (row) => [row.village, row.city, row.district, row.state].filter(Boolean).join(', ') || row.city || '-' },
       { key: 'mobile_number', label: 'Mobile' }
     ]
   },
