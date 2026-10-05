@@ -53,6 +53,7 @@ function RowsSelector({ limit, onLimitChange }) {
     </div>
   );
 }
+
 function SkeletonRow({ columns }) {
   const textWidths = ['w-36', 'w-24', 'w-32', 'w-20', 'w-28', 'w-16'];
   return (
@@ -78,13 +79,11 @@ function SkeletonRow({ columns }) {
                 <div className="w-9 h-9 rounded-full bg-surface-secondary border border-border/60 shrink-0" />
                 <div className="space-y-1.5 flex-1 max-w-[160px]">
                   <div className="h-3 rounded-full bg-surface-secondary w-28" />
-                  <div className="h-2 rounded-full bg-surface-secondary/70 w-16" />
+                  <div className="h-2.5 rounded-full bg-surface-secondary w-16" />
                 </div>
               </div>
             ) : (
-              <div className={`flex ${col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : 'items-center'}`}>
-                <div className={`h-3 rounded-full bg-surface-secondary ${textWidths[idx % textWidths.length]}`} />
-              </div>
+              <div className={`h-3.5 rounded-md bg-surface-secondary ${textWidths[idx % textWidths.length]}`} />
             )}
           </td>
         );
@@ -94,48 +93,50 @@ function SkeletonRow({ columns }) {
 }
 
 function getPageNumbers(currentPage, totalPages) {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
   const pages = [];
-  pages.push(1);
+  const maxVisiblePages = 5;
 
-  if (currentPage > 3) {
-    pages.push('...');
-  }
+  if (totalPages <= maxVisiblePages) {
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    pages.push(1);
+    let startPage = Math.max(2, currentPage - 1);
+    let endPage = Math.min(totalPages - 1, currentPage + 1);
 
-  const start = Math.max(2, currentPage - 1);
-  const end = Math.min(totalPages - 1, currentPage + 1);
+    if (currentPage <= 3) {
+      endPage = 4;
+    }
+    if (currentPage >= totalPages - 2) {
+      startPage = totalPages - 3;
+    }
 
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
-  if (currentPage < totalPages - 2) {
-    pages.push('...');
-  }
-
-  if (totalPages > 1) {
+    if (startPage > 2) {
+      pages.push('...');
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    if (endPage < totalPages - 1) {
+      pages.push('...');
+    }
     pages.push(totalPages);
   }
-
   return pages;
 }
 
 export default function Table({
   columns,
   data = [],
-  keyField = 'id',
+  loading = false,
   emptyState,
   pagination,
-  loading = false,
-  showSkeleton = false,
-  className = '',
-  maxHeightClass = 'max-h-[calc(100vh-275px)]',
-  stickyHeader = true,
   rowClassName,
-  // Checkbox selection & Bulk Actions (Default false as requested)
+  className = '',
+  keyField = '_id',
+  stickyHeader = true,
+  showSkeleton = false,
   selectable = false,
   selectedRows = [],
   onSelectionChange,
@@ -222,8 +223,10 @@ export default function Table({
   const showingTo = pagination ? Math.min(showingFrom + (pagination.limit || 15) - 1, totalRecords) : data.length;
 
   return (
-    <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col min-h-[400px] sm:min-h-[500px] lg:h-[calc(100vh-210px)] ${className}`}>
-      <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar" style={{ position: 'relative' }}>
+    <div className={`bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col min-h-[400px] sm:min-h-[500px] ${className}`}>
+      
+      {/* ─── DESKTOP TABLE VIEW (hidden on mobile, visible on sm+) ─── */}
+      <div className="hidden sm:block flex-1 overflow-x-auto overflow-y-auto custom-scrollbar" style={{ position: 'relative' }}>
         <table className="w-full min-w-full text-left border-collapse table-auto bg-white">
           <thead className={stickyHeader ? "sticky top-0 z-20 shadow-sm" : ""}>
             <tr className="border-b border-primary/20 text-text text-xs uppercase tracking-wider font-bold bg-white">
@@ -324,6 +327,96 @@ export default function Table({
           </tbody>
         </table>
       </div>
+
+      {/* ─── MOBILE CARD VIEW (visible on mobile < 640px) ─── */}
+      <div className="block sm:hidden flex-1 p-3.5 space-y-4 overflow-y-auto custom-scrollbar bg-slate-50/40">
+        {loading && data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-border gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <span className="text-xs font-bold text-text-secondary uppercase">Loading Records...</span>
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-border text-center">
+            <FolderOpen className="w-10 h-10 text-text-secondary/40 mb-2" />
+            <h4 className="text-sm font-bold text-text">{emptyState?.title || 'No records found'}</h4>
+            <p className="text-xs text-text-secondary mt-1 max-w-xs">{emptyState?.description || 'Try searching again or add a new entry.'}</p>
+          </div>
+        ) : (
+          data.map((row, i) => {
+            const id = getRowId(row);
+            const isSelected = effectiveSelected.includes(id);
+
+            // Separate selection, primary name/title, status, and action columns
+            const selectionCol = columns.find(c => c.key === '__table_selection_col' || c.key === 'select' || c.header === '' || c.className?.includes('w-12'));
+            const nameCol = columns.find(c => c.key === 'name' || c.key === 'title' || c.key === 'role_name' || c.key === 'full_name' || c.key === 'memberName') || columns.find(c => c !== selectionCol) || columns[0];
+            const statusCol = columns.find(c => c.key === 'status' || (typeof c.header === 'string' && c.header.toLowerCase() === 'status'));
+            const actionCol = columns.find(c => c.key === 'actions' || c.key === 'action');
+            const middleCols = columns.filter(c => c !== nameCol && c !== statusCol && c !== actionCol && c !== selectionCol && c.key !== '__table_selection_col' && c.key !== 'select');
+
+            return (
+              <div
+                key={row[keyField] || i}
+                className={`p-4 bg-white rounded-2xl border border-border shadow-xs space-y-3 transition-all ${isSelected ? 'ring-2 ring-primary/60 bg-primary/5' : ''}`}
+              >
+                {/* 1. Card Top: Primary Title & Badges on Left, Status Toggle / Selection on Right */}
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    {selectionCol && (
+                      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {selectionCol.render ? selectionCol.render(row, i) : null}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      {nameCol ? (
+                        nameCol.render ? nameCol.render(row, i) : (
+                          <div className="font-bold text-text text-sm truncate">{row[nameCol.key]}</div>
+                        )
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {statusCol && (
+                    <div className="shrink-0 flex items-center pt-0.5">
+                      {statusCol.render ? statusCol.render(row, i) : (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-secondary text-text">
+                          {row[statusCol.key]}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Card Middle: Rounded Information Pill Box */}
+                {middleCols.length > 0 && (
+                  <div className="p-3 rounded-xl bg-surface-secondary/50 border border-border/80 space-y-2 text-xs">
+                    {middleCols.map((col, idx) => {
+                      if (!col.header && !col.key) return null;
+                      return (
+                        <div key={col.key || idx} className="flex items-center justify-between gap-3 text-xs">
+                          <span className="text-text-secondary font-medium shrink-0">
+                            {col.header || col.key}:
+                          </span>
+                          <div className="font-bold text-text text-right truncate max-w-[180px]">
+                            {col.render ? col.render(row, i) : (row[col.key] || '—')}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 3. Card Bottom: Action Buttons */}
+                {actionCol && (
+                  <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/40">
+                    {actionCol.render ? actionCol.render(row, i) : row[actionCol.key]}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
       {effectiveSelected.length > 0 && (
         <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-primary/10 border-t border-primary/20 animate-fade-in text-text">
           <div className="flex items-center gap-2 text-xs font-semibold">
@@ -374,21 +467,23 @@ export default function Table({
           </div>
         </div>
       )}
+
       {pagination && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 border-t border-border bg-surface-secondary/40 text-sm">
           {/* Left: Rows selector + Showing info */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between sm:justify-start gap-4">
             {pagination.onLimitChange && (
               <div className="flex items-center gap-2">
                 <span className="text-text-secondary font-medium text-xs uppercase tracking-wide">Rows</span>
                 <RowsSelector limit={pagination.limit} onLimitChange={pagination.onLimitChange} />
               </div>
             )}
-            <span className="text-text-secondary">
+            <span className="text-text-secondary text-xs sm:text-sm">
               Showing <span className="font-semibold text-text">{showingFrom}</span> to <span className="font-semibold text-text">{showingTo}</span> of <span className="font-semibold text-text">{totalRecords}</span>
             </span>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center justify-center gap-1">
             <button
               type="button"
               disabled={pagination.loading || pagination.currentPage <= 1}

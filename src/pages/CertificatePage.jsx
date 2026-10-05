@@ -33,7 +33,7 @@ import letterpadLogo from '../assets/letterpad.png'
 import letterpadBanner from '../assets/letterpad-banner.png'
 import starLogo from '../assets/star.png'
 import { toGujarati, toGujaratiDigits, toEnglishDigits } from '../utils/gujaratiTyping'
-import api from '../lib/api'
+import api, { API_BASE } from '../lib/api'
 import toast from '../lib/toast'
 import { confirm } from '../lib/confirm'
 import DatePicker from '../components/DatePicker'
@@ -387,15 +387,21 @@ async function downloadAsPDF(ref, filename, options = {}) {
       const cloneTa = cloneTextareas[i]
       if (!cloneTa) return
       const div = document.createElement('div')
-      div.style.cssText = ta.style.cssText
+      const val = (ta.value !== undefined && ta.value !== null && ta.value !== '') 
+        ? ta.value 
+        : (ta.defaultValue || ta.textContent || '')
+      div.style.cssText = window.getComputedStyle(ta).cssText || ta.style.cssText
       div.style.whiteSpace = 'pre-wrap'
       div.style.wordBreak = 'break-word'
       div.style.display = 'block'
       div.style.border = 'none'
       div.style.outline = 'none'
       div.style.background = 'transparent'
-      div.style.color = '#0f172a'
-      div.textContent = ta.value || ''
+      div.style.color = '#000000'
+      div.style.fontSize = ta.style.fontSize || '13px'
+      div.style.fontWeight = ta.style.fontWeight || '600'
+      div.style.fontFamily = '"Noto Sans Gujarati", "Anek Gujarati", "Noto Sans", Arial, sans-serif'
+      div.textContent = val
       cloneTa.parentNode.replaceChild(div, cloneTa)
     })
 
@@ -410,13 +416,23 @@ async function downloadAsPDF(ref, filename, options = {}) {
         return
       }
       const span = document.createElement('span')
+      const val = (inp.value !== undefined && inp.value !== null && inp.value !== '') 
+        ? inp.value 
+        : (inp.defaultValue || inp.getAttribute('value') || '')
       span.style.cssText = inp.style.cssText
       span.style.display = 'inline-flex'
       span.style.alignItems = 'center'
+      span.style.justifyContent = inp.style.textAlign === 'center' ? 'center' : 'flex-start'
+      span.style.width = '100%'
+      span.style.height = '100%'
       span.style.border = 'none'
       span.style.outline = 'none'
       span.style.background = 'transparent'
-      span.textContent = inp.value || ''
+      span.style.color = '#000000'
+      span.style.fontSize = inp.style.fontSize || '12.5px'
+      span.style.fontWeight = inp.style.fontWeight || '700'
+      span.style.fontFamily = '"Noto Sans Gujarati", "Anek Gujarati", "Noto Sans", Arial, sans-serif'
+      span.textContent = val
       cloneInp.parentNode.replaceChild(span, cloneInp)
     })
 
@@ -2209,7 +2225,8 @@ const RecordsHistoryTable = memo(function RecordsHistoryTable({
 
       {/* Main Table Container */}
       <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-glass-sm flex flex-col min-h-[400px]">
-        <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
+        {/* Desktop Table View (sm+) */}
+        <div className="hidden sm:block flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
           <table className="w-full min-w-full text-left border-collapse table-auto bg-white">
             <thead className="sticky top-0 z-20 shadow-sm">
               <tr className="border-b border-primary/20 text-text text-xs uppercase tracking-wider font-bold bg-white">
@@ -2416,6 +2433,99 @@ const RecordsHistoryTable = memo(function RecordsHistoryTable({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Responsive Card View (< 640px) */}
+        <div className="block sm:hidden flex-1 p-3.5 space-y-4 overflow-y-auto custom-scrollbar bg-slate-50/50">
+          {loading && filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-10 bg-white rounded-3xl border border-border gap-2">
+              <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              <span className="text-xs font-bold text-text-secondary">Loading certificates...</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-border text-center">
+              <FileText className="w-10 h-10 text-text-secondary/40 mb-2" />
+              <h4 className="text-sm font-bold text-text">No {getCertificateBadgeName()} records found</h4>
+              <p className="text-xs text-text-secondary mt-1">Click Add Certificate to create a new record.</p>
+            </div>
+          ) : (
+            filtered.map((row, idx) => {
+              const rowId = String(row._id || `rec_${idx}`)
+              const isSelected = selectedIds.includes(rowId)
+              const isThisDownloading = downloadingId === rowId
+              const d = row.data || {}
+
+              const regNo = activeTab === 'marriage'
+                ? (d.number || row.certificateNumber || '—')
+                : (d.regNumber || row.certificateNumber || d.number || d.refNumber || '—')
+              const pName = row.primaryName || d.dulhaName || d.memberName || d.refNumber || '—'
+              const sName = row.secondaryName || d.dulhanFullName || d.dikraDikri || d.letterTitle || ''
+
+              return (
+                <div
+                  key={rowId}
+                  className={`p-4 bg-white rounded-[22px] border border-border shadow-sm space-y-3.5 transition-all ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+                >
+                  {/* Card Top: Icon + Name / Number + Checkbox */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <Award className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-text text-sm capitalize">{pName}</div>
+                        <div className="text-[11px] font-mono text-primary font-semibold flex items-center gap-1 mt-0.5">
+                          <span>Ref: {regNo}</span>
+                          <span className="text-text-secondary font-normal">• {formatRecordDate(row)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={() => handleToggleRow(rowId)}
+                    />
+                  </div>
+
+                  {/* Card Content Row (Pill Box) */}
+                  <div className="p-3 rounded-xl bg-surface-secondary/50 border border-border/80 flex items-center justify-between gap-2 text-xs">
+                    <span className="text-text-secondary font-medium">{getSecondaryHeader() || 'Details'}</span>
+                    <span className="font-bold text-text bg-white px-2.5 py-1 rounded-lg border border-border/80 shadow-2xs truncate max-w-[180px]">
+                      {sName || '—'}
+                    </span>
+                  </div>
+
+                  {/* Card Action Buttons Bar */}
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => onViewRecord(row)}
+                      className="py-2.5 px-3 rounded-xl border border-primary/20 bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Preview
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onDownloadRecord(row)}
+                      disabled={isThisDownloading}
+                      className="py-2.5 px-3 rounded-xl border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                    >
+                      <Download className={`w-3.5 h-3.5 ${isThisDownloading ? 'animate-bounce' : ''}`} /> PDF
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onEditRecord(row)}
+                      className="py-2.5 px-3 rounded-xl border border-border bg-surface-secondary hover:bg-surface text-text font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-primary" /> Edit
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          )}
         </div>
 
         {/* Table Footer with Total Count */}

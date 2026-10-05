@@ -823,7 +823,7 @@ export default function Users() {
                   ) : (
                     <div className="w-5.5 shrink-0" />
                   )}
-                  <div className="flex items-center gap-2.5 whitespace-nowrap">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <div 
                       onClick={(e) => {
                         const imgSrc = user.image || user.profile_image ? assetUrl(user.image || user.profile_image) : ''
@@ -842,7 +842,7 @@ export default function Users() {
                         (user.name || 'U').charAt(0).toUpperCase()
                       )}
                     </div>
-                    <span className="font-semibold text-text capitalize">{user.name}</span>
+                    <span className="font-semibold text-text capitalize text-sm">{user.name}</span>
                     {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium shrink-0">
                         <span>Family Head (મુખ્ય)</span>
@@ -927,25 +927,6 @@ export default function Users() {
             header: 'Actions',
             align: 'left',
             render: user=> ( <div className="flex items-center justify-start gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedNocMember({
-                      full_name: user.name,
-                      gender: user.gender,
-                      birthdate: user.dob,
-                      father_name: user.father_name,
-                      mother_name: user.mother_name,
-                      marital_status: user.marital_status || 'Single',
-                      aadhaar_card: user.aadhaar_card || user.aadhar_number || user.aadhaar_number
-                    })
-                    setIsNocModalOpen(true)
-                  }}
-                  className="p-2 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
-                  title="લગ્ન ના-વાંધા પ્રમાણપત્ર (Marriage NOC)"
-                >
-                  <FileCheck className="w-3.5 h-3.5" />
-                </button>
                 <button onClick={() => handleView(user)} className="p-2 text-indigo-500 hover:text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all" title="View Profile">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
