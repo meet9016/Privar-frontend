@@ -154,6 +154,10 @@ export const MASTER_ENDPOINTS = {
   GALLERY_CATEGORY: '/masters/gallery-category',
   EXPENSE_CATEGORY: '/masters/expense-category',
   RELATIONSHIP: '/masters/relationship',
+  STANDARD: '/masters/standard',
+  DEGREE: '/masters/degree',
+  BACHELOR_DEGREE: '/masters/bachelor-degree',
+  MASTER_DEGREE: '/masters/master-degree',
   GET_MASTER: (type) => type === 'bank-details' ? '/bank-details' : `/masters/${type}`
 }
 

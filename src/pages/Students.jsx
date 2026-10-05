@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter, X } from 'lucide-react'
 import api, { assetUrl, getStudentsList, getCommunitySurname } from '../lib/api'
 import { STUDENT_ENDPOINTS } from '../utils/endpoints'
@@ -48,8 +48,10 @@ export default function Students({ headerLeftContent }) {
   const [streamVal, setStreamVal] = useState('')
   const [degreeVal, setDegreeVal] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
+  const [masterStandards, setMasterStandards] = useState([])
+  const [masterDegrees, setMasterDegrees] = useState([])
 
-  const baseStandardOptions = [
+  const defaultStandards = [
     { label: 'Jr. KG', value: 'Jr. KG' },
     { label: 'Sr. KG', value: 'Sr. KG' },
     ...Array.from({ length: 10 }, (_, i) => ({ label: `Std ${i + 1}`, value: `${i + 1}` })),
@@ -59,22 +61,89 @@ export default function Students({ headerLeftContent }) {
     { label: 'Post Graduation (Master Degree)', value: 'Post Graduation' }
   ]
 
+  const baseStandardOptions = useMemo(() => {
+    if (!masterStandards || masterStandards.length === 0) return defaultStandards
+    const fetched = masterStandards.filter(s => s.status !== 0 && s.status !== '0').map(s => ({
+      label: s.name,
+      value: s.name === 'Std 11' ? '11' : s.name === 'Std 12' ? '12' : s.name
+    }))
+    const map = new Map()
+    defaultStandards.forEach(opt => map.set(opt.value, opt))
+    fetched.forEach(opt => map.set(opt.value, opt))
+    return Array.from(map.values())
+  }, [masterStandards])
+
+  const defaultBachelorDegrees = [
+    { label: 'B.Com (Bachelor of Commerce)', value: 'B.Com' },
+    { label: 'B.Tech / B.E. (Engineering)', value: 'B.Tech' },
+    { label: 'BBA (Bachelor of Business Administration)', value: 'BBA' },
+    { label: 'BCA (Bachelor of Computer Applications)', value: 'BCA' },
+    { label: 'B.Sc (Bachelor of Science)', value: 'B.Sc' },
+    { label: 'BA (Bachelor of Arts)', value: 'BA' },
+    { label: 'MBBS / BDS / BHMS (Medical)', value: 'MBBS' },
+    { label: 'LLB (Bachelor of Laws)', value: 'LLB' },
+    { label: 'B.Pharm (Pharmacy)', value: 'B.Pharm' },
+    { label: 'B.Ed (Bachelor of Education)', value: 'B.Ed' }
+  ]
+
+  const defaultMasterDegrees = [
+    { label: 'M.Com (Master of Commerce)', value: 'M.Com' },
+    { label: 'MBA (Master of Business Administration)', value: 'MBA' },
+    { label: 'MCA (Master of Computer Applications)', value: 'MCA' },
+    { label: 'M.Tech / M.E.', value: 'M.Tech' },
+    { label: 'M.Sc (Master of Science)', value: 'M.Sc' },
+    { label: 'MA (Master of Arts)', value: 'MA' },
+    { label: 'MD / MS (Medical Master)', value: 'MD' },
+    { label: 'LLM (Master of Laws)', value: 'LLM' },
+    { label: 'M.Pharm (Master of Pharmacy)', value: 'M.Pharm' },
+    { label: 'M.Ed (Master of Education)', value: 'M.Ed' }
+  ]
+
+  const [masterBachelorDegrees, setMasterBachelorDegrees] = useState([])
+  const [masterPostDegrees, setMasterPostDegrees] = useState([])
+
+  const bachelorOptions = useMemo(() => {
+    const fetched = (masterBachelorDegrees || []).filter(d => d.status !== 0 && d.status !== '0').map(d => ({
+      label: d.name,
+      value: d.name
+    }))
+    const map = new Map()
+    defaultBachelorDegrees.forEach(opt => map.set(opt.value, opt))
+    fetched.forEach(opt => map.set(opt.value, opt))
+    return Array.from(map.values())
+  }, [masterBachelorDegrees])
+
+  const masterDegreeOptions = useMemo(() => {
+    const fetched = (masterPostDegrees || []).filter(d => d.status !== 0 && d.status !== '0').map(d => ({
+      label: d.name,
+      value: d.name
+    }))
+    const map = new Map()
+    defaultMasterDegrees.forEach(opt => map.set(opt.value, opt))
+    fetched.forEach(opt => map.set(opt.value, opt))
+    return Array.from(map.values())
+  }, [masterPostDegrees])
+
+  const degreeOptions = useMemo(() => {
+    if (standardVal === 'Post Graduation') {
+      return masterDegreeOptions
+    }
+    return bachelorOptions
+  }, [standardVal, bachelorOptions, masterDegreeOptions])
+
   const streamOptions = [
     { label: 'Commerce', value: 'Commerce' },
     { label: 'Science', value: 'Science' },
     { label: 'Arts', value: 'Arts' }
   ]
 
-  const stdTabs = [
+  const stdTabs = useMemo(() => [
     { label: 'All', value: 'all' },
-    { label: 'Jr. KG', value: 'Jr. KG' },
-    { label: 'Sr. KG', value: 'Sr. KG' },
-    ...Array.from({ length: 10 }, (_, i) => ({ label: `Std ${i + 1}`, value: `${i + 1}` })),
-    { label: 'Std 11', value: '11' },
-    { label: 'Std 12', value: '12' },
-    { label: 'Graduation', value: 'Graduation' },
-    { label: 'Post Graduation', value: 'Post Graduation' }
-  ]
+    ...baseStandardOptions.map(opt => ({
+      label: opt.label.replace(/\s*\(.*?\)/g, ''),
+      value: opt.value
+    }))
+  ], [baseStandardOptions])
 
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
@@ -120,6 +189,38 @@ export default function Students({ headerLeftContent }) {
   useEffect(() => {
     fetchStudents()
   }, [fetchStudents])
+
+  useEffect(() => {
+    const fetchMasterOptions = async () => {
+      try {
+        const [stdRes, bachRes, postRes, degRes] = await Promise.all([
+          api.get('/masters/standard', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+          api.get('/masters/bachelor-degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+          api.get('/masters/master-degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+          api.get('/masters/degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } }))
+        ])
+        const stdList = stdRes.data?.data || stdRes.data || []
+        const bachList = bachRes.data?.data || bachRes.data || []
+        const postList = postRes.data?.data || postRes.data || []
+        const degList = degRes.data?.data || degRes.data || []
+
+        if (Array.isArray(stdList) && stdList.length > 0) {
+          setMasterStandards(stdList)
+        }
+        if (Array.isArray(bachList) && bachList.length > 0) {
+          setMasterBachelorDegrees(bachList)
+        } else if (Array.isArray(degList) && degList.length > 0) {
+          setMasterBachelorDegrees(degList)
+        }
+        if (Array.isArray(postList) && postList.length > 0) {
+          setMasterPostDegrees(postList)
+        }
+      } catch (e) {
+        console.error('Error fetching student masters:', e)
+      }
+    }
+    fetchMasterOptions()
+  }, [])
 
   const handleDelete = async (id) => {
     if (!await confirm('Are you sure you want to delete this student?')) return
@@ -565,6 +666,8 @@ export default function Students({ headerLeftContent }) {
                   label="Standard / Level"
                   name="standard"
                   required
+                  creatable
+                  createPrompt="Add"
                   value={standardVal}
                   placeholder="Select Standard"
                   options={baseStandardOptions}
@@ -573,6 +676,11 @@ export default function Students({ headerLeftContent }) {
                     setStandardVal(val)
                     if (val !== '11' && val !== '12') setStreamVal('')
                     if (val !== 'Graduation' && val !== 'Post Graduation') setDegreeVal('')
+                    if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null, stream: null, degree: null }))
+                  }}
+                  onCreateOption={(newVal) => {
+                    setStandardVal(newVal)
+                    setMasterStandards(prev => [{ name: newVal, status: 1 }, ...(prev || [])])
                     if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null, stream: null, degree: null }))
                   }}
                 />
@@ -596,17 +704,24 @@ export default function Students({ headerLeftContent }) {
                 </div>
               )}
 
-              {/* Slide-down input for Graduation & Post Graduation */}
+              {/* Slide-down select/input for Graduation & Post Graduation */}
               {(standardVal === 'Graduation' || standardVal === 'Post Graduation') && (
                 <div className="animate-in fade-in slide-in-from-top-3 duration-300">
-                  <Input
+                  <Select
                     label={standardVal === 'Graduation' ? 'Bachelor Degree / Course' : 'Master Degree / Course'}
-                    placeholder={standardVal === 'Graduation' ? 'e.g. B.Com, B.Tech, BBA, MBBS, BCA' : 'e.g. M.Com, MBA, M.Tech, MD, MCA'}
+                    placeholder={standardVal === 'Graduation' ? 'Select or type Degree (e.g. B.Com, B.Tech, BBA)' : 'Select or type Master Degree (e.g. M.Com, MBA, M.Tech)'}
                     required
+                    creatable
+                    createPrompt="Use"
                     value={degreeVal}
+                    options={degreeOptions}
                     error={fieldErrors.degree}
-                    onChange={(e) => {
-                      setDegreeVal(e.target.value)
+                    onChange={(val) => {
+                      setDegreeVal(val)
+                      if (fieldErrors.degree) setFieldErrors(prev => ({ ...prev, degree: null }))
+                    }}
+                    onCreateOption={(newVal) => {
+                      setDegreeVal(newVal)
                       if (fieldErrors.degree) setFieldErrors(prev => ({ ...prev, degree: null }))
                     }}
                   />

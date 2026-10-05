@@ -33,7 +33,7 @@ export default function Select({
     
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const menuMaxHeight = 240;
+    const menuMaxHeight = 280;
 
     let isDropUp = false;
     if (placement === 'up') {
@@ -41,11 +41,11 @@ export default function Select({
     } else if (placement === 'down') {
       isDropUp = false;
     } else {
-      isDropUp = spaceBelow < 240 && spaceAbove > spaceBelow;
+      isDropUp = spaceBelow < 280 && spaceAbove > spaceBelow;
     }
 
     const availableHeight = isDropUp ? spaceAbove - 16 : spaceBelow - 16;
-    const calculatedMaxHeight = Math.max(120, Math.min(menuMaxHeight + 50, availableHeight));
+    const calculatedMaxHeight = Math.max(160, Math.min(menuMaxHeight + 60, availableHeight));
 
     if (isDropUp) {
       setMenuStyle({
