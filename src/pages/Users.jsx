@@ -1238,6 +1238,7 @@ export default function Users() {
         data={visibleUsers}
         keyField="id"
         loading={loading}
+        disableMobileCard={true}
         rowClassName={(user) => selectedUsers.includes(user.id) ? 'bg-primary/5' : ''}
         emptyState={{
           icon: UsersIcon,
