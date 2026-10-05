@@ -21,6 +21,7 @@ import EventRegistrations from './pages/EventRegistration'
 import MasterPage from './pages/MasterPage'
 import News from './pages/News'
 import Documentation from './pages/Documentation'
+import RegistrationsPage from './pages/RegistrationsPage'
 import { hasPermission } from './lib/permissions'
 import Posts from './pages/Post'
 import { activeTheme, applyTheme } from './theme/theme'
@@ -53,86 +54,87 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <NotificationProvider>
-        <Suspense fallback={null}>
-        <ReactToaster />
-        <ConfirmDialog />
-      </Suspense>
-      <Routes>
-        {/* Public Website Routes with Persistent WebLayout (Header & Footer fixed) */}
-        <Route element={<WebLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/members" element={<MembersPage />} />
-          <Route path="/gallery" element={<GalleryWebPage />} />
-          <Route path="/events" element={<EventsWebPage />} />
-          <Route path="/students" element={<StudentsWebPage />} />
-          <Route path="/donors" element={<DonorsWebPage />} />
-          <Route path="/matrimonial" element={<MatrimonialWebPage />} />
-          <Route path="/jobs" element={<JobVacancyWebPage />} />
-          <Route path="/job-vacancy" element={<JobVacancyWebPage />} />
-          <Route path="/contact" element={<ContactUsPage />} />
-          <Route path="/contact-us" element={<ContactUsPage />} />
-          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        </Route>
+          <Suspense fallback={null}>
+            <ReactToaster />
+            <ConfirmDialog />
+          </Suspense>
+          <Routes>
+            {/* Public Website Routes with Persistent WebLayout (Header & Footer fixed) */}
+            <Route element={<WebLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/members" element={<MembersPage />} />
+              <Route path="/gallery" element={<GalleryWebPage />} />
+              <Route path="/events" element={<EventsWebPage />} />
+              <Route path="/students" element={<StudentsWebPage />} />
+              <Route path="/donors" element={<DonorsWebPage />} />
+              <Route path="/matrimonial" element={<MatrimonialWebPage />} />
+              <Route path="/jobs" element={<JobVacancyWebPage />} />
+              <Route path="/job-vacancy" element={<JobVacancyWebPage />} />
+              <Route path="/contact" element={<ContactUsPage />} />
+              <Route path="/contact-us" element={<ContactUsPage />} />
+              <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            </Route>
 
-        <Route path="/documentation" element={<Documentation />} />
+            <Route path="/documentation" element={<Documentation />} />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/businesses/:id" element={<BusinessProfile />} />
-
-
+            <Route path="/login" element={<Login />} />
+            <Route path="/businesses/:id" element={<BusinessProfile />} />
 
 
-        {/* Admin Dashboard Routes */}
-        <Route
-          path="/admin/*"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<PermissionRoute permission="dashboard.view"><Dashboard /></PermissionRoute>} />
-          <Route path="committee" element={<PermissionRoute permission="committee.list"><CommitteeMembers /></PermissionRoute>} />
-          <Route path="roles" element={<PermissionRoute permission="roles.list"><Roles /></PermissionRoute>} />
-          <Route path="users" element={<PermissionRoute permission="members.list"><Users /></PermissionRoute>} />
-          <Route path="activities" element={<ActivitiesPage />} />
-          <Route path="services" element={<ServicesPage />} />
-          <Route path="media" element={<MediaPage />} />
-          <Route path="engagements" element={<EngagementsPage />} />
-          <Route path="masters" element={<Navigate to="/admin/masters/business" replace />} />
-
-          {/* Legacy redirects for old URLs to new tabbed URLs */}
-          <Route path="gallery" element={<Navigate to="/admin/activities?tab=gallery" replace />} />
-          <Route path="events" element={<Navigate to="/admin/activities?tab=events" replace />} />
-          <Route path="birthday" element={<Navigate to="/admin/media?tab=birthday" replace />} />
-          <Route path="job-vacancy" element={<Navigate to="/admin/services?tab=job-vacancy" replace />} />
-          <Route path="businesses" element={<Navigate to="/admin/services?tab=businesses" replace />} />
-          <Route path="students" element={<Navigate to="/admin/activities?tab=students" replace />} />
-          <Route path="expenses" element={<Navigate to="/admin/engagements?tab=expenses" replace />} />
-          <Route path="matrimonies" element={<Navigate to="/admin/services?tab=matrimonies" replace />} />
-          <Route path="posts" element={<Navigate to="/admin/media?tab=festivals" replace />} />
-          <Route path="news" element={<Navigate to="/admin/media?tab=news" replace />} />
-          <Route path="feedback" element={<Navigate to="/admin/media?tab=feedback" replace />} />
-          <Route path="festivals" element={<Navigate to="/admin/media?tab=festivals" replace />} />
-          <Route path="donations" element={<Navigate to="/admin/engagements?tab=donations" replace />} />
-          <Route path="mandal" element={<Navigate to="/admin/engagements?tab=contribution" replace />} />
-          <Route path="masters/:type" element={<MasterRoute />} />
-          <Route path="bank-details" element={<PermissionRoute permission="masters.list"><ContentPage type="bank-details" /></PermissionRoute>} />
-
-          {/* Other standalone routes */}
-          <Route path="contact-inquiries" element={<PermissionRoute permission="contact-inquiries.list"><ContentPage type="inquiries" /></PermissionRoute>} />
-          <Route path="event-registrations" element={<PermissionRoute permission="events.list"><EventRegistrations /></PermissionRoute>} />
-          <Route path="settings" element={<PermissionRoute permission="settings.edit"><Settings /></PermissionRoute>} />
 
 
-        </Route>
+            {/* Admin Dashboard Routes */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<PermissionRoute permission="dashboard.view"><Dashboard /></PermissionRoute>} />
+              <Route path="registrations" element={<PermissionRoute permission="members.list"><RegistrationsPage /></PermissionRoute>} />
+              <Route path="committee" element={<PermissionRoute permission="committee.list"><CommitteeMembers /></PermissionRoute>} />
+              <Route path="roles" element={<PermissionRoute permission="roles.list"><Roles /></PermissionRoute>} />
+              <Route path="users" element={<PermissionRoute permission="members.list"><Users /></PermissionRoute>} />
+              <Route path="activities" element={<ActivitiesPage />} />
+              <Route path="services" element={<ServicesPage />} />
+              <Route path="media" element={<MediaPage />} />
+              <Route path="engagements" element={<EngagementsPage />} />
+              <Route path="masters" element={<Navigate to="/admin/masters/business" replace />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      </NotificationProvider>
+              {/* Legacy redirects for old URLs to new tabbed URLs */}
+              <Route path="gallery" element={<Navigate to="/admin/activities?tab=gallery" replace />} />
+              <Route path="events" element={<Navigate to="/admin/activities?tab=events" replace />} />
+              <Route path="birthday" element={<Navigate to="/admin/media?tab=birthday" replace />} />
+              <Route path="job-vacancy" element={<Navigate to="/admin/services?tab=job-vacancy" replace />} />
+              <Route path="businesses" element={<Navigate to="/admin/services?tab=businesses" replace />} />
+              <Route path="students" element={<Navigate to="/admin/activities?tab=students" replace />} />
+              <Route path="expenses" element={<Navigate to="/admin/engagements?tab=expenses" replace />} />
+              <Route path="matrimonies" element={<Navigate to="/admin/services?tab=matrimonies" replace />} />
+              <Route path="posts" element={<Navigate to="/admin/media?tab=festivals" replace />} />
+              <Route path="news" element={<Navigate to="/admin/media?tab=news" replace />} />
+              <Route path="feedback" element={<Navigate to="/admin/media?tab=feedback" replace />} />
+              <Route path="festivals" element={<Navigate to="/admin/media?tab=festivals" replace />} />
+              <Route path="donations" element={<Navigate to="/admin/engagements?tab=donations" replace />} />
+              <Route path="mandal" element={<Navigate to="/admin/engagements?tab=contribution" replace />} />
+              <Route path="masters/:type" element={<MasterRoute />} />
+              <Route path="bank-details" element={<PermissionRoute permission="masters.list"><ContentPage type="bank-details" /></PermissionRoute>} />
+
+              {/* Other standalone routes */}
+              <Route path="contact-inquiries" element={<PermissionRoute permission="contact-inquiries.list"><ContentPage type="inquiries" /></PermissionRoute>} />
+              <Route path="event-registrations" element={<PermissionRoute permission="events.list"><EventRegistrations /></PermissionRoute>} />
+              <Route path="settings" element={<PermissionRoute permission="settings.edit"><Settings /></PermissionRoute>} />
+
+
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   )
