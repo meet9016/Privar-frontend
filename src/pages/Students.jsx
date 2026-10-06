@@ -49,78 +49,47 @@ export default function Students({ headerLeftContent }) {
   const [degreeVal, setDegreeVal] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
   const [masterStandards, setMasterStandards] = useState([])
-  const [masterDegrees, setMasterDegrees] = useState([])
-
-  const defaultStandards = [
-    { label: 'Jr. KG', value: 'Jr. KG' },
-    { label: 'Sr. KG', value: 'Sr. KG' },
-    ...Array.from({ length: 10 }, (_, i) => ({ label: `Std ${i + 1}`, value: `${i + 1}` })),
-    { label: 'Std 11', value: '11' },
-    { label: 'Std 12', value: '12' },
-    { label: 'Graduation (Bachelor Degree)', value: 'Graduation' },
-    { label: 'Post Graduation (Master Degree)', value: 'Post Graduation' }
-  ]
-
-  const baseStandardOptions = useMemo(() => {
-    if (!masterStandards || masterStandards.length === 0) return defaultStandards
-    const fetched = masterStandards.filter(s => s.status !== 0 && s.status !== '0').map(s => ({
-      label: s.name,
-      value: s.name === 'Std 11' ? '11' : s.name === 'Std 12' ? '12' : s.name
-    }))
-    const map = new Map()
-    defaultStandards.forEach(opt => map.set(opt.value, opt))
-    fetched.forEach(opt => map.set(opt.value, opt))
-    return Array.from(map.values())
-  }, [masterStandards])
-
-  const defaultBachelorDegrees = [
-    { label: 'B.Com (Bachelor of Commerce)', value: 'B.Com' },
-    { label: 'B.Tech / B.E. (Engineering)', value: 'B.Tech' },
-    { label: 'BBA (Bachelor of Business Administration)', value: 'BBA' },
-    { label: 'BCA (Bachelor of Computer Applications)', value: 'BCA' },
-    { label: 'B.Sc (Bachelor of Science)', value: 'B.Sc' },
-    { label: 'BA (Bachelor of Arts)', value: 'BA' },
-    { label: 'MBBS / BDS / BHMS (Medical)', value: 'MBBS' },
-    { label: 'LLB (Bachelor of Laws)', value: 'LLB' },
-    { label: 'B.Pharm (Pharmacy)', value: 'B.Pharm' },
-    { label: 'B.Ed (Bachelor of Education)', value: 'B.Ed' }
-  ]
-
-  const defaultMasterDegrees = [
-    { label: 'M.Com (Master of Commerce)', value: 'M.Com' },
-    { label: 'MBA (Master of Business Administration)', value: 'MBA' },
-    { label: 'MCA (Master of Computer Applications)', value: 'MCA' },
-    { label: 'M.Tech / M.E.', value: 'M.Tech' },
-    { label: 'M.Sc (Master of Science)', value: 'M.Sc' },
-    { label: 'MA (Master of Arts)', value: 'MA' },
-    { label: 'MD / MS (Medical Master)', value: 'MD' },
-    { label: 'LLM (Master of Laws)', value: 'LLM' },
-    { label: 'M.Pharm (Master of Pharmacy)', value: 'M.Pharm' },
-    { label: 'M.Ed (Master of Education)', value: 'M.Ed' }
-  ]
-
   const [masterBachelorDegrees, setMasterBachelorDegrees] = useState([])
   const [masterPostDegrees, setMasterPostDegrees] = useState([])
 
+  const baseStandardOptions = useMemo(() => {
+    const dynamicStandards = (masterStandards || [])
+      .filter(s => s.status !== 0 && s.status !== '0' && s.name)
+      .map(s => ({
+        label: s.name,
+        value: s.name === 'Std 11' ? '11' : s.name === 'Std 12' ? '12' : s.name
+      }))
+
+    return [
+      ...dynamicStandards,
+      { label: 'Graduation (Bachelor Degree)', value: 'Graduation' },
+      { label: 'Post Graduation (Master Degree)', value: 'Post Graduation' }
+    ]
+  }, [masterStandards])
+
   const bachelorOptions = useMemo(() => {
-    const fetched = (masterBachelorDegrees || []).filter(d => d.status !== 0 && d.status !== '0').map(d => ({
-      label: d.name,
-      value: d.name
-    }))
     const map = new Map()
-    defaultBachelorDegrees.forEach(opt => map.set(opt.value, opt))
-    fetched.forEach(opt => map.set(opt.value, opt))
+    ;(masterBachelorDegrees || [])
+      .filter(d => d.status !== 0 && d.status !== '0' && d.name)
+      .forEach(d => {
+        const trimmed = d.name.trim()
+        if (trimmed && !map.has(trimmed.toLowerCase())) {
+          map.set(trimmed.toLowerCase(), { label: trimmed, value: trimmed })
+        }
+      })
     return Array.from(map.values())
   }, [masterBachelorDegrees])
 
   const masterDegreeOptions = useMemo(() => {
-    const fetched = (masterPostDegrees || []).filter(d => d.status !== 0 && d.status !== '0').map(d => ({
-      label: d.name,
-      value: d.name
-    }))
     const map = new Map()
-    defaultMasterDegrees.forEach(opt => map.set(opt.value, opt))
-    fetched.forEach(opt => map.set(opt.value, opt))
+    ;(masterPostDegrees || [])
+      .filter(d => d.status !== 0 && d.status !== '0' && d.name)
+      .forEach(d => {
+        const trimmed = d.name.trim()
+        if (trimmed && !map.has(trimmed.toLowerCase())) {
+          map.set(trimmed.toLowerCase(), { label: trimmed, value: trimmed })
+        }
+      })
     return Array.from(map.values())
   }, [masterPostDegrees])
 
@@ -193,20 +162,12 @@ export default function Students({ headerLeftContent }) {
   useEffect(() => {
     const fetchMasterOptions = async () => {
       try {
-        const [stdRes, bachRes, postRes, degRes] = await Promise.all([
-          api.get('/masters/standard', { params: { limit: 500 } }).catch(() => ({ data: { data: [] } })),
-          api.get('/masters/bachelor-degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
-          api.get('/masters/master-degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
-          api.get('/masters/degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } }))
-        ])
+        const stdRes = await api.get('/masters/standard', { params: { limit: 500 } }).catch(() => ({ data: { data: [] } }))
         const allStandardItems = stdRes.data?.data || stdRes.data || []
-        const legacyBachList = bachRes.data?.data || bachRes.data || []
-        const legacyPostList = postRes.data?.data || postRes.data || []
-        const legacyDegList = degRes.data?.data || degRes.data || []
 
         const stdItems = []
-        const bachItems = [...legacyBachList, ...legacyDegList]
-        const postItems = [...legacyPostList]
+        const bachItems = []
+        const postItems = []
 
         if (Array.isArray(allStandardItems)) {
           allStandardItems.forEach((item) => {
@@ -221,9 +182,9 @@ export default function Students({ headerLeftContent }) {
           })
         }
 
-        if (stdItems.length > 0) setMasterStandards(stdItems)
-        if (bachItems.length > 0) setMasterBachelorDegrees(bachItems)
-        if (postItems.length > 0) setMasterPostDegrees(postItems)
+        setMasterStandards(stdItems)
+        setMasterBachelorDegrees(bachItems)
+        setMasterPostDegrees(postItems)
       } catch (e) {
         console.error('Error fetching student masters:', e)
       }
