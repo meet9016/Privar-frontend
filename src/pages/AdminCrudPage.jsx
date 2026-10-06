@@ -170,7 +170,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     const results = {}
     await Promise.all(remoteFields.map(async (f) => {
       try {
-        const res = await api.get(f.source)
+        const res = await api.get(f.source, { params: { limit: 1000 } })
         results[f.name] = res.data?.data || res.data || []
       } catch (e) {
         results[f.name] = []
@@ -683,111 +683,189 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                     error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 ) : field.type === 'select-remote' ? (
-                  <Select 
-                    label={field.label}
-                    required={field.required}
-                    searchable={true}
-                    creatable={true}
-                    createPrompt={`Add ${field.label}`}
-                    value={formData[field.name] ?? ''} 
-                    onChange={(val) => {
-                      const next = { ...formData, [field.name]: val }
-                      if (field.name === 'country') {
-                        next.state = ''
-                        next.district = ''
-                        next.city = ''
-                        next.village = ''
-                      } else if (field.name === 'state') {
-                        next.district = ''
-                        next.city = ''
-                        next.village = ''
-                      } else if (field.name === 'district') {
-                        next.city = ''
-                        next.village = ''
-                      } else if (field.name === 'city') {
-                        next.village = ''
-                      }
-                      setFormData(next)
-                      if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
-                    }} 
-                    onCreateOption={async (newVal) => {
-                      const trimmed = newVal.trim()
-                      if (!trimmed) return
-                      const newObj = {
-                        name: trimmed,
-                        _id: trimmed,
-                        id: trimmed,
-                        parent_id: formData.district || formData.state || formData.country || '',
-                        country: formData.country || '',
-                        state: formData.state || '',
-                        district: formData.district || '',
-                        city: formData.city || '',
-                        status: 1
-                      }
-                      setRemoteOptions(prev => ({
-                        ...prev,
-                        [field.name]: [...(prev[field.name] || []), newObj]
-                      }))
-                      const formVal = field.valueKey === 'name' ? trimmed : trimmed
-                      setFormData(prev => ({ ...prev, [field.name]: formVal }))
-                      if (field.source) {
-                        try {
-                          await api.post(field.source, {
-                            name: trimmed,
-                            city: trimmed,
-                            district: trimmed,
-                            parent_id: formData.district || formData.state || formData.country || undefined,
-                            status: 1
-                          })
-                        } catch (err) {
-                          console.error(`Failed to create ${field.name}:`, err)
-                        }
-                      }
-                    }}
-                    disabled={saving}
-                    options={(remoteOptions[field.name] || [])
-                      .filter((option) => {
-                        const optVal = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
-                        if (formData[field.name] && String(formData[field.name]) === String(optVal)) return true
+                  (() => {
+                    const countryList = remoteOptions['country'] || []
+                    const stateList = remoteOptions['state'] || []
+                    const districtList = remoteOptions['district'] || []
+                    const cityList = remoteOptions['city'] || []
 
-                        if (field.name === 'state' && formData.country) {
-                          const parent = option.country_id || option.parent_id || option.country || ''
-                          if (parent && String(parent).toLowerCase() !== String(formData.country).toLowerCase()) {
-                            return false
+                    const selectedCountryObj = countryList.find(c => 
+                      String(c.name || c.country || '').toLowerCase() === String(formData.country || '').toLowerCase() ||
+                      String(c._id || c.id) === String(formData.country || '')
+                    )
+                    const selectedCountryId = selectedCountryObj ? String(selectedCountryObj._id || selectedCountryObj.id || '') : ''
+                    const selectedCountryName = selectedCountryObj ? String(selectedCountryObj.name || selectedCountryObj.country || '').toLowerCase() : String(formData.country || '').toLowerCase()
+
+                    const selectedStateObj = stateList.find(s => 
+                      String(s.name || s.state || '').toLowerCase() === String(formData.state || '').toLowerCase() ||
+                      String(s._id || s.id) === String(formData.state || '')
+                    )
+                    const selectedStateId = selectedStateObj ? String(selectedStateObj._id || selectedStateObj.id || '') : ''
+                    const selectedStateName = selectedStateObj ? String(selectedStateObj.name || selectedStateObj.state || '').toLowerCase() : String(formData.state || '').toLowerCase()
+
+                    const selectedDistrictObj = districtList.find(d => 
+                      String(d.name || d.district || '').toLowerCase() === String(formData.district || '').toLowerCase() ||
+                      String(d._id || d.id) === String(formData.district || '')
+                    )
+                    const selectedDistrictId = selectedDistrictObj ? String(selectedDistrictObj._id || selectedDistrictObj.id || '') : ''
+                    const selectedDistrictName = selectedDistrictObj ? String(selectedDistrictObj.name || selectedDistrictObj.district || '').toLowerCase() : String(formData.district || '').toLowerCase()
+
+                    const selectedCityObj = cityList.find(c => 
+                      String(c.name || c.city || '').toLowerCase() === String(formData.city || '').toLowerCase() ||
+                      String(c._id || c.id) === String(formData.city || '')
+                    )
+                    const selectedCityId = selectedCityObj ? String(selectedCityObj._id || selectedCityObj.id || '') : ''
+                    const selectedCityName = selectedCityObj ? String(selectedCityObj.name || selectedCityObj.city || '').toLowerCase() : String(formData.city || '').toLowerCase()
+
+                    const isStateField = field.name === 'state'
+                    const isDistrictField = field.name === 'district'
+                    const isCityField = field.name === 'city'
+                    const isVillageField = field.name === 'village'
+
+                    const isParentMissing = 
+                      (isStateField && !formData.country) ||
+                      (isDistrictField && !formData.state) ||
+                      (isCityField && !formData.district) ||
+                      (isVillageField && !formData.city)
+
+                    const placeholderText = `Select ${field.label || 'an option'}`
+
+                    return (
+                      <Select 
+                        label={field.label}
+                        required={field.required}
+                        searchable={true}
+                        creatable={!isParentMissing}
+                        createPrompt={`Add ${field.label}`}
+                        placeholder={placeholderText}
+                        value={formData[field.name] ?? ''} 
+                        onChange={(val) => {
+                          const next = { ...formData, [field.name]: val }
+                          if (field.name === 'country') {
+                            next.state = ''
+                            next.district = ''
+                            next.city = ''
+                            next.village = ''
+                          } else if (field.name === 'state') {
+                            next.district = ''
+                            next.city = ''
+                            next.village = ''
+                          } else if (field.name === 'district') {
+                            next.city = ''
+                            next.village = ''
+                          } else if (field.name === 'city') {
+                            next.village = ''
                           }
-                        }
-                        if (field.name === 'district' && formData.state) {
-                          const parent = option.state_id || option.parent_id || option.state || ''
-                          if (parent && String(parent).toLowerCase() !== String(formData.state).toLowerCase()) {
-                            return false
+                          setFormData(next)
+                          if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                        }} 
+                        onCreateOption={async (newVal) => {
+                          const trimmed = newVal.trim()
+                          if (!trimmed) return
+                          const newObj = {
+                            name: trimmed,
+                            _id: trimmed,
+                            id: trimmed,
+                            country_id: selectedCountryId || undefined,
+                            state_id: selectedStateId || undefined,
+                            district_id: selectedDistrictId || undefined,
+                            city_id: selectedCityId || undefined,
+                            parent_id: selectedDistrictId || selectedStateId || selectedCountryId || undefined,
+                            status: 1
                           }
-                        }
-                        if (field.name === 'city' && formData.district) {
-                          const parent = option.district_id || option.parent_id || option.district || ''
-                          const optName = String(option.name || option.city || '').toLowerCase()
-                          const distName = String(formData.district).toLowerCase()
-                          if (parent && String(parent).toLowerCase() !== distName && !optName.includes(distName)) {
-                            return false
+                          setRemoteOptions(prev => ({
+                            ...prev,
+                            [field.name]: [...(prev[field.name] || []), newObj]
+                          }))
+                          const formVal = field.valueKey === 'name' ? trimmed : trimmed
+                          setFormData(prev => ({ ...prev, [field.name]: formVal }))
+                          if (field.source) {
+                            try {
+                              await api.post(field.source, {
+                                name: trimmed,
+                                city: trimmed,
+                                district: trimmed,
+                                state: trimmed,
+                                country: trimmed,
+                                country_id: selectedCountryId || undefined,
+                                state_id: selectedStateId || undefined,
+                                district_id: selectedDistrictId || undefined,
+                                city_id: selectedCityId || undefined,
+                                parent_id: selectedDistrictId || selectedStateId || selectedCountryId || undefined,
+                                status: 1
+                              })
+                            } catch (err) {
+                              console.error(`Failed to create ${field.name}:`, err)
+                            }
                           }
-                        }
-                        if (field.name === 'village' && formData.city) {
-                          const parent = option.city_id || option.parent_id || option.city || ''
-                          if (parent && String(parent).toLowerCase() !== String(formData.city).toLowerCase()) {
-                            return false
-                          }
-                        }
-                        return true
-                      })
-                      .map((option) => {
-                        const label = field.labelKey ? option[field.labelKey] : (option.name || option.country || option.state || option.city || option.village || option.business || 'Unnamed')
-                        const val = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
-                        return {
-                          label: label || 'Unnamed',
-                          value: val
-                        }
-                      })}
-                    error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
-                  />
+                        }}
+                        disabled={saving || field.disabled}
+                        options={(remoteOptions[field.name] || [])
+                          .filter((option) => {
+                            const optVal = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
+                            if (formData[field.name] && String(formData[field.name]) === String(optVal)) return true
+
+                            if (field.name === 'state') {
+                              if (!formData.country) return false
+                              const parent = String(option.country_id || option.parent_id || option.country || '')
+                              const optCountry = String(option.country || '').toLowerCase()
+                              const matches = 
+                                !parent ||
+                                (selectedCountryId && parent === selectedCountryId) ||
+                                (selectedCountryName && parent.toLowerCase() === selectedCountryName) ||
+                                (selectedCountryName && optCountry === selectedCountryName)
+                              if (!matches) return false
+                            }
+
+                            if (field.name === 'district') {
+                              if (!formData.state) return false
+                              const parent = String(option.state_id || option.parent_id || option.state || '')
+                              const optState = String(option.state || '').toLowerCase()
+                              const matches = 
+                                !parent ||
+                                (selectedStateId && parent === selectedStateId) ||
+                                (selectedStateName && parent.toLowerCase() === selectedStateName) ||
+                                (selectedStateName && optState === selectedStateName)
+                              if (!matches) return false
+                            }
+
+                            if (field.name === 'city') {
+                              if (!formData.district) return false
+                              const cDistrictId = String(option.district_id || option.parent_id || '')
+                              const cName = String(option.name || option.city || '').toLowerCase()
+                              const matches = 
+                                (selectedDistrictId && cDistrictId === selectedDistrictId) ||
+                                (selectedDistrictName && cName === selectedDistrictName) ||
+                                (selectedDistrictName && cName.includes(selectedDistrictName)) ||
+                                (selectedDistrictName && String(option.district || '').toLowerCase() === selectedDistrictName)
+                              if (!matches) return false
+                            }
+
+                            if (field.name === 'village') {
+                              if (!formData.city) return false
+                              const parent = String(option.city_id || option.parent_id || option.city || '')
+                              const optCity = String(option.city || '').toLowerCase()
+                              const matches = 
+                                !parent ||
+                                (selectedCityId && parent === selectedCityId) ||
+                                (selectedCityName && parent.toLowerCase() === selectedCityName) ||
+                                (selectedCityName && optCity === selectedCityName)
+                              if (!matches) return false
+                            }
+                            return true
+                          })
+                          .map((option) => {
+                            const label = field.labelKey ? option[field.labelKey] : (option.name || option.country || option.state || option.city || option.village || option.business || 'Unnamed')
+                            const val = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
+                            return {
+                              label: label || 'Unnamed',
+                              value: val
+                            }
+                          })}
+                        error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
+                      />
+                    )
+                  })()
                 ) : field.type === 'file' ? (
                   <div className="flex flex-col h-full">
                     <label className="block text-sm font-semibold text-text-secondary mb-1.5">
