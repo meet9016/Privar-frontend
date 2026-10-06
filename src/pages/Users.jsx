@@ -814,8 +814,14 @@ export default function Users() {
           <SearchInput
             placeholder="Search by name, phone, city, patti..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onClear={() => setSearchQuery('')}
+            onChange={(e) => {
+              setSearchValue(e.target.value)
+              setPage(1)
+            }}
+            onClear={() => {
+              setSearchValue('')
+              setPage(1)
+            }}
             wrapperClassName="w-64 sm:w-80"
           />
 

@@ -686,20 +686,106 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                   <Select 
                     label={field.label}
                     required={field.required}
+                    searchable={true}
+                    creatable={true}
+                    createPrompt={`Add ${field.label}`}
                     value={formData[field.name] ?? ''} 
                     onChange={(val) => {
-                      setFormData({ ...formData, [field.name]: val })
+                      const next = { ...formData, [field.name]: val }
+                      if (field.name === 'country') {
+                        next.state = ''
+                        next.district = ''
+                        next.city = ''
+                        next.village = ''
+                      } else if (field.name === 'state') {
+                        next.district = ''
+                        next.city = ''
+                        next.village = ''
+                      } else if (field.name === 'district') {
+                        next.city = ''
+                        next.village = ''
+                      } else if (field.name === 'city') {
+                        next.village = ''
+                      }
+                      setFormData(next)
                       if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
                     }} 
-                    disabled={saving}
-                    options={(remoteOptions[field.name] || []).map((option) => {
-                      const label = field.labelKey ? option[field.labelKey] : (option.name || option.country || option.state || option.city || option.village || option.business || 'Unnamed')
-                      const val = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
-                      return {
-                        label: label || 'Unnamed',
-                        value: val
+                    onCreateOption={async (newVal) => {
+                      const trimmed = newVal.trim()
+                      if (!trimmed) return
+                      const newObj = {
+                        name: trimmed,
+                        _id: trimmed,
+                        id: trimmed,
+                        parent_id: formData.district || formData.state || formData.country || '',
+                        country: formData.country || '',
+                        state: formData.state || '',
+                        district: formData.district || '',
+                        city: formData.city || '',
+                        status: 1
                       }
-                    })}
+                      setRemoteOptions(prev => ({
+                        ...prev,
+                        [field.name]: [...(prev[field.name] || []), newObj]
+                      }))
+                      const formVal = field.valueKey === 'name' ? trimmed : trimmed
+                      setFormData(prev => ({ ...prev, [field.name]: formVal }))
+                      if (field.source) {
+                        try {
+                          await api.post(field.source, {
+                            name: trimmed,
+                            city: trimmed,
+                            district: trimmed,
+                            parent_id: formData.district || formData.state || formData.country || undefined,
+                            status: 1
+                          })
+                        } catch (err) {
+                          console.error(`Failed to create ${field.name}:`, err)
+                        }
+                      }
+                    }}
+                    disabled={saving}
+                    options={(remoteOptions[field.name] || [])
+                      .filter((option) => {
+                        const optVal = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
+                        if (formData[field.name] && String(formData[field.name]) === String(optVal)) return true
+
+                        if (field.name === 'state' && formData.country) {
+                          const parent = option.country_id || option.parent_id || option.country || ''
+                          if (parent && String(parent).toLowerCase() !== String(formData.country).toLowerCase()) {
+                            return false
+                          }
+                        }
+                        if (field.name === 'district' && formData.state) {
+                          const parent = option.state_id || option.parent_id || option.state || ''
+                          if (parent && String(parent).toLowerCase() !== String(formData.state).toLowerCase()) {
+                            return false
+                          }
+                        }
+                        if (field.name === 'city' && formData.district) {
+                          const parent = option.district_id || option.parent_id || option.district || ''
+                          const optName = String(option.name || option.city || '').toLowerCase()
+                          const distName = String(formData.district).toLowerCase()
+                          if (parent && String(parent).toLowerCase() !== distName && !optName.includes(distName)) {
+                            return false
+                          }
+                        }
+                        if (field.name === 'village' && formData.city) {
+                          const parent = option.city_id || option.parent_id || option.city || ''
+                          if (parent && String(parent).toLowerCase() !== String(formData.city).toLowerCase()) {
+                            return false
+                          }
+                        }
+                        return true
+                      })
+                      .map((option) => {
+                        const label = field.labelKey ? option[field.labelKey] : (option.name || option.country || option.state || option.city || option.village || option.business || 'Unnamed')
+                        const val = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
+                        return {
+                          label: label || 'Unnamed',
+                          value: val
+                        }
+                      })}
                     error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                   />
                 ) : field.type === 'file' ? (

@@ -20,6 +20,7 @@ const initialState = {
   pincode: '',
   country_id: '',
   state_id: '',
+  district_id: '',
   city_id: '',
   address: '',
   location_link: '',
@@ -50,6 +51,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   const [businessCategories, setBusinessCategories] = useState([])
   const [countries, setCountries] = useState([])
   const [states, setStates] = useState([])
+  const [districts, setDistricts] = useState([])
   const [cities, setCities] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -81,6 +83,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     fetchBusinessCategories()
     fetchCountries()
     fetchStates()
+    fetchDistricts()
     fetchCities()
   }, [])
 
@@ -126,6 +129,20 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     }
   }
 
+  const fetchDistricts = async () => {
+    try {
+      const res = await api.get(MEMBER_ENDPOINTS.MASTERS_DISTRICT)
+      const data = res.data?.data || res.data || []
+      setDistricts(data)
+      setError('')
+    } catch (err) {
+      setError('Failed to fetch districts')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const fetchCities = async () => {
     try {
       const res = await api.get(MEMBER_ENDPOINTS.MASTERS_CITY)
@@ -152,6 +169,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       pincode: business?.pincode || '',
       country_id: business?.country_id || (india ? (india._id || india.id) : ''),
       state_id: business?.state_id || (gujarat ? (gujarat._id || gujarat.id) : ''),
+      district_id: business?.district_id || '',
       city_id: business?.city_id || '',
       location_link: business?.location_link || '',
       business_name: business?.business_name || '',
@@ -167,7 +185,6 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       gallery_images: business?.gallery_images || [],
       status: Number(business?.status ?? 1)
     })
-    // Auto-enable social platforms that have values in this business record
     const activeSocials = ALL_SOCIAL_PLATFORMS
       .map(p => p.key)
       .filter(k => business && business[k] && String(business[k]).trim() !== '')
@@ -205,6 +222,12 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
             return sName === postalState || postalState.includes(sName) || sName.includes(postalState)
           })
 
+          // Match district
+          const matchedDistrict = districts.find(d => {
+            const dName = (d.name || d.district || '').trim().toLowerCase()
+            return dName === postalDistrict || postalDistrict.includes(dName) || dName.includes(postalDistrict)
+          })
+
           // Match city
           const matchedCity = cities.find(c => {
             const cName = (c.name || '').trim().toLowerCase()
@@ -221,6 +244,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
             pincode: cleanPin,
             country_id: matchedCountryId || prev.country_id,
             state_id: matchedState ? (matchedState._id || matchedState.id) : prev.state_id,
+            district_id: matchedDistrict ? (matchedDistrict._id || matchedDistrict.id) : prev.district_id,
             city_id: matchedCity ? (matchedCity._id || matchedCity.id) : prev.city_id
           }))
 
@@ -228,6 +252,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
             const updated = { ...prev }
             if (matchedCountryId) delete updated.country_id
             if (matchedState) delete updated.state_id
+            if (matchedDistrict) delete updated.district_id
             if (matchedCity) delete updated.city_id
             return updated
           })
@@ -243,15 +268,38 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   const handleFieldChange = (field, value) => {
     setFormData(prev => {
       const next = { ...prev, [field]: value }
+
       if (field === 'country_id') {
         const selCountry = countries.find(c => String(c._id || c.id) === String(value))
-        if (selCountry && /india/i.test(selCountry.name) && !prev.state_id) {
-          const gujarat = states.find(s => /gujarat/i.test(s.name))
-          if (gujarat) {
-            next.state_id = gujarat._id || gujarat.id
+        // If country changed, reset state, district, city
+        if (value !== prev.country_id) {
+          next.state_id = ''
+          next.district_id = ''
+          next.city_id = ''
+          if (selCountry && /india/i.test(selCountry.name)) {
+            const gujarat = states.find(s => /gujarat/i.test(s.name))
+            if (gujarat) {
+              next.state_id = gujarat._id || gujarat.id
+            }
           }
         }
       }
+
+      if (field === 'state_id') {
+        // If state changed, reset district and city
+        if (value !== prev.state_id) {
+          next.district_id = ''
+          next.city_id = ''
+        }
+      }
+
+      if (field === 'district_id') {
+        // If district changed, reset city
+        if (value !== prev.district_id) {
+          next.city_id = ''
+        }
+      }
+
       return next
     })
     setErrors(prev => {
@@ -268,6 +316,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       }
       if (field === 'country_id' && strVal) delete updated.country_id
       if (field === 'state_id' && strVal) delete updated.state_id
+      if (field === 'district_id' && strVal) delete updated.district_id
       if (field === 'city_id' && strVal) delete updated.city_id
       if (field === 'address' && strVal) delete updated.address
       if (field === 'location_link' && strVal) delete updated.location_link
@@ -285,6 +334,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     else if (!isValidEmail(String(formData.email).trim())) nextErrors.email = 'Please enter a valid email (e.g. user@gmail.com)'
     if (!formData.country_id || !String(formData.country_id).trim()) nextErrors.country_id = 'Country is required'
     if (!formData.state_id || !String(formData.state_id).trim()) nextErrors.state_id = 'State is required'
+    if (!formData.district_id || !String(formData.district_id).trim()) nextErrors.district_id = 'District is required'
     if (!formData.city_id || !String(formData.city_id).trim()) nextErrors.city_id = 'City is required'
     if (!formData.address || !String(formData.address).trim()) nextErrors.address = 'Address is required'
     if (!formData.location_link || !String(formData.location_link).trim()) nextErrors.location_link = 'Location link is required'
@@ -302,6 +352,68 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     }
     onSubmit({ ...formData, gallery_images: [...existingGalleryImages, ...newGalleryFiles] })
   }
+
+  // Cascading location options
+  const countryOptions = countries.map(c => ({ label: c.name, value: c._id || c.id }))
+
+  const stateOptions = states
+    .filter(s => {
+      if (!formData.country_id) return true
+      const parent = String(s.country_id || s.parent_id || '')
+      return !parent || parent === String(formData.country_id)
+    })
+    .map(s => ({ label: s.name, value: s._id || s.id }))
+
+  const districtOptions = districts
+    .filter(d => {
+      const dId = String(d._id || d.id)
+      if (formData.district_id && String(formData.district_id) === dId) return true
+      if (!formData.state_id) return true
+      const parent = String(d.state_id || d.parent_id || '')
+      return !parent || parent === String(formData.state_id)
+    })
+    .map(d => ({ label: d.name || d.district, value: d._id || d.id }))
+
+  const selectedDistrictObj = districts.find(d => String(d._id || d.id) === String(formData.district_id))
+  const selectedDistrictName = (selectedDistrictObj?.name || selectedDistrictObj?.district || '').trim().toLowerCase()
+
+  const cityOptions = cities
+    .filter(c => {
+      const cId = String(c._id || c.id)
+      if (formData.city_id && String(formData.city_id) === cId) return true
+
+      // If a district is selected:
+      if (formData.district_id) {
+        const cDistrictId = String(c.district_id || c.parent_id || '')
+        const cName = String(c.name || c.city || '').trim().toLowerCase()
+
+        // 1. Direct match by district ID
+        if (cDistrictId && cDistrictId === String(formData.district_id)) {
+          return true
+        }
+
+        // 2. Direct match if city name equals district name (e.g. Surat city in Surat district)
+        if (selectedDistrictName && cName === selectedDistrictName) {
+          return true
+        }
+
+        // 3. Match if city parent references state AND district name matches
+        if (selectedDistrictName && cName.includes(selectedDistrictName)) {
+          return true
+        }
+
+        return false
+      }
+
+      // If only state is selected (no district yet):
+      if (formData.state_id) {
+        const cStateId = String(c.state_id || c.parent_id || '')
+        return !cStateId || cStateId === String(formData.state_id)
+      }
+
+      return true
+    })
+    .map(c => ({ label: c.name || c.city || 'Unnamed City', value: c._id || c.id }))
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 text-text" noValidate>
@@ -380,19 +492,114 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           value={formData.country_id}
           onChange={(val) => handleFieldChange('country_id', val)}
           disabled={isLoading}
-          options={countries.map(c => ({ label: c.name, value: c._id || c.id }))}
+          options={countryOptions}
           error={errors.country_id}
+          creatable={true}
+          createPrompt="Add Country"
+          onCreateOption={async (newCountry) => {
+            const trimmed = newCountry.trim()
+            if (!trimmed) return
+            const newCId = `cntry_${Date.now()}`
+            const newCObj = { _id: newCId, id: newCId, name: trimmed, status: 1 }
+            setCountries(prev => [...prev, newCObj])
+            handleFieldChange('country_id', newCId)
+            try {
+              const res = await api.post(MEMBER_ENDPOINTS.MASTERS_COUNTRY, { name: trimmed, status: 1 })
+              const savedId = res.data?.data?._id || res.data?.data?.id
+              if (savedId) {
+                setCountries(prev => prev.map(c => c._id === newCId ? { ...c, _id: savedId, id: savedId } : c))
+                setFormData(prev => prev.country_id === newCId ? { ...prev, country_id: savedId } : prev)
+              }
+            } catch (err) {
+              console.error('Failed to create country:', err)
+            }
+          }}
         />
 
-        {/* Row 3 */}
+        {/* Row 3: State, District, City, Location Link */}
         <Select
           label="State"
           required
           value={formData.state_id}
           onChange={(val) => handleFieldChange('state_id', val)}
           disabled={isLoading}
-          options={states.map(s => ({ label: s.name, value: s._id || s.id }))}
+          options={stateOptions}
           error={errors.state_id}
+          creatable={true}
+          createPrompt="Add State"
+          onCreateOption={async (newState) => {
+            const trimmed = newState.trim()
+            if (!trimmed) return
+            const newSId = `st_${Date.now()}`
+            const newSObj = {
+              _id: newSId,
+              id: newSId,
+              name: trimmed,
+              parent_id: formData.country_id || '',
+              country_id: formData.country_id || '',
+              status: 1
+            }
+            setStates(prev => [...prev, newSObj])
+            handleFieldChange('state_id', newSId)
+            try {
+              const res = await api.post(MEMBER_ENDPOINTS.MASTERS_STATE, {
+                name: trimmed,
+                parent_id: formData.country_id || undefined,
+                country_id: formData.country_id || undefined,
+                status: 1
+              })
+              const savedId = res.data?.data?._id || res.data?.data?.id
+              if (savedId) {
+                setStates(prev => prev.map(s => s._id === newSId ? { ...s, _id: savedId, id: savedId } : s))
+                setFormData(prev => prev.state_id === newSId ? { ...prev, state_id: savedId } : prev)
+              }
+            } catch (err) {
+              console.error('Failed to create state:', err)
+            }
+          }}
+        />
+        <Select
+          label="District"
+          required
+          value={formData.district_id}
+          onChange={(val) => handleFieldChange('district_id', val)}
+          disabled={isLoading}
+          options={districtOptions}
+          error={errors.district_id}
+          creatable={true}
+          createPrompt="Add District"
+          onCreateOption={async (newDist) => {
+            const trimmed = newDist.trim()
+            if (!trimmed) return
+            const newDId = `dist_${Date.now()}`
+            const newDObj = {
+              _id: newDId,
+              id: newDId,
+              name: trimmed,
+              district: trimmed,
+              parent_id: formData.state_id || '',
+              state_id: formData.state_id || '',
+              status: 1
+            }
+            setDistricts(prev => [...prev, newDObj])
+            handleFieldChange('district_id', newDId)
+            try {
+              const res = await api.post(MEMBER_ENDPOINTS.MASTERS_DISTRICT, {
+                name: trimmed,
+                district: trimmed,
+                parent_id: formData.state_id || undefined,
+                state_id: formData.state_id || undefined,
+                status: 1
+              })
+              const savedId = res.data?.data?._id || res.data?.data?.id
+              if (savedId) {
+                setDistricts(prev => prev.map(d => d._id === newDId ? { ...d, _id: savedId, id: savedId } : d))
+                setFormData(prev => prev.district_id === newDId ? { ...prev, district_id: savedId } : prev)
+              }
+            } catch (err) {
+              console.error('Failed to create district:', err)
+            }
+          }}
         />
         <Select
           label="City"
@@ -400,20 +607,54 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           value={formData.city_id}
           onChange={(val) => handleFieldChange('city_id', val)}
           disabled={isLoading}
-          options={cities.map(c => ({ label: c.name, value: c._id || c.id }))}
+          creatable={true}
+          createPrompt="Add City"
+          onCreateOption={async (newCity) => {
+            const trimmed = newCity.trim()
+            if (!trimmed) return
+            const newCId = `city_${Date.now()}`
+            const newCObj = {
+              _id: newCId,
+              id: newCId,
+              name: trimmed,
+              city: trimmed,
+              parent_id: formData.district_id || formData.state_id || '',
+              district_id: formData.district_id || '',
+              state_id: formData.state_id || '',
+              status: 1
+            }
+            setCities(prev => [...prev, newCObj])
+            handleFieldChange('city_id', newCId)
+            try {
+              const res = await api.post(MEMBER_ENDPOINTS.MASTERS_CITY, {
+                name: trimmed,
+                city: trimmed,
+                parent_id: formData.district_id || formData.state_id || undefined,
+                district_id: formData.district_id || undefined,
+                state_id: formData.state_id || undefined,
+                status: 1
+              })
+              const savedId = res.data?.data?._id || res.data?.data?.id
+              if (savedId) {
+                setCities(prev => prev.map(c => c._id === newCId ? { ...c, _id: savedId, id: savedId } : c))
+                setFormData(prev => prev.city_id === newCId ? { ...prev, city_id: savedId } : prev)
+              }
+            } catch (err) {
+              console.error('Failed to create city:', err)
+            }
+          }}
+          options={cityOptions}
           error={errors.city_id}
         />
-        <div className="sm:col-span-2 md:col-span-2">
-          <Input
-            label="Location Link (Google Maps)"
-            required
-            placeholder="https://maps.google.com/..."
-            value={formData.location_link}
-            onChange={(e) => handleFieldChange('location_link', e.target.value)}
-            disabled={isLoading}
-            error={errors.location_link}
-          />
-        </div>
+        <Input
+          label="Location Link (Google Maps)"
+          required
+          placeholder="https://maps.google.com/..."
+          value={formData.location_link}
+          onChange={(e) => handleFieldChange('location_link', e.target.value)}
+          disabled={isLoading}
+          error={errors.location_link}
+        />
       </div>
 
       {/* Address & About Business side by side in a 2-column grid */}

@@ -3,6 +3,7 @@ import {
   Users,
   Eye,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   AlertTriangle,
   FileText,
@@ -32,7 +33,6 @@ import {
   ArrowRight,
   Clock,
   Home,
-  CheckCircle2,
   Filter,
   UserPlus
 } from 'lucide-react'
@@ -125,10 +125,18 @@ export default function RegistrationsPage() {
     try {
       const res = await api.get(REGISTRATION_ENDPOINTS.GET_DETAILS(targetId))
       const payload = res?.data?.data || res?.data || {}
-      if (payload.user || payload._id) {
+      const targetUser = payload.user || payload.registration || payload
+      const familyMembers = payload.family_members || payload.step2 || targetUser?.family_members || targetUser?.step2 || []
+
+      if (targetUser) {
         setRegDetails({
-          user: payload.user || payload,
-          family_members: payload.family_members || []
+          user: targetUser,
+          family_members: Array.isArray(familyMembers) ? familyMembers : [],
+          step1: payload.step1 || targetUser.step1 || [],
+          step2: payload.step2 || targetUser.step2 || [],
+          step3: payload.step3 || targetUser.step3 || [],
+          step4: payload.step4 || targetUser.step4 || [],
+          step5: payload.step5 || targetUser.step5 || []
         })
       } else {
         setRegDetails({ user: rawUser, family_members: [] })
@@ -222,26 +230,7 @@ export default function RegistrationsPage() {
     }
   }
 
-  // Toggle status directly like Roles page (Active 1 / Inactive 0)
-  const handleToggleStatus = async (row) => {
-    const id = row.id || row._id
-    if (!id) return
-    const isApproved = Number(row.status) === 1 || row.registration_status === 'approved'
-    
-    if (!isApproved) {
-      openApproveModal(row)
-      return
-    }
-
-    try {
-      await api.put(`/users/${id}`, { status: 0 })
-      toast.success('Status updated')
-      fetchRegistrations()
-    } catch (err) {
-      console.error('Failed to update status', err)
-      toast.error('Failed to update status')
-    }
-  }
+  // Toggle is removed - no status toggle on registrations page anymore
 
   // Safe cleaner for hex MongoDB ObjectIds or raw strings in location
   const cleanLocationName = (val) => {
@@ -409,64 +398,49 @@ export default function RegistrationsPage() {
       }
     },
     {
-      key: 'status',
-      header: 'Status',
-      className: 'min-w-[140px]',
-      render: (row) => {
-        const isApproved = Number(row.status) === 1 || row.registration_status === 'approved'
-        return (
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={isApproved}
-                onChange={() => handleToggleStatus(row)}
-              />
-              <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-            </label>
-            <span className="text-xs font-semibold">
-              {row.registration_status === 'rejected' ? (
-                <span className="text-rose-600 font-bold">Rejected</span>
-              ) : row.registration_status === 'needs_correction' ? (
-                <span className="text-amber-600 font-bold">Correction</span>
-              ) : isApproved ? (
-                <span className="text-emerald-600 font-bold">Active</span>
-              ) : (
-                <span className="text-text-secondary">Pending</span>
-              )}
-            </span>
-          </div>
-        )
-      }
-    },
-    {
       key: 'actions',
       header: 'Actions',
       align: 'left',
       className: 'w-[120px]',
-      render: (row) => (
-        <div className="flex items-center justify-start gap-2">
-          <button
-            type="button"
-            onClick={() => openViewModal(row)}
-            className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all cursor-pointer"
-            title="View Details (5 Steps)"
-          >
-            <Eye className="w-3.5 h-3.5" />
-          </button>
-          {row.registration_status !== 'approved' && row.status !== 1 && (
+      render: (row) => {
+        const stepsComplete = (row.current_step || row.registration_step || 1) >= 5
+        const isApproved = row.is_approved || row.registration_status === 'approved'
+        return (
+          <div className="flex items-center justify-start gap-2">
             <button
               type="button"
-              onClick={() => openApproveModal(row)}
-              className="p-2 text-emerald-600 hover:text-emerald-700 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
-              title="Quick Approve"
+              onClick={() => openViewModal(row)}
+              className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all cursor-pointer"
+              title="View Details (5 Steps)"
             >
-              <Check className="w-3.5 h-3.5" />
+              <Eye className="w-3.5 h-3.5" />
             </button>
-          )}
-        </div>
-      )
+            {!isApproved && stepsComplete && (
+              <button
+                type="button"
+                onClick={() => openApproveModal(row)}
+                className="p-2 text-emerald-600 hover:text-emerald-700 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
+                title="Approve (All 5 Steps Complete)"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {!isApproved && !stepsComplete && (
+              <span
+                className="p-2 text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] font-bold leading-none"
+                title={`Step ${row.current_step || row.registration_step || 1} of 5 - Incomplete`}
+              >
+                {row.current_step || row.registration_step || 1}/5
+              </span>
+            )}
+            {isApproved && (
+              <span className="p-2 text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-xl" title="Approved">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </span>
+            )}
+          </div>
+        )
+      }
     }
   ]
 
