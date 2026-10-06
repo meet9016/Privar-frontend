@@ -353,22 +353,20 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
     onSubmit({ ...formData, gallery_images: [...existingGalleryImages, ...newGalleryFiles] })
   }
 
-  // Cascading location options
+  // Cascading location options - strictly require parent selection
   const countryOptions = countries.map(c => ({ label: c.name, value: c._id || c.id }))
 
-  const stateOptions = states
+  const stateOptions = !formData.country_id ? [] : states
     .filter(s => {
-      if (!formData.country_id) return true
       const parent = String(s.country_id || s.parent_id || '')
       return !parent || parent === String(formData.country_id)
     })
     .map(s => ({ label: s.name, value: s._id || s.id }))
 
-  const districtOptions = districts
+  const districtOptions = !formData.state_id ? [] : districts
     .filter(d => {
       const dId = String(d._id || d.id)
       if (formData.district_id && String(formData.district_id) === dId) return true
-      if (!formData.state_id) return true
       const parent = String(d.state_id || d.parent_id || '')
       return !parent || parent === String(formData.state_id)
     })
@@ -377,41 +375,30 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   const selectedDistrictObj = districts.find(d => String(d._id || d.id) === String(formData.district_id))
   const selectedDistrictName = (selectedDistrictObj?.name || selectedDistrictObj?.district || '').trim().toLowerCase()
 
-  const cityOptions = cities
+  const cityOptions = !formData.district_id ? [] : cities
     .filter(c => {
       const cId = String(c._id || c.id)
       if (formData.city_id && String(formData.city_id) === cId) return true
 
-      // If a district is selected:
-      if (formData.district_id) {
-        const cDistrictId = String(c.district_id || c.parent_id || '')
-        const cName = String(c.name || c.city || '').trim().toLowerCase()
+      const cDistrictId = String(c.district_id || c.parent_id || '')
+      const cName = String(c.name || c.city || '').trim().toLowerCase()
 
-        // 1. Direct match by district ID
-        if (cDistrictId && cDistrictId === String(formData.district_id)) {
-          return true
-        }
-
-        // 2. Direct match if city name equals district name (e.g. Surat city in Surat district)
-        if (selectedDistrictName && cName === selectedDistrictName) {
-          return true
-        }
-
-        // 3. Match if city parent references state AND district name matches
-        if (selectedDistrictName && cName.includes(selectedDistrictName)) {
-          return true
-        }
-
-        return false
+      // 1. Direct match by district ID
+      if (cDistrictId && cDistrictId === String(formData.district_id)) {
+        return true
       }
 
-      // If only state is selected (no district yet):
-      if (formData.state_id) {
-        const cStateId = String(c.state_id || c.parent_id || '')
-        return !cStateId || cStateId === String(formData.state_id)
+      // 2. Direct match if city name equals district name (e.g. Surat city in Surat district)
+      if (selectedDistrictName && cName === selectedDistrictName) {
+        return true
       }
 
-      return true
+      // 3. Match if city parent references state AND district name matches
+      if (selectedDistrictName && cName.includes(selectedDistrictName)) {
+        return true
+      }
+
+      return false
     })
     .map(c => ({ label: c.name || c.city || 'Unnamed City', value: c._id || c.id }))
 
@@ -523,9 +510,10 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           value={formData.state_id}
           onChange={(val) => handleFieldChange('state_id', val)}
           disabled={isLoading}
+          placeholder="Select State"
           options={stateOptions}
           error={errors.state_id}
-          creatable={true}
+          creatable={Boolean(formData.country_id)}
           createPrompt="Add State"
           onCreateOption={async (newState) => {
             const trimmed = newState.trim()
@@ -564,9 +552,10 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           value={formData.district_id}
           onChange={(val) => handleFieldChange('district_id', val)}
           disabled={isLoading}
+          placeholder="Select District"
           options={districtOptions}
           error={errors.district_id}
-          creatable={true}
+          creatable={Boolean(formData.state_id)}
           createPrompt="Add District"
           onCreateOption={async (newDist) => {
             const trimmed = newDist.trim()
@@ -607,7 +596,8 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           value={formData.city_id}
           onChange={(val) => handleFieldChange('city_id', val)}
           disabled={isLoading}
-          creatable={true}
+          placeholder="Select City"
+          creatable={Boolean(formData.district_id)}
           createPrompt="Add City"
           onCreateOption={async (newCity) => {
             const trimmed = newCity.trim()
