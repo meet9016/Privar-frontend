@@ -21,6 +21,7 @@ export default function ImagePreviewModal({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0, startPanX: 0, startPanY: 0 });
   const containerRef = useRef(null);
 
@@ -31,6 +32,7 @@ export default function ImagePreviewModal({
       setPan({ x: 0, y: 0 });
       setRotation(0);
       setIsDragging(false);
+      setImgError(false);
 
       // Lock body scroll
       const originalOverflow = document.body.style.overflow;
@@ -242,13 +244,34 @@ export default function ImagePreviewModal({
             transformOrigin: 'center center'
           }}
         >
-          <img
-            src={imageUrl}
-            alt={title}
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-            className="max-w-[85vw] max-h-[70vh] sm:max-h-[75vh] object-contain rounded-lg shadow-2xl select-none pointer-events-auto"
-          />
+          {imgError ? (
+            <div className="p-6 bg-surface/90 text-center rounded-2xl border border-border shadow-2xl max-w-sm pointer-events-auto space-y-3">
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 mx-auto flex items-center justify-center text-xl font-bold">
+                !
+              </div>
+              <div>
+                <h4 className="font-bold text-text text-sm">Image / Document Load Failed</h4>
+                <p className="text-xs text-text-secondary mt-1">The file could not be loaded directly from storage or the link is expired (404).</p>
+              </div>
+              <a
+                href={imageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-md hover:bg-primary/90 transition-all"
+              >
+                Try Opening File Directly
+              </a>
+            </div>
+          ) : (
+            <img
+              src={imageUrl}
+              alt={title}
+              onError={() => setImgError(true)}
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              className="max-w-[85vw] max-h-[70vh] sm:max-h-[75vh] object-contain rounded-lg shadow-2xl select-none pointer-events-auto"
+            />
+          )}
         </div>
 
         {/* Floating Pan Hint (Subtle) */}

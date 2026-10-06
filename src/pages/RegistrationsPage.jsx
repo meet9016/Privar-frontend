@@ -558,6 +558,7 @@ export default function RegistrationsPage() {
             onClick={fetchRegistrations}
             disabled={loading}
             className="h-10 text-xs font-bold"
+            title="Refresh List"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -848,7 +849,8 @@ export default function RegistrationsPage() {
                 { label: 'Passport / Other Document', url: docs.passport, icon: Building }
               ].map((doc, idx) => {
                 const hasDoc = Boolean(doc.url)
-                const isPdf = hasDoc && doc.url.toLowerCase().endsWith('.pdf')
+                const isUrl = hasDoc && (String(doc.url).startsWith('http') || String(doc.url).startsWith('/uploads') || String(doc.url).startsWith('blob:'))
+                const isPdf = isUrl && String(doc.url).toLowerCase().endsWith('.pdf')
                 const Icon = doc.icon
 
                 return (
@@ -857,16 +859,21 @@ export default function RegistrationsPage() {
                       <div className={`p-2.5 rounded-xl shrink-0 ${hasDoc ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-surface-secondary text-text-secondary'}`}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="font-bold text-text text-xs">{doc.label}</div>
                         <span className={`text-[11px] font-semibold mt-0.5 inline-flex items-center gap-1 ${hasDoc ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-secondary/60'}`}>
                           {hasDoc ? <CheckCircle2 className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                          {hasDoc ? (isPdf ? 'PDF Uploaded' : 'Image Uploaded') : 'Not Uploaded'}
+                          {hasDoc ? (isUrl ? (isPdf ? 'PDF Uploaded' : 'Image Uploaded') : 'Attached / Number') : 'Not Uploaded'}
                         </span>
+                        {hasDoc && !isUrl && (
+                          <p className="text-[11px] font-mono font-bold text-primary mt-1.5 truncate bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
+                            {doc.url}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    {hasDoc ? (
+                    {hasDoc && isUrl ? (
                       <div className="flex items-center gap-2 pt-2 border-t border-border/60">
                         {isPdf ? (
                           <a
@@ -887,11 +894,11 @@ export default function RegistrationsPage() {
                           </button>
                         )}
                       </div>
-                    ) : (
+                    ) : !hasDoc ? (
                       <div className="py-2 text-[11px] text-text-secondary/50 italic border-t border-border/40">
                         No document attached
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 )
               })}

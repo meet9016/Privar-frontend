@@ -648,10 +648,18 @@ export default function Students({ headerLeftContent }) {
                     if (val !== 'Graduation' && val !== 'Post Graduation') setDegreeVal('')
                     if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null, stream: null, degree: null }))
                   }}
-                  onCreateOption={(newVal) => {
-                    setStandardVal(newVal)
-                    setMasterStandards(prev => [{ name: newVal, status: 1 }, ...(prev || [])])
+                  onCreateOption={async (newVal) => {
+                    const trimmed = String(newVal || '').trim()
+                    if (!trimmed) return
+                    setStandardVal(trimmed)
                     if (fieldErrors.standard) setFieldErrors(prev => ({ ...prev, standard: null, stream: null, degree: null }))
+                    setMasterStandards(prev => [{ name: trimmed, status: 1, category: 'standard' }, ...(prev || [])])
+                    try {
+                      await api.post('/masters/standard', { name: trimmed, category: 'standard', status: 1 })
+                      toast.success(`Standard "${trimmed}" saved to Masters`)
+                    } catch (e) {
+                      console.error('Failed to save standard master:', e)
+                    }
                   }}
                 />
               </div>
@@ -682,7 +690,7 @@ export default function Students({ headerLeftContent }) {
                     placeholder={standardVal === 'Graduation' ? 'Select or type Degree (e.g. B.Com, B.Tech, BBA)' : 'Select or type Master Degree (e.g. M.Com, MBA, M.Tech)'}
                     required
                     creatable
-                    createPrompt="Use"
+                    createPrompt="Add"
                     value={degreeVal}
                     options={degreeOptions}
                     error={fieldErrors.degree}
@@ -690,9 +698,23 @@ export default function Students({ headerLeftContent }) {
                       setDegreeVal(val)
                       if (fieldErrors.degree) setFieldErrors(prev => ({ ...prev, degree: null }))
                     }}
-                    onCreateOption={(newVal) => {
-                      setDegreeVal(newVal)
+                    onCreateOption={async (newVal) => {
+                      const trimmed = String(newVal || '').trim()
+                      if (!trimmed) return
+                      setDegreeVal(trimmed)
                       if (fieldErrors.degree) setFieldErrors(prev => ({ ...prev, degree: null }))
+                      const targetCategory = standardVal === 'Graduation' ? 'bachelor-degree' : 'master-degree'
+                      if (targetCategory === 'bachelor-degree') {
+                        setMasterBachelorDegrees(prev => [{ name: trimmed, status: 1, category: targetCategory }, ...(prev || [])])
+                      } else {
+                        setMasterPostDegrees(prev => [{ name: trimmed, status: 1, category: targetCategory }, ...(prev || [])])
+                      }
+                      try {
+                        await api.post('/masters/standard', { name: trimmed, category: targetCategory, status: 1 })
+                        toast.success(`${standardVal === 'Graduation' ? 'Bachelor Degree' : 'Master Degree'} "${trimmed}" saved to Masters`)
+                      } catch (e) {
+                        console.error('Failed to save degree master:', e)
+                      }
                     }}
                   />
                 </div>
