@@ -132,7 +132,7 @@ export default function Businesses({ headerLeftContent }) {
       // Append all text fields
       const textFields = [
         'business_category_id','business_name','number','whatsapp_number',
-        'GST_number','email','country_id','state_id','city_id','pincode','address',
+        'GST_number','email','country_id','state_id','district_id','city_id','pincode','address',
         'location_link','about_us','website','facebook','instagram',
         'pinterest','youtube','status'
       ]
@@ -192,7 +192,6 @@ export default function Businesses({ headerLeftContent }) {
 
   return (
   <div className="space-y-6 text-text">
-    {/* Header bar */}
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div className="flex-1 overflow-x-auto hide-scrollbar">
         {headerLeftContent ? headerLeftContent : (
@@ -447,7 +446,11 @@ export default function Businesses({ headerLeftContent }) {
                     <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     <div className="flex-1 space-y-1">
                        <p className="text-text font-medium text-xs sm:text-sm leading-relaxed">{viewBusiness.address || 'No street address specified'}</p>
-                      <div className="grid grid-cols-3 gap-2 pt-1 text-xs">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+                        <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
+                          <span className="text-[10px] text-text-secondary block font-medium">District</span>
+                          <span className="font-medium text-text text-xs">{viewBusiness.district_name || viewBusiness.district_id?.name || viewBusiness.district || '—'}</span>
+                        </div>
                         <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
                           <span className="text-[10px] text-text-secondary block font-medium">City</span>
                           <span className="font-medium text-text text-xs">{viewBusiness.city_name || viewBusiness.city_id?.name || viewBusiness.city || '—'}</span>

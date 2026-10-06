@@ -118,9 +118,10 @@ const definitions = {
       { name: 'weight', label: 'Weight' },
       { name: 'mobile_number', label: 'Mobile Number' },
 
-      // Row 3: Location Info (4 fields)
-      { name: 'state', label: 'State', type: 'select-remote', source: MASTER_ENDPOINTS.STATE, labelKey: 'name', valueKey: 'name' },
-      { name: 'district', label: 'District', type: 'select-remote', source: MASTER_ENDPOINTS.DISTRICT, labelKey: 'name', valueKey: 'name' },
+      // Row 3: Location Info (Cascading)
+      { name: 'country', label: 'Country', type: 'select-remote', source: MASTER_ENDPOINTS.COUNTRY, labelKey: 'name', valueKey: 'name' },
+      { name: 'state', label: 'State', type: 'select-remote', source: MASTER_ENDPOINTS.STATE, labelKey: 'name', valueKey: 'name', required: true },
+      { name: 'district', label: 'District', type: 'select-remote', source: MASTER_ENDPOINTS.DISTRICT, labelKey: 'name', valueKey: 'name', required: true },
       { name: 'city', label: 'City', type: 'select-remote', source: MASTER_ENDPOINTS.CITY, labelKey: 'name', valueKey: 'name', required: true },
       { name: 'village', label: 'Village', type: 'select-remote', source: MASTER_ENDPOINTS.VILLAGE, labelKey: 'name', valueKey: 'name' },
 
