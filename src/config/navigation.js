@@ -62,8 +62,6 @@ export const masterNavigation = [
   { type: 'patti-para-pargana', label: 'Patti / Para / Pargana', permission: 'masters.list' },
   { type: 'sub-caste', label: 'Sub Caste', permission: 'masters.list' },
   { type: 'standard', label: 'Standard / Level', permission: 'masters.list' },
-  { type: 'bachelor-degree', label: 'Bachelor Degree (Graduation)', permission: 'masters.list' },
-  { type: 'master-degree', label: 'Master Degree (Post Graduation)', permission: 'masters.list' },
   { type: 'blood-group', label: 'Blood Group', permission: 'masters.list' },
   { type: 'event-category', label: 'Event Category', permission: 'masters.list' },
   { type: 'gallery-category', label: 'Gallery Category', permission: 'masters.list' },
