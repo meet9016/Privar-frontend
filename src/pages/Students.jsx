@@ -194,27 +194,36 @@ export default function Students({ headerLeftContent }) {
     const fetchMasterOptions = async () => {
       try {
         const [stdRes, bachRes, postRes, degRes] = await Promise.all([
-          api.get('/masters/standard', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+          api.get('/masters/standard', { params: { limit: 500 } }).catch(() => ({ data: { data: [] } })),
           api.get('/masters/bachelor-degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
           api.get('/masters/master-degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
           api.get('/masters/degree', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } }))
         ])
-        const stdList = stdRes.data?.data || stdRes.data || []
-        const bachList = bachRes.data?.data || bachRes.data || []
-        const postList = postRes.data?.data || postRes.data || []
-        const degList = degRes.data?.data || degRes.data || []
+        const allStandardItems = stdRes.data?.data || stdRes.data || []
+        const legacyBachList = bachRes.data?.data || bachRes.data || []
+        const legacyPostList = postRes.data?.data || postRes.data || []
+        const legacyDegList = degRes.data?.data || degRes.data || []
 
-        if (Array.isArray(stdList) && stdList.length > 0) {
-          setMasterStandards(stdList)
+        const stdItems = []
+        const bachItems = [...legacyBachList, ...legacyDegList]
+        const postItems = [...legacyPostList]
+
+        if (Array.isArray(allStandardItems)) {
+          allStandardItems.forEach((item) => {
+            const cat = item.category || 'standard'
+            if (cat === 'bachelor-degree' || cat === 'graduation') {
+              bachItems.push(item)
+            } else if (cat === 'master-degree' || cat === 'post-graduation') {
+              postItems.push(item)
+            } else {
+              stdItems.push(item)
+            }
+          })
         }
-        if (Array.isArray(bachList) && bachList.length > 0) {
-          setMasterBachelorDegrees(bachList)
-        } else if (Array.isArray(degList) && degList.length > 0) {
-          setMasterBachelorDegrees(degList)
-        }
-        if (Array.isArray(postList) && postList.length > 0) {
-          setMasterPostDegrees(postList)
-        }
+
+        if (stdItems.length > 0) setMasterStandards(stdItems)
+        if (bachItems.length > 0) setMasterBachelorDegrees(bachItems)
+        if (postItems.length > 0) setMasterPostDegrees(postItems)
       } catch (e) {
         console.error('Error fetching student masters:', e)
       }
