@@ -445,11 +445,6 @@ export default function RegistrationsPage() {
         const stepNum = row.registration_step || 1
         return (
           <div className="text-xs space-y-1">
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md text-[11px] inline-flex items-center gap-1">
-                <Layers className="w-3 h-3" /> Step {stepNum} of 5
-              </span>
-            </div>
             <div className="text-[11px] text-text-secondary font-medium">
               {row.family_members_count > 0 ? (
                 <span className="text-primary font-bold">+{row.family_members_count} family members</span>
@@ -491,7 +486,7 @@ export default function RegistrationsPage() {
             )}
             {!isApproved && !stepsComplete && (
               <span
-                className="p-2 text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] font-bold leading-none"
+                className="p-2 text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl text-[10px] font-bold leading-none"
                 title={`Step ${row.current_step || row.registration_step || 1} of 5 - Incomplete`}
               >
                 {row.current_step || row.registration_step || 1}/5
@@ -522,9 +517,6 @@ export default function RegistrationsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-text flex items-center gap-2">
             New Member Registrations
           </h1>
-          <p className="text-sm font-medium text-text-secondary mt-1 tracking-tight">
-            Review, verify and approve multi-step mobile registration requests
-          </p>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
