@@ -122,7 +122,7 @@ const definitions = {
       { name: 'country', label: 'Country', type: 'select-remote', source: MASTER_ENDPOINTS.COUNTRY, labelKey: 'name', valueKey: 'name' },
       { name: 'state', label: 'State', type: 'select-remote', source: MASTER_ENDPOINTS.STATE, labelKey: 'name', valueKey: 'name', required: true },
       { name: 'district', label: 'District', type: 'select-remote', source: MASTER_ENDPOINTS.DISTRICT, labelKey: 'name', valueKey: 'name', required: true },
-      { name: 'city', label: 'City', type: 'select-remote', source: MASTER_ENDPOINTS.CITY, labelKey: 'name', valueKey: 'name', required: true },
+      { name: 'city', label: 'City / Taluka', type: 'select-remote', source: MASTER_ENDPOINTS.CITY, labelKey: 'name', valueKey: 'name', required: true },
       { name: 'village', label: 'Village', type: 'select-remote', source: MASTER_ENDPOINTS.VILLAGE, labelKey: 'name', valueKey: 'name' },
 
       // Row 4: Education & Parents (4 fields)
@@ -392,7 +392,11 @@ const definitions = {
       { name: 'description', label: 'Description', type: 'textarea', rows: 4, required: true, className: 'md:col-span-1' },
       { name: 'image', label: 'Image', type: 'file', className: 'md:col-span-1 md:row-span-2 [&>div]:h-[calc(100%-6px)] [&>div]:min-h-[140px]' },
       { name: 'qualifications', label: 'Qualifications', type: 'textarea', rows: 4, required: true, className: 'md:col-span-1' },
-      { name: 'location', label: 'Location', required: true, className: 'md:col-span-1' }, 
+      { name: 'country', label: 'Country', type: 'hidden', defaultValue: 'India', className: 'hidden' },
+      { name: 'state', label: 'State', type: 'select-remote', source: MASTER_ENDPOINTS.STATE, labelKey: 'name', valueKey: 'name', required: true, className: 'md:col-span-1' },
+      { name: 'district', label: 'District', type: 'select-remote', source: MASTER_ENDPOINTS.DISTRICT, labelKey: 'name', valueKey: 'name', required: true, className: 'md:col-span-1' },
+      { name: 'city', label: 'City', type: 'select-remote', source: MASTER_ENDPOINTS.CITY, labelKey: 'name', valueKey: 'name', required: true, className: 'md:col-span-1' },
+      { name: 'village', label: 'Village', type: 'select-remote', source: MASTER_ENDPOINTS.VILLAGE, labelKey: 'name', valueKey: 'name', className: 'md:col-span-1' },
       { name: 'job_type', label: 'Job Type', type: 'select', required: true, className: 'md:col-span-1',
         options: [{ value: "full-time", label: 'Full Time' }, { value: "part-time", label: 'Part Time' }, { value: "contract", label: 'Contract' }, { value: "internship", label: 'Internship' }]},
       { name: 'contact_number', label: 'Contact Number', required: true, className: 'md:col-span-1' },

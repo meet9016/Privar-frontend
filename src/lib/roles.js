@@ -91,7 +91,7 @@ export const buildPermissionGroups = (config = {}) => {
       .sort((a, b) => (actionIndex.get(a.action) ?? 99) - (actionIndex.get(b.action) ?? 99))
   }))
 
-  const masterModules = ['blood_groups', 'countries', 'states', 'cities', 'degrees', 'occupations', 'categories', 'master', 'gallery_categories', 'event_categories', 'expense_categories']
+  const masterModules = ['blood_groups', 'countries', 'states', 'cities', 'degrees', 's', 'categories', 'master', 'gallery_categories', 'event_categories', 'expense_categories']
   
   let finalModules = []
   let masterGroup = {

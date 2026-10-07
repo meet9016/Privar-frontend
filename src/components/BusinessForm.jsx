@@ -591,7 +591,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
           }}
         />
         <Select
-          label="City"
+          label="City / Taluka"
           required
           value={formData.city_id}
           onChange={(val) => handleFieldChange('city_id', val)}
