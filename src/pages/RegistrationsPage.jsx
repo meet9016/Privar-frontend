@@ -97,8 +97,39 @@ export default function RegistrationsPage() {
       })
       const payload = res?.data?.data || res?.data || {}
       const list = payload.registrations || (Array.isArray(payload) ? payload : [])
-      setRegistrations(list)
-      setPagination(payload.pagination || { page: 1, totalPages: 1, total: list.length, limit: 15 })
+
+      const mappedList = list.map(r => {
+        const s1 = (r.step1 && r.step1[0]) || {}
+        const s2 = r.step2 || []
+        const s3 = (r.step3 && r.step3[0]) || {}
+        const s4 = (r.step4 && r.step4[0]) || {}
+        const s5 = (r.step5 && r.step5[0]) || {}
+
+        let cStep = 1
+        if (s5 && Object.keys(s5).length > 0) cStep = 5
+        else if (s4 && Object.keys(s4).length > 0) cStep = 4
+        else if (s3 && Object.keys(s3).length > 0) cStep = 3
+        else if (s2 && s2.length > 0) cStep = 2
+        else if (s1 && Object.keys(s1).length > 0) cStep = 1
+
+        return {
+          ...r,
+          ...s1,
+          ...s3,
+          ...s4,
+          documents: s5,
+          occupation_details: s4,
+          family_members_count: s2.length,
+          family_members: s2,
+          current_step: r.current_step || cStep,
+          registration_step: r.registration_step || cStep,
+          status: r.status || 'in_progress',
+          is_approved: r.is_approved || false
+        }
+      })
+
+      setRegistrations(mappedList)
+      setPagination(payload.pagination || { page: 1, totalPages: 1, total: mappedList.length, limit: 15 })
     } catch (err) {
       console.error('Failed to fetch registrations', err)
       toast.error('Failed to load registrations')
@@ -129,14 +160,31 @@ export default function RegistrationsPage() {
       const familyMembers = payload.family_members || payload.step2 || targetUser?.family_members || targetUser?.step2 || []
 
       if (targetUser) {
+        const targetS1 = (targetUser.step1 && targetUser.step1[0]) || {}
+        const targetS2 = Array.isArray(familyMembers) ? familyMembers : []
+        const targetS3 = (targetUser.step3 && targetUser.step3[0]) || {}
+        const targetS4 = (targetUser.step4 && targetUser.step4[0]) || {}
+        const targetS5 = (targetUser.step5 && targetUser.step5[0]) || {}
+
+        const mappedTargetUser = {
+          ...targetUser,
+          ...targetS1,
+          ...targetS3,
+          ...targetS4,
+          documents: targetS5,
+          occupation_details: targetS4,
+          family_members_count: targetS2.length,
+          family_members: targetS2
+        }
+
         setRegDetails({
-          user: targetUser,
-          family_members: Array.isArray(familyMembers) ? familyMembers : [],
-          step1: payload.step1 || targetUser.step1 || [],
-          step2: payload.step2 || targetUser.step2 || [],
-          step3: payload.step3 || targetUser.step3 || [],
-          step4: payload.step4 || targetUser.step4 || [],
-          step5: payload.step5 || targetUser.step5 || []
+          user: mappedTargetUser,
+          family_members: targetS2,
+          step1: targetUser.step1 || [],
+          step2: targetS2,
+          step3: targetUser.step3 || [],
+          step4: targetUser.step4 || [],
+          step5: targetUser.step5 || []
         })
       } else {
         setRegDetails({ user: rawUser, family_members: [] })
@@ -163,7 +211,9 @@ export default function RegistrationsPage() {
 
     setActionLoading(true)
     try {
-      await api.post(REGISTRATION_ENDPOINTS.APPROVE(targetId))
+      await api.post(REGISTRATION_ENDPOINTS.UPDATE_STATUS(targetId), {
+        status: 'approved'
+      })
       toast.success('Registration Approved Successfully!')
       setApproveModalOpen(false)
       setIsViewModalOpen(false)
@@ -186,7 +236,8 @@ export default function RegistrationsPage() {
 
     setActionLoading(true)
     try {
-      await api.post(REGISTRATION_ENDPOINTS.REJECT(targetId), {
+      await api.post(REGISTRATION_ENDPOINTS.UPDATE_STATUS(targetId), {
+        status: 'rejected',
         reason: rejectReason
       })
       toast.success('Registration marked as Rejected')
@@ -212,8 +263,9 @@ export default function RegistrationsPage() {
 
     setActionLoading(true)
     try {
-      await api.post(REGISTRATION_ENDPOINTS.REQUEST_CORRECTION(targetId), {
-        remarks: correctionRemarks,
+      await api.post(REGISTRATION_ENDPOINTS.UPDATE_STATUS(targetId), {
+        status: 'needs_correction',
+        reason: correctionRemarks,
         fields_to_correct: correctionFields
       })
       toast.success('Correction request sent to applicant!')
@@ -315,7 +367,6 @@ export default function RegistrationsPage() {
                 {fullName}
               </div>
               <div className="text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
-                <span>ID: <b className="text-text font-mono">{row.member_id || '-'}</b></span>
                 {row.peta_jati && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/20">
                     {row.peta_jati}
@@ -346,7 +397,7 @@ export default function RegistrationsPage() {
     },
     {
       key: 'location',
-      header: 'Location & Patti',
+      header: 'Location',
       className: 'min-w-[190px]',
       render: (row) => {
         const villageClean = cleanLocationName(row.village_name || row.village)
@@ -364,6 +415,19 @@ export default function RegistrationsPage() {
             ) : (
               <span className="text-text-secondary opacity-50 flex items-center gap-1"><MapPin className="w-3 h-3 opacity-40" /> Not Provided</span>
             )}
+          </div>
+        )
+      }
+    },
+    {
+      key: 'patti',
+      header: 'Patti/Para/Pargana',
+      className: 'min-w-[190px]',
+      render: (row) => {
+        const patti = cleanLocationName(row.patti_name || row.patti_para_pargana)
+
+        return (
+          <div className="flex flex-col gap-1 text-xs">
             {patti && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-surface-secondary text-text-secondary border border-border w-fit truncate max-w-[180px]">
                 {patti}
@@ -566,15 +630,17 @@ export default function RegistrationsPage() {
       >
         <div className="space-y-5">
           {/* Top Applicant Header Banner */}
-          <div className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-surface-secondary border border-border shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+          <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-primary/5 via-surface to-surface border border-primary/10 shadow-sm">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+            
+            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+              <div className="flex items-center gap-5">
                 <div
                   onClick={() => {
                     const img = userObj.profile_image || userObj.image
                     if (img) setPreviewImage({ url: assetUrl(img), title: `${userObj.first_name} ${userObj.last_name}` })
                   }}
-                  className="w-16 h-16 rounded-2xl bg-surface border-2 border-primary/20 overflow-hidden shrink-0 shadow-sm flex items-center justify-center font-bold text-xl text-primary cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-surface-secondary border-2 border-primary/20 overflow-hidden shrink-0 shadow-sm flex items-center justify-center font-bold text-2xl text-primary cursor-pointer hover:scale-105 hover:shadow-md hover:border-primary/40 transition-all duration-300"
                   title="Click to zoom photo"
                 >
                   {userObj.profile_image || userObj.image ? (
@@ -583,17 +649,19 @@ export default function RegistrationsPage() {
                     (userObj.first_name || 'U').charAt(0).toUpperCase()
                   )}
                 </div>
-                <div>
-                  <div className="text-lg font-black text-text capitalize">
+                <div className="space-y-1.5">
+                  <div className="text-xl sm:text-2xl font-black text-text capitalize tracking-tight">
                     {`${userObj.first_name || ''} ${userObj.middle_name || ''} ${userObj.last_name || ''}`.trim() || 'Applicant'}
                   </div>
-                  <div className="text-xs text-text-secondary flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                    <span className="flex items-center gap-1 font-mono font-medium text-text">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]">
+                    <span className="flex items-center gap-1.5 font-medium text-text-secondary bg-surface-secondary/50 px-2 py-0.5 rounded-md border border-border/50">
                       <Phone className="w-3.5 h-3.5 text-primary" /> {userObj.number || userObj.phone || '-'}
                     </span>
-                    <span>• ID: <b className="font-mono text-text">{userObj.member_id || '-'}</b></span>
+                    <span className="flex items-center gap-1.5 font-medium text-text-secondary bg-surface-secondary/50 px-2 py-0.5 rounded-md border border-border/50">
+                      ID: <b className="font-mono text-text">{userObj.member_id || '-'}</b>
+                    </span>
                     {userObj.peta_jati && (
-                      <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/20 text-[10px]">
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/20 text-[11px]">
                         {userObj.peta_jati}
                       </span>
                     )}
@@ -601,10 +669,10 @@ export default function RegistrationsPage() {
                 </div>
               </div>
 
-              <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 border-t sm:border-t-0 pt-3 sm:pt-0 border-border/60">
+              <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-3 border-t sm:border-t-0 pt-4 sm:pt-0 border-border/40">
                 {getStatusBadge(userObj.registration_status || (userObj.status === 1 ? 'approved' : 'pending_review'))}
-                <span className="text-[11px] font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1">
-                  <Layers className="w-3 h-3" /> Step {userObj.registration_step || 1} of 5 Completed
+                <span className="text-[11px] font-bold text-primary bg-primary/5 border border-primary/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <Layers className="w-3.5 h-3.5" /> Step {userObj.registration_step || 1} of 5 Complete
                 </span>
               </div>
             </div>
@@ -612,27 +680,27 @@ export default function RegistrationsPage() {
 
           {/* If correction remarks or rejection reason exist */}
           {userObj.correction_remarks && (
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-3 shadow-xs">
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[13px] flex items-start gap-3 shadow-sm">
               <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <div className="font-bold text-sm">Correction Remarks (सुधार हेतु निर्देश):</div>
-                <p className="mt-0.5 font-medium leading-relaxed">{userObj.correction_remarks}</p>
+                <div className="font-bold text-sm text-amber-800 dark:text-amber-300">Correction Remarks (सुधार हेतु निर्देश)</div>
+                <p className="mt-1 font-medium leading-relaxed opacity-90">{userObj.correction_remarks}</p>
               </div>
             </div>
           )}
 
           {userObj.rejection_reason && (
-            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-xs flex items-start gap-3 shadow-xs">
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-[13px] flex items-start gap-3 shadow-sm">
               <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <div>
-                <div className="font-bold text-sm">Rejection Reason:</div>
-                <p className="mt-0.5 font-medium leading-relaxed">{userObj.rejection_reason}</p>
+                <div className="font-bold text-sm text-rose-800 dark:text-rose-300">Rejection Reason</div>
+                <p className="mt-1 font-medium leading-relaxed opacity-90">{userObj.rejection_reason}</p>
               </div>
             </div>
           )}
 
-          {/* Step Navigation Pill Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-surface-secondary/70 border border-border rounded-xl overflow-x-auto text-xs font-semibold">
+          {/* Premium Step Navigation Pill Tabs */}
+          <div className="flex items-center gap-2 p-1.5 bg-surface-secondary/50 border border-border/50 rounded-xl overflow-x-auto">
             {[
               { key: 'personal', icon: User, label: '1. Personal Info' },
               { key: 'family', icon: Users, label: `2. Family (${familyList.length})` },
@@ -647,12 +715,12 @@ export default function RegistrationsPage() {
                   key={t.key}
                   type="button"
                   onClick={() => setActiveTab(t.key)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all whitespace-nowrap cursor-pointer ${isActive
-                    ? 'bg-primary text-white shadow-xs font-bold'
-                    : 'text-text-secondary hover:text-text hover:bg-surface'
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 whitespace-nowrap cursor-pointer text-[13px] ${isActive
+                    ? 'bg-white dark:bg-surface shadow-sm text-primary font-bold border border-border'
+                    : 'text-text-secondary hover:text-text hover:bg-surface-secondary font-semibold border border-transparent'
                     }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'opacity-70'}`} />
                   {t.label}
                 </button>
               )
@@ -661,43 +729,61 @@ export default function RegistrationsPage() {
 
           {/* TAB 1: Personal Info */}
           {activeTab === 'personal' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Father / Husband Name</span>
-                <p className="font-bold text-text text-sm">{userObj.father_husband_name || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Gender</span>
-                <p className="font-bold text-text text-sm">{userObj.gender || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Date of Birth</span>
-                <p className="font-bold text-text text-sm">{formatDate(userObj.dob) || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Blood Group</span>
-                <p className="font-bold text-text text-sm text-rose-600 dark:text-rose-400">{userObj.blood_group || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Marital Status</span>
-                <p className="font-bold text-text text-sm">{userObj.marital_status || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Patti / Para / Pargana</span>
-                <p className="font-bold text-text text-sm">{cleanLocationName(userObj.patti_para_pargana) || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Sub Caste / Peta Jati</span>
-                <p className="font-bold text-text text-sm">{userObj.peta_jati || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Email Address</span>
-                <p className="font-bold text-text text-sm font-mono">{userObj.email || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Member Sequence ID</span>
-                <p className="font-bold text-primary text-sm font-mono">{userObj.member_id || '-'}</p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {userObj.first_name && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Full Name</span>
+                  <p className="font-bold text-text text-[15px] capitalize">{`${userObj.first_name || ''} ${userObj.middle_name || ''} ${userObj.last_name || ''}`.trim()}</p>
+                </div>
+              )}
+              {userObj.gender && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Gender</span>
+                  <p className="font-bold text-text text-[15px]">{userObj.gender}</p>
+                </div>
+              )}
+              {userObj.dob && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Date of Birth</span>
+                  <p className="font-bold text-text text-[15px]">{formatDate(userObj.dob)}</p>
+                </div>
+              )}
+              {userObj.blood_group && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Blood Group</span>
+                  <p className="font-bold text-[15px] text-rose-600 dark:text-rose-400">{userObj.blood_group}</p>
+                </div>
+              )}
+              {userObj.marital_status && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Marital Status</span>
+                  <p className="font-bold text-text text-[15px]">{userObj.marital_status}</p>
+                </div>
+              )}
+              {userObj.patti_para_pargana && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Patti / Para / Pargana</span>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.patti_para_pargana)}</p>
+                </div>
+              )}
+              {userObj.peta_jati && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Sub Caste / Peta Jati</span>
+                  <p className="font-bold text-text text-[15px]">{userObj.peta_jati}</p>
+                </div>
+              )}
+              {userObj.email && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Email Address</span>
+                  <p className="font-bold text-text text-[14px] font-mono break-all">{userObj.email}</p>
+                </div>
+              )}
+              {userObj.member_id && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Member Sequence ID</span>
+                  <p className="font-bold text-primary text-[15px] font-mono">{userObj.member_id}</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -705,35 +791,38 @@ export default function RegistrationsPage() {
           {activeTab === 'family' && (
             <div className="space-y-4">
               {familyList.length === 0 ? (
-                <div className="p-10 text-center bg-surface-secondary/40 rounded-2xl border border-dashed border-border text-text-secondary text-xs space-y-2">
-                  <Users className="w-8 h-8 mx-auto text-text-secondary/50" />
-                  <p className="font-semibold text-text">No Additional Family Members Added</p>
-                  <p className="text-[11px]">This application is registered for the primary Family Head only.</p>
+                <div className="p-10 text-center bg-surface-secondary/40 rounded-2xl border border-dashed border-border/60 text-text-secondary text-sm space-y-3">
+                  <div className="w-16 h-16 rounded-full bg-surface-secondary flex items-center justify-center mx-auto mb-2">
+                    <Users className="w-8 h-8 text-text-secondary/50" />
+                  </div>
+                  <p className="font-bold text-text text-[15px]">No Additional Family Members</p>
+                  <p className="text-[13px] opacity-80 max-w-sm mx-auto">This application was registered for the primary Family Head only. No dependents were added.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {familyList.map((m, idx) => (
-                    <div key={idx} className="p-4 rounded-2xl bg-surface border border-border shadow-xs hover:border-primary/40 transition-all flex items-start gap-3.5">
-                      <div className="w-11 h-11 rounded-full bg-primary/10 border border-primary/20 text-primary font-black flex items-center justify-center text-sm shrink-0">
-                        {m.first_name ? m.first_name[0] : idx + 1}
+                    <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-surface-secondary border border-border/60 shadow-sm hover:shadow-md hover:border-primary/40 transition-all flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 text-primary font-black flex items-center justify-center text-lg shrink-0 shadow-sm">
+                        {m.first_name ? m.first_name[0] : (m.name ? m.name[0] : idx + 1)}
                       </div>
-                      <div className="flex-1 text-xs space-y-1">
+                      <div className="flex-1 text-[13px] space-y-1.5 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="font-bold text-text text-sm capitalize">
-                            {`${m.first_name || ''} ${m.middle_name || ''} ${m.last_name || ''}`.trim()}
+                          <div className="font-bold text-text text-[15px] capitalize truncate">
+                            {m.name ? m.name : `${m.first_name || ''} ${m.middle_name || ''} ${m.last_name || ''}`.trim() || 'Family Member'}
                           </div>
-                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold shrink-0">
+                          <span className="px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold shrink-0">
                             {getRelationDisplay(m.relation) || m.relation || 'Member'}
                           </span>
                         </div>
-                        <div className="text-text-secondary text-[11px] flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                        <div className="text-text-secondary text-[12px] flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                           <span>Gender: <b className="text-text">{m.gender || '-'}</b></span>
                           {m.dob && <span>• DOB: <b className="text-text">{formatDate(m.dob)}</b></span>}
+                          {m.age && !m.dob && <span>• Age: <b className="text-text">{m.age} Yrs</b></span>}
                           {m.blood_group && <span>• Blood: <b className="text-rose-600">{m.blood_group}</b></span>}
                         </div>
-                        {m.number && (
-                          <div className="text-text font-mono text-[11px] flex items-center gap-1.5 pt-0.5">
-                            <Phone className="w-3 h-3 text-text-secondary" /> {m.number}
+                        {(m.number || m.mobile) && (
+                          <div className="text-text font-mono text-[12px] font-medium flex items-center gap-1.5 pt-1">
+                            <Phone className="w-3.5 h-3.5 text-text-secondary" /> {m.number || m.mobile}
                           </div>
                         )}
                       </div>
@@ -746,69 +835,103 @@ export default function RegistrationsPage() {
 
           {/* TAB 3: Address */}
           {activeTab === 'address' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs col-span-1 sm:col-span-2 md:col-span-3 space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Full Residential Address</span>
-                <p className="font-bold text-text text-sm leading-relaxed">{userObj.address || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Village / Native Place</span>
-                <p className="font-bold text-text text-sm">{cleanLocationName(userObj.village) || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Pincode</span>
-                <p className="font-bold text-text text-sm font-mono">{userObj.pincode || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">City / Taluka</span>
-                <p className="font-bold text-text text-sm">{cleanLocationName(userObj.city_id || userObj.city) || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">District</span>
-                <p className="font-bold text-text text-sm">{cleanLocationName(userObj.district_id || userObj.district) || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">State</span>
-                <p className="font-bold text-text text-sm">{cleanLocationName(userObj.state_id || userObj.state) || '-'}</p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {userObj.address && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors col-span-1 sm:col-span-2 md:col-span-3">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Full Residential Address</span>
+                  <p className="font-bold text-text text-[15px] leading-relaxed">{userObj.address}</p>
+                </div>
+              )}
+              {userObj.village && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Village / Native Place</span>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.village)}</p>
+                </div>
+              )}
+              {userObj.pincode && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Pincode</span>
+                  <p className="font-bold text-text text-[15px] font-mono">{userObj.pincode}</p>
+                </div>
+              )}
+              {(userObj.city_id || userObj.city) && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">City / Taluka</span>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.city_id || userObj.city)}</p>
+                </div>
+              )}
+              {(userObj.district_id || userObj.district) && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">District</span>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.district_id || userObj.district)}</p>
+                </div>
+              )}
+              {(userObj.state_id || userObj.state) && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">State</span>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.state_id || userObj.state)}</p>
+                </div>
+              )}
+              {(!userObj.address && !userObj.village && !userObj.pincode && !userObj.city && !userObj.district && !userObj.state) && (
+                <div className="col-span-full p-6 text-center text-text-secondary italic">No address details provided</div>
+              )}
             </div>
           )}
 
           {/* TAB 4: Occupation & Business */}
           {activeTab === 'occupation' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Occupation Type</span>
-                <p className="font-bold text-text text-sm">{userObj.occupation || userObj.occupation_type || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Business / Company Name</span>
-                <p className="font-bold text-text text-sm">{userObj.occupation_details?.business_name || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Business Category / Type</span>
-                <p className="font-bold text-text text-sm">{userObj.occupation_details?.business_type || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Business Contact Phone</span>
-                <p className="font-bold text-text text-sm font-mono">{userObj.occupation_details?.business_mobile || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Business Email</span>
-                <p className="font-bold text-text text-sm font-mono">{userObj.occupation_details?.business_email || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">GST / Tax Number</span>
-                <p className="font-bold text-text text-sm font-mono">{userObj.occupation_details?.gst_number || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs col-span-1 sm:col-span-2 space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Office / Business Address</span>
-                <p className="font-bold text-text text-sm leading-relaxed">{userObj.occupation_details?.business_address || '-'}</p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-1">
-                <span className="text-text-secondary text-[11px] font-medium uppercase tracking-wider">Website URL</span>
-                <p className="font-bold text-primary text-sm truncate">{userObj.occupation_details?.website || '-'}</p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {(userObj.occupation || userObj.occupation_type) && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Occupation Type</span>
+                  <p className="font-bold text-text text-[15px]">{userObj.occupation || userObj.occupation_type}</p>
+                </div>
+              )}
+              {userObj.occupation_details?.business_name && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Business / Company Name</span>
+                  <p className="font-bold text-text text-[15px]">{userObj.occupation_details.business_name}</p>
+                </div>
+              )}
+              {userObj.occupation_details?.business_type && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Business Category / Type</span>
+                  <p className="font-bold text-text text-[15px]">{userObj.occupation_details.business_type}</p>
+                </div>
+              )}
+              {userObj.occupation_details?.business_mobile && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Business Contact Phone</span>
+                  <p className="font-bold text-text text-[15px] font-mono">{userObj.occupation_details.business_mobile}</p>
+                </div>
+              )}
+              {userObj.occupation_details?.business_email && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Business Email</span>
+                  <p className="font-bold text-text text-[15px] font-mono break-all">{userObj.occupation_details.business_email}</p>
+                </div>
+              )}
+              {userObj.occupation_details?.gst_number && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">GST / Tax Number</span>
+                  <p className="font-bold text-text text-[15px] font-mono">{userObj.occupation_details.gst_number}</p>
+                </div>
+              )}
+              {userObj.occupation_details?.business_address && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors col-span-1 sm:col-span-2">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Office / Business Address</span>
+                  <p className="font-bold text-text text-[15px] leading-relaxed">{userObj.occupation_details.business_address}</p>
+                </div>
+              )}
+              {userObj.occupation_details?.website && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Website URL</span>
+                  <p className="font-bold text-primary text-[15px] truncate">{userObj.occupation_details.website}</p>
+                </div>
+              )}
+              {(!userObj.occupation && !userObj.occupation_type && (!userObj.occupation_details || Object.keys(userObj.occupation_details).length === 0)) && (
+                <div className="col-span-full p-6 text-center text-text-secondary italic">No occupation details provided</div>
+              )}
             </div>
           )}
 
@@ -821,26 +944,26 @@ export default function RegistrationsPage() {
                 { label: 'Voter ID', url: docs.voter_id, icon: FileCheck },
                 { label: 'Driving License', url: docs.driving_license, icon: FileText },
                 { label: 'Passport / Other Document', url: docs.passport, icon: Building }
-              ].map((doc, idx) => {
+              ].filter(doc => doc.url).map((doc, idx) => {
                 const hasDoc = Boolean(doc.url)
                 const isUrl = hasDoc && (String(doc.url).startsWith('http') || String(doc.url).startsWith('/uploads') || String(doc.url).startsWith('blob:'))
                 const isPdf = isUrl && String(doc.url).toLowerCase().endsWith('.pdf')
                 const Icon = doc.icon
 
                 return (
-                  <div key={idx} className="p-4 rounded-2xl bg-surface border border-border shadow-xs flex flex-col justify-between gap-3.5 hover:border-primary/40 transition-all">
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2.5 rounded-xl shrink-0 ${hasDoc ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-surface-secondary text-text-secondary'}`}>
+                  <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-surface-secondary border border-border/60 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md hover:border-primary/40 transition-all">
+                    <div className="flex items-start gap-3.5">
+                      <div className={`p-3 rounded-xl shrink-0 ${hasDoc ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-surface-secondary text-text-secondary border border-border/50'}`}>
                         <Icon className="w-5 h-5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-text text-xs">{doc.label}</div>
-                        <span className={`text-[11px] font-semibold mt-0.5 inline-flex items-center gap-1 ${hasDoc ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-secondary/60'}`}>
-                          {hasDoc ? <CheckCircle2 className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                        <div className="font-bold text-text text-[14px]">{doc.label}</div>
+                        <span className={`text-[11px] font-semibold mt-1 inline-flex items-center gap-1.5 ${hasDoc ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-secondary/70'}`}>
+                          {hasDoc ? <CheckCircle2 className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
                           {hasDoc ? (isUrl ? (isPdf ? 'PDF Uploaded' : 'Image Uploaded') : 'Attached / Number') : 'Not Uploaded'}
                         </span>
                         {hasDoc && !isUrl && (
-                          <p className="text-[11px] font-mono font-bold text-primary mt-1.5 truncate bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
+                          <p className="text-[12px] font-mono font-bold text-primary mt-2 truncate bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-md inline-block max-w-full">
                             {doc.url}
                           </p>
                         )}
@@ -848,75 +971,64 @@ export default function RegistrationsPage() {
                     </div>
 
                     {hasDoc && isUrl ? (
-                      <div className="flex items-center gap-2 pt-2 border-t border-border/60">
+                      <div className="flex items-center gap-2 pt-3 border-t border-border/50 mt-1">
                         {isPdf ? (
                           <a
                             href={assetUrl(doc.url)}
                             target="_blank"
                             rel="noreferrer"
-                            className="w-full py-2 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                            className="w-full py-2 px-3 rounded-xl bg-primary/5 hover:bg-primary/10 border border-primary/20 text-primary font-bold text-[13px] flex items-center justify-center gap-2 transition-colors shadow-sm"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" /> View PDF Document
+                            <ExternalLink className="w-4 h-4" /> View PDF Document
                           </a>
                         ) : (
                           <button
                             type="button"
                             onClick={() => setPreviewImage({ url: assetUrl(doc.url), title: doc.label })}
-                            className="w-full py-2 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            className="w-full py-2 px-3 rounded-xl bg-primary/5 hover:bg-primary/10 border border-primary/20 text-primary font-bold text-[13px] flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm"
                           >
-                            <Eye className="w-3.5 h-3.5" /> Preview Document
+                            <Eye className="w-4 h-4" /> Preview Document
                           </button>
                         )}
-                      </div>
-                    ) : !hasDoc ? (
-                      <div className="py-2 text-[11px] text-text-secondary/50 italic border-t border-border/40">
-                        No document attached
                       </div>
                     ) : null}
                   </div>
                 )
               })}
+              {!Object.values(docs).some(Boolean) && (
+                <div className="col-span-full p-6 text-center text-text-secondary italic">No documents uploaded</div>
+              )}
             </div>
           )}
 
           {/* Bottom Sticky Action Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCorrectionModalOpen(true)}
-                className="text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 border-amber-500/30 text-xs font-bold cursor-pointer"
-              >
-                <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
-                Request Correction (गलत डेटा सुधारने हेतु)
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setRejectModalOpen(true)}
-                className="text-rose-700 dark:text-rose-300 hover:bg-rose-500/10 border-rose-500/30 text-xs font-bold cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5 mr-1.5 text-rose-600" />
-                Reject Application
-              </Button>
-            </div>
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-5 mt-2 border-t border-border/60">
+            <Button
+              variant="outline"
+              onClick={() => setIsViewModalOpen(false)}
+              className="text-[13px] font-bold px-5 py-2.5 rounded-xl border-border/60 hover:bg-surface-secondary transition-all"
+            >
+              Close
+            </Button>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsViewModalOpen(false)}
-              >
-                Close
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => openApproveModal(userObj)}
-                disabled={actionLoading || userObj.registration_status === 'approved' || userObj.status === 1}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer shadow-xs"
-              >
-                <Check className="w-4 h-4 mr-1.5" />
-                {userObj.registration_status === 'approved' || userObj.status === 1 ? 'Approved' : 'Approve Registration'}
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => setRejectModalOpen(true)}
+              className="text-rose-700 dark:text-rose-300 bg-rose-500/5 hover:bg-rose-500/10 border-rose-500/20 hover:border-rose-500/40 text-[13px] font-bold cursor-pointer transition-all px-5 py-2.5 rounded-xl"
+            >
+              <X className="w-4 h-4 mr-1.5 text-rose-600" />
+              Reject
+            </Button>
+
+            <Button
+              variant="primary"
+              onClick={() => openApproveModal(userObj)}
+              disabled={actionLoading || userObj.registration_status === 'approved' || userObj.status === 1}
+              className="!bg-green-600 hover:!bg-green-700 !border-green-600 text-white text-[13px] font-bold cursor-pointer shadow-md hover:shadow-lg transition-all px-6 py-2.5 rounded-xl disabled:opacity-50"
+            >
+              <Check className="w-4 h-4 mr-1.5" />
+              {userObj.registration_status === 'approved' || userObj.status === 1 ? 'Approved' : 'Approve Registration'}
+            </Button>
           </div>
         </div>
       </Modal>
@@ -940,7 +1052,7 @@ export default function RegistrationsPage() {
               Confirm Member Approval?
             </h3>
             <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">
-              Are you sure you want to approve <b className="text-text">{approveTargetUser?.first_name || approveTargetUser?.name || 'this member'}</b>? 
+              Are you sure you want to approve <b className="text-text">{approveTargetUser?.first_name || approveTargetUser?.name || 'this member'}</b>?
               This will activate their profile in the Directory and enable all member features for their family.
             </p>
           </div>
