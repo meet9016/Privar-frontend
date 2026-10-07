@@ -182,9 +182,7 @@ export const MANDAL_ENDPOINTS = {
 export const REGISTRATION_ENDPOINTS = {
   GET_LIST: '/mobile-registration/admin/list',
   GET_DETAILS: (id) => `/mobile-registration/admin/${id}`,
-  APPROVE: (id) => `/mobile-registration/admin/${id}/approve`,
-  REJECT: (id) => `/mobile-registration/admin/${id}/reject`,
-  REQUEST_CORRECTION: (id) => `/mobile-registration/admin/${id}/request-correction`
+  UPDATE_STATUS: (id) => `/mobile-registration/admin/${id}/status`
 }
 
 export default {
