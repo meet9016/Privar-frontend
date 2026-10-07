@@ -609,6 +609,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               const colSpanClass = field.className || (isFullRow 
                 ? (gridCols ? 'md:col-span-2' : fields.length > 10 ? 'sm:col-span-2 md:col-span-4' : fields.length > 4 ? 'sm:col-span-2 md:col-span-3' : 'md:col-span-2')
                 : '');
+              const isHidden = field.type === 'hidden';
+              if (isHidden) return null;
               return (
               <div key={field.name} className={colSpanClass} style={{ zIndex: fields.length - fieldIdx, position: 'relative' }}>
                 {field.type === 'textarea' ? (
@@ -806,14 +808,19 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                             if (formData[field.name] && String(formData[field.name]) === String(optVal)) return true
 
                             if (field.name === 'state') {
-                              if (!formData.country) return false
+                              // If countryList is empty (e.g. country is hidden field), show all states
+                              if (!countryList.length && formData.country) return true
                               const parent = String(option.country_id || option.parent_id || option.country || '')
                               const optCountry = String(option.country || '').toLowerCase()
+                              const formCountryName = String(formData.country || '').toLowerCase()
                               const matches = 
                                 !parent ||
-                                (selectedCountryId && parent === selectedCountryId) ||
-                                (selectedCountryName && parent.toLowerCase() === selectedCountryName) ||
-                                (selectedCountryName && optCountry === selectedCountryName)
+                                (formData.country && selectedCountryId && parent === selectedCountryId) ||
+                                (formData.country && selectedCountryName && parent.toLowerCase() === selectedCountryName) ||
+                                (formData.country && selectedCountryName && optCountry === selectedCountryName) ||
+                                (formData.country && formCountryName && parent.toLowerCase() === formCountryName) ||
+                                (formData.country && formCountryName && optCountry === formCountryName) ||
+                                (!formData.country && !parent)
                               if (!matches) return false
                             }
 
