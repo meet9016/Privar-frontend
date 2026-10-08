@@ -3080,7 +3080,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             </div>
 
             {/* Registration, Date, Hijri & Venue Bar */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #cbd5e1', borderRadius: 5, padding: '5px 9px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 3.5, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ background: '#ffffff', border: '1.2px solid #16a34a', borderRadius: 5, padding: '5px 9px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 3.5, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center', fontWeight: 800 }}>નિકાહ રજીસ્ટ્રેશન નં.:</strong>
@@ -3148,8 +3148,8 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             </div>
 
             {/* 1. Groom (દુલ્હા) Section with Photo */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #cbd5e1', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૧', 'દુલ્હા  ની વિગત :')}
+            <div style={{ background: '#ffffff', border: '1.2px solid #93c5fd', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૧', 'દુલ્હા  ની વિગત :', 'linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%)', '#bfdbfe', '#1e40af', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', '#ffffff')}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -3187,9 +3187,9 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   style={{
                     width: 76,
                     height: 94,
-                    border: '1.5px dashed #94a3b8',
+                    border: '1.5px dashed #3b82f6',
                     borderRadius: 4,
-                    background: '#f8fafc',
+                    background: '#f0f9ff',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -3203,15 +3203,15 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {data.dulhaPhoto ? (
                     <img src={data.dulhaPhoto} alt="Groom" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} crossOrigin="anonymous" />
                   ) : (
-                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#475569', lineHeight: 1.2 }}>દુલ્હાનો ફોટો<br />(પાસપોર્ટ)</div>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#1e40af', lineHeight: 1.2 }}>દુલ્હાનો ફોટો<br />(પાસપોર્ટ)</div>
                   )}
                 </div>
               </div>
             </div>
 
             {/* 2. Bride (દુલ્હન) Section with Photo */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #cbd5e1', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૨', 'દુલ્હન  ની વિગત :')}
+            <div style={{ background: '#ffffff', border: '1.2px solid #fca5a5', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૨', 'દુલ્હન  ની વિગત :', 'linear-gradient(90deg, #fff1f2 0%, #f8fafc 100%)', '#fecaca', '#991b1b', 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)', '#ffffff')}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -3249,9 +3249,9 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   style={{
                     width: 76,
                     height: 94,
-                    border: '1.5px dashed #94a3b8',
+                    border: '1.5px dashed #f87171',
                     borderRadius: 4,
-                    background: '#f8fafc',
+                    background: '#fff1f2',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -3265,18 +3265,18 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {data.dulhanPhoto ? (
                     <img src={data.dulhanPhoto} alt="Bride" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} crossOrigin="anonymous" />
                   ) : (
-                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#475569', lineHeight: 1.2 }}>દુલ્હનનો ફોટો<br />(પાસપોર્ટ)</div>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#991b1b', lineHeight: 1.2 }}>દુલ્હનનો ફોટો<br />(પાસપોર્ટ)</div>
                   )}
                 </div>
               </div>
             </div>
 
             {/* 3. Vakil / Vali Details */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #cbd5e1', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૩', 'વકીલ / વાલીની વિગત :')}
+            <div style={{ background: '#ffffff', border: '1.2px solid #86efac', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૩', 'વકીલ / વાલીની વિગત :', 'linear-gradient(90deg, #f0fdf4 0%, #f8fafc 100%)', '#bbf7d0', '#166534', 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', '#ffffff')}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                  <strong style={{ color: '#0d2366', fontWeight: 800 }}>દુલ્હનના વકીલ:</strong>
+                  <strong style={{ color: '#166534', fontWeight: 800 }}>દુલ્હનના વકીલ:</strong>
                   {underField('dulhanVakilName', 1)}
                   <span>પિતા:</span>
                   {underField('dulhanVakilFather', 1)}
@@ -3286,7 +3286,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {underField('dulhanVakilMo', null, '85px')}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                  <strong style={{ color: '#0d2366', fontWeight: 800 }}>દુલ્હાના વાલી/વકીલ:</strong>
+                  <strong style={{ color: '#166534', fontWeight: 800 }}>દુલ્હાના વાલી/વકીલ:</strong>
                   {underField('dulhaValiName', 1)}
                   <span>પિતા:</span>
                   {underField('dulhaValiFather', 1)}
@@ -3299,11 +3299,11 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             </div>
 
             {/* 4. Meher Details */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #cbd5e1', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૪', 'મહેર (MEHER) ની વિગત :')}
+            <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૪', 'મહેર (MEHER) ની વિગત :', 'linear-gradient(90deg, #fefce8 0%, #f8fafc 100%)', '#fef08a', '#854d0e', 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', '#ffffff')}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <strong style={{ color: '#0d2366', flexShrink: 0, fontWeight: 800 }}>• મહેરની રકમ:</strong>
+                  <strong style={{ color: '#854d0e', flexShrink: 0, fontWeight: 800 }}>• મહેરની રકમ:</strong>
                   <span>અંકે રૂ.</span>
                   {underField('maherRakam', null, '110px')}
                   <span>(શબ્દોમાં:</span>
@@ -3311,15 +3311,15 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   <span>)</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                  <strong style={{ color: '#0d2366', flexShrink: 0, fontWeight: 800 }}>• સોના/ચાંદીના દાગીના:</strong>
+                  <strong style={{ color: '#854d0e', flexShrink: 0, fontWeight: 800 }}>• સોના/ચાંદીના દાગીના:</strong>
                   {underField('maherGoldDetails', 1)}
                   <span>વજન:</span>
                   {underField('maherGram', null, '70px')}
                   <span>ગ્રામ</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 1 }}>
-                  <strong style={{ color: '#0d2366', fontWeight: 800 }}>• ચૂકવણીનો પ્રકાર:</strong>
-                  <span style={{ fontWeight: 800, color: '#0f172a', background: '#f1f5f9', padding: '1px 8px', borderRadius: 4, border: '1px solid #cbd5e1' }}>
+                  <strong style={{ color: '#854d0e', fontWeight: 800 }}>• ચૂકવણીનો પ્રકાર:</strong>
+                  <span style={{ fontWeight: 800, color: '#166534', background: '#fef08a', padding: '1px 8px', borderRadius: 4, border: '1px solid #fde047' }}>
                     {data.maherType || 'મોઅજ્જલ (નકદ / રોકડ - સ્થળ પર જ ચૂકવી આપેલ છે)'}
                   </span>
                 </div>
@@ -3327,7 +3327,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             </div>
 
             {/* Page 1 Bottom Indicator */}
-            <div style={{ textAlign: 'center', fontSize: 10.5, color: '#475569', fontWeight: 800, fontStyle: 'italic', marginTop: 2 }}>
+            <div style={{ textAlign: 'center', fontSize: 10.5, color: '#166534', fontWeight: 800, fontStyle: 'italic', marginTop: 2 }}>
               [ પૃષ્ઠ ૧ / ૨ &bull; પાછળ સાક્ષીઓ, કાનૂની શરતો અને સહીઓ જુઓ ]
             </div>
           </div>
