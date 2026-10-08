@@ -3557,92 +3557,96 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
       return ['']
     }
 
-    // Realistic visual wrap threshold for 566px content width at font-size 13.5px
-    const CHARS_PER_LINE = 72
-    // Max visual lines that fit comfortably on a Single Page (with Header + Footer)
-    const SINGLE_PAGE_MAX = 14
-    // Max visual lines on Page 1 when multi-page (Header + Content + Page Jump indicator, NO footer)
-    const FIRST_PAGE_MAX = 17
-    // Max visual lines on Middle Pages (Ref bar + Content + Page Jump indicator, NO header/footer)
-    const MIDDLE_PAGE_MAX = 22
-    // Max visual lines on Last Page when multi-page (Ref bar + Content + Footer)
-    const LAST_PAGE_WITH_FOOTER_MAX = 16
+    // A 560px wide content area at 13.5px font holds approx 100-110 characters per line
+    const CHARS_PER_LINE = 100
+    // Capacity in visual lines:
+    // Single page with Header (~150px) + Footer (~180px) -> ~17 lines fit comfortably
+    const SINGLE_PAGE_MAX = 17
+    // Page 1 of multi-page (Header + Content + Jump note, NO footer) -> ~22 lines
+    const FIRST_PAGE_MAX = 22
+    // Middle pages (Ref bar only + Content + Jump note) -> ~26 lines
+    const MIDDLE_PAGE_MAX = 26
+    // Last page of multi-page (Ref bar + Content + Footer) -> ~20 lines
+    const LAST_PAGE_MAX = 20
 
     const rawParagraphs = rawBody.split('\n')
-    const visualLines = []
 
-    for (const paragraph of rawParagraphs) {
-      if (paragraph.length === 0) {
-        visualLines.push('')
-        continue
-      }
-
-      const words = paragraph.split(' ')
-      let currentLine = ''
-
-      for (const word of words) {
-        if (word.length > CHARS_PER_LINE) {
-          if (currentLine) {
-            visualLines.push(currentLine)
-            currentLine = ''
-          }
-          let remainingWord = word
-          while (remainingWord.length > CHARS_PER_LINE) {
-            visualLines.push(remainingWord.slice(0, CHARS_PER_LINE))
-            remainingWord = remainingWord.slice(CHARS_PER_LINE)
-          }
-          currentLine = remainingWord
-        } else if ((currentLine + (currentLine ? ' ' : '') + word).length <= CHARS_PER_LINE) {
-          currentLine = currentLine + (currentLine ? ' ' : '') + word
-        } else {
-          visualLines.push(currentLine)
-          currentLine = word
-        }
-      }
-      if (currentLine) {
-        visualLines.push(currentLine)
-      }
+    // Calculate how many visual lines each paragraph occupies based on length
+    const getParaLines = (para) => {
+      if (!para || para.length === 0) return 1
+      return Math.max(1, Math.ceil(para.length / CHARS_PER_LINE))
     }
 
-    const totalVisualLines = visualLines.length
+    const totalLines = rawParagraphs.reduce((acc, p) => acc + getParaLines(p), 0)
 
-    // Case 1: Fits comfortably on a single page with full header & footer
-    if (totalVisualLines <= SINGLE_PAGE_MAX) {
+    // Case 1: All text fits on a single page with full header and footer
+    if (totalLines <= SINGLE_PAGE_MAX) {
       return [rawBody]
     }
 
+    // Case 2: Multi-page distribution without inserting artificial newlines inside paragraphs
     const pages = []
+    let currentParas = []
+    let currentLineCount = 0
+    let isFirst = true
 
-    // Case 2: 2 pages (balance evenly so last page is not empty/orphaned)
-    if (totalVisualLines <= FIRST_PAGE_MAX + LAST_PAGE_WITH_FOOTER_MAX) {
-      const page1Target = Math.min(FIRST_PAGE_MAX, Math.max(8, Math.ceil(totalVisualLines / 2)))
-      pages.push(visualLines.slice(0, page1Target).join('\n'))
-      pages.push(visualLines.slice(page1Target).join('\n'))
-      return pages
-    }
+    for (let i = 0; i < rawParagraphs.length; i++) {
+      const p = rawParagraphs[i]
+      const lines = getParaLines(p)
+      const maxLines = isFirst ? FIRST_PAGE_MAX : MIDDLE_PAGE_MAX
 
-    // Case 3: 3 or more pages
-    let remainingLines = [...visualLines]
-    pages.push(remainingLines.slice(0, FIRST_PAGE_MAX).join('\n'))
-    remainingLines = remainingLines.slice(FIRST_PAGE_MAX)
-
-    while (remainingLines.length > 0) {
-      if (remainingLines.length <= LAST_PAGE_WITH_FOOTER_MAX) {
-        pages.push(remainingLines.join('\n'))
-        remainingLines = []
-      } else if (remainingLines.length <= MIDDLE_PAGE_MAX + LAST_PAGE_WITH_FOOTER_MAX) {
-        // Balance between penultimate page and final page
-        const midTarget = Math.ceil(remainingLines.length / 2)
-        pages.push(remainingLines.slice(0, midTarget).join('\n'))
-        pages.push(remainingLines.slice(midTarget).join('\n'))
-        remainingLines = []
+      if (currentLineCount + lines <= maxLines) {
+        currentParas.push(p)
+        currentLineCount += lines
       } else {
-        pages.push(remainingLines.slice(0, MIDDLE_PAGE_MAX).join('\n'))
-        remainingLines = remainingLines.slice(MIDDLE_PAGE_MAX)
+        const remainingSpace = maxLines - currentLineCount
+        // If the paragraph is long and at least 3 lines fit, split paragraph cleanly at word boundary
+        if (remainingSpace >= 3 && lines >= 4) {
+          const words = p.split(' ')
+          const part1Words = []
+          const part2Words = []
+          let part1Len = 0
+          const targetLen = remainingSpace * CHARS_PER_LINE
+
+          for (const w of words) {
+            if (part1Len + w.length + 1 <= targetLen) {
+              part1Words.push(w)
+              part1Len += w.length + 1
+            } else {
+              part2Words.push(w)
+            }
+          }
+
+          if (part1Words.length > 0 && part2Words.length > 0) {
+            currentParas.push(part1Words.join(' '))
+            pages.push(currentParas.join('\n'))
+            currentParas = []
+            currentLineCount = 0
+            isFirst = false
+
+            const part2Text = part2Words.join(' ')
+            rawParagraphs.splice(i + 1, 0, part2Text)
+            continue
+          }
+        }
+
+        // Flush accumulated paragraphs as a completed page
+        if (currentParas.length > 0) {
+          pages.push(currentParas.join('\n'))
+          currentParas = []
+          currentLineCount = 0
+          isFirst = false
+        }
+        currentParas.push(p)
+        currentLineCount = lines
       }
     }
 
-    return pages
+    if (currentParas.length > 0) {
+      pages.push(currentParas.join('\n'))
+    }
+
+    return pages.length > 0 ? pages : [rawBody]
   }, [rawBody])
 
   const totalPages = pagesData.length
