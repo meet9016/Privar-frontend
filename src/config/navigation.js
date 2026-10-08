@@ -14,7 +14,8 @@ import {
   HeartHandshake,
   IndianRupee,
   BookOpen,
-  UserPlus
+  UserPlus,
+  MessageSquare
 } from 'lucide-react'
 
 export const coreNavigation = [
@@ -22,7 +23,8 @@ export const coreNavigation = [
   { to: '/admin/registrations', label: 'New Registrations', icon: UserPlus, title: 'New Member Registrations', permission: 'members.list' },
   { to: '/admin/committee', label: 'Committee Members', icon: UserCog, title: 'Committee Members', permission: 'committee.list' },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheck, title: 'Roles & Permissions', permission: 'roles.list' },
-  { to: '/admin/users', label: 'Members', icon: Users, title: 'Member Directory', permission: 'members.list' }
+  { to: '/admin/users', label: 'Members', icon: Users, title: 'Member Directory', permission: 'members.list' },
+  { to: '/admin/chat', label: 'Messages', icon: MessageSquare, title: 'Chats' }
 ]
 
 export const activityNavigation = [

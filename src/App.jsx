@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useContext } from 'react'
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { AuthContext, AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
+import { ChatProvider } from './context/ChatContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -22,6 +23,7 @@ import MasterPage from './pages/MasterPage'
 import News from './pages/News'
 import Documentation from './pages/Documentation'
 import RegistrationsPage from './pages/RegistrationsPage'
+import ChatPage from './pages/ChatPage'
 import { hasPermission } from './lib/permissions'
 import Posts from './pages/Post'
 import { activeTheme, applyTheme } from './theme/theme'
@@ -54,10 +56,11 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <NotificationProvider>
-          <Suspense fallback={null}>
-            <ReactToaster />
-            <ConfirmDialog />
-          </Suspense>
+          <ChatProvider>
+            <Suspense fallback={null}>
+              <ReactToaster />
+              <ConfirmDialog />
+            </Suspense>
           <Routes>
             {/* Public Website Routes with Persistent WebLayout (Header & Footer fixed) */}
             <Route element={<WebLayout />}>
@@ -96,6 +99,7 @@ export default function App() {
             >
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<PermissionRoute permission="dashboard.view"><Dashboard /></PermissionRoute>} />
+              <Route path="chat" element={<ChatPage />} />
               <Route path="registrations" element={<PermissionRoute permission="members.list"><RegistrationsPage /></PermissionRoute>} />
               <Route path="committee" element={<PermissionRoute permission="committee.list"><CommitteeMembers /></PermissionRoute>} />
               <Route path="roles" element={<PermissionRoute permission="roles.list"><Roles /></PermissionRoute>} />
@@ -134,6 +138,7 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </ChatProvider>
         </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
