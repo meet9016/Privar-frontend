@@ -3557,11 +3557,16 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
       return ['']
     }
 
-    const CHARS_PER_LINE = 96
-    const SINGLE_PAGE_MAX = 17
-    const FIRST_PAGE_MAX = 21
-    const MIDDLE_PAGE_MAX = 24
-    const LAST_PAGE_WITH_FOOTER_MAX = 19
+    // Realistic visual wrap threshold for 566px content width at font-size 13.5px
+    const CHARS_PER_LINE = 72
+    // Max visual lines that fit comfortably on a Single Page (with Header + Footer)
+    const SINGLE_PAGE_MAX = 14
+    // Max visual lines on Page 1 when multi-page (Header + Content + Page Jump indicator, NO footer)
+    const FIRST_PAGE_MAX = 17
+    // Max visual lines on Middle Pages (Ref bar + Content + Page Jump indicator, NO header/footer)
+    const MIDDLE_PAGE_MAX = 22
+    // Max visual lines on Last Page when multi-page (Ref bar + Content + Footer)
+    const LAST_PAGE_WITH_FOOTER_MAX = 16
 
     const rawParagraphs = rawBody.split('\n')
     const visualLines = []
@@ -3599,19 +3604,37 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
       }
     }
 
-    if (visualLines.length <= SINGLE_PAGE_MAX) {
+    const totalVisualLines = visualLines.length
+
+    // Case 1: Fits comfortably on a single page with full header & footer
+    if (totalVisualLines <= SINGLE_PAGE_MAX) {
       return [rawBody]
     }
 
     const pages = []
-    let remainingLines = [...visualLines]
 
+    // Case 2: 2 pages (balance evenly so last page is not empty/orphaned)
+    if (totalVisualLines <= FIRST_PAGE_MAX + LAST_PAGE_WITH_FOOTER_MAX) {
+      const page1Target = Math.min(FIRST_PAGE_MAX, Math.max(8, Math.ceil(totalVisualLines / 2)))
+      pages.push(visualLines.slice(0, page1Target).join('\n'))
+      pages.push(visualLines.slice(page1Target).join('\n'))
+      return pages
+    }
+
+    // Case 3: 3 or more pages
+    let remainingLines = [...visualLines]
     pages.push(remainingLines.slice(0, FIRST_PAGE_MAX).join('\n'))
     remainingLines = remainingLines.slice(FIRST_PAGE_MAX)
 
     while (remainingLines.length > 0) {
       if (remainingLines.length <= LAST_PAGE_WITH_FOOTER_MAX) {
         pages.push(remainingLines.join('\n'))
+        remainingLines = []
+      } else if (remainingLines.length <= MIDDLE_PAGE_MAX + LAST_PAGE_WITH_FOOTER_MAX) {
+        // Balance between penultimate page and final page
+        const midTarget = Math.ceil(remainingLines.length / 2)
+        pages.push(remainingLines.slice(0, midTarget).join('\n'))
+        pages.push(remainingLines.slice(midTarget).join('\n'))
         remainingLines = []
       } else {
         pages.push(remainingLines.slice(0, MIDDLE_PAGE_MAX).join('\n'))
