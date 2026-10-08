@@ -2982,8 +2982,9 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            padding: '7px 11px 5px',
+            padding: '8px 12px 28px',
             position: 'relative',
+            boxSizing: 'border-box',
             background: 'linear-gradient(180deg, #ffffff 0%, #fffdfa 60%, #fffbf5 100%)',
           }}
         >
@@ -2994,7 +2995,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
           <RoyalCornerFiligree position="bottom-right" size={78} />
 
           {/* ── MAIN CONTENT PAGE 1 ── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3.5, padding: '1px 2px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, padding: '1px 2px' }}>
             {/* ── TOP HEADER SECTION: LOGOS ON SIDES + TRUST + COMMUNITY NAME + ADDRESS ── */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', paddingTop: 1 }}>
               <div
@@ -3076,11 +3077,11 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
               </div>
 
               {/* 3D Gold Ribbon Banner: નિકાહ નામા / MARRIAGE CERTIFICATE */}
-              <GoldRibbonBanner title="નિકાહ નામા / MARRIAGE CERTIFICATE" fontSize={15} maxWidth={515} style={{ margin: '5px auto 6px' }} />
+              <GoldRibbonBanner title="નિકાહ નામા / MARRIAGE CERTIFICATE" fontSize={15} maxWidth={515} style={{ margin: '5px auto 4px' }} />
             </div>
 
             {/* Registration, Date, Hijri & Venue Bar */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #16a34a', borderRadius: 5, padding: '5px 9px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 3.5, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '5px 9px', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 3.5, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <strong style={{ color: '#0d2366', display: 'flex', alignItems: 'center', fontWeight: 800 }}>નિકાહ રજીસ્ટ્રેશન નં.:</strong>
@@ -3148,9 +3149,9 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             </div>
 
             {/* 1. Groom (દુલ્હા) Section with Photo */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #93c5fd', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૧', 'દુલ્હા  ની વિગત :', 'linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%)', '#bfdbfe', '#1e40af', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', '#ffffff')}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૧', 'દુલ્હા  ની વિગત :', 'linear-gradient(90deg, #fefce8 0%, #f8fafc 100%)', '#fef08a', '#854d0e', 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', '#ffffff')}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontWeight: 800, color: '#1e293b', width: 95, flexShrink: 0 }}>• પૂરું નામ :</span>
@@ -3187,9 +3188,9 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   style={{
                     width: 76,
                     height: 94,
-                    border: '1.5px dashed #3b82f6',
+                    border: '1.5px dashed #d97706',
                     borderRadius: 4,
-                    background: '#f0f9ff',
+                    background: '#fffdf5',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -3203,16 +3204,16 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {data.dulhaPhoto ? (
                     <img src={data.dulhaPhoto} alt="Groom" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} crossOrigin="anonymous" />
                   ) : (
-                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#1e40af', lineHeight: 1.2 }}>દુલ્હાનો ફોટો<br />(પાસપોર્ટ)</div>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#b45309', lineHeight: 1.2 }}>દુલ્હાનો ફોટો<br />(પાસપોર્ટ)</div>
                   )}
                 </div>
               </div>
             </div>
 
             {/* 2. Bride (દુલ્હન) Section with Photo */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #fca5a5', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૨', 'દુલ્હન  ની વિગત :', 'linear-gradient(90deg, #fff1f2 0%, #f8fafc 100%)', '#fecaca', '#991b1b', 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)', '#ffffff')}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૨', 'દુલ્હન  ની વિગત :', 'linear-gradient(90deg, #fefce8 0%, #f8fafc 100%)', '#fef08a', '#854d0e', 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', '#ffffff')}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontWeight: 800, color: '#1e293b', width: 95, flexShrink: 0 }}>• પૂરું નામ :</span>
@@ -3249,9 +3250,9 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   style={{
                     width: 76,
                     height: 94,
-                    border: '1.5px dashed #f87171',
+                    border: '1.5px dashed #d97706',
                     borderRadius: 4,
-                    background: '#fff1f2',
+                    background: '#fffdf5',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -3265,18 +3266,18 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {data.dulhanPhoto ? (
                     <img src={data.dulhanPhoto} alt="Bride" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} crossOrigin="anonymous" />
                   ) : (
-                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#991b1b', lineHeight: 1.2 }}>દુલ્હનનો ફોટો<br />(પાસપોર્ટ)</div>
+                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#b45309', lineHeight: 1.2 }}>દુલ્હનનો ફોટો<br />(પાસપોર્ટ)</div>
                   )}
                 </div>
               </div>
             </div>
 
             {/* 3. Vakil / Vali Details */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #86efac', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૩', 'વકીલ / વાલીની વિગત :', 'linear-gradient(90deg, #f0fdf4 0%, #f8fafc 100%)', '#bbf7d0', '#166534', 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', '#ffffff')}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5 }}>
+            <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૩', 'વકીલ / વાલીની વિગત :', 'linear-gradient(90deg, #fefce8 0%, #f8fafc 100%)', '#fef08a', '#854d0e', 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', '#ffffff')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5, marginTop: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                  <strong style={{ color: '#166534', fontWeight: 800 }}>દુલ્હનના વકીલ:</strong>
+                  <strong style={{ color: '#854d0e', fontWeight: 800 }}>દુલ્હનના વકીલ:</strong>
                   {underField('dulhanVakilName', 1)}
                   <span>પિતા:</span>
                   {underField('dulhanVakilFather', 1)}
@@ -3286,7 +3287,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {underField('dulhanVakilMo', null, '85px')}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                  <strong style={{ color: '#166534', fontWeight: 800 }}>દુલ્હાના વાલી/વકીલ:</strong>
+                  <strong style={{ color: '#854d0e', fontWeight: 800 }}>દુલ્હાના વાલી/વકીલ:</strong>
                   {underField('dulhaValiName', 1)}
                   <span>પિતા:</span>
                   {underField('dulhaValiFather', 1)}
@@ -3301,7 +3302,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             {/* 4. Meher Details */}
             <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
               {sectionTitle('૪', 'મહેર (MEHER) ની વિગત :', 'linear-gradient(90deg, #fefce8 0%, #f8fafc 100%)', '#fef08a', '#854d0e', 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', '#ffffff')}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11.5, marginTop: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <strong style={{ color: '#854d0e', flexShrink: 0, fontWeight: 800 }}>• મહેરની રકમ:</strong>
                   <span>અંકે રૂ.</span>
@@ -3319,7 +3320,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 1 }}>
                   <strong style={{ color: '#854d0e', fontWeight: 800 }}>• ચૂકવણીનો પ્રકાર:</strong>
-                  <span style={{ fontWeight: 800, color: '#166534', background: '#fef08a', padding: '1px 8px', borderRadius: 4, border: '1px solid #fde047' }}>
+                  <span style={{ fontWeight: 800, color: '#854d0e', background: '#fef08a', padding: '1px 8px', borderRadius: 4, border: '1px solid #fde047' }}>
                     {data.maherType || 'મોઅજ્જલ (નકદ / રોકડ - સ્થળ પર જ ચૂકવી આપેલ છે)'}
                   </span>
                 </div>
@@ -3327,7 +3328,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             </div>
 
             {/* Page 1 Bottom Indicator */}
-            <div style={{ textAlign: 'center', fontSize: 10.5, color: '#166534', fontWeight: 800, fontStyle: 'italic', marginTop: 2 }}>
+            <div style={{ textAlign: 'center', fontSize: 10.5, color: '#166534', fontWeight: 800, fontStyle: 'italic', margin: '4px 0 0' }}>
               [ પૃષ્ઠ ૧ / ૨ &bull; પાછળ સાક્ષીઓ, કાનૂની શરતો અને સહીઓ જુઓ ]
             </div>
           </div>
@@ -3369,7 +3370,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            padding: '54px 16px 42px',
+            padding: '72px 14px 24px',
             position: 'relative',
             boxSizing: 'border-box',
             background: 'linear-gradient(180deg, #ffffff 0%, #fffdfa 60%, #fffbf5 100%)',
@@ -3382,20 +3383,20 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
           <RoyalCornerFiligree position="bottom-right" size={78} />
 
           {/* ── MAIN CONTENT PAGE 2 ── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, padding: '1px 2px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 5, padding: '1px 2px' }}>
             {/* Page 2 Header Badge */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(90deg, #fffbeb 0%, #fef3c7 50%, #fffbeb 100%)', border: '1.2px solid #fde68a', color: '#0f172a', padding: '5px 14px', margin: '0 0 4px', borderRadius: 4, fontSize: 11.5, fontWeight: 900, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(90deg, #fffbeb 0%, #fef3c7 50%, #fffbeb 100%)', border: '1.2px solid #fde68a', color: '#0f172a', padding: '6px 16px', margin: '0 0 4px', borderRadius: 6, fontSize: 11.5, fontWeight: 900, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
               <div style={{ color: '#0d2366' }}>નિકાહ રજીસ્ટ્રેશન નં.: <span style={{ color: '#8b181b' }}>{data.number || '........'}</span></div>
-              <div style={{ color: '#b45309', fontWeight: 900 }}>પૃષ્ઠ ૨ : સાક્ષીઓ, શરતો અને સહીઓ</div>
+              <div style={{ color: '#b45309', fontWeight: 900, fontSize: 12 }}>પૃષ્ઠ ૨ : સાક્ષીઓ, નિકાહના અને સહીઓ</div>
               <div style={{ color: '#0d2366' }}>તા.: {data.dateDay || 'DD'}/{data.dateMonth || 'MM'}/{data.dateYear ? (data.dateYear.length === 2 ? `૨૦${data.dateYear}` : data.dateYear) : '૨૦૨૬'}</div>
             </div>
 
             {/* 5. Witnesses (સાક્ષીઓ) Section */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #cbd5e1', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૫', 'સાક્ષીઓ (ગવાહ) ની વિગત :', 'linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%)', '#cbd5e1', '#0f172a', 'linear-gradient(135deg, #475569 0%, #334155 100%)', '#ffffff')}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5, marginTop: 2 }}>
+            <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૫', 'સાક્ષીઓ (ગવાહ) ની વિગત :', 'linear-gradient(90deg, #fefce8 0%, #f8fafc 100%)', '#fef08a', '#854d0e', 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', '#ffffff')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4.5, fontSize: 11.5, marginTop: 3 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                  <strong style={{ color: '#0d2366', fontWeight: 800 }}>(૧) સાક્ષી નં. ૧:</strong>
+                  <strong style={{ color: '#854d0e', fontWeight: 800 }}>(૧) સાક્ષી નં. ૧:</strong>
                   <span>નામ:</span>
                   {underField('sakshi1Name', 1)}
                   <span>પિતા:</span>
@@ -3408,7 +3409,7 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
                   {underField('sakshi1Mo', null, '85px')}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                  <strong style={{ color: '#0d2366', fontWeight: 800 }}>(૨) સાક્ષી નં. ૨:</strong>
+                  <strong style={{ color: '#854d0e', fontWeight: 800 }}>(૨) સાક્ષી નં. ૨:</strong>
                   <span>નામ:</span>
                   {underField('sakshi2Name', 1)}
                   <span>પિતા:</span>
@@ -3424,36 +3425,36 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             </div>
 
             {/* 6. Kazi Saheb Details */}
-            <div style={{ background: '#ffffff', border: '1.2px solid #cbd5e1', borderRadius: 5, padding: '5px 8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              {sectionTitle('૬', 'નિકાહ પઢાવનાર કાઝી સાહેબની વિગત :', 'linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%)', '#cbd5e1', '#0f172a', 'linear-gradient(135deg, #475569 0%, #334155 100%)', '#ffffff')}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, marginTop: 2 }}>
-                <strong style={{ color: '#0d2366', flexShrink: 0, fontWeight: 800 }}>• કાઝી સાહેબનું નામ:</strong>
+            <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              {sectionTitle('૬', 'નિકાહ પઢાવનાર કાઝી સાહેબની વિગત :', 'linear-gradient(90deg, #fefce8 0%, #f8fafc 100%)', '#fef08a', '#854d0e', 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', '#ffffff')}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, marginTop: 3 }}>
+                <strong style={{ color: '#854d0e', flexShrink: 0, fontWeight: 800 }}>• કાઝી સાહેબનું નામ:</strong>
                 {underField('kaziName', 1)}
-                <strong style={{ color: '#0d2366', flexShrink: 0, marginLeft: 8, fontWeight: 800 }}>• સરનામું / મો. નં.:</strong>
+                <strong style={{ color: '#854d0e', flexShrink: 0, marginLeft: 8, fontWeight: 800 }}>• સરનામું / મો. નં.:</strong>
                 {underField('kaziContact', 1)}
               </div>
             </div>
 
             {/* 7. Legal Declarations, Jamaat Constitution & Discipline Clauses */}
-            <div style={{ background: '#ffffff', border: '1.5px solid #b8860b', borderRadius: 5, padding: '5px 8px', fontSize: 10, lineHeight: '14px', color: '#1e293b', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              <div style={{ color: '#8b181b', fontWeight: 900, fontSize: 11, textAlign: 'center', borderBottom: '1px solid #fde68a', paddingBottom: 2, marginBottom: 3, background: 'linear-gradient(90deg, transparent, #fffbeb, transparent)' }}>
+            <div style={{ background: '#ffffff', border: '1.5px solid #16a34a', borderRadius: 5, padding: '5px 8px', fontSize: 9.8, lineHeight: '14px', color: '#1e293b', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              <div style={{ color: '#8b181b', fontWeight: 900, fontSize: 11.5, textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: 2, marginBottom: 3, letterSpacing: 0.3 }}>
                 ૭. સમાજનું બંધારણ અને શિસ્ત અંગેની શરતો
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                 <div>
-                  <strong style={{ color: '#0d2366' }}>૧. સ્વતંત્ર સંમતિ:</strong> દુલ્હા તથા દુલ્હને સંપૂર્ણ શુદ્ધિબુદ્ધિમાં, કોઈપણ પ્રકારના ડર કે દબાણ વગર પોતાની મુક્ત અને રાજીખુશીથી શરીઅતે મુહમ્મદી મુજબ શરઈ સાક્ષીઓની હાજરીમાં ઇજાબ-ઓ-કુબૂલ કરેલ છે.
+                  <strong style={{ color: '#166534', fontWeight: 800 }}>૧. સ્વતંત્ર સંમતિ (Consent):</strong> દુલ્હા તથા દુલ્હને સંપૂર્ણ શુદ્ધિબુદ્ધિમાં, કોઈપણ પ્રકારના ડર, દબાણ, ધાકધમકી કે પ્રલોભન વગર, પોતાની મુક્ત અને રાજીખુશીથી શરીઅતે મુહમ્મદી મુજબ શરઈ સાક્ષીઓની હાજરીમાં ઇજાબ-ઓ-કુબૂલ (કબૂલાત) કરેલ છે.
                 </div>
                 <div>
-                  <strong style={{ color: '#0d2366' }}>૨. કાયદેસર પુખ્તતા:</strong> બંને પક્ષકારો ભારત સરકારના પ્રવર્તમાન લગ્ન કાયદા મુજબ લગ્નની કાયદેસર ઉંમર ધરાવે છે અને દર્શાવેલ વિગતો તથા પુરાવા સાચા છે.
+                  <strong style={{ color: '#166534', fontWeight: 800 }}>૨. કાયદેસર પુખ્તતા:</strong> બંને પક્ષકારો ભારત સરકારના પ્રવર્તમાન લગ્ન કાયદા મુજબ લગ્નની કાયદેસર ઉંમર ધરાવે છે અને દર્શાવેલ વિગતો તથા ઓળખના પુરાવા સંપૂર્ણ સાચા છે.
                 </div>
                 <div>
-                  <strong style={{ color: '#0d2366' }}>૩. બંધારણ પાલન:</strong> બંને પક્ષકારો તથા તેમના વાલીઓ રાધનપુર મેમણ જમાતના પ્રવર્તમાન બંધારણ, નીતિ-નિયમો અને સામાજિક નિર્ણયોનું પાલન કરવા સહમત થાય છે.
+                  <strong style={{ color: '#166534', fontWeight: 800 }}>૩. જમાઅતના બંધારણનું પાલન:</strong> બંને પક્ષકારો તથા તેમના વાલીઓ 'UTMC જમાઅત' ના પ્રવર્તમાન બંધારણ, નીતિ-નિયમો, સામાજિક રિવાજો અને શિસ્તબદ્ધ નિર્ણયોનું ચુસ્તપણે પાલન કરવા સહમત થાય છે.
                 </div>
                 <div>
-                  <strong style={{ color: '#0d2366' }}>૪. વિવાદ નિવારણ:</strong> દાંપત્ય જીવન દરમિયાન જો કોઈ મતભેદ ઉપસ્થિત થાય તો સૌપ્રથમ સ્થાનિક જમાત સમક્ષ લેખિત રજૂઆત કરી આપસી સુખદ સમાધાન મેળવવા બંધાયેલા રહેશે.
+                  <strong style={{ color: '#166534', fontWeight: 800 }}>૪. વિવાદ નિવારણ અને સમાધાન:</strong> દાંપત્ય જીવન દરમ્યાન જો કોઈ ગેરસમજ કે પારિવારિક મતભેદ ઉપસ્થિત થાય, તો કોઈપણ પક્ષકાર સીધા પોલીસ સ્ટેશન કે કોર્ટ-કચેરીના પગલાં ભરશે નહીં. સૌપ્રથમ સ્થાનિક જમાઅત ની કારોબારી સમિતિ સમક્ષ લેખિત રજૂઆત કરી આપસી સુખદ સમાધાન મેળવવા બંધાયેલા રહેશે.
                 </div>
                 <div>
-                  <strong style={{ color: '#0d2366' }}>૫. સત્તાવાર દસ્તાવેજ:</strong> આ પ્રમાણપત્ર મુસ્લિમ પર્સનલ લો (શરીઅત) તથા પ્રવર્તમાન લગ્ન નોંધણી ધારા અન્વયે જમાતના અધિકૃત દસ્તાવેજ તરીકે માન્ય રહેશે.
+                  <strong style={{ color: '#166534', fontWeight: 800 }}>૫. સત્તાવાર દસ્તાવેજ:</strong> આ પ્રમાણપત્ર મુસ્લિમ પર્સનલ લો (શરીઅત) તથા 'ધ ગુજરાત રજીસ્ટ્રેશન ઓફ મેરેજીસ એક્ટ' અન્વયે જમાઅતના અધિકૃત દસ્તાવેજ તરીકે માન્ય રહેશે.
                 </div>
               </div>
             </div>
@@ -3556,11 +3557,11 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
       return ['']
     }
 
-    const CHARS_PER_LINE = 68
-    const SINGLE_PAGE_MAX = 12
-    const FIRST_PAGE_MAX = 14
-    const MIDDLE_PAGE_MAX = 18
-    const LAST_PAGE_WITH_FOOTER_MAX = 14
+    const CHARS_PER_LINE = 96
+    const SINGLE_PAGE_MAX = 17
+    const FIRST_PAGE_MAX = 21
+    const MIDDLE_PAGE_MAX = 24
+    const LAST_PAGE_WITH_FOOTER_MAX = 19
 
     const rawParagraphs = rawBody.split('\n')
     const visualLines = []
@@ -3624,163 +3625,152 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
   const totalPages = pagesData.length
   const isMultiPage = totalPages > 1
 
-  // Common Header Banner Component (Header Box shown only on First Page)
+  // Common Header Banner Component (Shown only on First Page, Ref No on All Pages)
   const renderHeader = (pageIndex = 0) => (
-    <div>
-      {/* ── TOP LETTERHEAD DOUBLE BORDER HEADER BOX (Only on First Page) ── */}
+    <div style={{ width: '100%', marginBottom: pageIndex === 0 ? 14 : 10 }}>
+      {/* ── TOP LETTERHEAD HEADER (Only on First Page) ── */}
       {pageIndex === 0 && (
         <div
           style={{
-            margin: '6px 52px 2px',
+            margin: '16px 62px 4px',
             boxSizing: 'border-box',
             position: 'relative',
-            border: '1.8px solid #0d2366',
-            borderRadius: 4,
-            background: '#ffffff',
-            padding: '2.5px',
-            boxShadow: '0 1px 4px rgba(13, 35, 102, 0.06)',
+            background: 'transparent',
+            padding: '2px 6px',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          {/* Inner Green Border Box */}
+          {/* Row 1: Trust Reg No (Left) + Email & Website (Right) */}
           <div
             style={{
-              border: '1.2px solid #16a34a',
-              borderRadius: 2,
-              padding: '4px 8px 3px',
               display: 'flex',
-              flexDirection: 'column',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              width: '100%',
+              padding: '0 4px',
+              fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
             }}
           >
-            {/* Row 1: Trust Reg No (Left) + Email & Website (Right) */}
+            {/* Trust Reg No */}
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                width: '100%',
-                fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-              }}
-            >
-              {/* Trust Reg No */}
-              <div
-                style={{
-                  color: '#b91c1c',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                }}
-              >
-                {l.trustLine || 'ટ્રસ્ટ રજી નં. બી ૧૨૯-મહેસાણા તા.૩૦-૯-૧૯૫૫'}
-              </div>
-
-              {/* Email & Website */}
-              <div
-                style={{
-                  textAlign: 'right',
-                  fontSize: 9.5,
-                  fontWeight: 800,
-                  lineHeight: 1.25,
-                  color: '#1e293b',
-                }}
-              >
-                <div>
-                  <span style={{ color: '#b91c1c' }}>ઈ-મેઇલ: </span>
-                  <span>{l.email || 'info.radhanpurmemonjamat@gmail.com'}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#b91c1c' }}>વેબસાઇટ: </span>
-                  <span>{l.website || 'https://memon.parivar.me/'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Row 2: Left Logo + Center Community Title + Right Logo */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                marginTop: 1,
-                marginBottom: 1,
-                padding: '0 2px',
-              }}
-            >
-              {/* Left Round Letterpad Logo */}
-              <div style={{ width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <img
-                  src={letterpadLogo}
-                  alt="Logo"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                  crossOrigin="anonymous"
-                />
-              </div>
-
-              {/* Center Community Title & Solid Blue Line */}
-              <div
-                style={{
-                  flex: 1,
-                  textAlign: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0 6px',
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif',
-                    fontSize: 26,
-                    fontWeight: 900,
-                    color: '#0d2366',
-                    letterSpacing: 0.8,
-                    lineHeight: 1.15,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {l.communityName || 'રાધનપુર મેમણ જમાત'}
-                </div>
-                {/* Solid Blue Horizontal Accent Line */}
-                <div
-                  style={{
-                    height: 2.5,
-                    background: '#0d2366',
-                    width: '94%',
-                    marginTop: 3,
-                    borderRadius: 1,
-                  }}
-                />
-              </div>
-
-              {/* Right Round Letterpad Logo */}
-              <div style={{ width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <img
-                  src={letterpadLogo}
-                  alt="Logo"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                  crossOrigin="anonymous"
-                />
-              </div>
-            </div>
-
-            {/* Row 3: Office Address & Contact */}
-            <div
-              style={{
-                marginTop: 2,
-                textAlign: 'center',
+                color: '#b91c1c',
                 fontSize: 9.5,
                 fontWeight: 800,
-                color: '#b91c1c',
-                fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
                 lineHeight: 1.2,
-                whiteSpace: 'nowrap',
               }}
             >
-              {l.addressLine || 'કાર્યાલય: મેમણ જમાતખાના, મુ. રાધનપુર, જિ. પાટણ, પીન - ૩૮૫૩૪૦ (ઉ.ગુ.)'}
-              {' | '}
-              <span>સંપર્ક: {l.contactLine || '+૯૧ ૯૯૯૮૦ ૧૬૫૬૬ | +૯૧ ૮૪૯૦૦ ૯૫૨૪૦'}</span>
+              {l.trustLine || 'ટ્રસ્ટ રજી નં. બી ૧૨૯-મહેસાણા તા.૩૦-૯-૧૯૫૫'}
             </div>
+
+            {/* Email & Website */}
+            <div
+              style={{
+                textAlign: 'right',
+                fontSize: 9,
+                fontWeight: 800,
+                lineHeight: 1.25,
+                color: '#1e293b',
+              }}
+            >
+              <div>
+                <span style={{ color: '#b91c1c' }}>ઈ-મેઇલ: </span>
+                <span>{l.email || 'info.radhanpurmemonjamat@gmail.com'}</span>
+              </div>
+              <div>
+                <span style={{ color: '#b91c1c' }}>વેબસાઇટ: </span>
+                <span>{l.website || 'https://memon.parivar.me/'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Left Logo + Center Community Title + Right Logo */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              marginTop: 3,
+              marginBottom: 3,
+              padding: '0 2px',
+            }}
+          >
+            {/* Left Round Letterpad Logo */}
+            <div style={{ width: 54, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <img
+                src={letterpadLogo}
+                alt="Logo"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                crossOrigin="anonymous"
+              />
+            </div>
+
+            {/* Center Community Title & Solid Blue Line */}
+            <div
+              style={{
+                flex: 1,
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 6px',
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: '"Anek Gujarati", "Noto Sans Gujarati", sans-serif',
+                  fontSize: 25,
+                  fontWeight: 900,
+                  color: '#0d2366',
+                  letterSpacing: 0.8,
+                  lineHeight: 1.15,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {l.communityName || 'રાધનપુર મેમણ જમાત'}
+              </div>
+              {/* Solid Blue Horizontal Accent Line */}
+              <div
+                style={{
+                  height: 2.5,
+                  background: '#0d2366',
+                  width: '92%',
+                  marginTop: 3,
+                  borderRadius: 1,
+                }}
+              />
+            </div>
+
+            {/* Right Round Letterpad Logo */}
+            <div style={{ width: 54, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <img
+                src={letterpadLogo}
+                alt="Logo"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                crossOrigin="anonymous"
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Office Address & Contact */}
+          <div
+            style={{
+              marginTop: 2,
+              textAlign: 'center',
+              fontSize: 9.5,
+              fontWeight: 800,
+              color: '#b91c1c',
+              fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {l.addressLine || 'કાર્યાલય: મેમણ જમાતખાના, મુ. રાધનપુર, જિ. પાટણ, પીન - ૩૮૫૩૪૦ (ઉ.ગુ.)'}
+            {' | '}
+            <span>સંપર્ક: {l.contactLine || '+૯૧ ૯૯૯૮૦ ૧૬૫૬૬ | +૯૧ ૮૪૯૦૦ ૯૫૨૪૦'}</span>
           </div>
         </div>
       )}
@@ -3790,13 +3780,12 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          padding: pageIndex === 0 ? '4px 52px 3px' : '6px 52px 5px',
+          padding: pageIndex === 0 ? '6px 62px 2px' : '26px 64px 6px',
           alignItems: 'center',
-          borderBottom: '1.5px solid #d4af37',
-          background: '#fffdfa',
-          fontSize: 12,
+          background: 'transparent',
+          fontSize: 11.5,
           fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-          marginTop: pageIndex > 0 ? 3 : 0,
+          marginTop: pageIndex > 0 ? 4 : 2,
         }}
       >
         {/* Left: Ref Number */}
@@ -3806,7 +3795,7 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
             {data.refNumber ? (data.refNumber.startsWith('RMJ') ? data.refNumber : `RMJ / ${data.refNumber}`) : 'RMJ / _________'}
           </span>
           {totalPages > 1 && (
-            <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, color: '#b45309', background: '#fef3c7', padding: '1px 6px', borderRadius: 4, border: '1px solid #fde68a' }}>
+            <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: '#b45309', background: '#fef3c7', padding: '1px 6px', borderRadius: 4, border: '1px solid #fde68a' }}>
               (પૃષ્ઠ {toGujaratiDigits(pageIndex + 1)} / {toGujaratiDigits(totalPages)})
             </span>
           )}
@@ -3836,26 +3825,52 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
           </span>
         </div>
       </div>
+
+      {/* ── ROYAL DESIGNED UNDERLINE / DIVIDER LINE ── */}
+      <div
+        style={{
+          margin: pageIndex === 0 ? '5px 58px 8px' : '4px 60px 8px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1.5,
+        }}
+      >
+        <div
+          style={{
+            height: 2,
+            background: 'linear-gradient(90deg, #b8860b 0%, #8b181b 15%, #8b181b 85%, #b8860b 100%)',
+            borderRadius: 1.5,
+            boxShadow: '0 0.5px 1.5px rgba(139,24,27,0.2)',
+          }}
+        />
+        <div
+          style={{
+            height: 1,
+            background: 'linear-gradient(90deg, transparent 0%, #b8860b 12%, #d97706 50%, #b8860b 88%, transparent 100%)',
+            opacity: 0.9,
+          }}
+        />
+      </div>
     </div>
   )
 
   // Common Footer Component with Signatures & Terms
   const renderFooter = () => (
-    <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' }}>
+    <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%', marginBottom: 26 }}>
       {/* Bottom Signature Row: Pramukh | Seal | Secretary */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-end',
-          padding: '4px 28px 4px',
+          padding: '4px 44px 4px',
           borderTop: '1px solid #e2e8f0',
           marginTop: 2,
         }}
       >
         {/* Pramukh */}
         <div style={{ textAlign: 'center', minWidth: 120 }}>
-          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 18 }} />
+          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 14 }} />
           <div style={{ fontWeight: 900, fontSize: 11.5, color: '#8b181b', fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>પ્રમુખશ્રી</div>
           <div style={{ fontSize: 10, color: '#333', fontWeight: 700, fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>રાધનપુર મેમણ જમાત</div>
         </div>
@@ -3863,14 +3878,14 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
         {/* Official Seal */}
         <div
           style={{
-            width: 56,
-            height: 56,
+            width: 52,
+            height: 52,
             border: '1.5px dashed #b8860b',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 9.5,
+            fontSize: 9,
             fontWeight: 900,
             color: '#8b181b',
             textAlign: 'center',
@@ -3884,7 +3899,7 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
 
         {/* Secretary */}
         <div style={{ textAlign: 'center', minWidth: 120 }}>
-          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 18 }} />
+          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 14 }} />
           <div style={{ fontWeight: 900, fontSize: 11.5, color: '#8b181b', fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>સેક્રેટરીશ્રી</div>
           <div style={{ fontSize: 10, color: '#333', fontWeight: 700, fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>રાધનપુર મેમણ જમાત</div>
         </div>
@@ -3896,15 +3911,15 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
           background: '#fffdf8',
           border: '1px solid #fde68a',
           borderRadius: 3,
-          margin: '2px 38px 4px',
-          padding: '3px 8px 4px',
+          margin: '3px 54px 2px',
+          padding: '4px 10px 4px',
           fontSize: 8.5,
           color: '#333',
           lineHeight: 1.3,
           fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
         }}
       >
-        <div style={{ fontWeight: 900, fontSize: 9.5, color: '#8b181b', marginBottom: 1.5, textAlign: 'center' }}>
+        <div style={{ fontWeight: 900, fontSize: 9.5, color: '#8b181b', marginBottom: 1, textAlign: 'center' }}>
           પત્ર સંબંધી નિયમો અને સામાજિક શરતો (Terms &amp; Conditions)
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -3982,115 +3997,116 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                 {renderHeader(pageIdx)}
 
-              {/* Body Writing Area */}
-              <div
-                style={{
-                  position: 'relative',
-                  padding: '10px 24px 8px',
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden',
-                }}
-              >
+                {/* Body Writing Area */}
                 <div
-                  className="letterhead-guide-lines"
                   style={{
                     position: 'relative',
-                    zIndex: 1,
+                    padding: pageIdx === 0 ? '6px 36px 6px' : '10px 36px 6px',
                     flex: 1,
                     display: 'flex',
-                    backgroundImage:
-                      'repeating-linear-gradient(transparent, transparent 30px, rgba(226, 232, 240, 0.65) 30px, rgba(226, 232, 240, 0.65) 31px)',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
                   }}
                 >
-                  {isSinglePage ? (
-                    <textarea
-                      value={data.body || ''}
-                      onChange={(e) => {
-                        onChange('letterhead', 'body', e.target.value)
-                      }}
-                      onBlur={(e) => {
-                        const raw = e.target.value
-                        if (raw && /[a-zA-Z]/.test(raw)) {
-                          onChange('letterhead', 'body', toGujarati(raw))
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === ' ' || e.keyCode === 32) {
+                  <div
+                    className="letterhead-guide-lines"
+                    style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      flex: 1,
+                      display: 'flex',
+                      backgroundImage:
+                        'repeating-linear-gradient(transparent, transparent 30px, rgba(226, 232, 240, 0.65) 30px, rgba(226, 232, 240, 0.65) 31px)',
+                    }}
+                  >
+                    {isSinglePage ? (
+                      <textarea
+                        value={data.body || ''}
+                        onChange={(e) => {
+                          onChange('letterhead', 'body', e.target.value)
+                        }}
+                        onBlur={(e) => {
                           const raw = e.target.value
                           if (raw && /[a-zA-Z]/.test(raw)) {
-                            e.preventDefault()
-                            onChange('letterhead', 'body', toGujarati(raw) + ' ')
+                            onChange('letterhead', 'body', toGujarati(raw))
                           }
-                        }
-                      }}
-                      placeholder="અહીં પત્રનું સમગ્ર લખાણ ટાઇપ કરો..."
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        background: 'transparent',
-                        border: 'none',
-                        outline: 'none',
-                        resize: 'none',
-                        fontFamily: '"Noto Sans Gujarati", "Noto Sans", Arial, sans-serif',
-                        fontSize: 13.5,
-                        fontWeight: 600,
-                        lineHeight: '31px',
-                        color: '#0f172a',
-                        boxSizing: 'border-box',
-                        padding: '2px 6px',
-                        margin: 0,
-                        display: 'block',
-                        textAlign: 'left',
-                        overflow: 'hidden',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'anywhere',
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        fontFamily: '"Noto Sans Gujarati", "Noto Sans", Arial, sans-serif',
-                        fontSize: 13.5,
-                        fontWeight: 600,
-                        lineHeight: '31px',
-                        color: '#0f172a',
-                        padding: '2px 6px',
-                        boxSizing: 'border-box',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'anywhere',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {pageText}
-                    </div>
-                  )}
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === ' ' || e.keyCode === 32) {
+                            const raw = e.target.value
+                            if (raw && /[a-zA-Z]/.test(raw)) {
+                              e.preventDefault()
+                              onChange('letterhead', 'body', toGujarati(raw) + ' ')
+                            }
+                          }
+                        }}
+                        placeholder="અહીં પત્રનું સમગ્ર લખાણ ટાઇપ કરો..."
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          outline: 'none',
+                          resize: 'none',
+                          fontFamily: '"Noto Sans Gujarati", "Noto Sans", Arial, sans-serif',
+                          fontSize: 13.5,
+                          fontWeight: 600,
+                          lineHeight: '31px',
+                          color: '#0f172a',
+                          boxSizing: 'border-box',
+                          padding: '2px 4px',
+                          margin: 0,
+                          display: 'block',
+                          textAlign: 'justify',
+                          overflow: 'hidden',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'anywhere',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          fontFamily: '"Noto Sans Gujarati", "Noto Sans", Arial, sans-serif',
+                          fontSize: 13.5,
+                          fontWeight: 600,
+                          lineHeight: '31px',
+                          color: '#0f172a',
+                          padding: '2px 4px',
+                          boxSizing: 'border-box',
+                          whiteSpace: 'pre-wrap',
+                          textAlign: 'justify',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'anywhere',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {pageText}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Footer on Last Page OR Forward Note on Intermediate Pages */}
-            {isLastPage ? (
-              renderFooter()
-            ) : (
-              <div
-                style={{
-                  padding: '6px 20px',
-                  textAlign: 'center',
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: '#15803d',
-                  borderTop: '1px dashed #cbd5e1',
-                  fontStyle: 'italic',
-                }}
-              >
-                [ પૃષ્ઠ {toGujaratiDigits(pageIdx + 1)} / {toGujaratiDigits(totalPages)} &bull; આગળનું લખાણ {pageIdx + 2 === totalPages ? 'તથા સહી-સિક્કો પાછળના પૃષ્ઠ' : 'આગળના પૃષ્ઠ'} {toGujaratiDigits(pageIdx + 2)} પર જુઓ &rarr; ]
-              </div>
-            )}
+              {/* Footer on Last Page OR Forward Note on Intermediate Pages */}
+              {isLastPage ? (
+                renderFooter()
+              ) : (
+                <div
+                  style={{
+                    padding: '6px 20px',
+                    textAlign: 'center',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: '#15803d',
+                    borderTop: '1px dashed #cbd5e1',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  [ પૃષ્ઠ {toGujaratiDigits(pageIdx + 1)} / {toGujaratiDigits(totalPages)} &bull; આગળનું લખાણ {pageIdx + 2 === totalPages ? 'તથા સહી-સિક્કો પાછળના પૃષ્ઠ' : 'આગળના પૃષ્ઠ'} {toGujaratiDigits(pageIdx + 2)} પર જુઓ &rarr; ]
+                </div>
+              )}
             </div>
           </div>
         )
