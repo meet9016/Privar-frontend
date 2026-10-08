@@ -3547,107 +3547,186 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
 
 /* ══════════════════════════════════════════════════════════════
    PRINTABLE LETTERHEAD SHEET
+/* ─── Smart Letterhead Text Normalizer (Fixes broken copy-pasted line wraps) ─── */
+function normalizeLetterheadText(text) {
+  if (!text || typeof text !== 'string') return ''
+
+  const lines = text.split('\n')
+  const paragraphs = []
+  let currentParagraph = ''
+
+  const isNewParagraphStart = (line, prevLine) => {
+    const trimmed = line.trim()
+    if (!trimmed) return true
+
+    // If previous line ended with a colon, next line is a new block
+    if (prevLine && prevLine.trim().endsWith(':')) {
+      return true
+    }
+
+    // Numbered list item: 1., 2., ૧., ૨., (1), (૧), a), A., i., etc.
+    if (/^([0-9૦-૯]+[\.\)]|\([0-9૦-૯]+\)|[a-zA-Z][\.\)]|\([a-zA-Z]\)|[•\-\*\>])\s*/.test(trimmed)) {
+      return true
+    }
+
+    // Salutation / greetings / subjects / titles
+    if (/^(વિષય|સંદર્ભ|પ્રતિ|શ્રીમાન|સવિનય|આથી|જય ભારત|તા\.|લિ\.|આભાર)\b/i.test(trimmed)) {
+      return true
+    }
+
+    return false
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i]
+    const trimmed = rawLine.trim()
+
+    if (!trimmed) {
+      if (currentParagraph) {
+        paragraphs.push(currentParagraph)
+        currentParagraph = ''
+      }
+      continue
+    }
+
+    const prevRawLine = i > 0 ? lines[i - 1] : ''
+
+    if (isNewParagraphStart(rawLine, prevRawLine)) {
+      if (currentParagraph) {
+        paragraphs.push(currentParagraph)
+      }
+      currentParagraph = trimmed
+    } else {
+      if (!currentParagraph) {
+        currentParagraph = trimmed
+      } else {
+        currentParagraph = currentParagraph + ' ' + trimmed
+      }
+    }
+  }
+
+  if (currentParagraph) {
+    paragraphs.push(currentParagraph)
+  }
+
+  return paragraphs.join('\n\n')
+}
+
+/* ══════════════════════════════════════════════════════════════
+   1:1 EXACT VISUAL REPLICA LETTERHEAD COMPONENT (MULTI-PAGE DYNAMIC SPLITTING)
 ══════════════════════════════════════════════════════════════ */
 const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef }) {
   const l = certData.letterhead
   const rawBody = data.body || ''
 
+  const cleanBody = useMemo(() => normalizeLetterheadText(rawBody), [rawBody])
+
   const pagesData = useMemo(() => {
-    if (!rawBody || !rawBody.trim()) {
+    if (!cleanBody || !cleanBody.trim()) {
       return ['']
     }
 
-    // A 560px wide content area at 13.5px font holds approx 100-110 characters per line
-    const CHARS_PER_LINE = 100
-    // Capacity in visual lines:
-    // Single page with Header (~150px) + Footer (~180px) -> ~17 lines fit comfortably
-    const SINGLE_PAGE_MAX = 17
-    // Page 1 of multi-page (Header + Content + Jump note, NO footer) -> ~22 lines
-    const FIRST_PAGE_MAX = 22
-    // Middle pages (Ref bar only + Content + Jump note) -> ~26 lines
-    const MIDDLE_PAGE_MAX = 26
-    // Last page of multi-page (Ref bar + Content + Footer) -> ~20 lines
-    const LAST_PAGE_MAX = 20
+    // Characters per line for 558px width at 13.5px font
+    const CHARS_PER_LINE = 78
 
-    const rawParagraphs = rawBody.split('\n')
+    // Safe capacities in visual lines per page
+    const SINGLE_PAGE_MAX = 14
+    const FIRST_PAGE_MAX = 17
+    const MIDDLE_PAGE_MAX = 22
+    const LAST_PAGE_MAX = 14
 
-    // Calculate how many visual lines each paragraph occupies based on length
-    const getParaLines = (para) => {
-      if (!para || para.length === 0) return 1
-      return Math.max(1, Math.ceil(para.length / CHARS_PER_LINE))
-    }
+    // Split into paragraphs
+    const rawParagraphs = cleanBody.split('\n')
 
-    const totalLines = rawParagraphs.reduce((acc, p) => acc + getParaLines(p), 0)
+    // Break every paragraph into wrapped line units
+    const allVisualUnits = []
 
-    // Case 1: All text fits on a single page with full header and footer
-    if (totalLines <= SINGLE_PAGE_MAX) {
-      return [rawBody]
-    }
+    for (let pIdx = 0; pIdx < rawParagraphs.length; pIdx++) {
+      const para = rawParagraphs[pIdx]
+      if (para.trim() === '') {
+        allVisualUnits.push({ text: '', isParaEnd: true })
+        continue
+      }
 
-    // Case 2: Multi-page distribution without inserting artificial newlines inside paragraphs
-    const pages = []
-    let currentParas = []
-    let currentLineCount = 0
-    let isFirst = true
+      const words = para.trim().split(/\s+/)
+      let currentLine = ''
 
-    for (let i = 0; i < rawParagraphs.length; i++) {
-      const p = rawParagraphs[i]
-      const lines = getParaLines(p)
-      const maxLines = isFirst ? FIRST_PAGE_MAX : MIDDLE_PAGE_MAX
+      for (let wIdx = 0; wIdx < words.length; wIdx++) {
+        const word = words[wIdx]
+        const testLine = currentLine ? currentLine + ' ' + word : word
 
-      if (currentLineCount + lines <= maxLines) {
-        currentParas.push(p)
-        currentLineCount += lines
-      } else {
-        const remainingSpace = maxLines - currentLineCount
-        // If the paragraph is long and at least 3 lines fit, split paragraph cleanly at word boundary
-        if (remainingSpace >= 3 && lines >= 4) {
-          const words = p.split(' ')
-          const part1Words = []
-          const part2Words = []
-          let part1Len = 0
-          const targetLen = remainingSpace * CHARS_PER_LINE
-
-          for (const w of words) {
-            if (part1Len + w.length + 1 <= targetLen) {
-              part1Words.push(w)
-              part1Len += w.length + 1
-            } else {
-              part2Words.push(w)
-            }
+        if (testLine.length <= CHARS_PER_LINE) {
+          currentLine = testLine
+        } else {
+          if (currentLine) {
+            allVisualUnits.push({ text: currentLine, isParaEnd: false })
           }
-
-          if (part1Words.length > 0 && part2Words.length > 0) {
-            currentParas.push(part1Words.join(' '))
-            pages.push(currentParas.join('\n'))
-            currentParas = []
-            currentLineCount = 0
-            isFirst = false
-
-            const part2Text = part2Words.join(' ')
-            rawParagraphs.splice(i + 1, 0, part2Text)
-            continue
-          }
+          currentLine = word
         }
-
-        // Flush accumulated paragraphs as a completed page
-        if (currentParas.length > 0) {
-          pages.push(currentParas.join('\n'))
-          currentParas = []
-          currentLineCount = 0
-          isFirst = false
-        }
-        currentParas.push(p)
-        currentLineCount = lines
+      }
+      if (currentLine) {
+        allVisualUnits.push({ text: currentLine, isParaEnd: true })
       }
     }
 
-    if (currentParas.length > 0) {
-      pages.push(currentParas.join('\n'))
+    const totalLines = allVisualUnits.length
+
+    // Case 1: Fits comfortably on a single page with full header and footer
+    if (totalLines <= SINGLE_PAGE_MAX) {
+      return [cleanBody]
     }
 
-    return pages.length > 0 ? pages : [rawBody]
-  }, [rawBody])
+    // Case 2: Multi-page distribution
+    const pages = []
+    let unitIndex = 0
+    let pageIndex = 0
+
+    while (unitIndex < totalLines) {
+      const remainingUnits = totalLines - unitIndex
+      let pageCapacity
+
+      if (pageIndex === 0) {
+        // First page
+        pageCapacity = FIRST_PAGE_MAX
+      } else {
+        // Last page or middle page
+        if (remainingUnits <= LAST_PAGE_MAX) {
+          pageCapacity = LAST_PAGE_MAX
+        } else {
+          pageCapacity = MIDDLE_PAGE_MAX
+        }
+      }
+
+      // Smooth balancing so last page never has an awkward tiny slice
+      if (pageIndex > 0 && remainingUnits > pageCapacity && (remainingUnits - pageCapacity) < 4) {
+        pageCapacity = Math.max(8, remainingUnits - 6)
+      }
+
+      const unitsForThisPage = allVisualUnits.slice(unitIndex, unitIndex + pageCapacity)
+      unitIndex += unitsForThisPage.length
+
+      // Reconstruct page text by joining lines naturally (new line on paraEnd, space otherwise)
+      let pageText = ''
+      for (let u = 0; u < unitsForThisPage.length; u++) {
+        const unit = unitsForThisPage[u]
+        if (unit.text === '') {
+          pageText += '\n\n'
+        } else {
+          pageText += unit.text
+          if (unit.isParaEnd) {
+            pageText += '\n\n'
+          } else if (u < unitsForThisPage.length - 1) {
+            pageText += ' '
+          }
+        }
+      }
+
+      pages.push(pageText.trim())
+      pageIndex++
+    }
+
+    return pages.length > 0 ? pages : [cleanBody]
+  }, [cleanBody])
 
   const totalPages = pagesData.length
   const isMultiPage = totalPages > 1
@@ -4046,72 +4125,26 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
                         'repeating-linear-gradient(transparent, transparent 30px, rgba(226, 232, 240, 0.65) 30px, rgba(226, 232, 240, 0.65) 31px)',
                     }}
                   >
-                    {isSinglePage ? (
-                      <textarea
-                        value={data.body || ''}
-                        onChange={(e) => {
-                          onChange('letterhead', 'body', e.target.value)
-                        }}
-                        onBlur={(e) => {
-                          const raw = e.target.value
-                          if (raw && /[a-zA-Z]/.test(raw)) {
-                            onChange('letterhead', 'body', toGujarati(raw))
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === ' ' || e.keyCode === 32) {
-                            const raw = e.target.value
-                            if (raw && /[a-zA-Z]/.test(raw)) {
-                              e.preventDefault()
-                              onChange('letterhead', 'body', toGujarati(raw) + ' ')
-                            }
-                          }
-                        }}
-                        placeholder="અહીં પત્રનું સમગ્ર લખાણ ટાઇપ કરો..."
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          background: 'transparent',
-                          border: 'none',
-                          outline: 'none',
-                          resize: 'none',
-                          fontFamily: '"Noto Sans Gujarati", "Noto Sans", Arial, sans-serif',
-                          fontSize: 13.5,
-                          fontWeight: 600,
-                          lineHeight: '31px',
-                          color: '#0f172a',
-                          boxSizing: 'border-box',
-                          padding: '2px 4px',
-                          margin: 0,
-                          display: 'block',
-                          textAlign: 'justify',
-                          overflow: 'hidden',
-                          wordBreak: 'break-word',
-                          overflowWrap: 'anywhere',
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          fontFamily: '"Noto Sans Gujarati", "Noto Sans", Arial, sans-serif',
-                          fontSize: 13.5,
-                          fontWeight: 600,
-                          lineHeight: '31px',
-                          color: '#0f172a',
-                          padding: '2px 4px',
-                          boxSizing: 'border-box',
-                          whiteSpace: 'pre-wrap',
-                          textAlign: 'justify',
-                          wordBreak: 'break-word',
-                          overflowWrap: 'anywhere',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {pageText}
-                      </div>
-                    )}
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        fontFamily: '"Noto Sans Gujarati", "Noto Sans", Arial, sans-serif',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        lineHeight: '31px',
+                        color: '#0f172a',
+                        padding: '2px 4px',
+                        boxSizing: 'border-box',
+                        whiteSpace: 'pre-wrap',
+                        textAlign: 'justify',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {pageText}
+                    </div>
                   </div>
                 </div>
               </div>
