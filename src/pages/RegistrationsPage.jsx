@@ -124,6 +124,8 @@ export default function RegistrationsPage() {
           current_step: r.current_step || cStep,
           registration_step: r.registration_step || cStep,
           status: r.status || 'in_progress',
+          status_check: Boolean(r.status_check),
+          is_resubmitted: Boolean(r.is_resubmitted || r.status === 'resubmitted' || r.status === 'resubmit'),
           is_approved: r.is_approved || false
         }
       })
@@ -295,7 +297,7 @@ export default function RegistrationsPage() {
   }
 
   const getStatusBadge = (status, row) => {
-    const isResubmitted = row?.is_resubmitted || row?.status_check || status === 'resubmitted' || status === 'resubmit'
+    const isResubmitted = Boolean(row?.status_check === true || status === 'resubmitted' || status === 'resubmit')
     if (isResubmitted && status !== 'approved' && status !== 'rejected') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/25">
