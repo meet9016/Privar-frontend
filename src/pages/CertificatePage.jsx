@@ -3547,69 +3547,120 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
 
 /* ══════════════════════════════════════════════════════════════
    PRINTABLE LETTERHEAD SHEET
-/* ─── Smart Letterhead Text Normalizer (Fixes broken copy-pasted line wraps) ─── */
-function normalizeLetterheadText(text) {
-  if (!text || typeof text !== 'string') return ''
+/* ─── Exact Visual Line Breaker & Dynamic Multi-Page Paginator ─── */
+function breakTextIntoVisualLines(text, charsPerLine = 46) {
+  if (!text || typeof text !== 'string') return []
 
-  const lines = text.split('\n')
-  const paragraphs = []
-  let currentParagraph = ''
+  // Normalize line endings
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const rawLines = normalized.split('\n')
+  const visualLines = []
 
-  const isNewParagraphStart = (line, prevLine) => {
-    const trimmed = line.trim()
-    if (!trimmed) return true
+  for (let i = 0; i < rawLines.length; i++) {
+    const rawLine = rawLines[i]
 
-    // If previous line ended with a colon, next line is a new block
-    if (prevLine && prevLine.trim().endsWith(':')) {
-      return true
-    }
-
-    // Numbered list item: 1., 2., ૧., ૨., (1), (૧), a), A., i., etc.
-    if (/^([0-9૦-૯]+[\.\)]|\([0-9૦-૯]+\)|[a-zA-Z][\.\)]|\([a-zA-Z]\)|[•\-\*\>])\s*/.test(trimmed)) {
-      return true
-    }
-
-    // Salutation / greetings / subjects / titles
-    if (/^(વિષય|સંદર્ભ|પ્રતિ|શ્રીમાન|સવિનય|આથી|જય ભારત|તા\.|લિ\.|આભાર)\b/i.test(trimmed)) {
-      return true
-    }
-
-    return false
-  }
-
-  for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i]
-    const trimmed = rawLine.trim()
-
-    if (!trimmed) {
-      if (currentParagraph) {
-        paragraphs.push(currentParagraph)
-        currentParagraph = ''
-      }
+    if (!rawLine.trim()) {
+      visualLines.push('')
       continue
     }
 
-    const prevRawLine = i > 0 ? lines[i - 1] : ''
+    const words = rawLine.trim().split(/\s+/)
+    let currentLine = ''
 
-    if (isNewParagraphStart(rawLine, prevRawLine)) {
-      if (currentParagraph) {
-        paragraphs.push(currentParagraph)
+    for (let w = 0; w < words.length; w++) {
+      const word = words[w]
+
+      if (word.length > charsPerLine) {
+        if (currentLine) {
+          visualLines.push(currentLine)
+          currentLine = ''
+        }
+        let remainingWord = word
+        while (remainingWord.length > charsPerLine) {
+          visualLines.push(remainingWord.slice(0, charsPerLine))
+          remainingWord = remainingWord.slice(charsPerLine)
+        }
+        currentLine = remainingWord
+        continue
       }
-      currentParagraph = trimmed
-    } else {
-      if (!currentParagraph) {
-        currentParagraph = trimmed
+
+      const testLine = currentLine ? `${currentLine} ${word}` : word
+      if (testLine.length <= charsPerLine) {
+        currentLine = testLine
       } else {
-        currentParagraph = currentParagraph + ' ' + trimmed
+        if (currentLine) {
+          visualLines.push(currentLine)
+        }
+        currentLine = word
       }
+    }
+
+    if (currentLine) {
+      visualLines.push(currentLine)
     }
   }
 
-  if (currentParagraph) {
-    paragraphs.push(currentParagraph)
+  return visualLines
+}
+
+function paginateVisualLines(visualLines) {
+  if (!visualLines || visualLines.length === 0) {
+    return ['']
   }
 
-  return paragraphs.join('\n\n')
+  // Exact capacities in visual lines (at 31px line height):
+  // - SINGLE_PAGE_MAX: 14 lines max on single page (full header + full footer)
+  // - FIRST_PAGE_MAX: 20 lines max on page 1 of multi-page (fills completely down to bottom forward note)
+  // - MIDDLE_PAGE_MAX: 23 lines max on intermediate pages (compact header + forward note)
+  // - LAST_PAGE_MAX: 16 lines max on last page (compact header + full footer)
+  const SINGLE_PAGE_MAX = 14
+  const FIRST_PAGE_MAX = 20
+  const MIDDLE_PAGE_MAX = 23
+  const LAST_PAGE_MAX = 16
+
+  const totalLines = visualLines.length
+
+  // Case 1: Fits comfortably on a single page
+  if (totalLines <= SINGLE_PAGE_MAX) {
+    return [visualLines.join('\n')]
+  }
+
+  // Case 2: Multi-page distribution - fill each page completely to capacity
+  const pages = []
+  let lineIndex = 0
+  let pageIndex = 0
+
+  while (lineIndex < totalLines) {
+    const remaining = totalLines - lineIndex
+    let capacity
+
+    if (pageIndex === 0) {
+      // First page: fill as much as possible up to FIRST_PAGE_MAX,
+      // while ensuring at least 1 line goes to the next page
+      if (remaining <= FIRST_PAGE_MAX) {
+        capacity = Math.max(1, remaining - 1)
+      } else {
+        capacity = FIRST_PAGE_MAX
+      }
+    } else {
+      // Subsequent pages:
+      if (remaining <= LAST_PAGE_MAX) {
+        capacity = remaining
+      } else if (remaining <= MIDDLE_PAGE_MAX) {
+        capacity = Math.max(1, remaining - 1)
+      } else {
+        capacity = MIDDLE_PAGE_MAX
+      }
+    }
+
+    const take = Math.min(capacity, remaining)
+    const pageLines = visualLines.slice(lineIndex, lineIndex + take)
+    pages.push(pageLines.join('\n'))
+    lineIndex += take
+    pageIndex++
+  }
+
+  return pages.length > 0 ? pages : [visualLines.join('\n')]
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -3619,114 +3670,13 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
   const l = certData.letterhead
   const rawBody = data.body || ''
 
-  const cleanBody = useMemo(() => normalizeLetterheadText(rawBody), [rawBody])
-
   const pagesData = useMemo(() => {
-    if (!cleanBody || !cleanBody.trim()) {
+    if (!rawBody || !rawBody.trim()) {
       return ['']
     }
-
-    // Characters per line for 558px width at 13.5px font
-    const CHARS_PER_LINE = 78
-
-    // Safe capacities in visual lines per page
-    const SINGLE_PAGE_MAX = 14
-    const FIRST_PAGE_MAX = 17
-    const MIDDLE_PAGE_MAX = 22
-    const LAST_PAGE_MAX = 14
-
-    // Split into paragraphs
-    const rawParagraphs = cleanBody.split('\n')
-
-    // Break every paragraph into wrapped line units
-    const allVisualUnits = []
-
-    for (let pIdx = 0; pIdx < rawParagraphs.length; pIdx++) {
-      const para = rawParagraphs[pIdx]
-      if (para.trim() === '') {
-        allVisualUnits.push({ text: '', isParaEnd: true })
-        continue
-      }
-
-      const words = para.trim().split(/\s+/)
-      let currentLine = ''
-
-      for (let wIdx = 0; wIdx < words.length; wIdx++) {
-        const word = words[wIdx]
-        const testLine = currentLine ? currentLine + ' ' + word : word
-
-        if (testLine.length <= CHARS_PER_LINE) {
-          currentLine = testLine
-        } else {
-          if (currentLine) {
-            allVisualUnits.push({ text: currentLine, isParaEnd: false })
-          }
-          currentLine = word
-        }
-      }
-      if (currentLine) {
-        allVisualUnits.push({ text: currentLine, isParaEnd: true })
-      }
-    }
-
-    const totalLines = allVisualUnits.length
-
-    // Case 1: Fits comfortably on a single page with full header and footer
-    if (totalLines <= SINGLE_PAGE_MAX) {
-      return [cleanBody]
-    }
-
-    // Case 2: Multi-page distribution
-    const pages = []
-    let unitIndex = 0
-    let pageIndex = 0
-
-    while (unitIndex < totalLines) {
-      const remainingUnits = totalLines - unitIndex
-      let pageCapacity
-
-      if (pageIndex === 0) {
-        // First page
-        pageCapacity = FIRST_PAGE_MAX
-      } else {
-        // Last page or middle page
-        if (remainingUnits <= LAST_PAGE_MAX) {
-          pageCapacity = LAST_PAGE_MAX
-        } else {
-          pageCapacity = MIDDLE_PAGE_MAX
-        }
-      }
-
-      // Smooth balancing so last page never has an awkward tiny slice
-      if (pageIndex > 0 && remainingUnits > pageCapacity && (remainingUnits - pageCapacity) < 4) {
-        pageCapacity = Math.max(8, remainingUnits - 6)
-      }
-
-      const unitsForThisPage = allVisualUnits.slice(unitIndex, unitIndex + pageCapacity)
-      unitIndex += unitsForThisPage.length
-
-      // Reconstruct page text by joining lines naturally (new line on paraEnd, space otherwise)
-      let pageText = ''
-      for (let u = 0; u < unitsForThisPage.length; u++) {
-        const unit = unitsForThisPage[u]
-        if (unit.text === '') {
-          pageText += '\n\n'
-        } else {
-          pageText += unit.text
-          if (unit.isParaEnd) {
-            pageText += '\n\n'
-          } else if (u < unitsForThisPage.length - 1) {
-            pageText += ' '
-          }
-        }
-      }
-
-      pages.push(pageText.trim())
-      pageIndex++
-    }
-
-    return pages.length > 0 ? pages : [cleanBody]
-  }, [cleanBody])
+    const visualLines = breakTextIntoVisualLines(rawBody, 46)
+    return paginateVisualLines(visualLines)
+  }, [rawBody])
 
   const totalPages = pagesData.length
   const isMultiPage = totalPages > 1
@@ -3962,21 +3912,21 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
 
   // Common Footer Component with Signatures & Terms
   const renderFooter = () => (
-    <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%', marginBottom: 26 }}>
+    <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%', marginBottom: 12 }}>
       {/* Bottom Signature Row: Pramukh | Seal | Secretary */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-end',
-          padding: '4px 44px 4px',
+          padding: '2px 44px 2px',
           borderTop: '1px solid #e2e8f0',
           marginTop: 2,
         }}
       >
         {/* Pramukh */}
         <div style={{ textAlign: 'center', minWidth: 120 }}>
-          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 14 }} />
+          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 10 }} />
           <div style={{ fontWeight: 900, fontSize: 11.5, color: '#8b181b', fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>પ્રમુખશ્રી</div>
           <div style={{ fontSize: 10, color: '#333', fontWeight: 700, fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>રાધનપુર મેમણ જમાત</div>
         </div>
@@ -3984,14 +3934,14 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
         {/* Official Seal */}
         <div
           style={{
-            width: 52,
-            height: 52,
+            width: 48,
+            height: 48,
             border: '1.5px dashed #b8860b',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 9,
+            fontSize: 8.5,
             fontWeight: 900,
             color: '#8b181b',
             textAlign: 'center',
@@ -4005,7 +3955,7 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
 
         {/* Secretary */}
         <div style={{ textAlign: 'center', minWidth: 120 }}>
-          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 14 }} />
+          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 10 }} />
           <div style={{ fontWeight: 900, fontSize: 11.5, color: '#8b181b', fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>સેક્રેટરીશ્રી</div>
           <div style={{ fontSize: 10, color: '#333', fontWeight: 700, fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>રાધનપુર મેમણ જમાત</div>
         </div>
@@ -4017,8 +3967,8 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
           background: '#fffdf8',
           border: '1px solid #fde68a',
           borderRadius: 3,
-          margin: '3px 54px 2px',
-          padding: '4px 10px 4px',
+          margin: '2px 54px 2px',
+          padding: '3px 10px 3px',
           fontSize: 8.5,
           color: '#333',
           lineHeight: 1.3,
