@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
-import { memberApi, API_BASE, assetUrl } from '../lib/api';
+import { memberApi, API_BASE, assetUrl, uploadFileToDigitalks } from '../lib/api';
 import { 
   MessageSquare, 
   Send, 
@@ -16,7 +16,16 @@ import {
   Smile, 
   Circle,
   Clock,
-  Sparkles
+  Sparkles,
+  Camera,
+  Info,
+  UserMinus,
+  Shield,
+  ShieldCheck,
+  Plus,
+  Trash2,
+  LogOut,
+  Edit2
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { toast } from '../lib/toast';
@@ -76,13 +85,27 @@ export default function ChatPage() {
   // Modals
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [showNewGroupModal, setShowNewGroupModal] = useState(false);
+  const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [availableUsers, setAvailableUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
   // New Group state
   const [groupName, setGroupName] = useState('');
+  const [groupImageFile, setGroupImageFile] = useState(null);
+  const [groupImagePreview, setGroupImagePreview] = useState('');
   const [selectedGroupMembers, setSelectedGroupMembers] = useState([]);
+  const [creatingGroup, setCreatingGroup] = useState(false);
+
+  // Group Details & Members state
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
+  const [isEditingGroupName, setIsEditingGroupName] = useState(false);
+  const [editGroupNameVal, setEditGroupNameVal] = useState('');
+  const [selectedAddMembers, setSelectedAddMembers] = useState([]);
+  const [addingMembers, setAddingMembers] = useState(false);
 
   // Socket reference
   const socketRef = useRef(null);
@@ -132,6 +155,16 @@ export default function ChatPage() {
         socketRef.current.emit('mark_read', { conversationId: convId });
       }
 
+      // Notify delivered for messages not sent by me
+      if (socketRef.current) {
+        data.forEach(m => {
+          const sId = String(m.senderId?._id || m.senderId?.id || m.senderId || '');
+          if (sId !== currentUserId && (!m.deliveredTo || !m.deliveredTo.some(d => String(d.userId) === currentUserId))) {
+            socketRef.current.emit('message_delivered', { messageId: m._id, conversationId: convId });
+          }
+        });
+      }
+
       // Clear local unread count in sidebar and decrement global unread count
       setConversations(prev => {
         const found = prev.find(c => c._id === convId);
@@ -145,7 +178,22 @@ export default function ChatPage() {
     } finally {
       setLoadingMessages(false);
     }
-  }, [scrollToBottom]);
+  }, [currentUserId, scrollToBottom]);
+
+  // Fetch Group Members for Group Info Modal
+  const fetchGroupMembers = useCallback(async (convId) => {
+    if (!convId) return;
+    setLoadingGroupMembers(true);
+    try {
+      const res = await memberApi.get(`/chat/${convId}/members`);
+      const list = res.data?.data || res.data || [];
+      setGroupMembers(list);
+    } catch (err) {
+      console.error('Failed to load group members:', err);
+    } finally {
+      setLoadingGroupMembers(false);
+    }
+  }, []);
 
   // 3. Socket Initialization & Lifecycle
   useEffect(() => {
@@ -161,7 +209,6 @@ export default function ChatPage() {
 
     socket.on('connect', () => {
       console.log('✅ Real-time Chat Socket connected:', socket.id);
-      // Query online users
       socket.emit('get_online_users', (onlineIds) => {
         if (Array.isArray(onlineIds)) {
           setOnlineUsers(new Set(onlineIds.map(String)));
@@ -187,6 +234,11 @@ export default function ChatPage() {
       const isSender = String(msg.senderId?._id || msg.senderId?.id || msg.senderId || '') === currentUserId;
       const isOpenChat = activeChatRef.current?._id === msg.conversationId;
 
+      // Automatically send delivery receipt back
+      if (!isSender && msgId) {
+        socket.emit('message_delivered', { messageId: msgId, conversationId: msg.conversationId });
+      }
+
       // Deduplicate incoming message processing
       const isNew = msgId ? !processedMsgIdsRef.current.has(msgId) : true;
       if (msgId) {
@@ -200,15 +252,12 @@ export default function ChatPage() {
       // If message is for currently open conversation
       if (isOpenChat) {
         setMessages(prev => {
-          // 1. Avoid duplicate message if real _id already exists
           if (prev.some(m => m._id === msg._id)) return prev;
 
-          // 2. If message matches an optimistic clientTempId, replace it
           if (msg.clientTempId && prev.some(m => m._id === msg.clientTempId)) {
             return prev.map(m => m._id === msg.clientTempId ? msg : m);
           }
 
-          // 3. If message is sent by me and a temporary message exists with identical text, replace it
           if (isSender) {
             const tempIndex = prev.findIndex(m => 
               String(m._id).startsWith('temp_') && m.message === msg.message
@@ -239,7 +288,6 @@ export default function ChatPage() {
           updatedChat.lastMessage = msg;
           updatedChat.lastMessageAt = msg.createdAt || new Date().toISOString();
           
-          // Increment unread count ONLY ONCE if chat is not currently open, message is from other user, and message is new
           if (!isOpenChat && !isSender && isNew) {
             updatedChat.unreadCount = (updatedChat.unreadCount || 0) + 1;
             window.dispatchEvent(new CustomEvent('chat-unread-increment', { detail: { delta: 1 } }));
@@ -248,14 +296,67 @@ export default function ChatPage() {
           const rest = prev.filter(c => c._id !== msg.conversationId);
           return [updatedChat, ...rest];
         } else {
-          // New conversation created, refetch list
           fetchConversations();
           return prev;
         }
       });
     });
 
-    // Handle general conversation update (update lastMessage and reorder without double-incrementing unread)
+    // Real-time Seen/Read Receipts Update (turns ticks to Double Blue)
+    socket.on('messages_read', ({ conversationId, readByUserId }) => {
+      setMessages(prev => prev.map(m => {
+        if (m.conversationId === conversationId) {
+          const alreadyRead = (m.readBy || []).some(r => String(r.userId?._id || r.userId) === String(readByUserId));
+          if (!alreadyRead) {
+            return {
+              ...m,
+              readBy: [...(m.readBy || []), { userId: readByUserId, readAt: new Date().toISOString() }],
+              deliveredTo: [...(m.deliveredTo || []), { userId: readByUserId, deliveredAt: new Date().toISOString() }]
+            };
+          }
+        }
+        return m;
+      }));
+    });
+
+    // Real-time Delivery Status Update (turns single tick to double grey)
+    socket.on('message_status_updated', ({ messageId, conversationId, deliveredTo, readBy }) => {
+      setMessages(prev => prev.map(m => {
+        if (m._id === messageId || m.clientTempId === messageId) {
+          return {
+            ...m,
+            deliveredTo: deliveredTo || m.deliveredTo || [],
+            readBy: readBy || m.readBy || []
+          };
+        }
+        return m;
+      }));
+    });
+
+    // Group members or details updated
+    socket.on('group_members_updated', ({ conversationId }) => {
+      if (activeChatRef.current?._id === conversationId) {
+        fetchGroupMembers(conversationId);
+      }
+    });
+
+    socket.on('group_updated', ({ conversationId, updated }) => {
+      if (activeChatRef.current?._id === conversationId) {
+        setActiveChat(prev => ({ ...prev, ...updated }));
+      }
+      setConversations(prev => prev.map(c => c._id === conversationId ? { ...c, ...updated } : c));
+    });
+
+    // Removed from group
+    socket.on('removed_from_group', ({ conversationId }) => {
+      if (activeChatRef.current?._id === conversationId) {
+        setActiveChat(null);
+        toast.info('You were removed from this group');
+      }
+      setConversations(prev => prev.filter(c => c._id !== conversationId));
+    });
+
+    // Handle general conversation update
     socket.on('conversation_updated', ({ conversationId, lastMessage, lastMessageAt }) => {
       setConversations(prev => {
         const index = prev.findIndex(c => c._id === conversationId);
@@ -263,8 +364,6 @@ export default function ChatPage() {
           const updatedChat = { ...prev[index] };
           if (lastMessage) updatedChat.lastMessage = lastMessage;
           if (lastMessageAt) updatedChat.lastMessageAt = lastMessageAt;
-
-          // Note: unreadCount is NOT incremented here because receive_message already handled it accurately
           const rest = prev.filter(c => c._id !== conversationId);
           return [updatedChat, ...rest];
         } else {
@@ -290,7 +389,7 @@ export default function ChatPage() {
     return () => {
       socket.disconnect();
     };
-  }, [token, currentUserId, fetchConversations, scrollToBottom]);
+  }, [token, currentUserId, fetchConversations, scrollToBottom, fetchGroupMembers]);
 
   // Initial load of conversations
   useEffect(() => {
@@ -306,13 +405,16 @@ export default function ChatPage() {
     }
 
     fetchMessages(activeChat._id);
+    if (activeChat.type === 'group') {
+      fetchGroupMembers(activeChat._id);
+    }
 
     return () => {
       if (socketRef.current && activeChat?._id) {
         socketRef.current.emit('leave_conversation', activeChat._id);
       }
     };
-  }, [activeChat?._id, fetchMessages]);
+  }, [activeChat?._id, activeChat?.type, fetchMessages, fetchGroupMembers]);
 
   // Handle typing debounce
   const handleInputChange = (e) => {
@@ -340,7 +442,6 @@ export default function ChatPage() {
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     socketRef.current?.emit('typing_stop', { conversationId: activeChat._id });
 
-    // Optimistic message
     const tempId = 'temp_' + Date.now();
     const optimisticMsg = {
       _id: tempId,
@@ -354,13 +455,13 @@ export default function ChatPage() {
       message: trimmed,
       messageType: 'text',
       createdAt: new Date().toISOString(),
-      readBy: []
+      deliveredTo: [],
+      readBy: [{ userId: currentUserId, readAt: new Date().toISOString() }]
     };
 
     setMessages(prev => [...prev, optimisticMsg]);
     setTimeout(() => scrollToBottom(true), 20);
 
-    // Send via socket first, with REST fallback
     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('send_message', {
         conversationId: activeChat._id,
@@ -370,7 +471,6 @@ export default function ChatPage() {
       }, (res) => {
         sendingRef.current = false;
         if (res?.success && res.message) {
-          // Replace optimistic message with actual message from DB
           setMessages(prev => {
             const alreadyHasReal = prev.some(m => m._id === res.message._id);
             if (alreadyHasReal) {
@@ -384,7 +484,6 @@ export default function ChatPage() {
         }
       });
     } else {
-      // Fallback to REST
       try {
         const res = await memberApi.post(`/chat/${activeChat._id}/messages`, {
           message: trimmed,
@@ -410,7 +509,7 @@ export default function ChatPage() {
     }
   };
 
-  // Search Users for New Chat Modal
+  // Search Users for New Chat Modal / Group Members
   const searchUsers = useCallback(async (query) => {
     setLoadingUsers(true);
     try {
@@ -424,10 +523,10 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    if (showNewChatModal || showNewGroupModal) {
+    if (showNewChatModal || showNewGroupModal || showAddMemberModal) {
       searchUsers(userSearchQuery);
     }
-  }, [showNewChatModal, showNewGroupModal, userSearchQuery, searchUsers]);
+  }, [showNewChatModal, showNewGroupModal, showAddMemberModal, userSearchQuery, searchUsers]);
 
   // Start 1-to-1 Chat with a user
   const handleStartPrivateChat = async (targetUser) => {
@@ -435,12 +534,10 @@ export default function ChatPage() {
       const res = await memberApi.post('/chat/private', { targetUserId: targetUser._id });
       const conversation = res.data?.data || res.data;
 
-      // Add otherUser if not already populated
       if (!conversation.otherUser) {
         conversation.otherUser = targetUser;
       }
 
-      // Add to conversations list if not present
       setConversations(prev => {
         const exists = prev.find(c => c._id === conversation._id);
         if (exists) return prev;
@@ -455,7 +552,7 @@ export default function ChatPage() {
     }
   };
 
-  // Create Group Chat
+  // Create Group Chat (with DP image upload)
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
       toast.error('Please enter a group name');
@@ -466,9 +563,20 @@ export default function ChatPage() {
       return;
     }
 
+    setCreatingGroup(true);
     try {
+      let uploadedImageUrl = '';
+      if (groupImageFile) {
+        try {
+          uploadedImageUrl = await uploadFileToDigitalks(groupImageFile, 'chat/groups');
+        } catch (uploadErr) {
+          console.error('Group DP upload failed:', uploadErr);
+        }
+      }
+
       const res = await memberApi.post('/chat/group', {
         name: groupName.trim(),
+        image: uploadedImageUrl || '',
         memberIds: selectedGroupMembers
       });
       const newGroup = res.data?.data || res.data;
@@ -477,10 +585,82 @@ export default function ChatPage() {
       setActiveChat(newGroup);
       setShowNewGroupModal(false);
       setGroupName('');
+      setGroupImageFile(null);
+      setGroupImagePreview('');
       setSelectedGroupMembers([]);
       toast.success('Group created successfully!');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create group');
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
+
+  // Update Group Info (Name or DP)
+  const handleUpdateGroupInfo = async (newImageFile = null) => {
+    if (!activeChat?._id) return;
+    try {
+      let imageUrl = activeChat.image;
+      if (newImageFile) {
+        imageUrl = await uploadFileToDigitalks(newImageFile, 'chat/groups');
+      }
+
+      const res = await memberApi.patch(`/chat/${activeChat._id}`, {
+        name: editGroupNameVal.trim() || activeChat.name,
+        image: imageUrl
+      });
+      const updated = res.data?.data || res.data;
+      setActiveChat(prev => ({ ...prev, ...updated }));
+      setConversations(prev => prev.map(c => c._id === activeChat._id ? { ...c, ...updated } : c));
+      setIsEditingGroupName(false);
+      toast.success('Group updated');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update group');
+    }
+  };
+
+  // Add Members to Existing Group
+  const handleAddMembersToGroup = async () => {
+    if (!activeChat?._id || selectedAddMembers.length === 0) return;
+    setAddingMembers(true);
+    try {
+      await memberApi.post(`/chat/${activeChat._id}/members`, {
+        memberIds: selectedAddMembers
+      });
+      toast.success('Members added to group');
+      setShowAddMemberModal(false);
+      setSelectedAddMembers([]);
+      fetchGroupMembers(activeChat._id);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add members');
+    } finally {
+      setAddingMembers(false);
+    }
+  };
+
+  // Remove Member from Group
+  const handleRemoveMember = async (memberUserId, memberName) => {
+    if (!activeChat?._id || !window.confirm(`Remove ${memberName || 'this member'} from group?`)) return;
+    try {
+      await memberApi.delete(`/chat/${activeChat._id}/members/${memberUserId}`);
+      toast.success('Member removed');
+      fetchGroupMembers(activeChat._id);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to remove member');
+    }
+  };
+
+  // Leave Group
+  const handleLeaveGroup = async () => {
+    if (!activeChat?._id || !window.confirm('Are you sure you want to leave this group?')) return;
+    try {
+      await memberApi.post(`/chat/${activeChat._id}/leave`);
+      toast.success('Left group');
+      setShowGroupInfoModal(false);
+      setActiveChat(null);
+      fetchConversations();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to leave group');
     }
   };
 
@@ -505,6 +685,12 @@ export default function ChatPage() {
     const otherId = String(chat.otherUser?._id || '');
     return onlineUsers.has(otherId);
   };
+
+  // Check if current user is Admin of the active group
+  const isGroupAdmin = activeChat?.type === 'group' && groupMembers.some(m => {
+    const mId = String(m.userId?._id || m.userId?.id || m.userId);
+    return mId === currentUserId && m.role === 'admin';
+  });
 
   const handleSelectChat = (chat) => {
     setActiveChat(chat);
@@ -548,6 +734,38 @@ export default function ChatPage() {
     return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
+  // Message Status Tick Helper (WhatsApp Style)
+  const renderMessageStatus = (msg) => {
+    if (String(msg._id).startsWith('temp_')) {
+      return <Clock className="w-3.5 h-3.5 text-white/60 animate-spin" />;
+    }
+
+    const otherRead = (msg.readBy || []).some(r => {
+      const rId = String(r.userId?._id || r.userId?.id || r.userId || '');
+      return rId && rId !== currentUserId;
+    });
+
+    if (otherRead) {
+      // Blue Double Tick (Seen/Read)
+      return <CheckCheck className="w-3.5 h-3.5 text-cyan-300 drop-shadow-xs stroke-[2.5]" title="Read / Seen" />;
+    }
+
+    const otherDelivered = (msg.deliveredTo || []).some(d => {
+      const dId = String(d.userId?._id || d.userId?.id || d.userId || '');
+      return dId && dId !== currentUserId;
+    });
+
+    const isRecipientOnline = isUserOnline(activeChat);
+
+    if (otherDelivered || isRecipientOnline) {
+      // Grey/White Double Tick (Delivered / Online)
+      return <CheckCheck className="w-3.5 h-3.5 text-white/80" title="Delivered" />;
+    }
+
+    // Single Tick (Sent to Server, Recipient Data Off/Offline)
+    return <Check className="w-3.5 h-3.5 text-white/70" title="Sent (Recipient offline)" />;
+  };
+
   return (
     <div className="flex h-[calc(100vh-100px)] bg-surface border border-border rounded-2xl overflow-hidden shadow-glass-sm animate-fade-in">
       
@@ -577,7 +795,7 @@ export default function ChatPage() {
 
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => { setShowNewGroupModal(true); setUserSearchQuery(''); }}
+              onClick={() => { setShowNewGroupModal(true); setUserSearchQuery(''); setGroupName(''); setGroupImagePreview(''); setGroupImageFile(null); setSelectedGroupMembers([]); }}
               title="Create Group Chat"
               className="p-2 rounded-xl text-text-secondary hover:text-primary hover:bg-surface-secondary transition-all"
             >
@@ -724,10 +942,19 @@ export default function ChatPage() {
           <>
             {/* Active Chat Header */}
             <div className="p-3.5 px-5 border-b border-border bg-surface flex items-center justify-between shadow-xs">
-              <div className="flex items-center gap-3">
+              <div 
+                onClick={() => {
+                  if (activeChat.type === 'group') {
+                    setEditGroupNameVal(activeChat.name || '');
+                    fetchGroupMembers(activeChat._id);
+                    setShowGroupInfoModal(true);
+                  }
+                }}
+                className={`flex items-center gap-3 ${activeChat.type === 'group' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+              >
                 {/* Mobile Back Button */}
                 <button
-                  onClick={() => setActiveChat(null)}
+                  onClick={(e) => { e.stopPropagation(); setActiveChat(null); }}
                   className="md:hidden p-1.5 -ml-2 rounded-lg text-text-secondary hover:text-text hover:bg-surface-secondary"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -756,8 +983,11 @@ export default function ChatPage() {
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-text text-sm md:text-base leading-tight">
+                  <h3 className="font-bold text-text text-sm md:text-base leading-tight flex items-center gap-1.5">
                     {getChatDisplayName(activeChat)}
+                    {activeChat.type === 'group' && (
+                      <Info className="w-3.5 h-3.5 text-text-secondary hover:text-primary" />
+                    )}
                   </h3>
                   <p className="text-[11px] text-text-secondary flex items-center gap-1">
                     {typingUsers[activeChat._id] ? (
@@ -765,7 +995,7 @@ export default function ChatPage() {
                         <span className="animate-pulse">typing...</span>
                       </span>
                     ) : activeChat.type === 'group' ? (
-                      <span>Group Conversation</span>
+                      <span>{groupMembers.length > 0 ? `${groupMembers.length} members • Tap for group info` : 'Group Conversation • Tap for details'}</span>
                     ) : isUserOnline(activeChat) ? (
                       <span className="text-emerald-600 font-medium flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
@@ -779,15 +1009,31 @@ export default function ChatPage() {
               </div>
 
               {/* Chat action options */}
-              {activeChat.otherUser?.number && (
-                <a
-                  href={`tel:${activeChat.otherUser.number}`}
-                  className="p-2 rounded-xl text-text-secondary hover:text-primary hover:bg-surface-secondary transition-all"
-                  title="Call Member"
-                >
-                  <Phone className="w-4 h-4" />
-                </a>
-              )}
+              <div className="flex items-center gap-2">
+                {activeChat.type === 'group' && (
+                  <button
+                    onClick={() => {
+                      setEditGroupNameVal(activeChat.name || '');
+                      fetchGroupMembers(activeChat._id);
+                      setShowGroupInfoModal(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-border bg-surface-secondary/40 text-text hover:bg-surface-secondary text-xs font-semibold flex items-center gap-1.5 transition-all"
+                  >
+                    <Users className="w-3.5 h-3.5 text-primary" />
+                    <span>Group Info</span>
+                  </button>
+                )}
+
+                {activeChat.otherUser?.number && (
+                  <a
+                    href={`tel:${activeChat.otherUser.number}`}
+                    className="p-2 rounded-xl text-text-secondary hover:text-primary hover:bg-surface-secondary transition-all"
+                    title="Call Member"
+                  >
+                    <Phone className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
             </div>
 
             {/* Messages Body */}
@@ -830,21 +1076,20 @@ export default function ChatPage() {
                       )}
 
                       <div
-                        className={`max-w-[78%] md:max-w-[65%] px-4 py-2.5 rounded-2xl shadow-sm text-sm relative group ${
+                        className={`max-w-[85%] md:max-w-[70%] px-3 py-1.5 rounded-2xl shadow-xs text-sm relative group ${
                           isMe
-                            ? 'bg-primary text-white rounded-tr-xs'
-                            : 'bg-surface border border-border/70 text-text rounded-tl-xs'
+                            ? 'bg-primary text-white rounded-tr-xs ml-auto'
+                            : 'bg-surface border border-border/70 text-text rounded-tl-xs mr-auto'
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words leading-relaxed">
-                          {msg.message}
-                        </p>
-
-                        <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isMe ? 'text-white/75' : 'text-text-secondary'}`}>
-                          <span>{formatTime(msg.createdAt)}</span>
-                          {isMe && (
-                            <CheckCheck className="w-3.5 h-3.5 text-white/90" />
-                          )}
+                        <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-0.5">
+                          <p className="whitespace-pre-wrap break-words text-[13.5px] leading-snug flex-1 select-text">
+                            {msg.message}
+                          </p>
+                          <div className={`inline-flex items-center gap-1 ml-auto shrink-0 select-none pb-[1px] text-[10.5px] ${isMe ? 'text-white/80' : 'text-text-secondary/80'}`}>
+                            <span className="leading-none">{formatTime(msg.createdAt)}</span>
+                            {isMe && renderMessageStatus(msg)}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1009,7 +1254,7 @@ export default function ChatPage() {
       )}
 
       {/* ======================================================== */}
-      {/* MODAL: New Group Chat                                    */}
+      {/* MODAL: New Group Chat (With DP Image Upload)             */}
       {/* ======================================================== */}
       {showNewGroupModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1027,9 +1272,41 @@ export default function ChatPage() {
               </button>
             </div>
 
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-4">
+              {/* Group DP Upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative group">
+                  <div className="w-16 h-16 rounded-2xl bg-surface-secondary border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
+                    {groupImagePreview ? (
+                      <img src={groupImagePreview} alt="Group DP" className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="w-6 h-6 text-text-secondary" />
+                    )}
+                  </div>
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-2xl opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                    <Camera className="w-5 h-5" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setGroupImageFile(file);
+                          setGroupImagePreview(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-text-secondary block mb-1">Group DP / Icon (Optional)</label>
+                  <p className="text-[11px] text-text-secondary">Upload a community or topic image for this group.</p>
+                </div>
+              </div>
+
               <div>
-                <label className="text-xs font-semibold text-text-secondary block mb-1">Group Name</label>
+                <label className="text-xs font-semibold text-text-secondary block mb-1">Group Name *</label>
                 <input
                   type="text"
                   placeholder="e.g. Committee Discussion, Event Volunteers"
@@ -1048,14 +1325,14 @@ export default function ChatPage() {
                   <Search className="w-3.5 h-3.5 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Search members..."
+                    placeholder="Search members to add..."
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
                     className="w-full bg-surface-secondary/40 border border-border rounded-xl pl-8 pr-3 py-1.5 text-xs text-text focus:outline-none focus:border-primary"
                   />
                 </div>
 
-                <div className="max-h-52 overflow-y-auto p-1 space-y-1 border border-border rounded-xl">
+                <div className="max-h-48 overflow-y-auto p-1 space-y-1 border border-border rounded-xl">
                   {availableUsers.map(u => {
                     const isSelected = selectedGroupMembers.includes(u._id);
                     const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.number;
@@ -1098,10 +1375,288 @@ export default function ChatPage() {
                 Cancel
               </button>
               <button
+                disabled={creatingGroup || !groupName.trim() || selectedGroupMembers.length === 0}
                 onClick={handleCreateGroup}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-white hover:bg-primary-hover shadow-sm"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-white hover:bg-primary-hover shadow-sm disabled:opacity-50"
               >
-                Create Group
+                {creatingGroup ? 'Creating Group...' : 'Create Group'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: Group Info & Member Management                    */}
+      {/* ======================================================== */}
+      {showGroupInfoModal && activeChat && activeChat.type === 'group' && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-lg shadow-glass-lg overflow-hidden animate-scale-in">
+            {/* Header */}
+            <div className="p-4 border-b border-border flex items-center justify-between bg-surface-secondary/30">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                <h3 className="font-bold text-text">Group Info</h3>
+              </div>
+              <button 
+                onClick={() => { setShowGroupInfoModal(false); setIsEditingGroupName(false); }}
+                className="p-1 rounded-lg text-text-secondary hover:text-text hover:bg-surface-secondary"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5 max-h-[75vh] overflow-y-auto">
+              {/* Group DP & Name Edit */}
+              <div className="flex items-center gap-4 p-4 rounded-2xl bg-surface-secondary/40 border border-border">
+                <div className="relative group">
+                  {getChatAvatar(activeChat) ? (
+                    <img 
+                      src={assetUrl(getChatAvatar(activeChat))} 
+                      alt={activeChat.name} 
+                      className="w-16 h-16 rounded-2xl object-cover border border-border shadow-xs" 
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-primary-light text-white font-bold text-xl flex items-center justify-center shadow-xs">
+                      <Users className="w-8 h-8 text-white" />
+                    </div>
+                  )}
+
+                  {isGroupAdmin && (
+                    <label className="absolute inset-0 flex items-center justify-center bg-black/50 text-white rounded-2xl opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                      <Camera className="w-5 h-5" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleUpdateGroupInfo(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  {isEditingGroupName ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editGroupNameVal}
+                        onChange={(e) => setEditGroupNameVal(e.target.value)}
+                        className="bg-surface border border-primary rounded-xl px-3 py-1.5 text-sm text-text flex-1"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleUpdateGroupInfo()}
+                        className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-xl"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setIsEditingGroupName(false)}
+                        className="p-1.5 text-text-secondary hover:text-text rounded-xl"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-base text-text truncate">{activeChat.name || 'Group Chat'}</h4>
+                      {isGroupAdmin && (
+                        <button
+                          onClick={() => { setEditGroupNameVal(activeChat.name || ''); setIsEditingGroupName(true); }}
+                          className="p-1 text-text-secondary hover:text-primary rounded-lg transition-colors"
+                          title="Edit Group Name"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    {groupMembers.length} Members • Created {new Date(activeChat.createdAt || Date.now()).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Members Section Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-text">Group Members ({groupMembers.length})</h4>
+                  <p className="text-xs text-text-secondary">Community members in this group</p>
+                </div>
+                {isGroupAdmin && (
+                  <button
+                    onClick={() => { setShowAddMemberModal(true); setUserSearchQuery(''); setSelectedAddMembers([]); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover shadow-sm transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Members
+                  </button>
+                )}
+              </div>
+
+              {/* Member List */}
+              <div className="space-y-1.5 divide-y divide-border/20 border border-border rounded-2xl overflow-hidden bg-surface">
+                {loadingGroupMembers ? (
+                  <div className="p-8 text-center text-text-secondary">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <p className="text-xs">Loading members...</p>
+                  </div>
+                ) : (
+                  groupMembers.map((m, idx) => {
+                    const u = m.userId || {};
+                    const memberIdStr = String(u._id || u.id || m.userId);
+                    const isMe = memberIdStr === currentUserId;
+                    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.number || 'Member';
+                    const avatar = u.image || u.profile_image;
+                    const isAdmin = m.role === 'admin';
+
+                    return (
+                      <div key={m._id || idx} className="p-3 flex items-center justify-between hover:bg-surface-secondary/30 transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {avatar ? (
+                            <img src={assetUrl(avatar)} alt={fullName} className="w-9 h-9 rounded-full object-cover border border-border flex-shrink-0" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center flex-shrink-0">
+                              {fullName.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-sm text-text truncate">
+                                {fullName} {isMe && <span className="text-xs text-text-secondary font-normal">(You)</span>}
+                              </span>
+                              {isAdmin && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
+                                  <ShieldCheck className="w-3 h-3" />
+                                  Admin
+                                </span>
+                              )}
+                              {u.designation && !isAdmin && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                  {u.designation}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-text-secondary truncate block">{u.number || u.occupation || ''}</span>
+                          </div>
+                        </div>
+
+                        {/* Admin remove action */}
+                        {isGroupAdmin && !isMe && !isAdmin && (
+                          <button
+                            onClick={() => handleRemoveMember(memberIdStr, fullName)}
+                            className="p-2 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors"
+                            title="Remove Member from Group"
+                          >
+                            <UserMinus className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Leave Group Action */}
+              <div className="pt-2">
+                <button
+                  onClick={handleLeaveGroup}
+                  className="w-full py-2.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-600 font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Leave Group
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: Add Members to Existing Group                     */}
+      {/* ======================================================== */}
+      {showAddMemberModal && activeChat && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-md shadow-glass-lg overflow-hidden animate-scale-in">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-primary" />
+                <h3 className="font-bold text-text">Add Members to {activeChat.name}</h3>
+              </div>
+              <button 
+                onClick={() => setShowAddMemberModal(false)}
+                className="p-1 rounded-lg text-text-secondary hover:text-text hover:bg-surface-secondary"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search community members..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="w-full bg-surface-secondary/40 border border-border rounded-xl pl-8 pr-3 py-2 text-xs text-text focus:outline-none focus:border-primary"
+                  autoFocus
+                />
+              </div>
+
+              <div className="max-h-60 overflow-y-auto p-1 space-y-1 border border-border rounded-xl">
+                {availableUsers
+                  .filter(u => !groupMembers.some(m => String(m.userId?._id || m.userId?.id || m.userId) === String(u._id)))
+                  .map(u => {
+                    const isSelected = selectedAddMembers.includes(u._id);
+                    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.number;
+
+                    return (
+                      <div
+                        key={u._id}
+                        onClick={() => {
+                          setSelectedAddMembers(prev => 
+                            isSelected ? prev.filter(id => id !== u._id) : [...prev, u._id]
+                          );
+                        }}
+                        className={`p-2.5 rounded-lg flex items-center justify-between text-xs cursor-pointer transition-colors ${
+                          isSelected ? 'bg-primary/10 border border-primary/20' : 'hover:bg-surface-secondary/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="font-semibold text-text">{fullName}</span>
+                          <span className="text-[11px] text-text-secondary">{u.number}</span>
+                        </div>
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                          isSelected ? 'bg-primary border-primary text-white' : 'border-border'
+                        }`}>
+                          {isSelected && <Check className="w-3 h-3" />}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-border bg-surface-secondary/20 flex justify-end gap-2">
+              <button
+                onClick={() => setShowAddMemberModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:bg-surface-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={addingMembers || selectedAddMembers.length === 0}
+                onClick={handleAddMembersToGroup}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-white hover:bg-primary-hover shadow-sm disabled:opacity-50"
+              >
+                {addingMembers ? 'Adding...' : `Add Selected (${selectedAddMembers.length})`}
               </button>
             </div>
           </div>
