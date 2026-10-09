@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter, X, Bell, Users, Shield, UserCheck } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
 import { EVENT_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
@@ -38,14 +38,13 @@ const defaultForm = {
   image: '',
   country_id: '',
   state_id: '',
+  district_id: '',
   city_id: '',
   remove_image: false,
   send_notification: true,
   target_type: 'all', // 'all' | 'committee' | 'specific'
   target_user_ids: []
 }
-
-
 
 export default function Events({ headerLeftContent }) {
   const { user: currentUser } = useContext(AuthContext)
@@ -71,6 +70,7 @@ export default function Events({ headerLeftContent }) {
   const [categories, setCategories] = useState([])
   const [countryList, setCountryList] = useState([])
   const [stateList, setStateList] = useState([])
+  const [districtList, setDistrictList] = useState([])
   const [cityList, setCityList] = useState([])
   const [memberOptions, setMemberOptions] = useState([])
   const [viewEventDetail, setViewEventDetail] = useState(null)
@@ -220,7 +220,7 @@ export default function Events({ headerLeftContent }) {
       const list = res.data?.data || res.data || []
       setCountryList(list)
       // Find India and store its ID for default selection
-      const india = list.find(c => /india/i.test(c.name))
+      const india = list.find(c => /india/i.test(c.name || c.country || ''))
       if (india) {
         const indiaId = india.id || india._id
         setFormData(prev => ({ ...prev, country_id: prev.country_id || indiaId }))
@@ -246,6 +246,18 @@ export default function Events({ headerLeftContent }) {
     }
   }, [])
 
+  const fetchDistrictList = useCallback(async () => {
+    try {
+      const res = await api.get(MEMBER_ENDPOINTS.MASTERS_DISTRICT)
+      const list = res.data?.data || res.data || []
+      setDistrictList(list)
+      return list
+    } catch (err) {
+      console.error('Failed to load district list:', err)
+      return []
+    }
+  }, [])
+
   const fetchCityList = useCallback(async () => {
     try {
       const res = await api.get(MEMBER_ENDPOINTS.MASTERS_CITY)
@@ -261,9 +273,219 @@ export default function Events({ headerLeftContent }) {
   useEffect(() => {
     fetchCountryList()
     fetchStateList()
+    fetchDistrictList()
     fetchCityList()
     fetchMembers()
-  }, [fetchCountryList, fetchStateList, fetchCityList, fetchMembers])
+  }, [fetchCountryList, fetchStateList, fetchDistrictList, fetchCityList, fetchMembers])
+
+  const countryOptions = useMemo(() => {
+    return countryList.map(c => ({
+      label: c.name || c.country || 'Unknown',
+      value: c.id || c._id
+    }))
+  }, [countryList])
+
+  const stateOptions = useMemo(() => {
+    if (!formData.country_id) return []
+    const selectedCountry = countryList.find(c => String(c.id || c._id) === String(formData.country_id))
+    const isIndia = (selectedCountry?.name || selectedCountry?.country || '').toLowerCase() === 'india'
+
+    const filtered = stateList.filter(s => {
+      const pId = String(s.parent_id || s.country_id || '')
+      const cId = String(formData.country_id)
+      if (pId) return pId === cId
+      return isIndia
+    })
+    return filtered.map(s => ({
+      label: s.name || s.state || 'Unknown',
+      value: s.id || s._id
+    }))
+  }, [stateList, countryList, formData.country_id])
+
+  const districtOptions = useMemo(() => {
+    if (!formData.state_id) return []
+    const filtered = districtList.filter(d => {
+      const pId = String(d.parent_id || d.state_id || '')
+      const sId = String(formData.state_id)
+      if (formData.district_id && String(formData.district_id) === String(d.id || d._id)) return true
+      return pId === sId
+    })
+    return filtered.map(d => ({
+      label: d.name || d.district || 'Unknown',
+      value: d.id || d._id
+    }))
+  }, [districtList, formData.state_id, formData.district_id])
+
+  const cityOptions = useMemo(() => {
+    if (!formData.state_id && !formData.district_id) return []
+
+    // 1. If a district is selected, filter strictly by that district
+    if (formData.district_id) {
+      const selectedDistrictObj = districtList.find(d => String(d.id || d._id) === String(formData.district_id))
+      const selectedDistrictName = (selectedDistrictObj?.name || selectedDistrictObj?.district || '').trim().toLowerCase()
+
+      const filtered = cityList.filter(c => {
+        const cId = String(c.id || c._id)
+        if (formData.city_id && String(formData.city_id) === cId) return true
+
+        const cParent = String(c.parent_id || c.district_id || '')
+        const cName = String(c.name || c.city || '').trim().toLowerCase()
+
+        // Direct match by district ID
+        if (cParent && cParent === String(formData.district_id)) return true
+
+        // Direct match if city name equals district name (e.g. Surat city in Surat district)
+        if (selectedDistrictName && cName === selectedDistrictName) return true
+
+        return false
+      })
+
+      return filtered.map(c => ({
+        label: c.name || c.city || 'Unknown',
+        value: c.id || c._id
+      }))
+    }
+
+    // 2. If only state is selected (no district yet), filter by districts belonging to that state
+    const stateDistricts = districtList.filter(d => String(d.parent_id || d.state_id || '') === String(formData.state_id))
+    const stateDistrictIds = new Set(stateDistricts.map(d => String(d.id || d._id)))
+    const stateDistrictNames = new Set(stateDistricts.map(d => (d.name || d.district || '').trim().toLowerCase()).filter(Boolean))
+
+    const filtered = cityList.filter(c => {
+      const cId = String(c.id || c._id)
+      if (formData.city_id && String(formData.city_id) === cId) return true
+
+      const cParent = String(c.parent_id || c.district_id || '')
+      const cState = String(c.state_id || '')
+      const cName = String(c.name || c.city || '').trim().toLowerCase()
+
+      if (cState && cState === String(formData.state_id)) return true
+      if (cParent && stateDistrictIds.has(cParent)) return true
+      if (stateDistrictNames.has(cName)) return true
+
+      return false
+    })
+
+    return filtered.map(c => ({
+      label: c.name || c.city || 'Unknown',
+      value: c.id || c._id
+    }))
+  }, [cityList, districtList, formData.district_id, formData.state_id, formData.city_id])
+
+  const handleCreateCountry = async (newVal) => {
+    const trimmed = newVal.trim()
+    if (!trimmed) return
+    const tempId = `cntry_${Date.now()}`
+    const tempObj = { _id: tempId, id: tempId, name: trimmed, status: 1 }
+    setCountryList(prev => [...prev, tempObj])
+    setFormData(prev => ({ ...prev, country_id: tempId, state_id: '', district_id: '', city_id: '' }))
+    if (fieldErrors.country_id) setFieldErrors(prev => ({ ...prev, country_id: null }))
+    try {
+      const res = await api.post(MEMBER_ENDPOINTS.MASTERS_COUNTRY, { name: trimmed, status: 1 })
+      const savedId = res.data?.data?._id || res.data?.data?.id
+      if (savedId) {
+        setCountryList(prev => prev.map(c => c._id === tempId ? { ...c, _id: savedId, id: savedId } : c))
+        setFormData(prev => prev.country_id === tempId ? { ...prev, country_id: savedId } : prev)
+      }
+      toast.success(`Country "${trimmed}" added`)
+    } catch (err) {
+      console.error('Failed to create country:', err)
+      toast.error('Failed to save country')
+    }
+  }
+
+  const handleCreateState = async (newVal) => {
+    const trimmed = newVal.trim()
+    if (!trimmed) return
+    const tempId = `st_${Date.now()}`
+    const tempObj = { _id: tempId, id: tempId, name: trimmed, parent_id: formData.country_id || '', country_id: formData.country_id || '', status: 1 }
+    setStateList(prev => [...prev, tempObj])
+    setFormData(prev => ({ ...prev, state_id: tempId, district_id: '', city_id: '' }))
+    if (fieldErrors.state_id) setFieldErrors(prev => ({ ...prev, state_id: null }))
+    try {
+      const res = await api.post(MEMBER_ENDPOINTS.MASTERS_STATE, {
+        name: trimmed,
+        parent_id: formData.country_id || undefined,
+        country_id: formData.country_id || undefined,
+        status: 1
+      })
+      const savedId = res.data?.data?._id || res.data?.data?.id
+      if (savedId) {
+        setStateList(prev => prev.map(s => s._id === tempId ? { ...s, _id: savedId, id: savedId } : s))
+        setFormData(prev => prev.state_id === tempId ? { ...prev, state_id: savedId } : prev)
+      }
+      toast.success(`State "${trimmed}" added`)
+    } catch (err) {
+      console.error('Failed to create state:', err)
+      toast.error('Failed to save state')
+    }
+  }
+
+  const handleCreateDistrict = async (newVal) => {
+    const trimmed = newVal.trim()
+    if (!trimmed) return
+    const tempId = `dist_${Date.now()}`
+    const tempObj = { _id: tempId, id: tempId, name: trimmed, district: trimmed, parent_id: formData.state_id || '', state_id: formData.state_id || '', status: 1 }
+    setDistrictList(prev => [...prev, tempObj])
+    setFormData(prev => ({ ...prev, district_id: tempId, city_id: '' }))
+    if (fieldErrors.district_id) setFieldErrors(prev => ({ ...prev, district_id: null }))
+    try {
+      const res = await api.post(MEMBER_ENDPOINTS.MASTERS_DISTRICT, {
+        name: trimmed,
+        district: trimmed,
+        parent_id: formData.state_id || undefined,
+        state_id: formData.state_id || undefined,
+        status: 1
+      })
+      const savedId = res.data?.data?._id || res.data?.data?.id
+      if (savedId) {
+        setDistrictList(prev => prev.map(d => d._id === tempId ? { ...d, _id: savedId, id: savedId } : d))
+        setFormData(prev => prev.district_id === tempId ? { ...prev, district_id: savedId } : prev)
+      }
+      toast.success(`District "${trimmed}" added`)
+    } catch (err) {
+      console.error('Failed to create district:', err)
+      toast.error('Failed to save district')
+    }
+  }
+
+  const handleCreateCity = async (newVal) => {
+    const trimmed = newVal.trim()
+    if (!trimmed) return
+    const tempId = `city_${Date.now()}`
+    const tempObj = {
+      _id: tempId,
+      id: tempId,
+      name: trimmed,
+      city: trimmed,
+      parent_id: formData.district_id || formData.state_id || '',
+      district_id: formData.district_id || '',
+      state_id: formData.state_id || '',
+      status: 1
+    }
+    setCityList(prev => [...prev, tempObj])
+    setFormData(prev => ({ ...prev, city_id: tempId }))
+    if (fieldErrors.city_id) setFieldErrors(prev => ({ ...prev, city_id: null }))
+    try {
+      const res = await api.post(MEMBER_ENDPOINTS.MASTERS_CITY, {
+        name: trimmed,
+        city: trimmed,
+        parent_id: formData.district_id || formData.state_id || undefined,
+        district_id: formData.district_id || undefined,
+        state_id: formData.state_id || undefined,
+        status: 1
+      })
+      const savedId = res.data?.data?._id || res.data?.data?.id
+      if (savedId) {
+        setCityList(prev => prev.map(c => c._id === tempId ? { ...c, _id: savedId, id: savedId } : c))
+        setFormData(prev => prev.city_id === tempId ? { ...prev, city_id: savedId } : prev)
+      }
+      toast.success(`City "${trimmed}" added`)
+    } catch (err) {
+      console.error('Failed to create city:', err)
+      toast.error('Failed to save city')
+    }
+  }
 
 
 
@@ -381,6 +603,11 @@ export default function Events({ headerLeftContent }) {
     setSelectedId(id)
     setExistingImage(row.image || '')
 
+    const foundCountry = countryList.find(c => String(c.id || c._id) === String(row.country_id) || (row.country && String(c.name || '').toLowerCase() === String(row.country || '').toLowerCase()))
+    const foundState = stateList.find(s => String(s.id || s._id) === String(row.state_id) || (row.state && String(s.name || '').toLowerCase() === String(row.state || '').toLowerCase()))
+    const foundDistrict = districtList.find(d => String(d.id || d._id) === String(row.district_id) || (row.district && (String(d.name || '').toLowerCase() === String(row.district || '').toLowerCase() || String(d.district || '').toLowerCase() === String(row.district || '').toLowerCase())))
+    const foundCity = cityList.find(c => String(c.id || c._id) === String(row.city_id) || (row.city && (String(c.name || '').toLowerCase() === String(row.city || '').toLowerCase() || String(c.city || '').toLowerCase() === String(row.city || '').toLowerCase())))
+
     setFormData({
       title: row.title || '',
       description: row.description || '',
@@ -389,9 +616,10 @@ export default function Events({ headerLeftContent }) {
       event_category_id: row.event_category_id || '',
       event_category_name: row.event_category_name || '',
       entry_type: row.entry_type || 'free',
-      country_id: row.country_id || '',
-      state_id: row.state_id || '',
-      city_id: row.city_id || '',
+      country_id: foundCountry ? (foundCountry.id || foundCountry._id) : (row.country_id || defaultForm.country_id || ''),
+      state_id: foundState ? (foundState.id || foundState._id) : (row.state_id || ''),
+      district_id: foundDistrict ? (foundDistrict.id || foundDistrict._id) : (row.district_id || ''),
+      city_id: foundCity ? (foundCity.id || foundCity._id) : (row.city_id || ''),
       start_time: toDateTimeLocal(row.start_time),
       end_time: toDateTimeLocal(row.end_time),
       image: '',
@@ -420,6 +648,7 @@ export default function Events({ headerLeftContent }) {
       event_location: 'Venue / Location',
       country_id: 'Country',
       state_id: 'State',
+      district_id: 'District',
       city_id: 'City'
     }
 
@@ -451,6 +680,11 @@ export default function Events({ headerLeftContent }) {
     try {
       const payload = new FormData()
 
+      const selectedCountry = countryList.find(c => String(c.id || c._id) === String(formData.country_id))
+      const selectedState = stateList.find(s => String(s.id || s._id) === String(formData.state_id))
+      const selectedDistrict = districtList.find(d => String(d.id || d._id) === String(formData.district_id))
+      const selectedCity = cityList.find(c => String(c.id || c._id) === String(formData.city_id))
+
       const bodyFields = {
         title: formData.title,
         description: formData.description,
@@ -462,8 +696,17 @@ export default function Events({ headerLeftContent }) {
         start_time: formData.start_time,
         end_time: formData.end_time,
         country_id: formData.country_id,
+        country: selectedCountry?.name || selectedCountry?.country || '',
+        country_name: selectedCountry?.name || selectedCountry?.country || '',
         state_id: formData.state_id,
-        city_id: formData.city_id
+        state: selectedState?.name || selectedState?.state || '',
+        state_name: selectedState?.name || selectedState?.state || '',
+        district_id: formData.district_id || '',
+        district: selectedDistrict?.name || selectedDistrict?.district || '',
+        district_name: selectedDistrict?.name || selectedDistrict?.district || '',
+        city_id: formData.city_id,
+        city: selectedCity?.name || selectedCity?.city || '',
+        city_name: selectedCity?.name || selectedCity?.city || ''
       }
 
       Object.entries(bodyFields).forEach(([key, value]) => payload.append(key, value ?? ''))
@@ -891,42 +1134,85 @@ export default function Events({ headerLeftContent }) {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Select
               label="Country"
               required
               value={formData.country_id}
               onChange={(val) => {
-                setFormData({ ...formData, country_id: val })
-                if (fieldErrors.country_id) setFieldErrors({ ...fieldErrors, country_id: null })
+                setFormData(prev => ({
+                  ...prev,
+                  country_id: val,
+                  state_id: '',
+                  district_id: '',
+                  city_id: ''
+                }))
+                if (fieldErrors.country_id) setFieldErrors(prev => ({ ...prev, country_id: null }))
               }}
               disabled={saving}
-              options={countryList.map((c) => ({ label: c.name, value: c.id || c._id }))}
+              options={countryOptions}
+              creatable={true}
+              createPrompt="Add Country"
+              onCreateOption={handleCreateCountry}
               error={fieldErrors.country_id}
+              placeholder="Select Country"
             />
             <Select
               label="State"
               required
               value={formData.state_id}
               onChange={(val) => {
-                setFormData({ ...formData, state_id: val })
-                if (fieldErrors.state_id) setFieldErrors({ ...fieldErrors, state_id: null })
+                setFormData(prev => ({
+                  ...prev,
+                  state_id: val,
+                  district_id: '',
+                  city_id: ''
+                }))
+                if (fieldErrors.state_id) setFieldErrors(prev => ({ ...prev, state_id: null }))
               }}
-              disabled={saving}
-              options={stateList.map((s) => ({ label: s.name, value: s.id || s._id }))}
+              disabled={saving || !formData.country_id}
+              options={stateOptions}
+              creatable={Boolean(formData.country_id)}
+              createPrompt="Add State"
+              onCreateOption={handleCreateState}
               error={fieldErrors.state_id}
+              placeholder={!formData.country_id ? 'Select country first' : 'Select State'}
+            />
+            <Select
+              label="District"
+              required
+              value={formData.district_id}
+              onChange={(val) => {
+                setFormData(prev => ({
+                  ...prev,
+                  district_id: val,
+                  city_id: ''
+                }))
+                if (fieldErrors.district_id) setFieldErrors(prev => ({ ...prev, district_id: null }))
+              }}
+              disabled={saving || !formData.state_id}
+              options={districtOptions}
+              creatable={Boolean(formData.state_id)}
+              createPrompt="Add District"
+              onCreateOption={handleCreateDistrict}
+              error={fieldErrors.district_id}
+              placeholder={!formData.state_id ? 'Select state first' : 'Select District'}
             />
             <Select
               label="City"
               required
               value={formData.city_id}
               onChange={(val) => {
-                setFormData({ ...formData, city_id: val })
-                if (fieldErrors.city_id) setFieldErrors({ ...fieldErrors, city_id: null })
+                setFormData(prev => ({ ...prev, city_id: val }))
+                if (fieldErrors.city_id) setFieldErrors(prev => ({ ...prev, city_id: null }))
               }}
-              disabled={saving}
-              options={cityList.map((c) => ({ label: c.name, value: c.id || c._id }))}
+              disabled={saving || (!formData.district_id && !formData.state_id)}
+              options={cityOptions}
+              creatable={Boolean(formData.district_id || formData.state_id)}
+              createPrompt="Add City"
+              onCreateOption={handleCreateCity}
               error={fieldErrors.city_id}
+              placeholder={!formData.state_id ? 'Select state first' : (!formData.district_id ? 'Select District or City' : 'Select City')}
             />
           </div>
 
@@ -1068,7 +1354,7 @@ export default function Events({ headerLeftContent }) {
                   <h3 className="text-base font-bold text-text">{viewRegistrationsEvent.title}</h3>
                   <p className="text-xs text-text-secondary line-clamp-1">{viewRegistrationsEvent.description || 'No description'}</p>
                   <div className="flex items-center gap-3 mt-1 text-xs text-text-secondary">
-                    <span>📍 {viewRegistrationsEvent.event_location || viewRegistrationsEvent.venue || '-'}</span>
+                    <span>📍 {[viewRegistrationsEvent.event_location || viewRegistrationsEvent.venue, viewRegistrationsEvent.city_name || viewRegistrationsEvent.city, viewRegistrationsEvent.district_name || viewRegistrationsEvent.district, viewRegistrationsEvent.state_name || viewRegistrationsEvent.state, viewRegistrationsEvent.country_name || viewRegistrationsEvent.country].filter(Boolean).join(', ') || '-'}</span>
                     <span>•</span>
                     <span>📅 {formatDate(viewRegistrationsEvent.start_time || viewRegistrationsEvent.event_date)}</span>
                   </div>
