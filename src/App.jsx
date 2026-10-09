@@ -23,6 +23,7 @@ import News from './pages/News'
 import Documentation from './pages/Documentation'
 import { hasPermission } from './lib/permissions'
 import Posts from './pages/Post'
+import Polls from './pages/Polls'
 import { activeTheme, applyTheme } from './theme/theme'
 import { ThemeProvider } from './context/ThemeContext'
 import { ActivitiesPage, ServicesPage, MediaPage, EngagementsPage, MastersPage } from './pages/TabbedCategoryPages'
@@ -98,6 +99,7 @@ export default function App() {
           <Route path="committee" element={<PermissionRoute permission="committee.list"><CommitteeMembers /></PermissionRoute>} />
           <Route path="roles" element={<PermissionRoute permission="roles.list"><Roles /></PermissionRoute>} />
           <Route path="users" element={<PermissionRoute permission="members.list"><Users /></PermissionRoute>} />
+          <Route path="polls" element={<PermissionRoute permission="polls.list"><Polls /></PermissionRoute>} />
           <Route path="activities" element={<ActivitiesPage />} />
           <Route path="services" element={<ServicesPage />} />
           <Route path="media" element={<MediaPage />} />

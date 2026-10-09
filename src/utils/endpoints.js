@@ -167,6 +167,18 @@ export const MANDAL_ENDPOINTS = {
   GET_HISTORY: '/mandal/history'
 }
 
+// Poll Module API Endpoints
+export const POLL_ENDPOINTS = {
+  GET_POLLS: '/polls',
+  CREATE_POLL: '/polls',
+  GET_POLL: (id) => `/polls/${id}`,
+  UPDATE_POLL: (id) => `/polls/${id}`,
+  DELETE_POLL: (id) => `/polls/${id}`,
+  SUBMIT_VOTE: (id) => `/polls/${id}/vote`,
+  GET_RESULTS: (id) => `/polls/${id}/results`,
+  GET_RESPONSES: (id) => `/polls/${id}/responses`
+}
+
 export default {
   COMMITTEE: COMMITTEE_ENDPOINTS,
   ROLES: ROLES_ENDPOINTS,
@@ -184,6 +196,7 @@ export default {
   EXPENSE: EXPENSE_ENDPOINTS,
   DONATION: DONATION_ENDPOINTS,
   MANDAL: MANDAL_ENDPOINTS,
-  MASTER: MASTER_ENDPOINTS
+  MASTER: MASTER_ENDPOINTS,
+  POLL: POLL_ENDPOINTS
 }
 

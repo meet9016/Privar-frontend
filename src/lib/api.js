@@ -231,7 +231,7 @@ const setupInterceptors = (axiosInstance) => {
 setupInterceptors(api)
 setupInterceptors(memberApi)
 
-import { COMMITTEE_ENDPOINTS, MEMBER_ENDPOINTS, EVENT_ENDPOINTS, GALLERY_ENDPOINTS, STUDENT_ENDPOINTS, BUSINESS_ENDPOINTS, POST_ENDPOINTS, NEWS_ENDPOINTS, EXPENSE_ENDPOINTS, DONATION_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
+import { COMMITTEE_ENDPOINTS, MEMBER_ENDPOINTS, EVENT_ENDPOINTS, GALLERY_ENDPOINTS, STUDENT_ENDPOINTS, BUSINESS_ENDPOINTS, POST_ENDPOINTS, NEWS_ENDPOINTS, EXPENSE_ENDPOINTS, DONATION_ENDPOINTS, MASTER_ENDPOINTS, POLL_ENDPOINTS } from '../utils/endpoints'
 
 export const getEventsList = (params = {}) => api.get(EVENT_ENDPOINTS.GET_EVENTS, { params })
 export const getUsersList = (params = {}) => api.get(MEMBER_ENDPOINTS.GET_MEMBERS, { params })
@@ -244,6 +244,13 @@ export const getBankDetailsList = (params = {}) => api.get(MASTER_ENDPOINTS.BANK
 export const getCommitteeMembersList = (params = {}) => api.get(COMMITTEE_ENDPOINTS.GET_MEMBERS, { params })
 export const getGalleryList = (params = {}) => api.get(GALLERY_ENDPOINTS.GET_GALLERY, { params })
 export const getExpensesList = (params = {}) => api.get(EXPENSE_ENDPOINTS.GET_EXPENSES, { params })
+export const getPollsList = (params = {}) => api.get(POLL_ENDPOINTS.GET_POLLS, { params })
+export const createPoll = (data) => api.post(POLL_ENDPOINTS.CREATE_POLL, data)
+export const updatePoll = (id, data) => api.put(POLL_ENDPOINTS.UPDATE_POLL(id), data)
+export const deletePoll = (id) => api.delete(POLL_ENDPOINTS.DELETE_POLL(id))
+export const submitPollVote = (id, data) => api.post(POLL_ENDPOINTS.SUBMIT_VOTE(id), data)
+export const getPollResults = (id) => api.get(POLL_ENDPOINTS.GET_RESULTS(id))
+export const getPollResponses = (id, params = {}) => api.get(POLL_ENDPOINTS.GET_RESPONSES(id), { params })
 
 export const exportExpensesExcel = (params = {}) =>
   api.get(EXPENSE_ENDPOINTS.EXPORT_EXCEL, { params, responseType: 'blob' })
