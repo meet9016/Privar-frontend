@@ -3149,11 +3149,11 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
       return ['']
     }
 
-    const CHARS_PER_LINE = 68
+    const CHARS_PER_LINE = 72
     const SINGLE_PAGE_MAX = 12
-    const FIRST_PAGE_MAX = 14
-    const MIDDLE_PAGE_MAX = 15
-    const LAST_PAGE_WITH_FOOTER_MAX = 9
+    const FIRST_PAGE_MAX = 17
+    const MIDDLE_PAGE_MAX = 17
+    const LAST_PAGE_WITH_FOOTER_MAX = 12
 
     // Break text into individual visual lines
     const rawParagraphs = rawBody.split('\n')
