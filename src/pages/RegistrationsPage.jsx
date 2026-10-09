@@ -834,10 +834,10 @@ export default function RegistrationsPage() {
                   <p className="font-bold text-text text-[15px] leading-relaxed">{userObj.address}</p>
                 </div>
               )}
-              {userObj.village && (
+              {Boolean(userObj.village || userObj.village_name) && (
                 <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
                   <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Village / Native Place</span>
-                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.village)}</p>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.village_name || userObj.village)}</p>
                 </div>
               )}
               {userObj.pincode && (
@@ -846,25 +846,31 @@ export default function RegistrationsPage() {
                   <p className="font-bold text-text text-[15px] font-mono">{userObj.pincode}</p>
                 </div>
               )}
-              {(userObj.city_id || userObj.city) && (
+              {Boolean(userObj.city_name || userObj.city || cleanLocationName(userObj.city_id)) && (
                 <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
                   <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">City / Taluka</span>
-                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.city_id || userObj.city)}</p>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.city_name || userObj.city || userObj.city_id)}</p>
                 </div>
               )}
-              {(userObj.district_id || userObj.district) && (
+              {Boolean(userObj.district_name || userObj.district || cleanLocationName(userObj.district_id)) && (
                 <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
                   <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">District</span>
-                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.district_id || userObj.district)}</p>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.district_name || userObj.district || userObj.district_id)}</p>
                 </div>
               )}
-              {(userObj.state_id || userObj.state) && (
+              {Boolean(userObj.state_name || userObj.state || cleanLocationName(userObj.state_id)) && (
                 <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
                   <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">State</span>
-                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.state_id || userObj.state)}</p>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.state_name || userObj.state || userObj.state_id)}</p>
                 </div>
               )}
-              {(!userObj.address && !userObj.village && !userObj.pincode && !userObj.city && !userObj.district && !userObj.state) && (
+              {Boolean(userObj.country_name || userObj.country || cleanLocationName(userObj.country_id)) && (
+                <div className="p-4 rounded-xl bg-surface-secondary/30 border border-border/50 hover:bg-surface-secondary/60 transition-colors">
+                  <span className="text-text-secondary text-[11px] font-semibold uppercase tracking-wider block mb-1">Country</span>
+                  <p className="font-bold text-text text-[15px]">{cleanLocationName(userObj.country_name || userObj.country || userObj.country_id)}</p>
+                </div>
+              )}
+              {(!userObj.address && !userObj.village && !userObj.pincode && !userObj.city && !userObj.district && !userObj.state && !userObj.country) && (
                 <div className="col-span-full p-6 text-center text-text-secondary italic">No address details provided</div>
               )}
             </div>
@@ -931,7 +937,8 @@ export default function RegistrationsPage() {
           {activeTab === 'documents' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {[
-                { label: 'Aadhaar Card', url: docs.aadhaar_card, icon: CreditCard },
+                { label: 'Aadhaar Card (Front)', url: docs.aadhaar_card || docs.aadhaar_front, icon: CreditCard },
+                { label: 'Aadhaar Card (Back)', url: docs.aadhaar_back || docs.aadhar_back, icon: CreditCard },
                 { label: 'PAN Card', url: docs.pan_card, icon: ShieldCheck },
                 { label: 'Voter ID', url: docs.voter_id, icon: FileCheck },
                 { label: 'Driving License', url: docs.driving_license, icon: FileText },
