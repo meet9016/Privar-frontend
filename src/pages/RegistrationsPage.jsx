@@ -294,7 +294,17 @@ export default function RegistrationsPage() {
     return str
   }
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, row) => {
+    const isResubmitted = row?.is_resubmitted || row?.status_check || status === 'resubmitted' || status === 'resubmit'
+    if (isResubmitted && status !== 'approved' && status !== 'rejected') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/25">
+          <RefreshCw className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+          Resubmitted
+        </span>
+      )
+    }
+
     switch (status) {
       case 'approved':
         return (
@@ -308,6 +318,14 @@ export default function RegistrationsPage() {
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/25">
             <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
             Rejected
+          </span>
+        )
+      case 'resubmit':
+      case 'resubmitted':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/25">
+            <RefreshCw className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+            Resubmitted
           </span>
         )
       case 'needs_correction':
@@ -422,7 +440,7 @@ export default function RegistrationsPage() {
     {
       key: 'patti',
       header: 'Patti/Para/Pargana',
-      className: 'min-w-[190px]',
+      className: 'min-w-[180px]',
       render: (row) => {
         const patti = cleanLocationName(row.patti_name || row.patti_para_pargana)
 
@@ -438,18 +456,31 @@ export default function RegistrationsPage() {
       }
     },
     {
+      key: 'status',
+      header: 'Status',
+      className: 'min-w-[140px]',
+      render: (row) => {
+        const isApproved = row.is_approved || row.registration_status === 'approved' || row.status === 'approved'
+        const currentStatus = isApproved ? 'approved' : (row.status || 'in_progress')
+        return getStatusBadge(currentStatus, row)
+      }
+    },
+    {
       key: 'step',
       header: 'Progress Step',
-      className: 'min-w-[150px]',
+      className: 'min-w-[140px]',
       render: (row) => {
-        const stepNum = row.registration_step || 1
+        const stepNum = row.registration_step || row.current_step || 1
         return (
           <div className="text-xs space-y-1">
+            <span className="inline-flex items-center gap-1 font-semibold text-text">
+              <Layers className="w-3 h-3 text-primary" /> Step {stepNum} of 5
+            </span>
             <div className="text-[11px] text-text-secondary font-medium">
               {row.family_members_count > 0 ? (
                 <span className="text-primary font-bold">+{row.family_members_count} family members</span>
               ) : (
-                <span>Head of Family only</span>
+                <span>Head only</span>
               )}
             </div>
           </div>
@@ -558,6 +589,7 @@ export default function RegistrationsPage() {
                 options={[
                   { label: 'All Statuses', value: '' },
                   { label: 'Pending Review', value: 'pending_review' },
+                  { label: 'Resubmitted', value: 'resubmitted' },
                   { label: 'Needs Correction', value: 'needs_correction' },
                   { label: 'In Progress', value: 'in_progress' },
                   { label: 'Approved', value: 'approved' },
@@ -671,7 +703,7 @@ export default function RegistrationsPage() {
 
             {/* Status & Progress Step Badges */}
             <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1.5 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-border/50 shrink-0">
-              {getStatusBadge(userObj.registration_status || (userObj.status === 1 ? 'approved' : 'pending_review'))}
+              {getStatusBadge(userObj.registration_status || (userObj.status === 1 ? 'approved' : userObj.status || 'pending_review'), userObj)}
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary bg-white dark:bg-surface border border-border/80 px-2.5 py-0.5 rounded-full">
                 <Layers className="w-3 h-3 text-primary" /> Step {userObj.registration_step || userObj.current_step || 1} of 5
               </span>
