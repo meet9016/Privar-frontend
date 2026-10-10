@@ -21,7 +21,8 @@ import {
   Square,
   Check,
   Layers,
-  ChevronDown
+  ChevronDown,
+  ExternalLink
 } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { toJpeg, getFontEmbedCSS } from 'html-to-image'
@@ -338,133 +339,176 @@ function saveData(data) {
   // No localStorage save - records are stored in MongoDB
 }
 
+// ─── Extract printable HTML clone with embedded base64 assets & typography ───
+function extractPrintableHtml(rootElement) {
+  if (!rootElement) return ''
+  const clone = rootElement.cloneNode(true)
+
+  // 1. Convert all <img> elements in clone to embedded Base64 Data URLs so Puppeteer has zero broken/relative images
+  const origImages = rootElement.querySelectorAll('img')
+  const cloneImages = clone.querySelectorAll('img')
+  origImages.forEach((img, i) => {
+    const cloneImg = cloneImages[i]
+    if (!cloneImg || !img.src) return
+
+    if (img.src.startsWith('data:')) {
+      cloneImg.src = img.src
+      return
+    }
+
+    try {
+      if (img.complete && (img.naturalWidth > 0 || img.width > 0)) {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth || img.width || 120
+        canvas.height = img.naturalHeight || img.height || 120
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        cloneImg.src = canvas.toDataURL('image/png')
+        return
+      }
+    } catch (_) {
+      // Tainted canvas fallback
+    }
+
+    // Fallback: Ensure URL is fully qualified with origin so Puppeteer can reach it
+    if (img.src.startsWith('/') || !img.src.startsWith('http')) {
+      try {
+        cloneImg.src = new URL(img.getAttribute('src') || img.src, window.location.origin).href
+      } catch (_) {
+        cloneImg.src = img.src
+      }
+    } else {
+      cloneImg.src = img.src
+    }
+  })
+
+  // 2. Convert <textarea> elements into clean styled <div> blocks preserving exact typography & line breaks
+  const origTextareas = rootElement.querySelectorAll('textarea')
+  const cloneTextareas = clone.querySelectorAll('textarea')
+  origTextareas.forEach((ta, i) => {
+    const cloneTa = cloneTextareas[i]
+    if (!cloneTa) return
+    const div = document.createElement('div')
+    const val = (ta.value !== undefined && ta.value !== null && ta.value !== '') 
+      ? ta.value 
+      : (ta.defaultValue || ta.textContent || '')
+    div.style.cssText = window.getComputedStyle(ta).cssText || ta.style.cssText
+    div.style.whiteSpace = 'pre-wrap'
+    div.style.wordBreak = 'break-word'
+    div.style.display = 'block'
+    div.style.border = 'none'
+    div.style.outline = 'none'
+    div.style.background = 'transparent'
+    div.style.color = '#000000'
+    div.style.fontSize = ta.style.fontSize || '13px'
+    div.style.fontWeight = ta.style.fontWeight || '600'
+    div.style.fontFamily = '"Noto Sans Gujarati", "Anek Gujarati", "Noto Sans", Arial, sans-serif'
+    div.textContent = val
+    cloneTa.parentNode.replaceChild(div, cloneTa)
+  })
+
+  // 3. Convert <input> elements into clean styled <span> blocks preserving exact typography
+  const origInputs = rootElement.querySelectorAll('input')
+  const cloneInputs = clone.querySelectorAll('input')
+  origInputs.forEach((inp, i) => {
+    const cloneInp = cloneInputs[i]
+    if (!cloneInp) return
+    if (inp.type === 'file') {
+      cloneInp.remove()
+      return
+    }
+    const span = document.createElement('span')
+    const val = (inp.value !== undefined && inp.value !== null && inp.value !== '') 
+      ? inp.value 
+      : (inp.defaultValue || inp.getAttribute('value') || '')
+    span.style.cssText = inp.style.cssText
+    span.style.display = 'inline-flex'
+    span.style.alignItems = 'center'
+    span.style.justifyContent = inp.style.textAlign === 'center' ? 'center' : 'flex-start'
+    span.style.width = '100%'
+    span.style.height = '100%'
+    span.style.border = 'none'
+    span.style.outline = 'none'
+    span.style.background = 'transparent'
+    span.style.color = '#000000'
+    span.style.fontSize = inp.style.fontSize || '12.5px'
+    span.style.fontWeight = inp.style.fontWeight || '700'
+    span.style.fontFamily = '"Noto Sans Gujarati", "Anek Gujarati", "Noto Sans", Arial, sans-serif'
+    span.textContent = val
+    cloneInp.parentNode.replaceChild(span, cloneInp)
+  })
+
+  // 4. Remove screen-only guide lines background
+  clone.querySelectorAll('.letterhead-guide-lines').forEach((el) => {
+    el.style.backgroundImage = 'none'
+  })
+
+  return clone.outerHTML
+}
+
+// ─── Browser file download helper from Blob (<50ms instant) ───
+function triggerBlobDownload(blobData, downloadFilename) {
+  const blob = blobData instanceof Blob ? blobData : new Blob([blobData], { type: 'application/pdf' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.style.display = 'none'
+  link.href = url
+  link.setAttribute('download', `${downloadFilename.replace(/\.pdf$/i, '')}.pdf`)
+  document.body.appendChild(link)
+  link.click()
+  setTimeout(() => {
+    try {
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (_) {}
+  }, 60000)
+}
+
+// ─── Direct retrieval of stored PDF from server without Puppeteer re-renders ───
+async function downloadStoredPdf(record, preferredFilename) {
+  if (!record) throw new Error('No record provided for download')
+  const token = localStorage.getItem('auth_token') || ''
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : ''
+
+  // Priority: 1. canonical downloadUrl, 2. direct API download endpoint, 3. pdfUrl
+  let targetUrl = record.downloadUrl
+  if (!targetUrl && record._id && !String(record._id).startsWith('rec_')) {
+    targetUrl = `${API_BASE}/api/certificates/download/${record._id}`
+  }
+  if (!targetUrl && record.pdfUrl) {
+    targetUrl = record.pdfUrl
+  }
+
+  if (!targetUrl) {
+    throw new Error('Record does not have an accessible download URL')
+  }
+
+  // Attach auth query parameter for seamless token transport
+  const fullFetchUrl = targetUrl.includes('?') ? `${targetUrl}&token=${encodeURIComponent(token)}` : `${targetUrl}${tokenParam}`
+  const filename = preferredFilename || record.fileName || `${record.type || 'certificate'}-${record.certificateNumber || 'doc'}`
+
+  const res = await fetch(fullFetchUrl, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to download stored PDF (Status: ${res.status})`)
+  }
+
+  const blob = await res.blob()
+  triggerBlobDownload(blob, filename)
+  return true
+}
+
 async function downloadAsPDF(ref, filename, options = {}) {
   if (!ref?.current) return
 
   const rootElement = ref.current
   const safeFilename = filename || 'Certificate'
+  const htmlContent = extractPrintableHtml(rootElement)
 
   // Method 1: High-Fidelity 1:1 Vector PDF via Backend Puppeteer/Chromium (Primary)
   try {
-    const clone = rootElement.cloneNode(true)
-
-    // 1. Convert all <img> elements in clone to embedded Base64 Data URLs so Puppeteer has zero broken/relative images
-    const origImages = rootElement.querySelectorAll('img')
-    const cloneImages = clone.querySelectorAll('img')
-    origImages.forEach((img, i) => {
-      const cloneImg = cloneImages[i]
-      if (!cloneImg || !img.src) return
-
-      if (img.src.startsWith('data:')) {
-        cloneImg.src = img.src
-        return
-      }
-
-      try {
-        if (img.complete && (img.naturalWidth > 0 || img.width > 0)) {
-          const canvas = document.createElement('canvas')
-          canvas.width = img.naturalWidth || img.width || 120
-          canvas.height = img.naturalHeight || img.height || 120
-          const ctx = canvas.getContext('2d')
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-          cloneImg.src = canvas.toDataURL('image/png')
-          return
-        }
-      } catch (e) {
-        // Tainted canvas fallback
-      }
-
-      // Fallback: Ensure URL is fully qualified with origin so Puppeteer can reach it
-      if (img.src.startsWith('/') || !img.src.startsWith('http')) {
-        try {
-          cloneImg.src = new URL(img.getAttribute('src') || img.src, window.location.origin).href
-        } catch (_) {
-          cloneImg.src = img.src
-        }
-      } else {
-        cloneImg.src = img.src
-      }
-    })
-
-    // 2. Convert <textarea> elements into clean styled <div> blocks preserving exact typography & line breaks
-    const origTextareas = rootElement.querySelectorAll('textarea')
-    const cloneTextareas = clone.querySelectorAll('textarea')
-    origTextareas.forEach((ta, i) => {
-      const cloneTa = cloneTextareas[i]
-      if (!cloneTa) return
-      const div = document.createElement('div')
-      const val = (ta.value !== undefined && ta.value !== null && ta.value !== '') 
-        ? ta.value 
-        : (ta.defaultValue || ta.textContent || '')
-      div.style.cssText = window.getComputedStyle(ta).cssText || ta.style.cssText
-      div.style.whiteSpace = 'pre-wrap'
-      div.style.wordBreak = 'break-word'
-      div.style.display = 'block'
-      div.style.border = 'none'
-      div.style.outline = 'none'
-      div.style.background = 'transparent'
-      div.style.color = '#000000'
-      div.style.fontSize = ta.style.fontSize || '13px'
-      div.style.fontWeight = ta.style.fontWeight || '600'
-      div.style.fontFamily = '"Noto Sans Gujarati", "Anek Gujarati", "Noto Sans", Arial, sans-serif'
-      div.textContent = val
-      cloneTa.parentNode.replaceChild(div, cloneTa)
-    })
-
-    // 3. Convert <input> elements into clean styled <span> blocks preserving exact typography
-    const origInputs = rootElement.querySelectorAll('input')
-    const cloneInputs = clone.querySelectorAll('input')
-    origInputs.forEach((inp, i) => {
-      const cloneInp = cloneInputs[i]
-      if (!cloneInp) return
-      if (inp.type === 'file') {
-        cloneInp.remove()
-        return
-      }
-      const span = document.createElement('span')
-      const val = (inp.value !== undefined && inp.value !== null && inp.value !== '') 
-        ? inp.value 
-        : (inp.defaultValue || inp.getAttribute('value') || '')
-      span.style.cssText = inp.style.cssText
-      span.style.display = 'inline-flex'
-      span.style.alignItems = 'center'
-      span.style.justifyContent = inp.style.textAlign === 'center' ? 'center' : 'flex-start'
-      span.style.width = '100%'
-      span.style.height = '100%'
-      span.style.border = 'none'
-      span.style.outline = 'none'
-      span.style.background = 'transparent'
-      span.style.color = '#000000'
-      span.style.fontSize = inp.style.fontSize || '12.5px'
-      span.style.fontWeight = inp.style.fontWeight || '700'
-      span.style.fontFamily = '"Noto Sans Gujarati", "Anek Gujarati", "Noto Sans", Arial, sans-serif'
-      span.textContent = val
-      cloneInp.parentNode.replaceChild(span, cloneInp)
-    })
-
-    // 4. Remove screen-only guide lines background
-    clone.querySelectorAll('.letterhead-guide-lines').forEach((el) => {
-      el.style.backgroundImage = 'none'
-    })
-
-    // Helper to trigger browser file download from Blob
-    const triggerBlobDownload = (blobData, downloadFilename) => {
-      const blob = blobData instanceof Blob ? blobData : new Blob([blobData], { type: 'application/pdf' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.style.display = 'none'
-      link.href = url
-      link.setAttribute('download', `${downloadFilename}.pdf`)
-      document.body.appendChild(link)
-      link.click()
-      setTimeout(() => {
-        try {
-          document.body.removeChild(link)
-          window.URL.revokeObjectURL(url)
-        } catch (_) { }
-      }, 60000)
-    }
-
     // Attempt 1: Fetch directly from backend generate-pdf
     try {
       const res = await fetch(`${API_BASE}/api/certificates/generate-pdf`, {
@@ -474,7 +518,7 @@ async function downloadAsPDF(ref, filename, options = {}) {
           ...(localStorage.getItem('auth_token') ? { Authorization: `Bearer ${localStorage.getItem('auth_token')}` } : {}),
         },
         body: JSON.stringify({
-          html: clone.outerHTML,
+          html: htmlContent,
           filename: safeFilename,
           pageRanges: options.pageRanges,
         }),
@@ -493,7 +537,7 @@ async function downloadAsPDF(ref, filename, options = {}) {
     const response = await api.post(
       '/certificates/generate-pdf',
       {
-        html: clone.outerHTML,
+        html: htmlContent,
         filename: safeFilename,
         pageRanges: options.pageRanges,
       },
@@ -4962,50 +5006,29 @@ export default function CertificatePage() {
     setSaveStatus(null)
   }, [])
 
-  // Save or Update record into MongoDB Database Table
+  // Save or Update record into MongoDB Database Table with PDF Generation and Multer/Storage Support
   const handleSaveRecord = async () => {
     setSaving(true)
     const currentData = formData[activeTab] || {}
 
-    let certificateNumber = ''
-    let primaryName = ''
-    let secondaryName = ''
-    let issuedDate = ''
-
-    if (activeTab === 'marriage') {
-      certificateNumber = currentData.number || currentData.regNumber || ''
-      primaryName = currentData.dulhaName || ''
-      secondaryName = currentData.dulhanFullName || ''
-      issuedDate = [currentData.dateDay, currentData.dateMonth, currentData.dateYear ? (currentData.dateYear.length === 2 ? `20${currentData.dateYear}` : currentData.dateYear) : ''].filter(Boolean).join('/')
-    } else if (activeTab === 'noc') {
-      certificateNumber = currentData.number || currentData.regNumber || ''
-      primaryName = currentData.memberName || ''
-      secondaryName = currentData.dikraDikri || ''
-      issuedDate = [currentData.dateDay, currentData.dateMonth, currentData.dateYear ? (currentData.dateYear.length === 2 ? `20${currentData.dateYear}` : currentData.dateYear) : ''].filter(Boolean).join('/')
-    } else if (activeTab === 'letterhead') {
-      issuedDate = currentData.date || ''
-      primaryName = currentData.refNumber || 'Letter'
-      secondaryName = currentData.letterTitle || ''
-    }
-
     try {
+      // 1. Extract printable HTML clone so the backend Puppeteer generates identical layout
+      const printableHtml = printRef?.current ? extractPrintableHtml(printRef.current) : ''
+      const payload = {
+        type: activeTab,
+        data: currentData,
+        html: printableHtml,
+      }
       const jsonCfg = { headers: { 'Content-Type': 'application/json' } }
+
       if (editingRecordId && !String(editingRecordId).startsWith('rec_')) {
-        await api.put(
-          `/certificates/records/${editingRecordId}`,
-          { type: activeTab, data: currentData },
-          jsonCfg
-        )
+        await api.put(`/certificates/records/${editingRecordId}`, payload, jsonCfg)
         setSaveStatus('updated')
-        toast.success('Certificate updated successfully!')
+        toast.success('Certificate record and PDF updated successfully!')
       } else {
-        await api.post(
-          '/certificates/records',
-          { type: activeTab, data: currentData },
-          jsonCfg
-        )
+        await api.post('/certificates/records', payload, jsonCfg)
         setSaveStatus('created')
-        toast.success('Certificate saved to table successfully!')
+        toast.success('Certificate saved and PDF generated successfully!')
       }
 
       await fetchRecords()
@@ -5044,7 +5067,7 @@ export default function CertificatePage() {
     setIsFormModalOpen(true)
   }
 
-  // Delete a record from table
+  // Delete a record from table (Recoverable soft-delete on server)
   const handleDeleteRecord = async (id) => {
     const isConfirmed = await confirm('Are you sure you want to delete this certificate record? This action cannot be undone.', {
       confirmText: 'Delete',
@@ -5064,26 +5087,30 @@ export default function CertificatePage() {
 
   // View specific record directly in 1:1 Live Sheet view
   const handleViewRecord = async (record) => {
+    if (!record) return
     setEditingRecordId(record._id)
     try {
+      let currentRecData = record.data || {}
       if (record._id && !String(record._id).startsWith('rec_')) {
         const res = await api.get(`/certificates/records/${record._id}`)
         if (res.data?.data) {
-          const fullRec = res.data.data
-          setFormData((prev) => ({
-            ...prev,
-            [fullRec.type || record.type]: { ...(defaultData[fullRec.type || record.type] || {}), ...(fullRec.data || {}) },
-          }))
-          setIsPreviewModalOpen(true)
-          return
+          currentRecData = res.data.data.data || res.data.data || currentRecData
         }
       }
-    } catch (_) { }
-    setFormData((prev) => ({
-      ...prev,
-      [record.type]: { ...(defaultData[record.type] || {}), ...(record.data || {}) },
-    }))
-    setIsPreviewModalOpen(true)
+      const recType = record.type || activeTab
+      if (recType !== activeTab) {
+        setActiveTab(recType)
+      }
+      const mergedData = { ...(defaultData[recType] || {}), ...currentRecData }
+      setFormData((prev) => ({
+        ...prev,
+        [recType]: mergedData,
+      }))
+      setIsPreviewModalOpen(true)
+    } catch (e) {
+      console.error('Error viewing record:', e)
+      toast.error('Failed to load record details')
+    }
   }
 
   // Reset to brand new blank form
@@ -5097,7 +5124,7 @@ export default function CertificatePage() {
     setIsFormModalOpen(true)
   }
 
-  // Exact PDF download with instant capture & view sync
+  // Exact PDF download from active form editor sheet
   const handleDownload = async () => {
     setDownloading(true)
     const toastId = toast.loading('Generating and downloading certificate PDF...')
@@ -5119,29 +5146,25 @@ export default function CertificatePage() {
     }
   }
 
-  // Direct PDF download from Saved Records Table
+  // Direct PDF download from Saved Records Table: 1:1 Exact Vector PDF render matching screen
   const handleDownloadRecord = async (record) => {
     if (!record) return
     setDownloadingRecordId(record._id)
-    const toastId = toast.loading(`Downloading certificate (1 of 1)...`)
+    const toastId = toast.loading('Generating and downloading certificate PDF...')
     try {
       let currentRecData = record.data || {}
       if (record._id && !String(record._id).startsWith('rec_')) {
         try {
           const res = await api.get(`/certificates/records/${record._id}`)
-          if (res.data?.data?.data) {
-            currentRecData = res.data.data.data
+          if (res.data?.data) {
+            currentRecData = res.data.data.data || res.data.data || currentRecData
           }
         } catch (_) { }
       }
 
       const recType = record.type || activeTab
       const mergedData = { ...(defaultData[recType] || {}), ...currentRecData }
-
-      // Set target record in dedicated offscreen table printing state
       setPrintingRecord({ type: recType, data: mergedData })
-
-      // Give React time to flush state update to DOM
       await new Promise((r) => setTimeout(r, 120))
 
       const names = {
@@ -5151,64 +5174,62 @@ export default function CertificatePage() {
       }
 
       await downloadAsPDF(tablePrintRef, names[recType] || 'Certificate', { pageRanges: recType === 'letterhead' ? undefined : '1-2' })
-
       toast.dismiss(toastId)
       toast.success('Certificate downloaded successfully!')
     } catch (e) {
       console.error('Direct table PDF download error:', e)
       toast.dismiss(toastId)
-      toast.error('Download failed, please try again.')
+      toast.error('Download failed: ' + (e.message || 'Please try again'))
     } finally {
       setPrintingRecord(null)
       setDownloadingRecordId(null)
     }
   }
 
-  // Bulk download multiple certificates with live count progress toaster
+  // Bounded bulk download of stored certificates (batch limit = 25, worker concurrency = 3)
   const handleBulkDownloadRecords = async (recordsToDownload) => {
     if (!Array.isArray(recordsToDownload) || recordsToDownload.length === 0) return
-    const totalCount = recordsToDownload.length
+
+    // Enforce batch size limit of 25
+    const batch = recordsToDownload.slice(0, 25)
+    if (recordsToDownload.length > 25) {
+      toast.info('Processing first 25 certificates (batch size limit).')
+    }
+
+    const totalCount = batch.length
     const toastId = toast.loading(`Downloading: 0 of ${totalCount} certificates...`)
     let downloadedCount = 0
 
-    for (let i = 0; i < totalCount; i++) {
-      const rec = recordsToDownload[i]
-      setDownloadingRecordId(rec._id)
-      try {
-        let currentRecData = rec.data || {}
-        if (rec._id && !String(rec._id).startsWith('rec_')) {
-          try {
-            const res = await api.get(`/certificates/records/${rec._id}`)
-            if (res.data?.data?.data) {
-              currentRecData = res.data.data.data
-            }
-          } catch (_) { }
+    // Bounded worker queue with concurrency = 3
+    const CONCURRENCY_LIMIT = 3
+    let cursor = 0
+
+    const worker = async () => {
+      while (cursor < totalCount) {
+        const index = cursor++
+        const rec = batch[index]
+        if (!rec) continue
+
+        setDownloadingRecordId(rec._id)
+        try {
+          const names = {
+            marriage: `Marriage-Certificate-${rec.certificateNumber || rec.data?.number || index + 1}`,
+            letterhead: `Letterhead-${rec.primaryName || rec.data?.refNumber || index + 1}`,
+            noc: `NOC-Certificate-${rec.certificateNumber || rec.data?.number || index + 1}`,
+          }
+          const filename = names[rec.type || activeTab] || `Certificate-${index + 1}`
+          await downloadStoredPdf(rec, filename)
+          downloadedCount++
+          toast.loading(`Downloading: ${downloadedCount} of ${totalCount} certificates...`, { id: toastId })
+        } catch (err) {
+          console.error(`Error downloading certificate ${rec._id}:`, err)
         }
-
-        const recType = rec.type || activeTab
-        const mergedData = { ...(defaultData[recType] || {}), ...currentRecData }
-
-        setPrintingRecord({ type: recType, data: mergedData })
-
-        // Wait for React to flush state to tablePrintRef
-        await new Promise((r) => setTimeout(r, 120))
-
-        const names = {
-          marriage: `Marriage-Certificate-${rec.certificateNumber || mergedData?.number || i + 1}`,
-          letterhead: `Letterhead-${rec.primaryName || mergedData?.refNumber || i + 1}`,
-          noc: `NOC-Certificate-${rec.certificateNumber || mergedData?.number || i + 1}`,
-        }
-
-        await downloadAsPDF(tablePrintRef, names[recType] || `Certificate-${i + 1}`, { pageRanges: recType === 'letterhead' ? undefined : '1-2' })
-        downloadedCount++
-        toast.loading(`Downloading: ${downloadedCount} of ${totalCount} certificates...`, { id: toastId })
-        await new Promise((r) => setTimeout(r, 150))
-      } catch (err) {
-        console.error(`Error downloading certificate ${rec._id}:`, err)
       }
     }
 
-    setPrintingRecord(null)
+    const workers = Array.from({ length: Math.min(CONCURRENCY_LIMIT, totalCount) }, () => worker())
+    await Promise.all(workers)
+
     setDownloadingRecordId(null)
     toast.dismiss(toastId)
     toast.success(`Successfully downloaded ${downloadedCount} of ${totalCount} certificate(s)!`)
@@ -5366,7 +5387,21 @@ export default function CertificatePage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end w-full gap-2 pb-2 border-b border-border">
+          <div className="flex items-center justify-end w-full gap-2 pb-2 border-b border-border flex-wrap">
+            {editingRecordId && (
+              <Button
+                onClick={() => {
+                  const token = localStorage.getItem('auth_token') || ''
+                  const directUrl = `${API_BASE}/api/certificates/view/${editingRecordId}?token=${encodeURIComponent(token)}`
+                  window.open(directUrl, '_blank')
+                }}
+                variant="outline"
+                size="sm"
+                icon={<ExternalLink className="w-4 h-4" />}
+              >
+                Open Stored PDF File
+              </Button>
+            )}
             <Button
               onClick={handleDownload}
               disabled={downloading}
