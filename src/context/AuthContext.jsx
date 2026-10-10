@@ -26,6 +26,12 @@ const storeWebTheme = (themeData) => {
     'twitter',
     'youtube',
     'whatsapp',
+    'playStoreUrl',
+    'appStoreUrl',
+    'playstore_url',
+    'appstore_url',
+    'android_app_link',
+    'ios_app_link',
     'bannerImages'
   ]
 

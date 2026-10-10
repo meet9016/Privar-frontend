@@ -3,7 +3,8 @@ import {
   Settings, Save, Sparkles, RefreshCw, Info,
   Upload, X, Globe, Smartphone, Star,
   Image as ImageIcon, Mail, Phone,
-  Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2
+  Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2,
+  Apple, Play
 } from 'lucide-react'
 import api, { assetUrl, getSubdomainTenant } from '../lib/api'
 import Loader from '../components/common/Loader'
@@ -37,6 +38,8 @@ const DEFAULT_CONFIG = {
   instagram: '',
   youtube: '',
   whatsapp: '',
+  playStoreUrl: '',
+  appStoreUrl: '',
   bannerImages: [],
 }
 
@@ -60,6 +63,8 @@ const WEB_THEME_KEYS = [
   'instagram',
   'youtube',
   'whatsapp',
+  'playStoreUrl',
+  'appStoreUrl',
   'bannerImages'
 ]
 
@@ -276,6 +281,8 @@ export default function SettingsPage() {
         instagram: data.instagram || '',
         youtube: data.youtube || '',
         whatsapp: data.whatsapp || '',
+        playStoreUrl: data.playStoreUrl || data.playstore_url || data.android_app_link || '',
+        appStoreUrl: data.appStoreUrl || data.appstore_url || data.ios_app_link || '',
         bannerImages: Array.isArray(data.bannerImages) ? data.bannerImages : [],
       })
       setLogoFiles({ appLogo: null, webLogo: null, favicon: null })
@@ -329,8 +336,10 @@ export default function SettingsPage() {
       const payload = new FormData()
 
       // Colors + text fields
-      const textFields = ['primaryColor','secondaryColor','backgroundColor','textColor','buttonColor','fontColor','borderColor','gradientStart','gradientEnd','name','email','phone','facebook','twitter','instagram','youtube','whatsapp']
+      const textFields = ['primaryColor','secondaryColor','backgroundColor','textColor','buttonColor','fontColor','borderColor','gradientStart','gradientEnd','name','email','phone','facebook','twitter','instagram','youtube','whatsapp','playStoreUrl','appStoreUrl']
       textFields.forEach(key => payload.append(key, config[key] ?? ''))
+      payload.append('playstore_url', config.playStoreUrl ?? '')
+      payload.append('appstore_url', config.appStoreUrl ?? '')
 
       // Logo files or existing URLs
       ;['appLogo', 'webLogo', 'favicon'].forEach(field => {
@@ -479,6 +488,29 @@ export default function SettingsPage() {
                 <TextInput label="Twitter / X" icon={Twitter} keyName="twitter" value={config.twitter} placeholder="https://twitter.com/handle" onChange={handleConfigChange} />
                 <TextInput label="Instagram" icon={Instagram} keyName="instagram" value={config.instagram} placeholder="https://instagram.com/page" onChange={handleConfigChange} />
                 <TextInput label="YouTube" icon={Youtube} keyName="youtube" value={config.youtube} placeholder="https://youtube.com/channel" onChange={handleConfigChange} />
+              </div>
+            </div>
+
+            {/* Mobile App Download Links */}
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-glass-sm space-y-4">
+              <SectionHeader icon={Smartphone} title="Mobile App Download Links" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <TextInput
+                  label="Google Play Store Link"
+                  icon={Play}
+                  keyName="playStoreUrl"
+                  value={config.playStoreUrl}
+                  placeholder="https://play.google.com/store/apps/details?id=..."
+                  onChange={handleConfigChange}
+                />
+                <TextInput
+                  label="Apple App Store Link"
+                  icon={Apple}
+                  keyName="appStoreUrl"
+                  value={config.appStoreUrl}
+                  placeholder="https://apps.apple.com/app/..."
+                  onChange={handleConfigChange}
+                />
               </div>
             </div>
 

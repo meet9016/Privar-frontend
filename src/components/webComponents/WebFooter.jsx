@@ -3,11 +3,20 @@ import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Send, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart, Apple, Play } from 'lucide-react';
 import { assetUrl } from '../../lib/api';
 
+const formatExternalUrl = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
+
 const getStoredWebTheme = () => {
   const colorKeys = [
     'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
     'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
     'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp',
+    'playStoreUrl', 'appStoreUrl', 'playstore_url', 'appstore_url', 'android_app_link', 'ios_app_link'
   ];
   const loadedTheme = {};
   colorKeys.forEach((key) => {
@@ -22,8 +31,13 @@ export default function WebFooter() {
 
   useEffect(() => {
     const loadTheme = () => setTheme(getStoredWebTheme());
+    loadTheme();
     window.addEventListener('storage', loadTheme);
-    return () => window.removeEventListener('storage', loadTheme);
+    window.addEventListener('web-theme-updated', loadTheme);
+    return () => {
+      window.removeEventListener('storage', loadTheme);
+      window.removeEventListener('web-theme-updated', loadTheme);
+    };
   }, []);
 
   const navigationLinks = [
@@ -84,31 +98,56 @@ export default function WebFooter() {
             <div className="flex flex-col gap-2 pt-2 items-center sm:items-start">
               <p className="text-xs font-bold text-white uppercase tracking-wider">Download Our App</p>
               <div className="flex flex-row items-center gap-3">
-                <a
-                  href="https://play.google.com/store/apps/details?id=com.digitalks.parivar"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="transition-transform hover:scale-105 shrink-0 block"
-                >
-                  <img
-                    src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-                    alt="Get it on Google Play"
-                    className="h-[54px] w-auto object-contain -my-2 -ml-2"
-                  />
-                </a>
+                {(() => {
+                  const playStoreHref = formatExternalUrl(
+                    theme?.playStoreUrl ||
+                    theme?.playstore_url ||
+                    theme?.android_app_link
+                  ) || "https://play.google.com/store/apps/details?id=com.digitalks.parivar";
+                  return (
+                    <a
+                      href={playStoreHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="transition-transform hover:scale-105 shrink-0 block"
+                      title="Get it on Google Play"
+                    >
+                      <img
+                        src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                        alt="Get it on Google Play"
+                        className="h-[54px] w-auto object-contain -my-2 -ml-2"
+                      />
+                    </a>
+                  );
+                })()}
 
-                <a
-                  href="#"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="transition-transform hover:scale-105 shrink-0 block"
-                >
-                  <img
-                    src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
-                    alt="Download on the App Store"
-                    className="h-[36px] w-auto object-contain"
-                  />
-                </a>
+                {(() => {
+                  const appStoreHref = formatExternalUrl(
+                    theme?.appStoreUrl ||
+                    theme?.appstore_url ||
+                    theme?.ios_app_link
+                  );
+                  return (
+                    <a
+                      href={appStoreHref || '#'}
+                      target={appStoreHref ? '_blank' : undefined}
+                      rel="noreferrer"
+                      onClick={(e) => {
+                        if (!appStoreHref) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className={`transition-transform hover:scale-105 shrink-0 block ${!appStoreHref ? 'cursor-default opacity-80' : 'cursor-pointer'}`}
+                      title={appStoreHref ? 'Download on the App Store' : 'App Store app coming soon'}
+                    >
+                      <img
+                        src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+                        alt="Download on the App Store"
+                        className="h-[36px] w-auto object-contain"
+                      />
+                    </a>
+                  );
+                })()}
               </div>
             </div>
           </div>
