@@ -64,7 +64,15 @@ export default function RegistrationsPage() {
 
   // View & Preview modals
   const [selectedReg, setSelectedReg] = useState(null)
-  const [regDetails, setRegDetails] = useState(null)
+  const [regDetails, setRegDetails] = useState({
+    user: null,
+    family_members: [],
+    step1: [],
+    step2: [],
+    step3: [],
+    step4: [],
+    step5: []
+  })
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState(null)
@@ -99,11 +107,11 @@ export default function RegistrationsPage() {
       const list = payload.registrations || (Array.isArray(payload) ? payload : [])
 
       const mappedList = list.map(r => {
-        const s1 = (r.step1 && r.step1[0]) || {}
-        const s2 = r.step2 || []
-        const s3 = (r.step3 && r.step3[0]) || {}
-        const s4 = (r.step4 && r.step4[0]) || {}
-        const s5 = (r.step5 && r.step5[0]) || {}
+        const s1 = (r.step1 && (Array.isArray(r.step1) ? r.step1[0] : r.step1)) || {}
+        const s2 = Array.isArray(r.step2) ? r.step2 : []
+        const s3 = (r.step3 && (Array.isArray(r.step3) ? r.step3[0] : r.step3)) || {}
+        const s4 = (r.step4 && (Array.isArray(r.step4) ? r.step4[0] : r.step4)) || {}
+        const s5 = (r.step5 && (Array.isArray(r.step5) ? r.step5[0] : r.step5)) || r.documents || {}
 
         let cStep = 1
         if (s5 && Object.keys(s5).length > 0) cStep = 5
@@ -111,6 +119,36 @@ export default function RegistrationsPage() {
         else if (s3 && Object.keys(s3).length > 0) cStep = 3
         else if (s2 && s2.length > 0) cStep = 2
         else if (s1 && Object.keys(s1).length > 0) cStep = 1
+
+        const s1Check = s1?.status_check === true || s1?.status_check === 'true' || s1?.status_check === 1 || s1?.status_check === '1'
+        const s2Check = Array.isArray(s2) && s2.some(m => m?.status_check === true || m?.status_check === 'true' || m?.status_check === 1 || m?.status_check === '1')
+        const s3Check = s3?.status_check === true || s3?.status_check === 'true' || s3?.status_check === 1 || s3?.status_check === '1'
+        const s4Check = s4?.status_check === true || s4?.status_check === 'true' || s4?.status_check === 1 || s4?.status_check === '1'
+        const s5Check = s5?.status_check === true || s5?.status_check === 'true' || s5?.status_check === 1 || s5?.status_check === '1'
+
+        const hasAnyStatusCheck = Boolean(
+          r.status_check === true ||
+          r.status_check === 'true' ||
+          r.status_check === 1 ||
+          r.status_check === '1' ||
+          r.is_resubmitted === true ||
+          r.is_resubmitted === 'true' ||
+          r.status === 'resubmitted' ||
+          r.status === 'resubmit' ||
+          s1Check ||
+          s2Check ||
+          s3Check ||
+          s4Check ||
+          s5Check
+        )
+
+        const isApproved = Boolean(r.is_approved || r.status === 'approved')
+        const isRejected = Boolean(r.status === 'rejected')
+        const finalStatus = isApproved 
+          ? 'approved' 
+          : (isRejected 
+            ? 'rejected' 
+            : (hasAnyStatusCheck ? 'resubmitted' : (r.status || 'in_progress')))
 
         return {
           ...r,
@@ -123,10 +161,10 @@ export default function RegistrationsPage() {
           family_members: s2,
           current_step: r.current_step || cStep,
           registration_step: r.registration_step || cStep,
-          status: r.status || 'in_progress',
-          status_check: Boolean(r.status_check),
-          is_resubmitted: Boolean(r.is_resubmitted || r.status === 'resubmitted' || r.status === 'resubmit'),
-          is_approved: r.is_approved || false
+          status: finalStatus,
+          status_check: hasAnyStatusCheck,
+          is_resubmitted: hasAnyStatusCheck,
+          is_approved: isApproved
         }
       })
 
@@ -162,11 +200,11 @@ export default function RegistrationsPage() {
       const familyMembers = payload.family_members || payload.step2 || targetUser?.family_members || targetUser?.step2 || []
 
       if (targetUser) {
-        const targetS1 = (targetUser.step1 && targetUser.step1[0]) || {}
-        const targetS2 = Array.isArray(familyMembers) ? familyMembers : []
-        const targetS3 = (targetUser.step3 && targetUser.step3[0]) || {}
-        const targetS4 = (targetUser.step4 && targetUser.step4[0]) || {}
-        const targetS5 = (targetUser.step5 && targetUser.step5[0]) || {}
+        const targetS1 = (targetUser.step1 && (Array.isArray(targetUser.step1) ? targetUser.step1[0] : targetUser.step1)) || {}
+        const targetS2 = Array.isArray(familyMembers) ? familyMembers : (Array.isArray(targetUser.step2) ? targetUser.step2 : [])
+        const targetS3 = (targetUser.step3 && (Array.isArray(targetUser.step3) ? targetUser.step3[0] : targetUser.step3)) || {}
+        const targetS4 = (targetUser.step4 && (Array.isArray(targetUser.step4) ? targetUser.step4[0] : targetUser.step4)) || {}
+        const targetS5 = (targetUser.step5 && (Array.isArray(targetUser.step5) ? targetUser.step5[0] : targetUser.step5)) || targetUser.documents || {}
 
         const mappedTargetUser = {
           ...targetUser,
@@ -182,18 +220,34 @@ export default function RegistrationsPage() {
         setRegDetails({
           user: mappedTargetUser,
           family_members: targetS2,
-          step1: targetUser.step1 || [],
+          step1: Array.isArray(targetUser.step1) ? targetUser.step1 : (targetS1 ? [targetS1] : []),
           step2: targetS2,
-          step3: targetUser.step3 || [],
-          step4: targetUser.step4 || [],
-          step5: targetUser.step5 || []
+          step3: Array.isArray(targetUser.step3) ? targetUser.step3 : (targetS3 ? [targetS3] : []),
+          step4: Array.isArray(targetUser.step4) ? targetUser.step4 : (targetS4 ? [targetS4] : []),
+          step5: Array.isArray(targetUser.step5) ? targetUser.step5 : (targetS5 ? [targetS5] : [])
         })
       } else {
-        setRegDetails({ user: rawUser, family_members: [] })
+        setRegDetails({
+          user: rawUser,
+          family_members: [],
+          step1: [],
+          step2: [],
+          step3: [],
+          step4: [],
+          step5: []
+        })
       }
     } catch (err) {
       console.error('Failed to load full registration details', err)
-      setRegDetails({ user: rawUser, family_members: [] })
+      setRegDetails({
+        user: rawUser,
+        family_members: [],
+        step1: [],
+        step2: [],
+        step3: [],
+        step4: [],
+        step5: []
+      })
     } finally {
       setDetailsLoading(false)
     }
@@ -297,8 +351,41 @@ export default function RegistrationsPage() {
   }
 
   const getStatusBadge = (status, row) => {
-    const isResubmitted = Boolean(row?.status_check === true || status === 'resubmitted' || status === 'resubmit')
-    if (isResubmitted && status !== 'approved' && status !== 'rejected') {
+    const s1 = (row?.step1 && (Array.isArray(row.step1) ? row.step1[0] : row.step1)) || {}
+    const s2 = Array.isArray(row?.step2) ? row.step2 : []
+    const s3 = (row?.step3 && (Array.isArray(row.step3) ? row.step3[0] : row.step3)) || {}
+    const s4 = (row?.step4 && (Array.isArray(row.step4) ? row.step4[0] : row.step4)) || {}
+    const s5 = (row?.step5 && (Array.isArray(row.step5) ? row.step5[0] : row.step5)) || row?.documents || {}
+
+    const hasAnyStatusCheck = Boolean(
+      row?.status_check === true ||
+      row?.status_check === 'true' ||
+      row?.status_check === 1 ||
+      row?.status_check === '1' ||
+      row?.is_resubmitted === true ||
+      row?.is_resubmitted === 'true' ||
+      status === 'resubmitted' ||
+      status === 'resubmit' ||
+      s1?.status_check === true ||
+      s1?.status_check === 'true' ||
+      s1?.status_check === 1 ||
+      s1?.status_check === '1' ||
+      (Array.isArray(s2) && s2.some(m => m?.status_check === true || m?.status_check === 'true' || m?.status_check === 1 || m?.status_check === '1')) ||
+      s3?.status_check === true ||
+      s3?.status_check === 'true' ||
+      s3?.status_check === 1 ||
+      s3?.status_check === '1' ||
+      s4?.status_check === true ||
+      s4?.status_check === 'true' ||
+      s4?.status_check === 1 ||
+      s4?.status_check === '1' ||
+      s5?.status_check === true ||
+      s5?.status_check === 'true' ||
+      s5?.status_check === 1 ||
+      s5?.status_check === '1'
+    )
+
+    if (hasAnyStatusCheck && status !== 'approved' && status !== 'rejected') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/25">
           <RefreshCw className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
@@ -648,12 +735,13 @@ export default function RegistrationsPage() {
       {/* ========================================================================= */}
       {/* FULL REGISTRATION DETAILS MODAL (PREMIUM 5-STEP TABBED VIEW)             */}
       {/* ========================================================================= */}
-      <Modal
-        isOpen={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
-        title="Member Registration Application Details"
-        maxWidth="max-w-4xl"
-      >
+      {isViewModalOpen && (
+        <Modal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          title="Member Registration Application Details"
+          maxWidth="max-w-4xl"
+        >
         <div className="space-y-4">
           {/* Sleek, Clean Profile Card Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-surface-secondary/40 border border-border/80">
@@ -734,32 +822,69 @@ export default function RegistrationsPage() {
           )}
 
           {/* Segmented Tab Navigation Bar */}
-          <div className="flex items-center gap-1 p-1 bg-surface-secondary/60 border border-border/80 rounded-xl overflow-x-auto no-scrollbar select-none">
-            {[
-              { key: 'personal', icon: User, label: '1. Personal Info' },
-              { key: 'family', icon: Users, label: `2. Family (${familyList.length})` },
-              { key: 'address', icon: Home, label: '3. Address' },
-              { key: 'occupation', icon: Briefcase, label: '4. Occupation' },
-              { key: 'documents', icon: FileCheck, label: '5. Documents' }
-            ].map(t => {
-              const Icon = t.icon
-              const isActive = activeTab === t.key
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setActiveTab(t.key)}
-                  className={`flex items-center gap-2 py-2 px-3.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${isActive
-                    ? 'bg-white dark:bg-surface text-primary shadow-xs border border-border'
-                    : 'text-text-secondary hover:text-text hover:bg-surface/50 border border-transparent'
-                    }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-primary' : 'opacity-60'}`} />
-                  <span>{t.label}</span>
-                </button>
-              )
-            })}
-          </div>
+          {(() => {
+            const s1Check = Boolean(
+              regDetails?.step1?.[0]?.status_check ||
+              userObj?.step1?.[0]?.status_check ||
+              userObj?.step1?.status_check
+            );
+            const s2Check = Boolean(
+              (Array.isArray(familyList) && familyList.some(m => m?.status_check === true || m?.status_check === 'true' || m?.status_check === 1 || m?.status_check === '1')) ||
+              userObj?.step2_status_check
+            );
+            const s3Check = Boolean(
+              regDetails?.step3?.[0]?.status_check ||
+              userObj?.step3?.[0]?.status_check ||
+              userObj?.step3?.status_check
+            );
+            const s4Check = Boolean(
+              regDetails?.step4?.[0]?.status_check ||
+              userObj?.step4?.[0]?.status_check ||
+              userObj?.step4?.status_check
+            );
+            const s5Check = Boolean(
+              regDetails?.step5?.[0]?.status_check ||
+              userObj?.step5?.[0]?.status_check ||
+              userObj?.step5?.status_check ||
+              docs?.status_check
+            );
+
+            const tabs = [
+              { key: 'personal', icon: User, label: '1. Personal Info', isChecked: s1Check },
+              { key: 'family', icon: Users, label: `2. Family (${(Array.isArray(familyList) ? familyList.length : 0)})`, isChecked: s2Check },
+              { key: 'address', icon: Home, label: '3. Address', isChecked: s3Check },
+              { key: 'occupation', icon: Briefcase, label: '4. Occupation', isChecked: s4Check },
+              { key: 'documents', icon: FileCheck, label: '5. Documents', isChecked: s5Check }
+            ];
+
+            return (
+              <div className="flex items-center gap-1 p-1 bg-surface-secondary/60 border border-border/80 rounded-xl overflow-x-auto no-scrollbar select-none">
+                {tabs.map(t => {
+                  const Icon = t.icon;
+                  const isActive = activeTab === t.key;
+                  return (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setActiveTab(t.key)}
+                      className={`flex items-center gap-2 py-2 px-3.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${isActive
+                        ? 'bg-white dark:bg-surface text-primary shadow-xs border border-border'
+                        : 'text-text-secondary hover:text-text hover:bg-surface/50 border border-transparent'
+                        }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-primary' : 'opacity-60'}`} />
+                      <span>{t.label}</span>
+                      {t.isChecked && (
+                        <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                          Resubmitted
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* TAB CONTENT (Stable Layout, Ultra-Modern Card Style) */}
           <div className="min-h-[280px]">
@@ -1029,6 +1154,7 @@ export default function RegistrationsPage() {
           </div>
         </div>
       </Modal>
+      )}
 
       {/* ========================================================================= */}
       {/* APPROVE CONFIRMATION POPUP MODAL                                         */}
