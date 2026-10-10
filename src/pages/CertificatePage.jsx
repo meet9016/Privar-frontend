@@ -3548,119 +3548,68 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
 /* ══════════════════════════════════════════════════════════════
    PRINTABLE LETTERHEAD SHEET
 /* ─── Exact Visual Line Breaker & Dynamic Multi-Page Paginator ─── */
-function breakTextIntoVisualLines(text, charsPerLine = 46) {
-  if (!text || typeof text !== 'string') return []
+function paginateParagraphs(text) {
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    return ['']
+  }
 
   // Normalize line endings
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   const rawLines = normalized.split('\n')
-  const visualLines = []
+
+  // Calculate approximate visual lines based on full width (~115 chars per line at 13.5px on 570px width)
+  const CHARS_PER_LINE = 115
+  const visualUnits = []
 
   for (let i = 0; i < rawLines.length; i++) {
     const rawLine = rawLines[i]
-
     if (!rawLine.trim()) {
-      visualLines.push('')
+      visualUnits.push({ text: '', cost: 1 })
       continue
     }
 
-    const words = rawLine.trim().split(/\s+/)
-    let currentLine = ''
-
-    for (let w = 0; w < words.length; w++) {
-      const word = words[w]
-
-      if (word.length > charsPerLine) {
-        if (currentLine) {
-          visualLines.push(currentLine)
-          currentLine = ''
-        }
-        let remainingWord = word
-        while (remainingWord.length > charsPerLine) {
-          visualLines.push(remainingWord.slice(0, charsPerLine))
-          remainingWord = remainingWord.slice(charsPerLine)
-        }
-        currentLine = remainingWord
-        continue
-      }
-
-      const testLine = currentLine ? `${currentLine} ${word}` : word
-      if (testLine.length <= charsPerLine) {
-        currentLine = testLine
-      } else {
-        if (currentLine) {
-          visualLines.push(currentLine)
-        }
-        currentLine = word
-      }
-    }
-
-    if (currentLine) {
-      visualLines.push(currentLine)
-    }
+    // Estimate how many visual lines this paragraph will occupy
+    const lineCost = Math.max(1, Math.ceil(rawLine.length / CHARS_PER_LINE))
+    visualUnits.push({ text: rawLine, cost: lineCost })
   }
 
-  return visualLines
-}
-
-function paginateVisualLines(visualLines) {
-  if (!visualLines || visualLines.length === 0) {
-    return ['']
-  }
-
-  // Exact capacities in visual lines (at 31px line height):
-  // - SINGLE_PAGE_MAX: 14 lines max on single page (full header + full footer)
-  // - FIRST_PAGE_MAX: 20 lines max on page 1 of multi-page (fills completely down to bottom forward note)
-  // - MIDDLE_PAGE_MAX: 23 lines max on intermediate pages (compact header + forward note)
-  // - LAST_PAGE_MAX: 16 lines max on last page (compact header + full footer)
   const SINGLE_PAGE_MAX = 14
   const FIRST_PAGE_MAX = 20
   const MIDDLE_PAGE_MAX = 23
   const LAST_PAGE_MAX = 16
 
-  const totalLines = visualLines.length
+  const totalCost = visualUnits.reduce((acc, u) => acc + u.cost, 0)
 
-  // Case 1: Fits comfortably on a single page
-  if (totalLines <= SINGLE_PAGE_MAX) {
-    return [visualLines.join('\n')]
+  // If fits on single page
+  if (totalCost <= SINGLE_PAGE_MAX) {
+    return [text]
   }
 
-  // Case 2: Multi-page distribution - fill each page completely to capacity
   const pages = []
-  let lineIndex = 0
-  let pageIndex = 0
+  let currentUnits = []
+  let currentCost = 0
+  let pageIdx = 0
 
-  while (lineIndex < totalLines) {
-    const remaining = totalLines - lineIndex
-    let capacity
+  for (let i = 0; i < visualUnits.length; i++) {
+    const unit = visualUnits[i]
+    const limit = pageIdx === 0 ? FIRST_PAGE_MAX : MIDDLE_PAGE_MAX
 
-    if (pageIndex === 0) {
-      // First page: fill as much as possible up to FIRST_PAGE_MAX,
-      // while ensuring at least 1 line goes to the next page
-      if (remaining <= FIRST_PAGE_MAX) {
-        capacity = Math.max(1, remaining - 1)
-      } else {
-        capacity = FIRST_PAGE_MAX
-      }
+    if (currentCost + unit.cost > limit && currentUnits.length > 0) {
+      pages.push(currentUnits.map(u => u.text).join('\n'))
+      currentUnits = [unit]
+      currentCost = unit.cost
+      pageIdx++
     } else {
-      // Subsequent pages:
-      if (remaining <= LAST_PAGE_MAX) {
-        capacity = remaining
-      } else if (remaining <= MIDDLE_PAGE_MAX) {
-        capacity = Math.max(1, remaining - 1)
-      } else {
-        capacity = MIDDLE_PAGE_MAX
-      }
+      currentUnits.push(unit)
+      currentCost += unit.cost
     }
-
-    const take = Math.min(capacity, remaining)
-    const pageLines = visualLines.slice(lineIndex, lineIndex + take)
-    pages.push(pageLines.join('\n'))
-    lineIndex += take
-    pageIndex++
   }
 
-  return pages.length > 0 ? pages : [visualLines.join('\n')]
+  if (currentUnits.length > 0) {
+    pages.push(currentUnits.map(u => u.text).join('\n'))
+  }
+
+  return pages.length > 0 ? pages : [text]
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -3671,11 +3620,7 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
   const rawBody = data.body || ''
 
   const pagesData = useMemo(() => {
-    if (!rawBody || !rawBody.trim()) {
-      return ['']
-    }
-    const visualLines = breakTextIntoVisualLines(rawBody, 46)
-    return paginateVisualLines(visualLines)
+    return paginateParagraphs(rawBody)
   }, [rawBody])
 
   const totalPages = pagesData.length

@@ -19,6 +19,7 @@ export const ROLES_ENDPOINTS = {
 // Members / Family Registry Module API Endpoints
 export const MEMBER_ENDPOINTS = {
   GET_MEMBERS: '/users',
+  GET_MEMBER: (id) => `/users/${id}`,
   CREATE_MEMBER: '/users',
   UPDATE_MEMBER: (id) => `/users/${id}`,
   DELETE_MEMBER: (id) => `/users/${id}`,
@@ -29,8 +30,11 @@ export const MEMBER_ENDPOINTS = {
   GET_ROLES: '/roles',
   MASTERS_COUNTRY: '/masters/country',
   MASTERS_STATE: '/masters/state',
+  MASTERS_DISTRICT: '/masters/district',
   MASTERS_CITY: '/masters/city',
   MASTERS_VILLAGE: '/masters/village',
+  MASTERS_PATTI_PARA_PARGANA: '/masters/patti-para-pargana',
+  MASTERS_SUB_CASTE: '/masters/sub-caste',
   MASTERS_RELATIONSHIP: '/masters/relationship'
 }
 
@@ -140,13 +144,20 @@ export const MASTER_ENDPOINTS = {
   BANK_DETAILS: '/bank-details',
   COUNTRY: '/masters/country',
   STATE: '/masters/state',
+  DISTRICT: '/masters/district',
   CITY: '/masters/city',
   VILLAGE: '/masters/village',
+  PATTI_PARA_PARGANA: '/masters/patti-para-pargana',
+  SUB_CASTE: '/masters/sub-caste',
   BLOOD_GROUP: '/masters/blood-group',
   EVENT_CATEGORY: '/masters/event-category',
   GALLERY_CATEGORY: '/masters/gallery-category',
   EXPENSE_CATEGORY: '/masters/expense-category',
   RELATIONSHIP: '/masters/relationship',
+  STANDARD: '/masters/standard',
+  DEGREE: '/masters/degree',
+  BACHELOR_DEGREE: '/masters/bachelor-degree',
+  MASTER_DEGREE: '/masters/master-degree',
   GET_MASTER: (type) => type === 'bank-details' ? '/bank-details' : `/masters/${type}`
 }
 
@@ -167,6 +178,13 @@ export const MANDAL_ENDPOINTS = {
   GET_HISTORY: '/mandal/history'
 }
 
+// Mobile Registration Portal API Endpoints
+export const REGISTRATION_ENDPOINTS = {
+  GET_LIST: '/mobile-registration/admin/list',
+  GET_DETAILS: (id) => `/mobile-registration/admin/${id}`,
+  UPDATE_STATUS: (id) => `/mobile-registration/admin/${id}/status`
+}
+
 export default {
   COMMITTEE: COMMITTEE_ENDPOINTS,
   ROLES: ROLES_ENDPOINTS,
@@ -184,6 +202,7 @@ export default {
   EXPENSE: EXPENSE_ENDPOINTS,
   DONATION: DONATION_ENDPOINTS,
   MANDAL: MANDAL_ENDPOINTS,
-  MASTER: MASTER_ENDPOINTS
+  MASTER: MASTER_ENDPOINTS,
+  REGISTRATION: REGISTRATION_ENDPOINTS
 }
 
