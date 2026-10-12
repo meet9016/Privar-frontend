@@ -10,6 +10,7 @@ import { User as UserIcon, Phone, Mail, ShieldCheck } from 'lucide-react'
 export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
   const [userList, setUserList] = useState([])
+  const [villageList, setVillageList] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState('')
 
@@ -22,6 +23,8 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     email: '',
     password: '',
     role_id: '',
+    village: '',
+    village_id: '',
     status: 1,
     image: ''
   })
@@ -47,6 +50,23 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     return () => { isMounted = false }
   }, [])
 
+  // Fetch master villages for dropdown selection
+  useEffect(() => {
+    let isMounted = true
+    const fetchVillages = async () => {
+      try {
+        const res = await api.get('/masters/village', { params: { limit: 200 } })
+        const raw = res.data?.data || res.data || []
+        const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : [])
+        if (isMounted) setVillageList(list)
+      } catch (err) {
+        console.warn('Failed to load village list for committee selection:', err)
+      }
+    }
+    fetchVillages()
+    return () => { isMounted = false }
+  }, [])
+
   // Initialize or populate form
   useEffect(() => {
     if (member) {
@@ -61,6 +81,8 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         email: member.email || '',
         password: '',
         role_id: member.role_id?._id || member.role_id || '',
+        village: member.village || member.village_name || '',
+        village_id: member.village_id || '',
         status: member.status !== undefined ? Number(member.status) : 1,
         image: member.image || ''
       })
@@ -75,6 +97,8 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         email: '',
         password: '',
         role_id: '',
+        village: '',
+        village_id: '',
         status: 1,
         image: ''
       })
@@ -190,12 +214,8 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     if (selectedUserId) {
       payload.append('user_id', selectedUserId)
     }
-    if (formData.village) {
-      payload.append('village', formData.village)
-    }
-    if (formData.village_id) {
-      payload.append('village_id', formData.village_id)
-    }
+    payload.append('village', formData.village || '')
+    payload.append('village_id', formData.village_id || '')
 
     onSubmit(payload)
   }
@@ -228,6 +248,30 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     { label: 'Select Assigned Role', value: '' },
     ...roles.map(r => ({ label: r.name, value: r.id || String(r._id) }))
   ], [roles])
+
+  const villageOptions = useMemo(() => {
+    const opts = [{ label: 'Select Village (Optional)', value: '' }]
+    const existing = new Set()
+    villageList.forEach(v => {
+      if (v.name) {
+        opts.push({ label: v.name, value: v.name })
+        existing.add(v.name.toLowerCase().trim())
+      }
+    })
+    if (formData.village && !existing.has(formData.village.toLowerCase().trim())) {
+      opts.push({ label: formData.village, value: formData.village })
+    }
+    return opts
+  }, [villageList, formData.village])
+
+  const handleVillageChange = (val) => {
+    const matched = villageList.find(v => v.name === val || String(v._id || v.id) === String(val))
+    setFormData(prev => ({
+      ...prev,
+      village: matched?.name || val || '',
+      village_id: matched ? String(matched._id || matched.id) : ''
+    }))
+  }
 
   const fullNameDisplay = [formData.first_name, formData.middle_name, formData.last_name].filter(Boolean).join(' ')
 
@@ -278,6 +322,27 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             { label: 'Active', value: 1 },
             { label: 'Inactive', value: 0 }
           ]}
+        />
+      </div>
+
+      {/* Step 3: Village */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <Select
+          label="Village"
+          value={formData.village}
+          onChange={handleVillageChange}
+          disabled={isLoading}
+          searchable={true}
+          options={villageOptions}
+          placeholder="Select Village"
+        />
+        <Input
+          label="Village Name (Or type custom)"
+          type="text"
+          placeholder="Enter village name"
+          value={formData.village}
+          onChange={(e) => setFormData(prev => ({ ...prev, village: e.target.value }))}
+          disabled={isLoading}
         />
       </div>
 
