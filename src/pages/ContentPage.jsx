@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
 import { GALLERY_ENDPOINTS, BIRTHDAY_ENDPOINTS, DEATH_ENDPOINTS, JOB_VACANCY_ENDPOINTS, MATRIMONY_ENDPOINTS, FEEDBACK_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
@@ -7,14 +7,13 @@ import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
-import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2 } from 'lucide-react'
+import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck } from 'lucide-react'
 import { toast } from '../lib/toast'
 import { confirm } from '../lib/confirm'
-import api, { getCommunityFullName, assetUrl } from '../lib/api'
+import api, { getCommunityFullName, assetUrl, getUsersList } from '../lib/api'
 import Modal from '../components/Modal'
 import Button from '../components/common/Button'
 import NocCertificateModal from '../components/NocCertificateModal'
-import { FileCheck } from 'lucide-react'
 
 const isSameDayAndMonth = (dateStr) => {
   if (!dateStr) return false
@@ -387,7 +386,7 @@ const definitions = {
     columns: [
       {
         key: 'name',
-        label: 'MARHUM MEMBER',
+        label: 'Marhum Member',
         render: (row) => {
           const isFemale = String(row.gender || '').toLowerCase() === 'female'
           const titlePrefix = isFemale ? 'Marhuma' : 'Marhum'
@@ -411,23 +410,21 @@ const definitions = {
 
           return (
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center shrink-0 border transition-all ${
-                isToday ? 'border-rose-500 ring-2 ring-rose-500/40 shadow-rose-500/20' : 'border-primary/30 shadow-xs'
-              }`}>
-                {row.profile_image || row.image ? (
-                  <img src={assetUrl(row.profile_image || row.image)} alt={row.name} className="w-full h-full object-cover filter grayscale" />
-                ) : (
-                  <Flower2 className={`w-5 h-5 ${isToday ? 'text-rose-500 animate-pulse' : 'text-primary'}`} />
-                )}
-              </div>
+              {row.profile_image || row.image ? (
+                <img src={assetUrl(row.profile_image || row.image)} alt="" className="h-9 w-9 rounded-lg object-cover border border-border" />
+              ) : (
+                <div className="h-9 w-9 rounded-lg bg-surface-secondary flex items-center justify-center text-sm font-semibold text-text-secondary">
+                  {row.name?.slice(0, 1) || 'M'}
+                </div>
+              )}
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-text truncate">
-                    <span className={`${isToday ? 'text-rose-600 dark:text-rose-400 font-extrabold' : 'text-primary font-semibold'} text-xs mr-1`}>{titlePrefix}</span>
+                  <div className="font-semibold text-text truncate">
+                    <span className="text-xs text-primary font-medium mr-1">{titlePrefix}</span>
                     {row.name || '-'}
-                  </span>
+                  </div>
                   {isToday && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 font-black text-[10px] tracking-wide border border-rose-500/30 whitespace-nowrap animate-pulse">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border font-semibold text-xs bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20 whitespace-nowrap shrink-0">
                       Today
                     </span>
                   )}
@@ -435,15 +432,15 @@ const definitions = {
                     <button
                       type="button"
                       onClick={handleSendCondolence}
-                      className="inline-flex items-center justify-center p-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all cursor-pointer"
-                      title={`Send WhatsApp Condolence to family (${cleanPhone})`}
+                      className="p-1.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-all cursor-pointer shrink-0"
+                      title={`Send WhatsApp Condolence (${cleanPhone})`}
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
-                <div className="text-[11px] text-text-secondary truncate mt-0.5">
-                  {row.relation ? `${row.relation} • ` : ''}{row.village || (row.family_head?.name ? `Head: ${row.family_head.name}` : '')}
+                <div className="text-xs text-text-secondary truncate mt-0.5">
+                  {[row.relation, row.village || (row.family_head?.name ? `Head: ${row.family_head.name}` : '')].filter(Boolean).join(' • ')}
                 </div>
               </div>
             </div>
@@ -452,7 +449,7 @@ const definitions = {
       },
       {
         key: 'death_date',
-        label: 'INTEKAL',
+        label: 'Date of Intekal',
         render: (row) => {
           if (!row.death_date) return '-'
           const isToday = Boolean(row.is_today || isSameDayAndMonth(row.death_date))
@@ -473,21 +470,21 @@ const definitions = {
           else passedLabel = `${Math.max(days, 0)} Days`
 
           return (
-            <div className="text-xs space-y-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className={`font-bold ${isToday ? 'text-rose-600 dark:text-rose-400 font-extrabold' : 'text-text'}`}>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-text text-sm">
                   {formatDate(row.death_date)}
                 </span>
-                {row.death_time && <span className="text-[11px] text-text-secondary">({row.death_time})</span>}
+                {row.death_time && <span className="text-xs text-text-secondary">({row.death_time})</span>}
                 {isToday && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold text-[10px] border border-rose-500/30 whitespace-nowrap shadow-xs animate-pulse">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border font-semibold text-xs bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20 whitespace-nowrap shadow-xs">
                     🕯️ Today's Barsi
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-text-secondary flex-wrap">
-                {row.death_place && <span className="truncate max-w-[130px]">📍 {row.death_place}</span>}
-                <span className="px-1.5 py-0.5 rounded-md bg-slate-500/10 border border-slate-500/15 text-text-secondary font-medium shrink-0">
+              <div className="flex items-center gap-2 text-xs text-text-secondary flex-wrap">
+                {row.death_place && <span>📍 {row.death_place}</span>}
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg border border-border bg-surface-secondary text-text-secondary font-medium text-xs">
                   ⏳ {passedLabel}
                 </span>
               </div>
@@ -497,24 +494,26 @@ const definitions = {
       },
       {
         key: 'janaza_kabrastan',
-        label: 'JANAZA & KABRASTAN',
+        label: 'Janaza & Kabrastan',
         render: (row) => {
           const hasJanaza = row.janaza_date || row.janaza_time || row.janaza_place
           const hasKabr = row.kabrastan
-          if (!hasJanaza && !hasKabr) return <span className="text-text-secondary text-xs">-</span>
+          if (!hasJanaza && !hasKabr) return <span className="text-text-secondary text-sm">-</span>
           return (
-            <div className="text-xs space-y-1">
+            <div className="space-y-1 text-sm">
               {hasJanaza && (
-                <div className="font-medium text-text flex items-center gap-1.5 flex-wrap">
-                  <span className="text-primary font-semibold">🕌 {row.janaza_date ? formatDate(row.janaza_date) : ''}</span>
-                  {row.janaza_time && <span className="text-[11px] text-text-secondary">({row.janaza_time})</span>}
-                  {row.janaza_place && <span className="text-[11px] text-text-secondary truncate max-w-[150px]" title={row.janaza_place}>• 📍 {row.janaza_place}</span>}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-semibold text-text text-sm">
+                    🕌 {row.janaza_date ? formatDate(row.janaza_date) : ''}
+                  </span>
+                  {row.janaza_time && <span className="text-xs text-text-secondary">({row.janaza_time})</span>}
+                  {row.janaza_place && <span className="text-xs text-text-secondary truncate max-w-[160px]" title={row.janaza_place}>• 📍 {row.janaza_place}</span>}
                 </div>
               )}
               {hasKabr && (
-                <div className="text-[11px] text-text font-medium flex items-center gap-1 truncate max-w-[200px]" title={row.kabrastan}>
+                <div className="text-xs text-text-secondary flex items-center gap-1 truncate max-w-[200px]" title={row.kabrastan}>
                   <span>🌿</span>
-                  <span>{row.kabrastan}</span>
+                  <span className="font-medium text-text">{row.kabrastan}</span>
                 </div>
               )}
             </div>
@@ -523,9 +522,9 @@ const definitions = {
       },
       {
         key: 'death_note',
-        label: 'DUA & REMARKS',
+        label: 'Dua & Remarks',
         render: (row) => {
-          if (!row.death_note) return <span className="text-text-secondary text-xs">-</span>
+          if (!row.death_note) return <span className="text-text-secondary text-sm">-</span>
           return (
             <div className="text-xs text-text-secondary max-w-[240px] truncate flex items-center gap-1.5" title={row.death_note}>
               <span>🤲</span>
@@ -651,10 +650,10 @@ export default function ContentPage({ type, headerLeftContent }) {
 
   const extraCount = [appliedMonth, appliedYear, appliedStart, appliedEnd].filter(Boolean).length
 
-  const customFilters = type === 'birthday' ? (
+  const customFilters = (type === 'birthday' || type === 'death') ? (
     <div className="space-y-4 mb-4">
       <Select
-        label="Birth Month"
+        label={type === 'birthday' ? "Birth Month" : "Intekal Month"}
         value={draftMonth}
         onChange={setDraftMonth}
         options={[
@@ -674,21 +673,21 @@ export default function ContentPage({ type, headerLeftContent }) {
         ]}
       />
       <Input
-        label="Birth Year"
+        label={type === 'birthday' ? "Birth Year" : "Intekal Year"}
         type="number"
-        placeholder="e.g. 1995"
+        placeholder={type === 'birthday' ? "e.g. 1995" : "e.g. 2024"}
         value={draftYear}
         onChange={(e) => setDraftYear(e.target.value.replace(/\D/g, ''))}
       />
       <div className="grid grid-cols-2 gap-2">
         <DatePicker
-          label="From DOB"
+          label={type === 'birthday' ? "From DOB" : "From Date"}
           placeholder="Start Date"
           value={draftStart}
           onChange={setDraftStart}
         />
         <DatePicker
-          label="To DOB"
+          label={type === 'birthday' ? "To DOB" : "To Date"}
           placeholder="End Date"
           value={draftEnd}
           onChange={setDraftEnd}
@@ -752,7 +751,7 @@ export default function ContentPage({ type, headerLeftContent }) {
     if (type === 'death') {
       const isToday = Boolean(row.is_today || isSameDayAndMonth(row.death_date))
       if (isToday) {
-        return '!bg-linear-to-r !from-rose-500/15 !via-primary/5 !to-transparent hover:!bg-rose-500/20 border-l-4 border-l-rose-500 font-semibold shadow-xs'
+        return '!bg-rose-500/5 hover:!bg-rose-500/10 border-l-4 border-l-rose-500'
       }
     }
     return ''
@@ -807,6 +806,8 @@ export default function ContentPage({ type, headerLeftContent }) {
   const [deathModalMode, setDeathModalMode] = useState('add') // 'add' | 'edit'
   const [selectedDeathMember, setSelectedDeathMember] = useState(null)
   const [isManualEntry, setIsManualEntry] = useState(false)
+  const [userList, setUserList] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
   const [manualMember, setManualMember] = useState({
     first_name: '',
     middle_name: '',
@@ -827,33 +828,54 @@ export default function ContentPage({ type, headerLeftContent }) {
     death_note: ''
   })
   const [savingDeath, setSavingDeath] = useState(false)
-  const [deathSearchQuery, setDeathSearchQuery] = useState('')
-  const [memberOptions, setMemberOptions] = useState([])
-  const [searchingMembers, setSearchingMembers] = useState(false)
 
-  const handleSearchMembers = async (q) => {
-    setDeathSearchQuery(q)
-    if (!q || q.trim().length < 2) {
-      setMemberOptions([])
-      return
+  // Fetch community users for dropdown selection when death modal is used
+  useEffect(() => {
+    if (!deathModalOpen || userList.length > 0) return
+    let isMounted = true
+    const fetchUsers = async () => {
+      setLoadingUsers(true)
+      try {
+        const res = await getUsersList({ limit: 500, flat: 'true' })
+        const raw = res.data?.data || res.data?.members || res.data || []
+        const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : [])
+        if (isMounted) setUserList(list)
+      } catch (err) {
+        console.error('Failed to load user list for intekal selection:', err)
+      } finally {
+        if (isMounted) setLoadingUsers(false)
+      }
     }
-    setSearchingMembers(true)
-    try {
-      const res = await api.get('/users', { params: { search: q.trim(), limit: 12 } })
-      const data = res.data?.data || res.data || []
-      setMemberOptions(Array.isArray(data) ? data : [])
-    } catch (err) {
-      console.error('Failed to search members', err)
-    } finally {
-      setSearchingMembers(false)
-    }
-  }
+    fetchUsers()
+    return () => { isMounted = false }
+  }, [deathModalOpen, userList.length])
+
+  const deathUserOptions = useMemo(() => {
+    const options = [
+      { label: loadingUsers ? 'Loading members...' : 'Select a Member...', value: '' }
+    ]
+    userList.forEach(u => {
+      const id = String(u._id || u.id || u.member_id)
+      const fullName = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ')
+      const phone = u.number || u.phone || ''
+      const village = u.village || u.city || ''
+      const sub = [phone, village].filter(Boolean).join(' • ')
+      const initials = (u.first_name?.[0] || '') + (u.last_name?.[0] || '')
+
+      options.push({
+        label: fullName || 'Unnamed Member',
+        value: id,
+        sublabel: sub || undefined,
+        image: u.image || u.profile_image || undefined,
+        imagePlaceholder: !u.image && !u.profile_image ? initials.toUpperCase() || 'U' : undefined
+      })
+    })
+    return options
+  }, [userList, loadingUsers])
 
   const handleOpenAddDeathModal = () => {
     setDeathModalMode('add')
     setSelectedDeathMember(null)
-    setDeathSearchQuery('')
-    setMemberOptions([])
     setIsManualEntry(false)
     setManualMember({
       first_name: '',
@@ -1031,9 +1053,9 @@ export default function ContentPage({ type, headerLeftContent }) {
           onClick={handleOpenAddDeathModal}
           variant="primary"
           icon={<Plus className="w-4 h-4" />}
-          className="h-10 shadow-sm whitespace-nowrap cursor-pointer font-bold"
+          className="h-10"
         >
-          Record Death
+          Record Intekal
         </Button>
       )
     }
@@ -1100,303 +1122,234 @@ export default function ContentPage({ type, headerLeftContent }) {
       {type === 'death' && (
         <Modal
           isOpen={deathModalOpen}
-          title={deathModalMode === 'edit' ? 'Edit Intekal & Janaza Details' : 'Record Intekal'}
+          title={deathModalMode === 'edit' ? 'Edit Intekal Details' : 'Record Intekal'}
           onClose={() => setDeathModalOpen(false)}
           maxWidth="max-w-2xl"
         >
-          <div className="space-y-4">
-            {/* Mode Switch Tabs for Adding */}
-            {deathModalMode === 'add' && (
-              <div className="flex p-1 bg-surface-secondary/70 rounded-xl border border-border gap-1">
-                <button
-                  type="button"
-                  onClick={() => setIsManualEntry(false)}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    !isManualEntry 
-                      ? 'bg-primary text-white shadow-xs' 
-                      : 'text-text-secondary hover:text-text'
-                  }`}
-                >
-                  🔍 Select From Registered Members
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsManualEntry(true)
-                    setSelectedDeathMember(null)
-                  }}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    isManualEntry 
-                      ? 'bg-primary text-white shadow-xs' 
-                      : 'text-text-secondary hover:text-text'
-                  }`}
-                >
-                  ✍️ Add New / Manual Entry
-                </button>
-              </div>
-            )}
-
-            {/* Member Selection from List */}
-            {!isManualEntry && (
-              !selectedDeathMember ? (
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
-                    Select Member *
-                  </label>
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Search member by name, mobile, or village..."
-                      value={deathSearchQuery}
-                      onChange={(e) => handleSearchMembers(e.target.value)}
-                      className="w-full pl-9 pr-8 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all"
-                      autoFocus
-                    />
-                    {searchingMembers && (
-                      <RefreshCw className="w-4 h-4 text-primary animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
-                    )}
+          <form onSubmit={handleSaveDeath} className="space-y-4 text-text">
+            {/* Step 1: Member Selection (Add mode) */}
+            {deathModalMode === 'add' ? (
+              <div className="bg-surface-secondary/40 border border-border/80 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wide">
+                    <UsersIcon className="w-4 h-4" />
+                    <span>Select Community Member *</span>
                   </div>
-
-                  {memberOptions.length > 0 && (
-                    <div className="max-h-48 overflow-y-auto border border-border rounded-xl divide-y divide-border bg-card shadow-lg custom-scrollbar">
-                      {memberOptions.map((m) => {
-                        const memberDisplayName = m.name || `${m.first_name || ''} ${m.middle_name || ''} ${m.last_name || ''}`.trim()
-                        const isF = String(m.gender || '').toLowerCase() === 'female'
-                        return (
-                          <button
-                            key={m.id || m._id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedDeathMember(m)
-                              setMemberOptions([])
-                            }}
-                            className="w-full p-2.5 text-left flex items-center justify-between hover:bg-surface-secondary/70 transition-colors cursor-pointer"
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center shrink-0">
-                                {m.profile_image || m.image ? (
-                                  <img src={assetUrl(m.profile_image || m.image)} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                  <User className="w-4 h-4 text-slate-500" />
-                                )}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-sm text-text">
-                                  <span className="text-xs text-primary mr-1 font-medium">{isF ? 'Marhuma' : 'Marhum'}</span>
-                                  {memberDisplayName}
-                                </div>
-                                <div className="text-xs text-text-secondary">
-                                  {m.number ? `📱 ${m.number} • ` : ''}{m.village || 'No village'}
-                                </div>
-                              </div>
-                            </div>
-                            <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">Select</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                  {deathSearchQuery.trim().length >= 2 && memberOptions.length === 0 && !searchingMembers && (
-                    <p className="text-xs text-text-secondary italic">No members found matching "${deathSearchQuery}". Try another name or phone number, or switch to manual entry above.</p>
-                  )}
-                </div>
-              ) : (
-                <div className="p-3.5 rounded-xl bg-surface-secondary/60 border border-border flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-300 dark:bg-slate-700 overflow-hidden flex items-center justify-center shrink-0 border border-primary/30">
-                      {selectedDeathMember.profile_image || selectedDeathMember.image ? (
-                        <img src={assetUrl(selectedDeathMember.profile_image || selectedDeathMember.image)} alt="" className="w-full h-full object-cover grayscale" />
-                      ) : (
-                        <Flower2 className="w-5 h-5 text-primary" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-bold text-sm text-text flex items-center gap-1.5">
-                        <span className="text-xs px-2 py-0.5 rounded-md bg-primary/15 text-primary font-semibold">
-                          {String(selectedDeathMember.gender || '').toLowerCase() === 'female' ? 'Marhuma' : 'Marhum'}
-                        </span>
-                        <span>
-                          {selectedDeathMember.name || `${selectedDeathMember.first_name || ''} ${selectedDeathMember.middle_name || ''} ${selectedDeathMember.last_name || ''}`.trim()}
-                        </span>
-                      </div>
-                      <div className="text-xs text-text-secondary mt-0.5">
-                        {selectedDeathMember.number ? `📱 ${selectedDeathMember.number} • ` : ''}
-                        {selectedDeathMember.village ? `🏡 ${selectedDeathMember.village}` : ''}
-                      </div>
-                    </div>
-                  </div>
-                  {deathModalMode === 'add' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedDeathMember(null)}
-                      className="text-xs"
-                    >
-                      Change Member
-                    </Button>
-                  )}
-                </div>
-              )
-            )}
-
-            {/* Manual Member Entry Form */}
-            {isManualEntry && deathModalMode === 'add' && (
-              <div className="p-3.5 rounded-xl bg-slate-500/5 border border-border space-y-3">
-                <div className="font-semibold text-xs text-text uppercase tracking-wider flex items-center justify-between">
-                  <span>✍️ Member Details</span>
-                  <span className="text-[11px] text-primary font-bold">
-                    {manualMember.gender === 'Female' ? 'Marhuma' : 'Marhum'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Input
-                    label="First Name"
-                    placeholder="e.g. Ahmed"
-                    value={manualMember.first_name}
-                    onChange={(e) => setManualMember(prev => ({ ...prev, first_name: e.target.value }))}
-                    required
-                  />
-                  <Input
-                    label="Father / Husband Name"
-                    placeholder="e.g. Ibrahim"
-                    value={manualMember.middle_name}
-                    onChange={(e) => setManualMember(prev => ({ ...prev, middle_name: e.target.value }))}
-                  />
-                  <Input
-                    label="Surname / Last Name"
-                    placeholder="e.g. Memon"
-                    value={manualMember.last_name}
-                    onChange={(e) => setManualMember(prev => ({ ...prev, last_name: e.target.value }))}
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Select
-                    label="Gender *"
-                    value={manualMember.gender}
-                    onChange={(val) => setManualMember(prev => ({ ...prev, gender: val }))}
-                    options={[
-                      { value: 'Male', label: 'Male (Marhum)' },
-                      { value: 'Female', label: 'Female (Marhuma)' }
-                    ]}
-                  />
-                  <Input
-                    label="Family Phone / Contact"
-                    placeholder="e.g. 9876543210 (Optional)"
-                    value={manualMember.number}
-                    onChange={(e) => setManualMember(prev => ({ ...prev, number: e.target.value }))}
-                  />
-                  <Input
-                    label="Native / Village / City"
-                    placeholder="e.g. Surat / Dhoraji"
-                    value={manualMember.village}
-                    onChange={(e) => setManualMember(prev => ({ ...prev, village: e.target.value }))}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Intekal & Funeral Details Form */}
-            {(selectedDeathMember || isManualEntry) && (
-              <form onSubmit={handleSaveDeath} className="space-y-4 pt-1">
-                {/* 1. Intekal Details */}
-                <div className="p-3.5 rounded-xl bg-slate-500/5 border border-border space-y-3">
-                  <div className="font-semibold text-xs text-text uppercase tracking-wider flex items-center gap-1.5">
-                    <span>🕊️ Intekal Details</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <DatePicker
-                      label="Date of Intekal "
-                      value={deathFormData.death_date}
-                      onChange={(val) => setDeathFormData(prev => ({ ...prev, death_date: val }))}
-                      required
-                      placeholder="Select intekal date"
-                    />
-                    <Input
-                      label="Time of Intekal"
-                      placeholder="e.g. 05:30 AM / Morning 8:00 AM"
-                      value={deathFormData.death_time}
-                      onChange={(e) => setDeathFormData(prev => ({ ...prev, death_time: e.target.value }))}
-                    />
-                  </div>
-                  <Input
-                    label="Place of Intekal"
-                    placeholder="e.g. Surat / Residence / Civil Hospital"
-                    value={deathFormData.death_place}
-                    onChange={(e) => setDeathFormData(prev => ({ ...prev, death_place: e.target.value }))}
-                  />
-                </div>
-
-                {/* 2. Namaz-e-Janaza & Kabrastan */}
-                <div className="p-3.5 rounded-xl bg-slate-500/5 border border-border space-y-3">
-                  <div className="font-semibold text-xs text-text uppercase tracking-wider flex items-center gap-1.5">
-                    <span>🕌 Namaz-e-Janaza & Kabrastan</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <DatePicker
-                      label="Janaza Date"
-                      value={deathFormData.janaza_date}
-                      onChange={(val) => setDeathFormData(prev => ({ ...prev, janaza_date: val }))}
-                      placeholder="Select janaza date"
-                    />
-                    <Input
-                      label="Janaza Time"
-                      placeholder="e.g. Baad Namaz-e-Zuhr / Baad Asr / 10:30 AM"
-                      value={deathFormData.janaza_time}
-                      onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_time: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      label="Janaza Masjid / Venue"
-                      placeholder="e.g. Memon Jamat Masjid, Surat"
-                      value={deathFormData.janaza_place}
-                      onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_place: e.target.value }))}
-                    />
-                    <Input
-                      label="Kabrastan / Burial Place"
-                      placeholder="e.g. Memon Kabrastan, Rander Road"
-                      value={deathFormData.kabrastan}
-                      onChange={(e) => setDeathFormData(prev => ({ ...prev, kabrastan: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                {/* 3. Dua / Remarks */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1.5">
-                    Dua / Special Remarks
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={deathFormData.death_note}
-                    onChange={(e) => setDeathFormData(prev => ({ ...prev, death_note: e.target.value }))}
-                    placeholder="e.g. May Allah grant magfirah and the highest place in Jannat-ul-Firdaus..."
-                    className="w-full px-3.5 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-all custom-scrollbar"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    onClick={() => setDeathModalOpen(false)}
-                    disabled={savingDeath}
+                    onClick={() => {
+                      setIsManualEntry(!isManualEntry)
+                      setSelectedDeathMember(null)
+                    }}
+                    className="text-xs text-primary font-semibold hover:underline cursor-pointer"
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={savingDeath}
-                    className="font-bold"
-                  >
-                    {savingDeath ? 'Saving...' : (deathModalMode === 'edit' ? 'Update Intekal Details' : 'Save Intekal Record')}
-                  </Button>
+                    {isManualEntry ? 'Select registered member' : '+ Or enter member manually'}
+                  </button>
                 </div>
-              </form>
+
+                {!isManualEntry ? (
+                  <Select
+                    label=""
+                    value={selectedDeathMember ? String(selectedDeathMember._id || selectedDeathMember.id || selectedDeathMember.member_id) : ''}
+                    onChange={(val) => {
+                      if (!val) {
+                        setSelectedDeathMember(null)
+                        return
+                      }
+                      const found = userList.find(u => String(u._id || u.id || u.member_id) === String(val))
+                      setSelectedDeathMember(found || null)
+                    }}
+                    options={deathUserOptions}
+                    searchable={true}
+                    placeholder="Search and select community member..."
+                    disabled={savingDeath || loadingUsers}
+                  />
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <Input
+                        label="First Name"
+                        placeholder="e.g. Ahmed"
+                        value={manualMember.first_name}
+                        onChange={(e) => setManualMember(prev => ({ ...prev, first_name: e.target.value }))}
+                        required
+                        disabled={savingDeath}
+                      />
+                      <Input
+                        label="Father / Middle Name"
+                        placeholder="e.g. Ibrahim"
+                        value={manualMember.middle_name}
+                        onChange={(e) => setManualMember(prev => ({ ...prev, middle_name: e.target.value }))}
+                        disabled={savingDeath}
+                      />
+                      <Input
+                        label="Surname / Last Name"
+                        placeholder="e.g. Memon"
+                        value={manualMember.last_name}
+                        onChange={(e) => setManualMember(prev => ({ ...prev, last_name: e.target.value }))}
+                        disabled={savingDeath}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <Select
+                        label="Gender"
+                        value={manualMember.gender}
+                        onChange={(val) => setManualMember(prev => ({ ...prev, gender: val }))}
+                        options={[
+                          { value: 'Male', label: 'Male (Marhum)' },
+                          { value: 'Female', label: 'Female (Marhuma)' }
+                        ]}
+                        disabled={savingDeath}
+                      />
+                      <Input
+                        label="Family Phone"
+                        placeholder="e.g. 9876543210"
+                        value={manualMember.number}
+                        onChange={(e) => setManualMember(prev => ({ ...prev, number: e.target.value }))}
+                        disabled={savingDeath}
+                      />
+                      <Input
+                        label="Native / City"
+                        placeholder="e.g. Surat"
+                        value={manualMember.village}
+                        onChange={(e) => setManualMember(prev => ({ ...prev, village: e.target.value }))}
+                        disabled={savingDeath}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Edit mode: Display Selected Member Details */
+              <div className="bg-surface-secondary/40 border border-border/80 rounded-2xl p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {selectedDeathMember?.profile_image || selectedDeathMember?.image ? (
+                    <img src={assetUrl(selectedDeathMember.profile_image || selectedDeathMember.image)} alt="" className="h-9 w-9 rounded-lg object-cover border border-border" />
+                  ) : (
+                    <div className="h-9 w-9 rounded-lg bg-surface-secondary flex items-center justify-center text-sm font-semibold text-text-secondary">
+                      {selectedDeathMember?.name?.slice(0, 1) || 'M'}
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-semibold text-text text-sm">
+                      <span className="text-xs text-primary font-medium mr-1">
+                        {String(selectedDeathMember?.gender || '').toLowerCase() === 'female' ? 'Marhuma' : 'Marhum'}
+                      </span>
+                      {selectedDeathMember?.name || `${selectedDeathMember?.first_name || ''} ${selectedDeathMember?.middle_name || ''} ${selectedDeathMember?.last_name || ''}`.trim()}
+                    </div>
+                    <div className="text-xs text-text-secondary mt-0.5">
+                      {[selectedDeathMember?.number, selectedDeathMember?.village].filter(Boolean).join(' • ')}
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
+
+            {/* Step 2: Intekal Details */}
+            <div className="bg-surface-secondary/20 border border-border/60 rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wide">
+                <Flower2 className="w-3.5 h-3.5 text-primary" />
+                <span>Intekal Details</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                <DatePicker
+                  label="Date of Intekal"
+                  required
+                  value={deathFormData.death_date}
+                  onChange={(val) => setDeathFormData(prev => ({ ...prev, death_date: val }))}
+                  placeholder="Select date"
+                />
+                <Input
+                  label="Time of Intekal"
+                  placeholder="e.g. 05:30 AM"
+                  value={deathFormData.death_time}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, death_time: e.target.value }))}
+                  disabled={savingDeath}
+                />
+                <Input
+                  label="Place of Intekal"
+                  placeholder="e.g. Surat / Residence"
+                  value={deathFormData.death_place}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, death_place: e.target.value }))}
+                  disabled={savingDeath}
+                />
+              </div>
+            </div>
+
+            {/* Step 3: Namaz-e-Janaza & Kabrastan */}
+            <div className="bg-surface-secondary/20 border border-border/60 rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wide">
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                <span>Namaz-e-Janaza & Kabrastan</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <DatePicker
+                  label="Janaza Date"
+                  value={deathFormData.janaza_date}
+                  onChange={(val) => setDeathFormData(prev => ({ ...prev, janaza_date: val }))}
+                  placeholder="Select date"
+                />
+                <Input
+                  label="Janaza Time"
+                  placeholder="e.g. Baad Namaz-e-Zuhr"
+                  value={deathFormData.janaza_time}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_time: e.target.value }))}
+                  disabled={savingDeath}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <Input
+                  label="Janaza Venue / Masjid"
+                  placeholder="e.g. Memon Jamat Masjid"
+                  value={deathFormData.janaza_place}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_place: e.target.value }))}
+                  disabled={savingDeath}
+                />
+                <Input
+                  label="Kabrastan / Burial Place"
+                  placeholder="e.g. Memon Kabrastan"
+                  value={deathFormData.kabrastan}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, kabrastan: e.target.value }))}
+                  disabled={savingDeath}
+                />
+              </div>
+            </div>
+
+            {/* Step 4: Dua / Remarks */}
+            <div>
+              <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                Dua / Special Remarks
+              </label>
+              <textarea
+                rows={3}
+                value={deathFormData.death_note}
+                onChange={(e) => setDeathFormData(prev => ({ ...prev, death_note: e.target.value }))}
+                placeholder="e.g. May Allah grant magfirah and Jannat-ul-Firdaus..."
+                className="w-full px-3 py-2 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all custom-scrollbar"
+                disabled={savingDeath}
+              />
+            </div>
+
+            {/* Modal Footer Buttons */}
+            <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeathModalOpen(false)}
+                disabled={savingDeath}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={savingDeath}
+                disabled={savingDeath}
+              >
+                {savingDeath ? 'Saving...' : (deathModalMode === 'edit' ? 'Update' : 'Save')}
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
 

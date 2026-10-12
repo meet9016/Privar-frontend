@@ -109,7 +109,8 @@ export default function Select({
   };
 
   const filteredOptions = options.filter(option => 
-    String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase())
+    String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(option.sublabel || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const selectedOption = options.find(opt => String(opt.value) === String(value));
