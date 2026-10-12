@@ -217,6 +217,7 @@ export default function CommitteeMembers() {
         { header: 'NAME', key: 'name', width: 40 },
         { header: 'MOBILE NUMBER', key: 'contact', width: 25 },
         { header: 'EMAIL', key: 'email', width: 35 },
+        { header: 'VILLAGE', key: 'village', width: 25 },
         { header: 'ASSIGNED ROLE', key: 'role', width: 25 },
         { header: 'STATUS', key: 'status', width: 20 }
       ];
@@ -243,7 +244,7 @@ export default function CommitteeMembers() {
         };
       });
 
-      worksheet.autoFilter = 'A1:E1'; // Add filter to all columns
+      worksheet.autoFilter = 'A1:F1'; // Add filter to all columns
 
       const getExcelRoleStyle = (roleName) => {
         if (!roleName || roleName === '-') return { bg: 'FFF1F5F9', text: 'FF475569' };
@@ -276,6 +277,7 @@ export default function CommitteeMembers() {
           name: `${member.first_name || ''} ${member.middle_name || ''} ${member.last_name || ''}`.trim(),
           contact: member.number || '-',
           email: member.email || '-',
+          village: member.village || member.village_name || '-',
           role: roleName,
           status: statusText
         });
@@ -429,6 +431,15 @@ export default function CommitteeMembers() {
             render: (member) => <span>{member.email || '-'}</span>
           },
           {
+            header: 'Village',
+            key: 'village',
+            render: (member) => (
+              <span className="font-medium text-text text-sm">
+                {member.village || member.village_name || '-'}
+              </span>
+            )
+          },
+          {
             header: 'Assigned Role',
             key: 'role',
             render: (member) => {
@@ -560,6 +571,10 @@ export default function CommitteeMembers() {
                 <div className="flex items-center justify-between">
                   <span className="text-text-secondary text-xs">Email</span>
                   <span className="font-medium text-text text-right truncate max-w-[200px]">{member.email || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-text-secondary text-xs">Village</span>
+                  <span className="font-medium text-text text-right truncate max-w-[200px]">{member.village || member.village_name || '-'}</span>
                 </div>
               </div>
 
