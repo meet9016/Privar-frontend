@@ -14,7 +14,7 @@ export default function FilterPopover({
   className = ''
 }) {
   return (
-    <div className={`relative z-30 ${className}`}>
+    <div className={`relative ${isOpen ? 'z-30' : 'z-10'} ${className}`}>
       {/* Trigger Button */}
       <button
         type="button"

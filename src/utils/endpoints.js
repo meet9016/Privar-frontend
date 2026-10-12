@@ -52,6 +52,11 @@ export const BIRTHDAY_ENDPOINTS = {
   GET_BIRTHDAYS: '/users?birthday'
 }
 
+// Deaths & In Memoriam Module API Endpoints
+export const DEATH_ENDPOINTS = {
+  GET_DEATHS: '/users?death'
+}
+
 // Job Vacancies Module API Endpoints
 export const JOB_VACANCY_ENDPOINTS = {
   GET_VACANCIES: '/job-vacancy',

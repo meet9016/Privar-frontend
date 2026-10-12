@@ -45,38 +45,45 @@ export default function ConfirmDialog() {
   const isDanger = dialog.type === 'danger'
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4"
+      onClick={handleCancel}
+    >
       <div
-        className="relative mx-4 w-full max-w-sm rounded-[24px] border border-border bg-surface p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] animate-scale-in text-center flex flex-col items-center"
+        className="relative mx-auto w-full max-w-sm rounded-[24px] border border-border bg-surface p-7 shadow-2xl animate-scale-in text-center flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Animated Icon Container */}
-        <div className={`mb-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full ${isDanger ? 'bg-error-bg shadow-[0_0_0_8px_rgba(239,68,68,0.1)]' : 'bg-primary-bg shadow-[0_0_0_8px_var(--color-primary-bg)]'}`}>
-          <AlertTriangle className={`h-8 w-8 ${isDanger ? 'text-error' : 'text-primary'}`} strokeWidth={2.5} />
+        <div className={`mb-4 flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${
+          isDanger 
+            ? 'bg-rose-500/15 text-rose-600 ring-8 ring-rose-500/10' 
+            : 'bg-primary/15 text-primary ring-8 ring-primary/10'
+        }`}>
+          <AlertTriangle className="h-7 w-7" strokeWidth={2.5} />
         </div>
 
-        <h3 className="text-xl font-bold text-text mb-2 tracking-tight">Confirm Action</h3>
-        <p className="text-sm text-text-secondary/90 leading-relaxed mb-8 px-2">{dialog.message}</p>
+        <h3 className="text-lg font-bold text-text mb-2 tracking-tight">Confirm Action</h3>
+        <p className="text-xs text-text-secondary leading-relaxed mb-6 px-1">{dialog.message}</p>
 
         <div className="flex items-center justify-center gap-3 w-full">
           <button
             type="button"
             onClick={handleCancel}
-            className="flex-1 px-4 py-3 rounded-xl border border-border bg-surface-secondary text-text text-sm font-bold hover:bg-surface hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-surface-secondary text-text text-xs font-bold hover:bg-surface hover:shadow-xs transition-all cursor-pointer"
           >
-            {dialog.cancelText}
+            {dialog.cancelText || 'Cancel'}
           </button>
           <button
             type="button"
             onClick={handleConfirm}
             autoFocus
-            className={`flex-1 px-4 py-3 rounded-xl text-white text-sm font-bold transition-all duration-200 shadow-sm hover:-translate-y-0.5 ${
+            className={`flex-1 px-4 py-2.5 rounded-xl text-white text-xs font-bold transition-all shadow-sm cursor-pointer ${
               isDanger
-                ? 'bg-error hover:bg-error-text shadow-error-glow'
-                : 'bg-primary hover:bg-primary-hover shadow-glow-primary'
+                ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/30'
+                : 'bg-primary hover:bg-primary-hover shadow-primary/30'
             }`}
           >
-            {dialog.confirmText}
+            {dialog.confirmText || 'Confirm'}
           </button>
         </div>
       </div>

@@ -25,6 +25,7 @@ const legacyPermissionFor = (permission) => {
     'donations.': 'donations.manage',
     'feedback.': 'feedback.manage',
     'birthday.': 'users.manage',
+    'death.': 'users.manage',
     'job-vacancy.': 'job-vacancy.manage',
     'expenses.': 'expenses.manage',
     'expense-category.': 'expense-category.manage',

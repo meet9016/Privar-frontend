@@ -49,7 +49,8 @@ export const MediaPage = () => {
     // { id: 'posts', label: 'Posts', icon: mediaNavigation.find(n => n.to?.includes('posts'))?.icon, permission: 'posts.list', component: (props) => <Posts {...props} /> },
     { id: 'festivals', label: 'Festivals', icon: mediaNavigation.find(n => n.to?.includes('festivals'))?.icon || CalendarDays, permission: 'festivals.list', component: (props) => <ContentPage type="festivals" {...props} /> },
     { id: 'news', label: 'News', icon: mediaNavigation.find(n => n.to?.includes('news'))?.icon, permission: 'news.list', component: (props) => <News {...props} /> },
-    { id: 'birthday', label: 'Birthdays', icon: mediaNavigation.find(n => n.to?.includes('birthday'))?.icon, permission: 'birthday.list', component: (props) => <ContentPage type="birthday" {...props} /> }
+    { id: 'birthday', label: 'Birthdays', icon: mediaNavigation.find(n => n.to?.includes('birthday'))?.icon, permission: 'birthday.list', component: (props) => <ContentPage type="birthday" {...props} /> },
+    { id: 'death', label: 'Death', icon: mediaNavigation.find(n => n.to?.includes('death'))?.icon, permission: 'death.list', component: (props) => <ContentPage type="death" {...props} /> }
   ].filter(t => hasPermission(user, t.permission)), [user])
 
   return tabs.length > 0 ? <TabbedPage title="Media & Content" tabs={tabs} storageKey="media" /> : null

@@ -20,8 +20,8 @@ import useDebounce from '../hooks/useDebounce'
 import { transliterateText } from '../utils/transliterate'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customRowActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
-  const shouldHideActions = hideActions || (hideEdit && hideDelete)
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customRowActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName, refreshTrigger }) {
+  const shouldHideActions = !customRowActions && (hideActions || (hideEdit && hideDelete))
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ 
       ...acc, 
@@ -84,6 +84,12 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   useEffect(() => {
     fetchRows()
   }, [fetchRows, endpoint])
+
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      fetchRows()
+    }
+  }, [refreshTrigger, fetchRows])
 
   const setSearch = (value) => {
     setSearchValue(value)
@@ -325,6 +331,17 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       const cleanEndpoint = endpoint.split('?')[0];
       if (deleteAction === 'clear-dob') {
         await api.put(`${cleanEndpoint}/${row._id || row.id}`, { dob: null, anniversary: null })
+      } else if (deleteAction === 'clear-death') {
+        await api.put(`${cleanEndpoint}/${row._id || row.id}`, {
+          is_deceased: false,
+          death_date: null,
+          death_time: '',
+          death_place: '',
+          death_note: '',
+          besnu_date: null,
+          besnu_time: '',
+          besnu_place: ''
+        })
       } else {
         await api.delete(`${cleanEndpoint}/${row._id || row.id}`)
       }

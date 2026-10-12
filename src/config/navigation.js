@@ -13,7 +13,8 @@ import {
   GraduationCap,
   HeartHandshake,
   IndianRupee,
-  BookOpen
+  BookOpen,
+  Flower2
 } from 'lucide-react'
 
 export const coreNavigation = [
@@ -40,6 +41,7 @@ export const mediaNavigation = [
   { to: '/admin/festivals', label: 'Festivals', icon: CalendarDays, title: 'Festivals', permission: 'festivals.list' },
   { to: '/admin/news', label: 'News', icon: FileText, title: 'News Moderator', permission: 'news.list' },
   { to: '/admin/birthday', label: 'Birthdays', icon: CalendarDays, title: 'Member Birthdays', permission: 'birthday.list' },
+  { to: '/admin/death', label: 'Intekal', icon: Flower2, title: 'Intekal & Barsi', permission: 'death.list' },
 ]
 
 export const engagementNavigation = [

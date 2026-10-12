@@ -43,8 +43,8 @@ import TermsAndConditions from './components/webComponents/TermsAndConditions'
 
 import WebLayout from './components/webComponents/WebLayout'
 
+import ConfirmDialog from './components/ConfirmDialog'
 const ReactToaster = lazy(() => import('./components/ReactToaster'))
-const ConfirmDialog = lazy(() => import('./components/ConfirmDialog'))
 
 
 applyTheme(activeTheme)
@@ -109,6 +109,8 @@ export default function App() {
           <Route path="gallery" element={<Navigate to="/admin/activities?tab=gallery" replace />} />
           <Route path="events" element={<Navigate to="/admin/activities?tab=events" replace />} />
           <Route path="birthday" element={<Navigate to="/admin/media?tab=birthday" replace />} />
+          <Route path="death" element={<Navigate to="/admin/media?tab=death" replace />} />
+          <Route path="deaths" element={<Navigate to="/admin/media?tab=death" replace />} />
           <Route path="job-vacancy" element={<Navigate to="/admin/services?tab=job-vacancy" replace />} />
           <Route path="businesses" element={<Navigate to="/admin/services?tab=businesses" replace />} />
           <Route path="students" element={<Navigate to="/admin/activities?tab=students" replace />} />
