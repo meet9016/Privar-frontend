@@ -602,15 +602,23 @@ export default function RegistrationsPage() {
             >
               <Eye className="w-3.5 h-3.5" />
             </button>
-            {!isApproved && (
+            {!isApproved && stepsComplete && (
               <button
                 type="button"
                 onClick={() => openApproveModal(row)}
                 className="p-2 text-emerald-600 hover:text-emerald-700 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
-                title={stepsComplete ? "Approve (All 5 Steps Complete)" : `Approve Member (Step ${row.current_step || row.registration_step || 1} of 5)`}
+                title="Approve (All 5 Steps Complete)"
               >
                 <Check className="w-3.5 h-3.5" />
               </button>
+            )}
+            {!isApproved && !stepsComplete && (
+              <span
+                className="p-2 text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl text-[10px] font-bold leading-none"
+                title={`Step ${row.current_step || row.registration_step || 1} of 5 - Incomplete`}
+              >
+                {row.current_step || row.registration_step || 1}/5
+              </span>
             )}
             {isApproved && (
               <span className="p-2 text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-xl" title="Approved">
