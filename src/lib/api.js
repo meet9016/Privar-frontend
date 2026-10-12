@@ -219,8 +219,9 @@ const setupInterceptors = (axiosInstance) => {
         error.response?.data?.message ||
         error.response?.data?.error
 
-      if (errorMessage) {
+      if (errorMessage && !error.config?.skipErrorToast && !error.config?.silent) {
         toast.error(errorMessage)
+        error.isToastShown = true
       }
 
       return Promise.reject(error)

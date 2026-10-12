@@ -172,7 +172,9 @@ export default function RegistrationsPage() {
       setPagination(payload.pagination || { page: 1, totalPages: 1, total: mappedList.length, limit: 15 })
     } catch (err) {
       console.error('Failed to fetch registrations', err)
-      toast.error('Failed to load registrations')
+      if (!err.response?.data?.message) {
+        toast.error('Failed to load registrations')
+      }
     } finally {
       setLoading(false)
     }
@@ -276,7 +278,9 @@ export default function RegistrationsPage() {
       fetchRegistrations()
     } catch (err) {
       console.error('Failed to approve registration', err)
-      toast.error(err.response?.data?.message || 'Failed to approve registration')
+      if (!err.response?.data?.message) {
+        toast.error('Failed to approve registration')
+      }
     } finally {
       setActionLoading(false)
     }
@@ -303,7 +307,9 @@ export default function RegistrationsPage() {
       fetchRegistrations()
     } catch (err) {
       console.error('Failed to reject registration', err)
-      toast.error(err.response?.data?.message || 'Failed to reject registration')
+      if (!err.response?.data?.message) {
+        toast.error('Failed to reject registration')
+      }
     } finally {
       setActionLoading(false)
     }
@@ -332,7 +338,9 @@ export default function RegistrationsPage() {
       fetchRegistrations()
     } catch (err) {
       console.error('Failed to request correction', err)
-      toast.error(err.response?.data?.message || 'Failed to request correction')
+      if (!err.response?.data?.message) {
+        toast.error('Failed to request correction')
+      }
     } finally {
       setActionLoading(false)
     }
@@ -594,23 +602,15 @@ export default function RegistrationsPage() {
             >
               <Eye className="w-3.5 h-3.5" />
             </button>
-            {!isApproved && stepsComplete && (
+            {!isApproved && (
               <button
                 type="button"
                 onClick={() => openApproveModal(row)}
                 className="p-2 text-emerald-600 hover:text-emerald-700 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
-                title="Approve (All 5 Steps Complete)"
+                title={stepsComplete ? "Approve (All 5 Steps Complete)" : `Approve Member (Step ${row.current_step || row.registration_step || 1} of 5)`}
               >
                 <Check className="w-3.5 h-3.5" />
               </button>
-            )}
-            {!isApproved && !stepsComplete && (
-              <span
-                className="p-2 text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl text-[10px] font-bold leading-none"
-                title={`Step ${row.current_step || row.registration_step || 1} of 5 - Incomplete`}
-              >
-                {row.current_step || row.registration_step || 1}/5
-              </span>
             )}
             {isApproved && (
               <span className="p-2 text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-xl" title="Approved">
