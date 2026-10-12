@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useContext } from 'react'
 import {
   Users,
   Eye,
@@ -49,8 +49,24 @@ import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import ImagePreviewModal from '../components/common/ImagePreviewModal'
 import { getRelationDisplay } from '../components/UserForm'
+import { AuthContext } from '../context/AuthContext'
 
 export default function RegistrationsPage() {
+  const { user: currentUser } = useContext(AuthContext)
+  const isSuperAdmin = Boolean(
+    currentUser?.role === 'superadmin' || 
+    currentUser?.is_super_admin === true || 
+    currentUser?.committee_role === 'President' || 
+    currentUser?.role_id?.name?.toLowerCase() === 'super admin' ||
+    currentUser?.role_id?.name?.toLowerCase() === 'admin'
+  )
+  const isCommittee = Boolean(
+    currentUser?.is_committee || 
+    currentUser?.role === 'committee' || 
+    (currentUser?.committee_role && currentUser?.committee_role !== 'Self')
+  )
+  const committeeVillage = (isCommittee && !isSuperAdmin) ? (currentUser?.village || currentUser?.village_name || '').trim() : ''
+
   const [registrations, setRegistrations] = useState([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -100,7 +116,8 @@ export default function RegistrationsPage() {
           limit,
           search: debouncedSearch,
           status: filters.status,
-          step: filters.step
+          step: filters.step,
+          village: committeeVillage || undefined
         }
       })
       const payload = res?.data?.data || res?.data || {}
@@ -178,7 +195,7 @@ export default function RegistrationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, limit, debouncedSearch, filters])
+  }, [page, limit, debouncedSearch, filters, committeeVillage])
 
   useEffect(() => {
     fetchRegistrations()
@@ -213,6 +230,17 @@ export default function RegistrationsPage() {
           ...targetS1,
           ...targetS3,
           ...targetS4,
+          village: targetS3.village || targetUser.village || targetUser.village_name || '',
+          village_id: targetS3.village_id || targetUser.village_id || '',
+          village_name: targetS3.village || targetUser.village_name || targetUser.village || '',
+          city: targetS3.city || targetUser.city || '',
+          city_id: targetS3.city_id || targetUser.city_id || '',
+          district: targetS3.district || targetUser.district || '',
+          district_id: targetS3.district_id || targetUser.district_id || '',
+          state: targetS3.state || targetUser.state || '',
+          state_id: targetS3.state_id || targetUser.state_id || '',
+          address: targetS3.address || targetS3.complete_address || targetUser.address || '',
+          pincode: targetS3.pincode || targetUser.pincode || '',
           documents: targetS5,
           occupation_details: targetS4,
           family_members_count: targetS2.length,
@@ -645,6 +673,12 @@ export default function RegistrationsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-text flex items-center gap-2">
             New Member Registrations
           </h1>
+          {committeeVillage && (
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-primary font-medium">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Village Scoped: Only showing new registrations from <strong className="font-bold underline">{committeeVillage}</strong></span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -975,12 +1009,14 @@ export default function RegistrationsPage() {
                     <p className="font-bold text-text text-[14px] leading-relaxed">{userObj.address}</p>
                   </div>
                 )}
-                {Boolean(userObj.village || userObj.village_name) && (
-                  <div className="p-3.5 sm:p-4 rounded-xl bg-surface-secondary/35 hover:bg-surface-secondary/60 border border-border/60 transition-colors">
-                    <span className="text-text-secondary text-xs font-semibold block mb-1">Village / Native Place</span>
-                    <p className="font-bold text-text text-[14px] leading-snug">{cleanLocationName(userObj.village_name || userObj.village)}</p>
-                  </div>
-                )}
+                <div className="p-3.5 sm:p-4 rounded-xl bg-surface-secondary/35 hover:bg-surface-secondary/60 border border-border/60 transition-colors">
+                  <span className="text-text-secondary text-xs font-semibold block mb-1">Village / Native Place</span>
+                  <p className="font-bold text-text text-[14px] leading-snug">
+                    {cleanLocationName(userObj.village || userObj.village_name || userObj.step3?.[0]?.village || userObj.step3?.village) || (
+                      <span className="text-text-secondary/70 italic font-normal text-xs">Not specified</span>
+                    )}
+                  </p>
+                </div>
                 {userObj.pincode && (
                   <div className="p-3.5 sm:p-4 rounded-xl bg-surface-secondary/35 hover:bg-surface-secondary/60 border border-border/60 transition-colors">
                     <span className="text-text-secondary text-xs font-semibold block mb-1">Pincode</span>

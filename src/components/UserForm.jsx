@@ -487,7 +487,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         state_id: user.state_id || '',
         district_id: user.district_id || '',
         city_id: user.city_id || '',
-        village: user.village || user.village_id || '',
+        village: (user.village_name && !/^[0-9a-fA-F]{24}$/.test(user.village_name)) 
+          ? user.village_name 
+          : ((user.village && !/^[0-9a-fA-F]{24}$/.test(user.village)) ? user.village : (user.village_name || user.village || user.village_id || '')),
         patti_para_pargana: user.patti_para_pargana || user.patti || '',
         address: user.address || '',
         image: user.image || user.profile_image || '',
@@ -577,6 +579,102 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       setExpandedMemberIndex(null)
     }
   }, [user, targetMemberId])
+
+  // Auto-resolve any missing location IDs or hex village IDs as soon as master data loads
+  useEffect(() => {
+    if (!user) return
+    const isHex = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val.trim())
+
+    setFormData(prev => {
+      let changed = false
+      const next = { ...prev }
+
+      // 1. Resolve country_id (prefer master ID, match by ID or clean name)
+      if (countries.length > 0) {
+        const countryVal = (user.country_id || user.country_name || user.country || next.country_id || '').trim()
+        if (countryVal) {
+          const found = countries.find(c => 
+            String(c._id || c.id) === countryVal || 
+            (c.name && c.name.toLowerCase().trim() === countryVal.toLowerCase())
+          )
+          const targetId = found ? (found._id || found.id) : (isHex(countryVal) ? countryVal : '')
+          if (targetId && next.country_id !== targetId) {
+            next.country_id = targetId
+            changed = true
+          }
+        }
+      }
+
+      // 2. Resolve state_id (prefer master ID, match by ID or clean name)
+      if (states.length > 0) {
+        const stateVal = (user.state_id || user.state_name || user.state || next.state_id || '').trim()
+        if (stateVal) {
+          const found = states.find(s => 
+            String(s._id || s.id) === stateVal || 
+            ((s.name || s.state) && String(s.name || s.state).toLowerCase().trim() === stateVal.toLowerCase())
+          )
+          const targetId = found ? (found._id || found.id) : (isHex(stateVal) ? stateVal : '')
+          if (targetId && next.state_id !== targetId) {
+            next.state_id = targetId
+            changed = true
+          }
+        }
+      }
+
+      // 3. Resolve district_id (prefer master ID, match by ID or clean name)
+      if (districts.length > 0) {
+        const distVal = (user.district_id || user.district_name || user.district || next.district_id || '').trim()
+        if (distVal) {
+          const found = districts.find(d => 
+            String(d._id || d.id) === distVal || 
+            ((d.name || d.district) && String(d.name || d.district).toLowerCase().trim() === distVal.toLowerCase())
+          )
+          const targetId = found ? (found._id || found.id) : (isHex(distVal) ? distVal : '')
+          if (targetId && next.district_id !== targetId) {
+            next.district_id = targetId
+            changed = true
+          }
+        }
+      }
+
+      // 4. Resolve city_id (prefer master ID, match by ID or clean name)
+      if (cities.length > 0) {
+        const cityVal = (user.city_id || user.city_name || user.city || next.city_id || '').trim()
+        if (cityVal) {
+          const found = cities.find(c => 
+            String(c._id || c.id) === cityVal || 
+            ((c.name || c.city) && String(c.name || c.city).toLowerCase().trim() === cityVal.toLowerCase())
+          )
+          const targetId = found ? (found._id || found.id) : (isHex(cityVal) ? cityVal : '')
+          if (targetId && next.city_id !== targetId) {
+            next.city_id = targetId
+            changed = true
+          }
+        }
+      }
+
+      // 5. Resolve village (always resolve to clean human-readable village NAME)
+      if (villages.length > 0) {
+        const villageVal = (user.village_name || user.village || user.village_id || next.village || '').trim()
+        if (villageVal) {
+          const found = villages.find(v => 
+            String(v._id || v.id) === villageVal || 
+            String(v._id || v.id) === String(next.village || '').trim() ||
+            ((v.name || v.village) && String(v.name || v.village).toLowerCase().trim() === villageVal.toLowerCase())
+          )
+          if (found && (found.name || found.village)) {
+            const vCleanName = found.name || found.village
+            if (next.village !== vCleanName) {
+              next.village = vCleanName
+              changed = true
+            }
+          }
+        }
+      }
+
+      return changed ? next : prev
+    })
+  }, [user, countries, states, districts, cities, villages])
 
   const activeRoles = useMemo(() => roles.filter((role) => Number(role.status ?? 1) === 1), [roles])
   const isEditingSelf = Boolean(user && loggedInUser && [
@@ -1063,8 +1161,44 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       return
     }
 
+    const selectedCountry = countries.find(c => 
+      String(c._id || c.id) === String(formData.country_id) || 
+      (c.name && c.name.toLowerCase().trim() === String(formData.country_id || '').toLowerCase().trim())
+    )
+    const selectedState = states.find(s => 
+      String(s._id || s.id) === String(formData.state_id) || 
+      ((s.name || s.state) && String(s.name || s.state).toLowerCase().trim() === String(formData.state_id || '').toLowerCase().trim())
+    )
+    const selectedDistrict = districts.find(d => 
+      String(d._id || d.id) === String(formData.district_id) || 
+      ((d.name || d.district) && String(d.name || d.district).toLowerCase().trim() === String(formData.district_id || '').toLowerCase().trim())
+    )
+    const selectedCity = cities.find(c => 
+      String(c._id || c.id) === String(formData.city_id) || 
+      ((c.name || c.city) && String(c.name || c.city).toLowerCase().trim() === String(formData.city_id || '').toLowerCase().trim())
+    )
+    const selectedVillage = villages.find(v => 
+      ((v.name || v.village) && String(v.name || v.village).toLowerCase().trim() === String(formData.village || '').toLowerCase().trim()) || 
+      String(v._id || v.id) === String(formData.village || '').trim()
+    )
+
+    const cleanVillageName = selectedVillage 
+      ? (selectedVillage.name || selectedVillage.village) 
+      : ((formData.village && !/^[0-9a-fA-F]{24}$/.test(formData.village.trim())) ? formData.village.trim() : (user?.village_name || user?.village || ''))
+
     const payload = {
       ...formData,
+      country: selectedCountry ? selectedCountry.name : (user?.country_name || user?.country || ''),
+      country_id: selectedCountry ? (selectedCountry._id || selectedCountry.id || '') : (formData.country_id || user?.country_id || ''),
+      state: selectedState ? (selectedState.name || selectedState.state || '') : (user?.state_name || user?.state || ''),
+      state_id: selectedState ? (selectedState._id || selectedState.id || '') : (formData.state_id || user?.state_id || ''),
+      district: selectedDistrict ? (selectedDistrict.name || selectedDistrict.district || '') : (user?.district_name || user?.district || ''),
+      district_id: selectedDistrict ? (selectedDistrict._id || selectedDistrict.id || '') : (formData.district_id || user?.district_id || ''),
+      city: selectedCity ? (selectedCity.name || selectedCity.city || '') : (user?.city_name || user?.city || ''),
+      city_id: selectedCity ? (selectedCity._id || selectedCity.id || '') : (formData.city_id || user?.city_id || ''),
+      village: cleanVillageName,
+      village_name: cleanVillageName,
+      village_id: selectedVillage ? (selectedVillage._id || selectedVillage.id || '') : (user?.village_id || ''),
       first_name: capitalizeWords(formData.first_name),
       middle_name: capitalizeWords(formData.middle_name),
       last_name: capitalizeWords(formData.last_name),
@@ -1102,49 +1236,115 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   }
 
   // Formatting cascading options for Select components
-  const countryOptions = countries.map(c => ({ label: c.name, value: c._id || c.id }))
+  const countryOptions = countries.map(c => ({ 
+    label: c.name, 
+    value: c._id || c.id,
+    _id: c._id || c.id,
+    id: c.id || c._id,
+    name: c.name 
+  }))
+
+  const selectedCountryObj = countries.find(c => 
+    String(c._id || c.id) === String(formData.country_id) || 
+    (c.name && c.name.toLowerCase().trim() === String(formData.country_id || '').toLowerCase().trim())
+  )
   
   const stateOptions = states
-    .filter(s => !formData.country_id || !s.parent_id || String(s.country_id || s.parent_id) === String(formData.country_id))
-    .map(s => ({ label: s.name, value: s._id || s.id }))
+    .filter(s => {
+      const sId = String(s._id || s.id)
+      if (formData.state_id && (String(formData.state_id) === sId || (s.name && s.name === formData.state_id))) return true
+      if (!formData.country_id) return true
+      const sCountry = String(s.country_id || s.parent_id || '').trim().toLowerCase()
+      if (!sCountry) return true
+      const cId = String(formData.country_id).trim().toLowerCase()
+      const cName = String(selectedCountryObj?.name || '').trim().toLowerCase()
+      return sCountry === cId || (cName && sCountry === cName)
+    })
+    .map(s => ({ 
+      label: s.name || s.state || '', 
+      value: s._id || s.id,
+      _id: s._id || s.id,
+      id: s.id || s._id,
+      name: s.name || s.state || ''
+    }))
+
+  const selectedStateObj = states.find(s => 
+    String(s._id || s.id) === String(formData.state_id) || 
+    ((s.name || s.state) && String(s.name || s.state).toLowerCase().trim() === String(formData.state_id || '').toLowerCase().trim())
+  )
 
   const districtOptions = districts
     .filter(d => {
       const dId = String(d._id || d.id)
-      if (formData.district_id && String(formData.district_id) === dId) {
+      if (formData.district_id && (String(formData.district_id) === dId || (d.name && d.name === formData.district_id))) {
         return true
       }
-      return !formData.state_id || !d.parent_id || String(d.state_id || d.parent_id) === String(formData.state_id)
+      if (!formData.state_id) return true
+      const dState = String(d.state_id || d.parent_id || '').trim().toLowerCase()
+      if (!dState) return true
+      const sId = String(formData.state_id).trim().toLowerCase()
+      const sName = String(selectedStateObj?.name || selectedStateObj?.state || '').trim().toLowerCase()
+      return dState === sId || (sName && dState === sName)
     })
-    .map(d => ({ label: d.name, value: d._id || d.id }))
+    .map(d => ({ 
+      label: d.name || d.district || '', 
+      value: d._id || d.id,
+      _id: d._id || d.id,
+      id: d.id || d._id,
+      name: d.name || d.district || ''
+    }))
+
+  const selectedDistrictObj = districts.find(d => 
+    String(d._id || d.id) === String(formData.district_id) || 
+    ((d.name || d.district) && String(d.name || d.district).toLowerCase().trim() === String(formData.district_id || '').toLowerCase().trim())
+  )
 
   const cityOptions = cities
     .filter(c => {
       const cId = String(c._id || c.id)
-      if (formData.city_id && String(formData.city_id) === cId) {
+      if (formData.city_id && (String(formData.city_id) === cId || (c.name && c.name === formData.city_id) || (c.city && c.city === formData.city_id))) {
         return true
       }
-      if (formData.district_id && (c.parent_id || c.district_id)) {
-        return String(c.parent_id || c.district_id) === String(formData.district_id)
+      const cParent = String(c.district_id || c.parent_id || c.state_id || '').trim().toLowerCase()
+      if (!cParent) return true
+      if (formData.district_id) {
+        const dId = String(formData.district_id).trim().toLowerCase()
+        const dName = String(selectedDistrictObj?.name || selectedDistrictObj?.district || '').trim().toLowerCase()
+        if (cParent === dId || (dName && cParent === dName)) return true
       }
-      if (formData.state_id && (c.state_id || c.parent_id)) {
-        return String(c.state_id || c.parent_id) === String(formData.state_id)
+      if (formData.state_id) {
+        const sId = String(formData.state_id).trim().toLowerCase()
+        const sName = String(selectedStateObj?.name || selectedStateObj?.state || '').trim().toLowerCase()
+        if (cParent === sId || (sName && cParent === sName)) return true
       }
-      return true
+      return false
     })
-    .map(c => ({ label: c.name || c.city || 'Unnamed City', value: c._id || c.id }))
+    .map(c => ({ 
+      label: c.name || c.city || 'Unnamed City', 
+      value: c._id || c.id,
+      _id: c._id || c.id,
+      id: c.id || c._id,
+      name: c.name || c.city 
+    }))
 
-  const selectedCityObj = cities.find(c => String(c._id || c.id) === String(formData.city_id))
-  const selectedDistrictObj = districts.find(d => String(d._id || d.id) === String(formData.district_id))
+  const selectedCityObj = cities.find(c => 
+    String(c._id || c.id) === String(formData.city_id) || 
+    ((c.name || c.city) && String(c.name || c.city).toLowerCase().trim() === String(formData.city_id || '').toLowerCase().trim())
+  )
 
   const villageOptions = villages
     .filter(v => {
-      const vName = v.name
-      if (formData.village && formData.village === vName) {
+      const vName = String(v.name || v.village || '').trim()
+      const vId = String(v._id || v.id || '').trim()
+      if (formData.village && (
+        vName.toLowerCase() === String(formData.village).trim().toLowerCase() ||
+        (vId && vId.toLowerCase() === String(formData.village).trim().toLowerCase())
+      )) {
         return true
       }
       
-      const vParent = String(v.parent_id || v.city_id || v.district_id || '').trim().toLowerCase()
+      const vParent = String(v.parent_id || v.city_id || v.district_id || v.taluka_id || '').trim().toLowerCase()
+      if (!vParent) return true
 
       if (formData.city_id) {
         const cId = String(formData.city_id).toLowerCase()
@@ -1152,26 +1352,35 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         if (vParent === cId || (cName && vParent === cName)) {
           return true
         }
-        // If village parent was mapped to district instead of city
-        if (formData.district_id) {
-          const dId = String(formData.district_id).toLowerCase()
-          const dName = String(selectedDistrictObj?.name || '').toLowerCase().trim()
-          if (vParent === dId || (dName && vParent === dName)) {
-            return true
-          }
-        }
-        return false
       }
 
       if (formData.district_id) {
         const dId = String(formData.district_id).toLowerCase()
-        const dName = String(selectedDistrictObj?.name || '').toLowerCase().trim()
-        return vParent === dId || (dName && vParent === dName)
+        const dName = String(selectedDistrictObj?.name || selectedDistrictObj?.district || '').toLowerCase().trim()
+        if (vParent === dId || (dName && vParent === dName)) {
+          return true
+        }
       }
 
-      return true
+      if (formData.state_id) {
+        const sId = String(formData.state_id).toLowerCase()
+        const sName = String(selectedStateObj?.name || selectedStateObj?.state || '').toLowerCase().trim()
+        if (vParent === sId || (sName && vParent === sName)) {
+          return true
+        }
+      }
+
+      if (!formData.city_id && !formData.district_id) return true
+
+      return false
     })
-    .map(v => ({ label: v.name, value: v.name }))
+    .map(v => ({ 
+      label: v.name || v.village || '', 
+      value: v.name || v.village || '',
+      _id: v._id || v.id,
+      id: v.id || v._id,
+      name: v.name || v.village || ''
+    }))
 
   const roleOptions = [
     { label: 'Select Assigned Role (Optional)', value: '' },

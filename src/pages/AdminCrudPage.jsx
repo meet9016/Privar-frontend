@@ -130,6 +130,21 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         ? '' 
         : (data[field.name] !== undefined && data[field.name] !== null ? data[field.name] : (data[field.fallback] !== undefined && data[field.fallback] !== null ? data[field.fallback] : (field.defaultValue ?? '')))
       
+      // If field expects name (e.g. location fields), check if explicit name field is available
+      if (field.valueKey === 'name') {
+        const explicitName = data[`${field.name}_name`]
+        if (explicitName) {
+          val = explicitName
+        } else if (typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val.trim()) && data[`${field.name}_name`]) {
+          val = data[`${field.name}_name`]
+        }
+      }
+
+      // If field expects ID, but val is empty, check ${field.name}_id
+      if (field.type === 'select-remote' && field.valueKey !== 'name' && !val && data[`${field.name}_id`]) {
+        val = data[`${field.name}_id`]
+      }
+
       // For 'name' field on birthday/user records: compose from first_name + last_name if name is empty
       if (field.name === 'name' && !val && (data.first_name || data.last_name)) {
         val = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ')
@@ -177,6 +192,51 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       }
     }))
     setRemoteOptions((prev) => ({ ...prev, ...results }))
+
+    // Resolve any raw IDs or mismatched values in formData
+    setFormData((prevForm) => {
+      let changed = false
+      const nextForm = { ...prevForm }
+      remoteFields.forEach((f) => {
+        const curVal = nextForm[f.name]
+        const optList = results[f.name] || []
+        if (curVal !== undefined && curVal !== null && curVal !== '' && optList.length > 0) {
+          const isHex = typeof curVal === 'string' && /^[0-9a-fA-F]{24}$/.test(curVal.trim())
+          if (f.valueKey === 'name') {
+            if (isHex || !optList.some(o => (o.name || o.title || o.country || o.state || o.city || o.village) === curVal)) {
+              const matched = optList.find(o => 
+                String(o._id || o.id) === String(curVal) ||
+                ((o.name || o.title || o.country || o.state || o.city || o.village) && 
+                 String(o.name || o.title || o.country || o.state || o.city || o.village).toLowerCase() === String(curVal).toLowerCase())
+              )
+              if (matched) {
+                const labelName = matched.name || matched.title || matched.country || matched.state || matched.city || matched.village
+                if (labelName && labelName !== curVal) {
+                  nextForm[f.name] = labelName
+                  changed = true
+                }
+              }
+            }
+          } else {
+            if (!isHex) {
+              const matched = optList.find(o => 
+                ((o.name || o.title || o.country || o.state || o.city || o.village) && 
+                 String(o.name || o.title || o.country || o.state || o.city || o.village).toLowerCase() === String(curVal).toLowerCase()) ||
+                String(o._id || o.id) === String(curVal)
+              )
+              if (matched) {
+                const targetId = matched.id || matched._id
+                if (targetId && targetId !== curVal) {
+                  nextForm[f.name] = targetId
+                  changed = true
+                }
+              }
+            }
+          }
+        }
+      })
+      return changed ? nextForm : prevForm
+    })
   }
 
   const handleSave = async (event) => {
@@ -293,6 +353,30 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         })
       }
 
+      // Auto-attach location ID fields if names are present
+      ['country', 'state', 'district', 'city', 'village'].forEach(locKey => {
+        const locVal = formData[locKey]
+        if (locVal) {
+          const optList = remoteOptions[locKey] || []
+          const found = optList.find(o => 
+            (o.name && String(o.name).toLowerCase() === String(locVal).toLowerCase()) ||
+            (o.title && String(o.title).toLowerCase() === String(locVal).toLowerCase()) ||
+            (o.country && String(o.country).toLowerCase() === String(locVal).toLowerCase()) ||
+            (o.state && String(o.state).toLowerCase() === String(locVal).toLowerCase()) ||
+            (o.city && String(o.city).toLowerCase() === String(locVal).toLowerCase()) ||
+            (o.village && String(o.village).toLowerCase() === String(locVal).toLowerCase()) ||
+            String(o._id || o.id) === String(locVal)
+          )
+          if (found && (found._id || found.id)) {
+            const locId = found._id || found.id
+            if (hasFiles && payload instanceof FormData) {
+              if (!payload.has(`${locKey}_id`)) payload.append(`${locKey}_id`, locId)
+            } else if (!hasFiles && typeof payload === 'object') {
+              if (!payload[`${locKey}_id`]) payload[`${locKey}_id`] = locId
+            }
+          }
+        }
+      })
 
       const cleanEndpoint = endpoint.split('?')[0];
       const token = localStorage.getItem('auth_token');
@@ -805,7 +889,13 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                         options={(remoteOptions[field.name] || [])
                           .filter((option) => {
                             const optVal = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
-                            if (formData[field.name] && String(formData[field.name]) === String(optVal)) return true
+                            const optId = String(option._id || option.id || '')
+                            const curFormVal = String(formData[field.name] || '').trim()
+
+                            // If option matches current form value by ID or Name, always retain it so it is pre-selected and selectable
+                            if (curFormVal && (curFormVal === String(optVal) || (optId && curFormVal === optId) || (option.name && curFormVal.toLowerCase() === option.name.toLowerCase()))) {
+                              return true
+                            }
 
                             if (field.name === 'state') {
                               // If countryList is empty (e.g. country is hidden field), show all states
@@ -832,7 +922,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                                 !parent ||
                                 (selectedStateId && parent === selectedStateId) ||
                                 (selectedStateName && parent.toLowerCase() === selectedStateName) ||
-                                (selectedStateName && optState === selectedStateName)
+                                (selectedStateName && optState === selectedStateName) ||
+                                (formData.state && parent.toLowerCase() === String(formData.state).toLowerCase())
                               if (!matches) return false
                             }
 
@@ -844,7 +935,8 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                                 (selectedDistrictId && cDistrictId === selectedDistrictId) ||
                                 (selectedDistrictName && cName === selectedDistrictName) ||
                                 (selectedDistrictName && cName.includes(selectedDistrictName)) ||
-                                (selectedDistrictName && String(option.district || '').toLowerCase() === selectedDistrictName)
+                                (selectedDistrictName && String(option.district || '').toLowerCase() === selectedDistrictName) ||
+                                (selectedDistrictId && String(option.district_id || '') === selectedDistrictId)
                               if (!matches) return false
                             }
 
@@ -856,7 +948,9 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                                 !parent ||
                                 (selectedCityId && parent === selectedCityId) ||
                                 (selectedCityName && parent.toLowerCase() === selectedCityName) ||
-                                (selectedCityName && optCity === selectedCityName)
+                                (selectedCityName && optCity === selectedCityName) ||
+                                (formData.city && parent.toLowerCase() === String(formData.city).toLowerCase()) ||
+                                (selectedDistrictId && String(option.district_id || '') === selectedDistrictId)
                               if (!matches) return false
                             }
                             return true
@@ -866,7 +960,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                             const val = field.valueKey ? option[field.valueKey] : (option.id || option._id || option.name)
                             return {
                               label: label || 'Unnamed',
-                              value: val
+                              value: val,
+                              _id: option._id || option.id,
+                              id: option.id || option._id,
+                              name: option.name || label,
+                              _raw: option
                             }
                           })}
                         error={fieldErrors[field.name] ? `${field.label} is required` : undefined}

@@ -1,5 +1,6 @@
 const legacyPermissionFor = (permission) => {
   const legacyMap = {
+    'registrations.': 'members.list',
     'members.': 'users.manage',
     'committee.': 'committee.manage',
     'roles.': 'roles.manage',

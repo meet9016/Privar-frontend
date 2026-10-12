@@ -126,7 +126,28 @@ export default function Select({
     String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedOption = !isMultiple ? options.find(opt => String(opt.value) === String(value)) : null;
+  const isHexId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val.trim());
+
+  const findMatchingOption = (val) => {
+    if (val === undefined || val === null || val === '') return null;
+    const str = String(val).trim();
+    const strLower = str.toLowerCase();
+    return options.find(opt => {
+      if (!opt) return false;
+      const optVal = String(opt.value ?? '').trim();
+      if (optVal === str) return true;
+      if (optVal && optVal.toLowerCase() === strLower) return true;
+      if (opt._id && String(opt._id).trim() === str) return true;
+      if (opt.id && String(opt.id).trim() === str) return true;
+      if (opt.label && String(opt.label).trim().toLowerCase() === strLower) return true;
+      if (opt.name && String(opt.name).trim().toLowerCase() === strLower) return true;
+      if (opt._raw?._id && String(opt._raw._id).trim() === str) return true;
+      if (opt._raw?.name && String(opt._raw.name).trim().toLowerCase() === strLower) return true;
+      return false;
+    }) || null;
+  };
+
+  const selectedOption = !isMultiple ? findMatchingOption(value) : null;
 
   const handleSelect = (val) => { 
     if (isMultiple) {
@@ -228,8 +249,8 @@ export default function Select({
             {isMultiple ? (
               selectedValues.length > 0 ? (
                 selectedValues.map(v => {
-                  const matched = options.find(o => String(o.value) === String(v));
-                  const displayLabel = matched ? matched.label : v;
+                  const matched = findMatchingOption(v);
+                  const displayLabel = matched ? matched.label : (isHexId(v) ? 'Selected' : v);
                   return (
                     <span 
                       key={v}
@@ -254,8 +275,8 @@ export default function Select({
                 {selectedOption?.image && (
                   <img src={selectedOption.image} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 border border-border" />
                 )}
-                <span className={selectedOption || value ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
-                  {selectedOption ? selectedOption.label : (value || placeholder)}
+                <span className={selectedOption || (value && !isHexId(value)) ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
+                  {selectedOption ? selectedOption.label : (isHexId(value) ? placeholder : (value || placeholder))}
                 </span>
               </>
             )}
@@ -290,7 +311,12 @@ export default function Select({
               filteredOptions.map((option) => {
                 const isSelected = isMultiple
                   ? selectedValues.includes(String(option.value))
-                  : String(value) === String(option.value);
+                  : (
+                      String(value) === String(option.value) ||
+                      (selectedOption && (option === selectedOption || String(option.value) === String(selectedOption.value))) ||
+                      (value && option._id && String(option._id) === String(value)) ||
+                      (value && option.id && String(option.id) === String(value))
+                    );
 
                 return (
                   <div 

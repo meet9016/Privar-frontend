@@ -115,6 +115,8 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         last_name: found.last_name || '',
         number: found.number || found.phone || '',
         email: userEmail || prev.email || '',
+        village: found.village || found.village_name || '',
+        village_id: found.village_id || '',
         image: found.image || found.profile_image || ''
       }))
       if (userEmail) {
@@ -187,6 +189,12 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     }
     if (selectedUserId) {
       payload.append('user_id', selectedUserId)
+    }
+    if (formData.village) {
+      payload.append('village', formData.village)
+    }
+    if (formData.village_id) {
+      payload.append('village_id', formData.village_id)
     }
 
     onSubmit(payload)
