@@ -15,7 +15,10 @@ const TABS = [
 ]
 
 export default function Mandal({ headerLeftContent }) {
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('subtab') || (params.get('tab') === 'contribution' ? 'contribution' : 'dashboard')
+  })
   const [mandals, setMandals] = useState([])
   const [selectedMandalId, setSelectedMandalId] = useState('')
   const [loadingMandals, setLoadingMandals] = useState(false)

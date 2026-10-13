@@ -178,6 +178,7 @@ export const MANDAL_ENDPOINTS = {
   TOGGLE_MEMBER: '/mandal/members/toggle',
   BULK_MEMBERS: '/mandal/members/bulk',
   GET_CONTRIBUTIONS: '/mandal/contributions',
+  EXPORT_CONTRIBUTIONS: '/mandal/contributions/export',
   UPDATE_CONTRIBUTION: (id) => `/mandal/contributions/${id}`,
   BULK_MARK_PAID: '/mandal/contributions/bulk-mark-paid',
   GET_HISTORY: '/mandal/history'

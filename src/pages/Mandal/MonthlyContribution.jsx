@@ -15,8 +15,10 @@ import {
   Filter,
   X,
   CreditCard,
-  RotateCcw
+  RotateCcw,
+  Download
 } from 'lucide-react'
+import { saveAs } from 'file-saver'
 import api, { assetUrl, formatDate } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
 import Table from '../../components/common/Table'
@@ -94,6 +96,7 @@ export default function MonthlyContribution({ mandalId, mandal }) {
   const [summary, setSummary] = useState(null)
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
 
   // Single Edit Modal
   const [activeContribution, setActiveContribution] = useState(null)
@@ -251,6 +254,46 @@ export default function MonthlyContribution({ mandalId, mandal }) {
       toast.error(err.response?.data?.message || 'Failed to mark all as paid')
     } finally {
       setBulkPaidLoading(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    try {
+      setExportLoading(true)
+      const params = {
+        mandal_id: mandalId,
+        month: selectedMonth,
+        status: statusFilter,
+        payment_mode: paymentModeFilter !== 'All' ? paymentModeFilter : undefined,
+        search: debouncedSearch
+      }
+      if (selectedRows.length > 0) {
+        params.ids = selectedRows.join(',')
+      }
+
+      const response = await api.get(MANDAL_ENDPOINTS.EXPORT_CONTRIBUTIONS, {
+        params,
+        responseType: 'blob'
+      })
+
+      if (response.data?.type === 'application/json') {
+        const text = await response.data.text()
+        const json = JSON.parse(text)
+        toast.error(json.message || 'Failed to download contributions')
+        return
+      }
+
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+      const safeMandalName = (mandal?.name || 'Mandal').replace(/[^a-zA-Z0-9]/g, '_')
+      saveAs(blob, `Contributions_${safeMandalName}_${selectedMonth}.xlsx`)
+      toast.success('Contributions downloaded successfully')
+    } catch (err) {
+      console.error('Error downloading contributions:', err)
+      toast.error(err.response?.data?.message || 'Failed to download contributions')
+    } finally {
+      setExportLoading(false)
     }
   }
 
@@ -443,6 +486,18 @@ export default function MonthlyContribution({ mandalId, mandal }) {
               <span className="sm:hidden">All Paid</span>
             </button>
           )}
+
+          {/* Download Button */}
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={exportLoading}
+            className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl border border-border bg-input-bg hover:bg-surface-secondary text-text-secondary hover:text-text transition-colors cursor-pointer shadow-xs disabled:opacity-50 text-xs font-semibold"
+            title="Download contributions Excel"
+          >
+            <Download className={`w-4 h-4 ${exportLoading ? 'animate-spin text-primary' : ''}`} />
+            <span className="hidden sm:inline">{exportLoading ? 'Downloading...' : 'Download'}</span>
+          </button>
 
           {/* Refresh Button */}
           <button
