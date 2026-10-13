@@ -304,18 +304,18 @@ export default function Roles() {
             render: (role) => {
               const isSystemRole = role.name === 'admin' || role.name === 'UserRole';
               return (
-              <div className="flex items-center justify-start gap-2">
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-error-text bg-error-bg hover:bg-error/20 border-error-border'}`} title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+                <div className="flex items-center justify-start gap-2">
+                  {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                    <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                    <button onClick={() => handleDelete(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-error-text bg-error-bg hover:bg-error/20 border-error-border'}`} title="Delete">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               );
             }
           }
@@ -416,7 +416,7 @@ export default function Roles() {
                 placeholder="Enter Role Name"
                 value={formData.name}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                  const val = e.target.value.replace(/[^a-zA-Z\u0A80-\u0AFF\s]/g, '')
                   setFormData(prev => ({ ...prev, name: val }))
                   if (val.trim()) setFieldErrors(prev => ({ ...prev, name: null }))
                 }}
