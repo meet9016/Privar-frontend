@@ -204,6 +204,9 @@ const defaultData = {
     sakshi2Mo: '',
 
     kaziName: '',
+    kaziAadhaar: '',
+    kaziAddress: '',
+    kaziMo: '',
     kaziContact: '',
     kaziSign: '',
   },
@@ -274,6 +277,8 @@ function sanitizeData(data) {
     if (data.marriage.sakshi1Mo) data.marriage.sakshi1Mo = sanitizeDigits(data.marriage.sakshi1Mo).slice(0, 10)
     if (data.marriage.sakshi2Aadhaar) data.marriage.sakshi2Aadhaar = sanitizeDigits(data.marriage.sakshi2Aadhaar)
     if (data.marriage.sakshi2Mo) data.marriage.sakshi2Mo = sanitizeDigits(data.marriage.sakshi2Mo).slice(0, 10)
+    if (data.marriage.kaziAadhaar) data.marriage.kaziAadhaar = sanitizeDigits(data.marriage.kaziAadhaar)
+    if (data.marriage.kaziMo) data.marriage.kaziMo = sanitizeDigits(data.marriage.kaziMo).slice(0, 10)
     if (data.marriage.hijriYear) data.marriage.hijriYear = sanitizeDigitsOrEmpty(data.marriage.hijriYear)
     if (data.marriage.regNumber) data.marriage.regNumber = sanitizeDigitsOrEmpty(data.marriage.regNumber)
     if (data.marriage.maherRakam) data.marriage.maherRakam = sanitizeDigitsOrEmpty(data.marriage.maherRakam)
@@ -1732,7 +1737,7 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                 gap: 12,
               }}
             >
@@ -1741,6 +1746,12 @@ const CertificateEntryForm = memo(function CertificateEntryForm({
                 value={data.kaziName}
                 onChange={(v) => handleField('kaziName', v)}
                 placeholder="દા.ત. મૌલાના મોહમ્મદ સાહેબ"
+              />
+              <NormalInput
+                label="આધાર કાર્ડ નં."
+                value={data.kaziAadhaar}
+                onChange={(v) => handleField('kaziAadhaar', v)}
+                placeholder="દા.ત. ૧૨૩૪ ૫૬૭૮ ૯૦૧૨"
               />
               <NormalInput
                 label="સરનામું / મોબાઈલ નં."
@@ -3471,10 +3482,12 @@ const MarriageCertificateSheet = memo(function MarriageCertificateSheet({
             {/* 6. Kazi Saheb Details */}
             <div style={{ background: '#ffffff', border: '1.2px solid #fde047', borderRadius: 5, padding: '6px 9px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
               {sectionTitle('૬', 'નિકાહ પઢાવનાર કાઝી સાહેબની વિગત :', 'linear-gradient(90deg, #fefce8 0%, #f8fafc 100%)', '#fef08a', '#854d0e', 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', '#ffffff')}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, marginTop: 3 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, marginTop: 3, flexWrap: 'wrap' }}>
                 <strong style={{ color: '#854d0e', flexShrink: 0, fontWeight: 800 }}>• કાઝી સાહેબનું નામ:</strong>
                 {underField('kaziName', 1)}
-                <strong style={{ color: '#854d0e', flexShrink: 0, marginLeft: 8, fontWeight: 800 }}>• સરનામું / મો. નં.:</strong>
+                <strong style={{ color: '#854d0e', flexShrink: 0, marginLeft: 4, fontWeight: 800 }}>• આધાર કાર્ડ નં.:</strong>
+                {underField('kaziAadhaar', null, '115px')}
+                <strong style={{ color: '#854d0e', flexShrink: 0, marginLeft: 4, fontWeight: 800 }}>• સરનામું / મો.:</strong>
                 {underField('kaziContact', 1)}
               </div>
             </div>
