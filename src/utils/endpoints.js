@@ -186,6 +186,15 @@ export const MANDAL_ENDPOINTS = {
   GET_HISTORY: '/mandal/history'
 }
 
+// Certificates Module API Endpoints
+export const CERTIFICATE_ENDPOINTS = {
+  GET_CERTIFICATES: '/certificates',
+  DOWNLOAD_LINK: (id) => `/certificates/download-link/${id}`,
+  DOWNLOAD: (id) => `/certificates/download/${id}`,
+  VIEW: (id) => `/certificates/view/${id}`,
+  BULK_DOWNLOAD: '/certificates/bulk-download'
+}
+
 // Mobile Registration Portal API Endpoints
 export const REGISTRATION_ENDPOINTS = {
   GET_LIST: '/mobile-registration/admin/list',
@@ -209,6 +218,7 @@ export default {
   FEEDBACK: FEEDBACK_ENDPOINTS,
   EXPENSE: EXPENSE_ENDPOINTS,
   DONATION: DONATION_ENDPOINTS,
+  CERTIFICATE: CERTIFICATE_ENDPOINTS,
   MANDAL: MANDAL_ENDPOINTS,
   MASTER: MASTER_ENDPOINTS,
   REGISTRATION: REGISTRATION_ENDPOINTS

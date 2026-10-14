@@ -42,7 +42,7 @@ import {
 } from '../assets/embeddedCertAssets'
 import starLogo from '../assets/star.png'
 import { toGujarati, toGujaratiDigits, toEnglishDigits } from '../utils/gujaratiTyping'
-import api, { API_BASE } from '../lib/api'
+import api, { API_BASE, getCertificateDownloadLink, getCertificateDownloadUrl } from '../lib/api'
 import toast from '../lib/toast'
 import { confirm } from '../lib/confirm'
 import DatePicker from '../components/DatePicker'
@@ -5146,42 +5146,67 @@ export default function CertificatePage() {
     }
   }
 
-  // Direct PDF download from Saved Records Table: 1:1 Exact Vector PDF render matching screen
+  // Direct PDF download from Saved Records Table: Direct Server API download (matching Donations download flow)
   const handleDownloadRecord = async (record) => {
     if (!record) return
-    setDownloadingRecordId(record._id)
-    const toastId = toast.loading('Generating and downloading certificate PDF...')
+    const id = record._id || record.id
+    if (!id) return
+
+    setDownloadingRecordId(id)
     try {
-      let currentRecData = record.data || {}
-      if (record._id && !String(record._id).startsWith('rec_')) {
-        try {
-          const res = await api.get(`/certificates/records/${record._id}`)
-          if (res.data?.data) {
-            currentRecData = res.data.data.data || res.data.data || currentRecData
-          }
-        } catch (_) { }
-      }
+      // 1. Call Backend API to fetch direct certificate download link (identical to donations receipt-link)
+      const res = await getCertificateDownloadLink(id)
+      const data = res.data?.data || {}
+      const downloadUrl = data.download_url || record.downloadUrl || record.pdfUrl || getCertificateDownloadUrl(id)
 
-      const recType = record.type || activeTab
-      const mergedData = { ...(defaultData[recType] || {}), ...currentRecData }
-      setPrintingRecord({ type: recType, data: mergedData })
-      await new Promise((r) => setTimeout(r, 120))
-
-      const names = {
-        marriage: `Marriage-Certificate-${record.certificateNumber || mergedData?.number || 'Record'}`,
-        letterhead: `Letterhead-${record.primaryName || mergedData?.refNumber || 'Record'}`,
-        noc: `NOC-Certificate-${record.certificateNumber || mergedData?.number || 'Record'}`,
-      }
-
-      await downloadAsPDF(tablePrintRef, names[recType] || 'Certificate', { pageRanges: recType === 'letterhead' ? undefined : '1-2' })
-      toast.dismiss(toastId)
+      // 2. Direct browser download from the backend link (zero client-side DOM capture overhead)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      const fallbackName = `${record.type || 'certificate'}-${record.certificateNumber || id}.pdf`
+      link.setAttribute('download', data.filename || fallbackName)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
       toast.success('Certificate downloaded successfully!')
-    } catch (e) {
-      console.error('Direct table PDF download error:', e)
-      toast.dismiss(toastId)
-      toast.error('Download failed: ' + (e.message || 'Please try again'))
+    } catch (err) {
+      console.warn('Direct API certificate download link failed, falling back to direct URL or client render:', err)
+      try {
+        const fallbackUrl = record.downloadUrl || record.pdfUrl || getCertificateDownloadUrl(id)
+        if (fallbackUrl) {
+          const link = document.createElement('a')
+          link.href = fallbackUrl
+          link.setAttribute('download', `${record.type || 'certificate'}-${record.certificateNumber || id}.pdf`)
+          link.style.display = 'none'
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          toast.success('Certificate downloaded successfully!')
+          return
+        }
+      } catch (_) { }
+
+      // Emergency fallback: client-side rendered download
+      try {
+        let currentRecData = record.data || {}
+        const recType = record.type || activeTab
+        const mergedData = { ...(defaultData[recType] || {}), ...currentRecData }
+        setPrintingRecord({ type: recType, data: mergedData })
+        await new Promise((r) => setTimeout(r, 120))
+        const names = {
+          marriage: `Marriage-Certificate-${record.certificateNumber || mergedData?.number || 'Record'}`,
+          letterhead: `Letterhead-${record.primaryName || mergedData?.refNumber || 'Record'}`,
+          noc: `NOC-Certificate-${record.certificateNumber || mergedData?.number || 'Record'}`,
+        }
+        await downloadAsPDF(tablePrintRef, names[recType] || 'Certificate', { pageRanges: recType === 'letterhead' ? undefined : '1-2' })
+        toast.success('Certificate downloaded successfully!')
+      } catch (e) {
+        console.error('All download fallbacks failed:', e)
+        toast.error('Download failed: ' + (e.message || 'Please try again'))
+      } finally {
+        setPrintingRecord(null)
+      }
     } finally {
-      setPrintingRecord(null)
       setDownloadingRecordId(null)
     }
   }

@@ -11,6 +11,7 @@ import {
   NEWS_ENDPOINTS,
   EXPENSE_ENDPOINTS,
   DONATION_ENDPOINTS,
+  CERTIFICATE_ENDPOINTS,
   MASTER_ENDPOINTS
 } from '../utils/endpoints'
 
@@ -179,6 +180,16 @@ export const getDonationReceiptDownloadUrl = (id) => {
 
 export const getDonationReceiptLink = (id) =>
   api.get(DONATION_ENDPOINTS.RECEIPT_LINK(id))
+
+export const getCertificateDownloadUrl = (id) => {
+  if (!id) return ''
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || ''
+  const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : ''
+  return `${API_BASE}/api${CERTIFICATE_ENDPOINTS.DOWNLOAD(id)}${tokenQuery}`
+}
+
+export const getCertificateDownloadLink = (id) =>
+  api.get(CERTIFICATE_ENDPOINTS.DOWNLOAD_LINK(id))
 
 export const memberApi = axios.create({
   baseURL: `${API_BASE}/api`,
