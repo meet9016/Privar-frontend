@@ -1,5 +1,18 @@
 import axios from 'axios'
 import { toast } from './toast'
+import {
+  COMMITTEE_ENDPOINTS,
+  MEMBER_ENDPOINTS,
+  EVENT_ENDPOINTS,
+  GALLERY_ENDPOINTS,
+  STUDENT_ENDPOINTS,
+  BUSINESS_ENDPOINTS,
+  POST_ENDPOINTS,
+  NEWS_ENDPOINTS,
+  EXPENSE_ENDPOINTS,
+  DONATION_ENDPOINTS,
+  MASTER_ENDPOINTS
+} from '../utils/endpoints'
 
 export const API_BASE = import.meta.env.VITE_API_BASE || `http://${window.location.hostname}:5000`
 
@@ -148,19 +161,29 @@ export const getCommunityFullName = () => {
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: { 'Content-Type': 'multipart/form-data' },
-  timeout: 120000, 
+  timeout: 120000,
   transitional: {
     clarifyTimeoutError: true
   }
 })
 
 export const exportDonationsExcel = (search = '') =>
-  api.get('/donations/export', { params: search ? { search } : {}, responseType: 'blob' })
+  api.get(DONATION_ENDPOINTS.EXPORT_EXCEL, { params: search ? { search } : {}, responseType: 'blob' })
+
+export const getDonationReceiptDownloadUrl = (id) => {
+  if (!id) return ''
+  const token = localStorage.getItem('token') || ''
+  const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : ''
+  return `${API_BASE}/api${DONATION_ENDPOINTS.RECEIPT_DOWNLOAD(id)}${tokenQuery}`
+}
+
+export const getDonationReceiptLink = (id) =>
+  api.get(DONATION_ENDPOINTS.RECEIPT_LINK(id))
 
 export const memberApi = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 120000, 
+  timeout: 120000,
   transitional: {
     clarifyTimeoutError: true
   }
@@ -224,8 +247,6 @@ const setupInterceptors = (axiosInstance) => {
 
 setupInterceptors(api)
 setupInterceptors(memberApi)
-
-import { COMMITTEE_ENDPOINTS, MEMBER_ENDPOINTS, EVENT_ENDPOINTS, GALLERY_ENDPOINTS, STUDENT_ENDPOINTS, BUSINESS_ENDPOINTS, POST_ENDPOINTS, NEWS_ENDPOINTS, EXPENSE_ENDPOINTS, DONATION_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
 
 export const getEventsList = (params = {}) => api.get(EVENT_ENDPOINTS.GET_EVENTS, { params })
 export const getUsersList = (params = {}) => api.get(MEMBER_ENDPOINTS.GET_MEMBERS, { params })

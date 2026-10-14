@@ -194,10 +194,6 @@ export default function Expenses({ headerLeftContent }) {
     if (!formData.date) errors.date = 'Date is required'
     if (!formData.amount || Number(formData.amount) <= 0) errors.amount = 'Amount is required'
     if (!formData.expense_category_id) errors.expense_category_id = 'Expense Category is required'
-    if (!formData.committee_member_id) errors.committee_member_id = 'Committee Member is required'
-    if (!proofImage && (!selectedExpense || !selectedExpense.image || removeImage)) {
-      errors.proof = 'Proof / Receipt is required'
-    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
@@ -497,7 +493,6 @@ export default function Expenses({ headerLeftContent }) {
             <Select
               label="Committee Member"
               name="committee_member_id"
-              required
               value={formData.committee_member_id}
               onChange={(val) => {
                 handleChange({ target: { name: 'committee_member_id', value: val } })
@@ -522,7 +517,7 @@ export default function Expenses({ headerLeftContent }) {
             
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">
-                Proof / Receipt <span className="text-red-500">*</span>
+                Proof / Receipt
               </label>
               <div className="flex flex-col gap-2">
                 <FileDropzone

@@ -140,7 +140,9 @@ export const DONATION_ENDPOINTS = {
   CREATE_DONATION: '/donations',
   UPDATE_DONATION: (id) => `/donations/${id}`,
   DELETE_DONATION: (id) => `/donations/${id}`,
-  EXPORT_EXCEL: '/donations/export'
+  EXPORT_EXCEL: '/donations/export',
+  RECEIPT_LINK: (id) => `/donations/receipt-link/${id}`,
+  RECEIPT_DOWNLOAD: (id) => `/donations/receipt/${id}/download`
 }
 
 // Masters Module API Endpoints

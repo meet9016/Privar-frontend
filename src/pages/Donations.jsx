@@ -12,9 +12,10 @@ import {
   User2,
   Copy,
   Landmark,
-  FileDown
+  FileDown,
+  Loader2
 } from 'lucide-react'
-import api, { getDonationsList, getBankDetailsList, exportDonationsExcel, formatDate } from '../lib/api'
+import api, { getDonationsList, getBankDetailsList, exportDonationsExcel, formatDate, getDonationReceiptDownloadUrl, getDonationReceiptLink } from '../lib/api'
 import { DONATION_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
@@ -62,6 +63,45 @@ export default function Donations({ headerLeftContent }) {
   const [selectedDonation, setSelectedDonation] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({})
+  const [downloadingId, setDownloadingId] = useState(null)
+
+  const handleDownloadReceipt = async (donation) => {
+    const id = donation.id || donation._id
+    if (!id) return
+
+    setDownloadingId(id)
+    try {
+      // 1. Call Backend API to fetch direct receipt download link
+      // This will show up in DevTools Network tab under Fetch/XHR as: GET /api/donations/receipt-link/:id
+      const res = await getDonationReceiptLink(id)
+      const data = res.data?.data || {}
+      const downloadUrl = data.download_url || donation.receipt_url || donation.download_url || getDonationReceiptDownloadUrl(id)
+
+      // 2. Direct browser download from the backend link (zero client-side blob conversion)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.setAttribute('download', `Donation_Receipt_${data.receipt_number || id}.pdf`)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success('Donation receipt downloaded successfully')
+    } catch (err) {
+      console.error('Failed to get donation receipt link:', err)
+      // Fallback direct url
+      const fallbackUrl = donation.receipt_url || donation.download_url || getDonationReceiptDownloadUrl(id)
+      const link = document.createElement('a')
+      link.href = fallbackUrl
+      link.setAttribute('download', `Donation_Receipt_${id}.pdf`)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success('Donation receipt downloaded')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   const fetchDonations = useCallback(async () => {
     setLoading(true)
@@ -352,11 +392,10 @@ export default function Donations({ headerLeftContent }) {
             header: 'Status',
             key: 'status',
             render: (donation) => (
-              <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${
-                Number(donation.status ?? 1) === 1
+              <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${Number(donation.status ?? 1) === 1
                   ? 'bg-success-bg border-success-border text-success-text'
                   : 'bg-surface-secondary border-border text-text-secondary'
-              }`}>
+                }`}>
                 {Number(donation.status ?? 1) === 1 ? 'Active' : 'Inactive'}
               </span>
             )
@@ -365,11 +404,24 @@ export default function Donations({ headerLeftContent }) {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: donation => ( <div className="flex items-center justify-start gap-2">
+            render: donation => (
+              <div className="flex items-center justify-start gap-2">
+                <button
+                  onClick={() => handleDownloadReceipt(donation)}
+                  disabled={downloadingId === (donation.id || donation._id)}
+                  className="p-2 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                  title="Download Receipt (આભાર પત્ર)"
+                >
+                  {downloadingId === (donation.id || donation._id) ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
                 {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
                   <button
                     onClick={() => handleEdit(donation)}
-                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
+                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all cursor-pointer"
                     title="Edit Donation"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
@@ -378,7 +430,7 @@ export default function Donations({ headerLeftContent }) {
                 {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
                   <button
                     onClick={() => handleDelete(donation.id || donation._id)}
-                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
+                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all cursor-pointer"
                     title="Delete Donation"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
