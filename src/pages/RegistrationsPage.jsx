@@ -116,8 +116,7 @@ export default function RegistrationsPage() {
           limit,
           search: debouncedSearch,
           status: filters.status,
-          step: filters.step,
-          village: committeeVillage || undefined
+          step: filters.step
         }
       })
       const payload = res?.data?.data || res?.data || {}
@@ -673,12 +672,6 @@ export default function RegistrationsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-text flex items-center gap-2">
             New Member Registrations
           </h1>
-          {committeeVillage && (
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-primary font-medium">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>Village Scoped: Only showing new registrations from <strong className="font-bold underline">{committeeVillage}</strong></span>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">

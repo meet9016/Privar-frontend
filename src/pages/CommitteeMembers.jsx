@@ -431,13 +431,27 @@ export default function CommitteeMembers() {
             render: (member) => <span>{member.email || '-'}</span>
           },
           {
-            header: 'Village',
-            key: 'village',
-            render: (member) => (
-              <span className="font-medium text-text text-sm">
-                {member.village || member.village_name || '-'}
-              </span>
-            )
+            header: 'Jurisdiction Area (કાર્યક્ષેત્ર)',
+            key: 'jurisdiction',
+            render: (member) => {
+              const parts = [
+                member.village || member.village_name,
+                member.city || member.city_name,
+                member.district || member.district_name,
+                member.state || member.state_name
+              ].filter(Boolean);
+
+              if (parts.length === 0) return <span className="text-text-secondary text-xs">-</span>;
+
+              return (
+                <div className="flex flex-col text-xs font-medium text-text">
+                  <span className="font-semibold text-text">{parts[0]}</span>
+                  {parts.length > 1 && (
+                    <span className="text-[11px] text-text-secondary">{parts.slice(1).join(', ')}</span>
+                  )}
+                </div>
+              );
+            }
           },
           {
             header: 'Assigned Role',

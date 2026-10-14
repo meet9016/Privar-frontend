@@ -222,11 +222,16 @@ export default function Users() {
       )
       const currentPage = Number(pg.page || pg.current_page || page)
 
+      const totalFamilies = Number(pg.totalFamilies || total)
+      const totalMembers = Number(pg.totalMembers || total)
+
       setUsers(Array.isArray(rows) ? rows : [])
       setPagination({
         page: currentPage,
         totalPages: Number.isFinite(totalPages) && totalPages > 0 ? totalPages : 1,
         total,
+        totalFamilies,
+        totalMembers,
         limit: pageLimit,
         hasPrevPage: Boolean(pg.hasPrevPage ?? currentPage > 1),
         hasNextPage: Boolean(pg.hasNextPage ?? currentPage < totalPages)
@@ -809,6 +814,7 @@ export default function Users() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-text tracking-tight">Family Registry</h2>
+          <p className="text-xs text-text-secondary mt-0.5">Manage family units, members, and relations</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <SearchInput

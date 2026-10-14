@@ -240,12 +240,73 @@ export default function Roles() {
             />
           </div>
           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto hide-scrollbar pb-1 sm:pb-0">
-            {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
-              <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10 whitespace-nowrap">
-                Add Role
-              </Button>
+            {(!permissions.canAdd && !permissions.isSuperAdmin) ? null : (
+              <>
+                <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10 whitespace-nowrap">
+                  Add Role
+                </Button>
+              </>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Quick Setup Presets Banner */}
+      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-text flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            Standard Pramukh Role Presets (પ્રમુખ રોલ પ્રીસેટ્સ)
+          </h3>
+          <p className="text-xs text-text-secondary mt-0.5">
+            Quickly create or populate permissions for State, District, City, and Village level Pramukhs.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { name: 'State Pramukh', desc: 'Jurisdiction: All districts, cities & villages in assigned state' },
+            { name: 'District Pramukh', desc: 'Jurisdiction: All cities & villages in assigned district' },
+            { name: 'City Pramukh', desc: 'Jurisdiction: All villages in assigned city' },
+            { name: 'Village Pramukh', desc: 'Jurisdiction: Only assigned village' }
+          ].map((preset) => (
+            <button
+              key={preset.name}
+              type="button"
+              onClick={() => {
+                const existing = roles.find(r => r.name.toLowerCase().trim() === preset.name.toLowerCase().trim())
+                if (existing) {
+                  openEdit(existing)
+                } else {
+                  setSelected(null)
+                  // Give them default permissions (e.g. users, registrations, dashboard)
+                  const defaultPerms = [
+                    'dashboard.view',
+                    'members.list',
+                    'members.view',
+                    'registrations.list',
+                    'registrations.view',
+                    'registrations.edit',
+                    'events.list',
+                    'events.view',
+                    'news.list',
+                    'news.view'
+                  ]
+                  setFormData({
+                    name: preset.name,
+                    description: preset.desc,
+                    status: 1,
+                    permissions: defaultPerms
+                  })
+                  setFormError('')
+                  setFieldErrors({})
+                  setIsModalOpen(true)
+                }
+              }}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-primary/30 bg-white dark:bg-card text-primary hover:bg-primary/10 transition-colors shadow-2xs"
+            >
+              + {preset.name}
+            </button>
+          ))}
         </div>
       </div>
 

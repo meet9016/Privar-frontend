@@ -10,6 +10,9 @@ import { User as UserIcon, Phone, Mail, ShieldCheck } from 'lucide-react'
 export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
   const [userList, setUserList] = useState([])
+  const [stateList, setStateList] = useState([])
+  const [districtList, setDistrictList] = useState([])
+  const [cityList, setCityList] = useState([])
   const [villageList, setVillageList] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState('')
@@ -23,6 +26,12 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     email: '',
     password: '',
     role_id: '',
+    state: '',
+    state_id: '',
+    district: '',
+    district_id: '',
+    city: '',
+    city_id: '',
     village: '',
     village_id: '',
     status: 1,
@@ -50,20 +59,32 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     return () => { isMounted = false }
   }, [])
 
-  // Fetch master villages for dropdown selection
+  // Fetch location masters for dropdown selection
   useEffect(() => {
     let isMounted = true
-    const fetchVillages = async () => {
+    const fetchLocationMasters = async () => {
       try {
-        const res = await api.get('/masters/village', { params: { limit: 200 } })
-        const raw = res.data?.data || res.data || []
-        const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : [])
-        if (isMounted) setVillageList(list)
+        const [statesRes, distRes, citiesRes, villRes] = await Promise.all([
+          api.get('/masters/state', { params: { limit: 200 } }).catch(() => ({ data: [] })),
+          api.get('/masters/district', { params: { limit: 200 } }).catch(() => ({ data: [] })),
+          api.get('/masters/city', { params: { limit: 200 } }).catch(() => ({ data: [] })),
+          api.get('/masters/village', { params: { limit: 200 } }).catch(() => ({ data: [] }))
+        ])
+        if (isMounted) {
+          const s = statesRes.data?.data || statesRes.data || []
+          setStateList(Array.isArray(s) ? s : [])
+          const d = distRes.data?.data || distRes.data || []
+          setDistrictList(Array.isArray(d) ? d : [])
+          const c = citiesRes.data?.data || citiesRes.data || []
+          setCityList(Array.isArray(c) ? c : [])
+          const v = villRes.data?.data || villRes.data || []
+          setVillageList(Array.isArray(v) ? v : [])
+        }
       } catch (err) {
-        console.warn('Failed to load village list for committee selection:', err)
+        console.warn('Failed to load location masters for committee selection:', err)
       }
     }
-    fetchVillages()
+    fetchLocationMasters()
     return () => { isMounted = false }
   }, [])
 
@@ -81,6 +102,12 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         email: member.email || '',
         password: '',
         role_id: member.role_id?._id || member.role_id || '',
+        state: member.state || member.state_name || '',
+        state_id: member.state_id || '',
+        district: member.district || member.district_name || '',
+        district_id: member.district_id || '',
+        city: member.city || member.city_name || '',
+        city_id: member.city_id || '',
         village: member.village || member.village_name || '',
         village_id: member.village_id || '',
         status: member.status !== undefined ? Number(member.status) : 1,
@@ -97,6 +124,12 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         email: '',
         password: '',
         role_id: '',
+        state: '',
+        state_id: '',
+        district: '',
+        district_id: '',
+        city: '',
+        city_id: '',
         village: '',
         village_id: '',
         status: 1,
@@ -162,11 +195,33 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         else if (!isValidEmail(value.trim())) updated.email = 'Please enter a valid email address (e.g. user@gmail.com)'
         else delete updated.email
       }
-      if (field === 'role_id' && value) delete updated.role_id
-      if (field === 'status' && value !== '') delete updated.status
-      return updated
-    })
-  }
+    if (field === 'role_id') {
+      if (value) delete updated.role_id
+      // Clear irrelevant jurisdiction fields when role changes
+      const roleObj = roles.find(r => String(r.id || r._id) === String(value))
+      const rName = (roleObj?.name || '').toLowerCase()
+      const isStateRole = rName.includes('state') || rName.includes('rajya')
+      const isDistrictRole = rName.includes('district') || rName.includes('jilla') || rName.includes('zilla')
+      const isCityRole = rName.includes('city') || rName.includes('shahar')
+      const isVillageRole = rName.includes('village') || rName.includes('gam') || rName.includes('gaam')
+
+      setFormData(prev => ({
+        ...prev,
+        role_id: value,
+        state_id: isStateRole || isDistrictRole || isCityRole || isVillageRole ? prev.state_id : '',
+        state: isStateRole || isDistrictRole || isCityRole || isVillageRole ? prev.state : '',
+        district_id: isDistrictRole ? prev.district_id : '',
+        district: isDistrictRole ? prev.district : '',
+        city_id: isCityRole ? prev.city_id : '',
+        city: isCityRole ? prev.city : '',
+        village: isVillageRole ? prev.village : '',
+        village_id: isVillageRole ? prev.village_id : ''
+      }))
+    }
+    if (field === 'status' && value !== '') delete updated.status
+    return updated
+  })
+}
 
   const validate = () => {
     const nextErrors = {}
@@ -184,6 +239,21 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     if (formData.status === '' || formData.status === undefined) {
       nextErrors.status = 'Status is required'
     }
+
+    // Role-specific jurisdiction validation
+    if (roleScopeType === 'city' && !formData.city_id && !formData.city) {
+      nextErrors.city_id = 'Please select assigned City for City role'
+    }
+    if (roleScopeType === 'district' && !formData.district_id && !formData.district) {
+      nextErrors.district_id = 'Please select assigned District for District role'
+    }
+    if (roleScopeType === 'state' && !formData.state_id && !formData.state) {
+      nextErrors.state_id = 'Please select assigned State for State role'
+    }
+    if (roleScopeType === 'village' && !formData.village && !formData.village_id) {
+      nextErrors.village = 'Please select assigned Village for Village role'
+    }
+
     return nextErrors
   }
 
@@ -214,6 +284,12 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     if (selectedUserId) {
       payload.append('user_id', selectedUserId)
     }
+    payload.append('state', formData.state || '')
+    payload.append('state_id', formData.state_id || '')
+    payload.append('district', formData.district || '')
+    payload.append('district_id', formData.district_id || '')
+    payload.append('city', formData.city || '')
+    payload.append('city_id', formData.city_id || '')
     payload.append('village', formData.village || '')
     payload.append('village_id', formData.village_id || '')
 
@@ -249,6 +325,39 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     ...roles.map(r => ({ label: r.name, value: r.id || String(r._id) }))
   ], [roles])
 
+  const selectedRoleObj = useMemo(() => {
+    return roles.find(item => String(item.id || item._id) === String(formData.role_id))
+  }, [roles, formData.role_id])
+
+  const selectedRoleName = useMemo(() => {
+    return (selectedRoleObj?.name || '').toLowerCase().trim()
+  }, [selectedRoleObj])
+
+  // Detect scope type based on role name containing keywords
+  const roleScopeType = useMemo(() => {
+    if (!selectedRoleName) return null
+    if (selectedRoleName.includes('city') || selectedRoleName.includes('shahar')) return 'city'
+    if (selectedRoleName.includes('district') || selectedRoleName.includes('jilla') || selectedRoleName.includes('zilla')) return 'district'
+    if (selectedRoleName.includes('state') || selectedRoleName.includes('rajya')) return 'state'
+    if (selectedRoleName.includes('village') || selectedRoleName.includes('gam') || selectedRoleName.includes('gaam')) return 'village'
+    return 'custom'
+  }, [selectedRoleName])
+
+  const stateOptions = useMemo(() => [
+    { label: 'Select State (Optional)', value: '' },
+    ...stateList.map(s => ({ label: s.name || s.state, value: String(s.id || s._id) }))
+  ], [stateList])
+
+  const districtOptions = useMemo(() => [
+    { label: 'Select District (Optional)', value: '' },
+    ...districtList.map(d => ({ label: d.name || d.district, value: String(d.id || d._id) }))
+  ], [districtList])
+
+  const cityOptions = useMemo(() => [
+    { label: 'Select City (Optional)', value: '' },
+    ...cityList.map(c => ({ label: c.name || c.city, value: String(c.id || c._id) }))
+  ], [cityList])
+
   const villageOptions = useMemo(() => {
     const opts = [{ label: 'Select Village (Optional)', value: '' }]
     const existing = new Set()
@@ -263,6 +372,33 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     }
     return opts
   }, [villageList, formData.village])
+
+  const handleStateChange = (val) => {
+    const matched = stateList.find(s => String(s.id || s._id) === String(val) || s.name === val)
+    setFormData(prev => ({
+      ...prev,
+      state_id: matched ? String(matched.id || matched._id) : '',
+      state: matched?.name || matched?.state || val || ''
+    }))
+  }
+
+  const handleDistrictChange = (val) => {
+    const matched = districtList.find(d => String(d.id || d._id) === String(val) || d.name === val)
+    setFormData(prev => ({
+      ...prev,
+      district_id: matched ? String(matched.id || matched._id) : '',
+      district: matched?.name || matched?.district || val || ''
+    }))
+  }
+
+  const handleCityChange = (val) => {
+    const matched = cityList.find(c => String(c.id || c._id) === String(val) || c.name === val)
+    setFormData(prev => ({
+      ...prev,
+      city_id: matched ? String(matched.id || matched._id) : '',
+      city: matched?.name || matched?.city || val || ''
+    }))
+  }
 
   const handleVillageChange = (val) => {
     const matched = villageList.find(v => v.name === val || String(v._id || v.id) === String(val))
@@ -325,26 +461,148 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         />
       </div>
 
-      {/* Step 3: Village */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-        <Select
-          label="Village"
-          value={formData.village}
-          onChange={handleVillageChange}
-          disabled={isLoading}
-          searchable={true}
-          options={villageOptions}
-          placeholder="Select Village"
-        />
-        <Input
-          label="Village Name (Or type custom)"
-          type="text"
-          placeholder="Enter village name"
-          value={formData.village}
-          onChange={(e) => setFormData(prev => ({ ...prev, village: e.target.value }))}
-          disabled={isLoading}
-        />
-      </div>
+      {/* Step 3: Jurisdiction Scope (Smart conditional based on Role Name) */}
+      {roleScopeType && roleScopeType !== 'none' && (
+        <div className="bg-surface-secondary/20 border border-border/60 rounded-xl p-3.5 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-text uppercase tracking-wide">
+              Assigned Jurisdiction Area (કાર્યક્ષેત્ર)
+            </span>
+            {selectedRoleObj?.name && (
+              <span className="text-[11px] font-semibold text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                {selectedRoleObj.name}
+              </span>
+            )}
+          </div>
+
+          {/* If City Role -> Only Show City Selector */}
+          {roleScopeType === 'city' && (
+            <div>
+              <Select
+                label="Assigned City (શહેર) *"
+                required
+                value={formData.city_id}
+                onChange={handleCityChange}
+                disabled={isLoading}
+                searchable={true}
+                options={cityOptions}
+                placeholder="Select City"
+                error={errors.city_id}
+              />
+              <p className="text-[11px] text-text-secondary mt-1">
+                આ સભ્ય આ શહેર હેઠળ આવતા તમામ ગામ અને પરિવારોનું સંચાલન કરી શકશે.
+              </p>
+            </div>
+          )}
+
+          {/* If District Role -> Only Show District Selector */}
+          {roleScopeType === 'district' && (
+            <div>
+              <Select
+                label="Assigned District (જિલ્લો) *"
+                required
+                value={formData.district_id}
+                onChange={handleDistrictChange}
+                disabled={isLoading}
+                searchable={true}
+                options={districtOptions}
+                placeholder="Select District"
+                error={errors.district_id}
+              />
+              <p className="text-[11px] text-text-secondary mt-1">
+                આ સભ્ય આ જિલ્લા હેઠળ આવતા તમામ તાલુકા, શહેર અને ગામનું સંચાલન કરી શકશે.
+              </p>
+            </div>
+          )}
+
+          {/* If State Role -> Only Show State Selector */}
+          {roleScopeType === 'state' && (
+            <div>
+              <Select
+                label="Assigned State (રાજ્ય) *"
+                required
+                value={formData.state_id}
+                onChange={handleStateChange}
+                disabled={isLoading}
+                searchable={true}
+                options={stateOptions}
+                placeholder="Select State"
+                error={errors.state_id}
+              />
+              <p className="text-[11px] text-text-secondary mt-1">
+                આ સભ્ય સમગ્ર રાજ્ય સ્તરના તમામ પરિવારો અને સભ્યોનું સંચાલન કરી શકશે.
+              </p>
+            </div>
+          )}
+
+          {/* If Village Role -> Only Show Village Selector */}
+          {roleScopeType === 'village' && (
+            <div>
+              <Select
+                label="Assigned Village (ગામ) *"
+                required
+                value={formData.village}
+                onChange={handleVillageChange}
+                disabled={isLoading}
+                searchable={true}
+                options={villageOptions}
+                placeholder="Select Village"
+                error={errors.village}
+              />
+              <p className="text-[11px] text-text-secondary mt-1">
+                આ સભ્ય ફક્ત પોતાના નિયુક્ત ગામના પરિવારોનું સંચાલન કરી શકશે.
+              </p>
+            </div>
+          )}
+
+          {/* Fallback for General / Custom roles: Show clean 2x2 grid */}
+          {roleScopeType === 'custom' && (
+            <div className="space-y-3">
+              <p className="text-[11px] text-text-secondary">
+                Select jurisdiction if this role is location restricted (optional):
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <Select
+                  label="Assigned State (રાજ્ય)"
+                  value={formData.state_id}
+                  onChange={handleStateChange}
+                  disabled={isLoading}
+                  searchable={true}
+                  options={stateOptions}
+                  placeholder="Select State"
+                />
+                <Select
+                  label="Assigned District (જિલ્લો)"
+                  value={formData.district_id}
+                  onChange={handleDistrictChange}
+                  disabled={isLoading}
+                  searchable={true}
+                  options={districtOptions}
+                  placeholder="Select District"
+                />
+                <Select
+                  label="Assigned City (શહેર)"
+                  value={formData.city_id}
+                  onChange={handleCityChange}
+                  disabled={isLoading}
+                  searchable={true}
+                  options={cityOptions}
+                  placeholder="Select City"
+                />
+                <Select
+                  label="Assigned Village (ગામ)"
+                  value={formData.village}
+                  onChange={handleVillageChange}
+                  disabled={isLoading}
+                  searchable={true}
+                  options={villageOptions}
+                  placeholder="Select Village"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Step 3: Login Credentials (Email & Password) */}
       <div className="bg-surface-secondary/20 border border-border/60 rounded-xl p-3.5 space-y-3">
