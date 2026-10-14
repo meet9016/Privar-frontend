@@ -184,7 +184,6 @@ export default function Donations({ headerLeftContent }) {
     const errors = {}
     if (!donator_name.trim()) errors.donator_name = 'Donator Name is required'
     if (!donate_amount.trim()) errors.donate_amount = 'Donation Amount is required'
-    if (!donation_purpose.trim()) errors.donation_purpose = 'Donation Purpose is required'
     if (!date) errors.date = 'Date is required'
 
     if (Object.keys(errors).length > 0) {
@@ -497,11 +496,10 @@ export default function Donations({ headerLeftContent }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               type="text"
-              label="Donation Purpose"
+              label="Donation Purpose (Optional)"
               name="donation_purpose"
               defaultValue={selectedDonation?.donation_purpose || ''}
-              required
-              placeholder="e.g. Temple renovation, Food drive..."
+              placeholder="e.g. General, Temple renovation, Food drive..."
               error={fieldErrors.donation_purpose}
               onChange={() => { if (fieldErrors.donation_purpose) setFieldErrors(prev => ({ ...prev, donation_purpose: null })) }}
             />

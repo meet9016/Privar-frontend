@@ -70,7 +70,7 @@ export default function Mandal({ headerLeftContent }) {
       case 'members':
         return <MandalMembers mandalId={selectedMandalId} mandal={selectedMandal} />
       case 'contribution':
-        return <MonthlyContribution mandalId={selectedMandalId} mandal={selectedMandal} />
+        return <MonthlyContribution mandalId={selectedMandalId} mandal={selectedMandal} mandals={mandals} />
       case 'setup':
         return (
           <MandalSetup
@@ -133,24 +133,31 @@ export default function Mandal({ headerLeftContent }) {
               >
                 <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span className="text-text-secondary whitespace-nowrap">Active:</span>
-                <span className="font-bold text-text max-w-[160px] truncate">
+                <span className="font-bold text-text max-w-[140px] truncate">
                   {selectedMandal?.name || 'Mandal'}
                 </span>
                 <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-extrabold text-[10px]">
                   ₹{selectedMandal?.monthly_amount || 500}
+                </span>
+                <span className="px-1.5 py-0.5 rounded-md bg-surface-secondary text-text-secondary font-bold text-[10px] border border-border" title={`Total Mandals: ${mandals.length}`}>
+                  {mandals.length} Mandals
                 </span>
                 <ChevronDown className={`w-3.5 h-3.5 text-text-secondary transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Dropdown Popup Menu */}
               {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-2xl shadow-xl z-50 p-1.5 space-y-1 animate-fade-in">
-                  <div className="px-3 py-1.5 text-[11px] font-bold text-text-secondary uppercase tracking-wider border-b border-border/60 mb-1">
-                    Select Community Mandal
+                <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-2xl shadow-xl z-50 p-1.5 space-y-1 animate-fade-in">
+                  <div className="px-3 py-1.5 flex items-center justify-between text-[11px] font-bold text-text-secondary uppercase tracking-wider border-b border-border/60 mb-1">
+                    <span>Select Community Mandal</span>
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-black text-[10px] tracking-normal">
+                      Total: {mandals.length} Mandals
+                    </span>
                   </div>
                   {mandals.map(m => {
                     const mId = String(m.id || m._id)
                     const isSelected = String(selectedMandalId) === mId
+                    const memberCount = m.members_count ?? (Array.isArray(m.members) ? m.members.length : 0)
                     return (
                       <button
                         key={mId}
@@ -165,10 +172,15 @@ export default function Mandal({ headerLeftContent }) {
                             : 'hover:bg-surface-secondary text-text'
                         }`}
                       >
-                        <div className="space-y-0.5">
-                          <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-primary' : 'text-text'}`}>
-                            {m.name || 'Mandal'}
-                          </p>
+                        <div className="space-y-0.5 min-w-0 pr-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className={`text-xs font-bold leading-tight truncate ${isSelected ? 'text-primary' : 'text-text'}`}>
+                              {m.name || 'Mandal'}
+                            </p>
+                            <span className="px-1.5 py-0.2 rounded-md bg-surface-secondary text-[10px] font-semibold text-text-secondary border border-border/60">
+                              {memberCount} members
+                            </span>
+                          </div>
                           <p className="text-[11px] text-text-secondary">
                             ₹{m.monthly_amount || 500} / month • Due: {m.due_day || 10}th
                           </p>

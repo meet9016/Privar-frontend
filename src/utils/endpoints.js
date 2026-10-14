@@ -183,6 +183,7 @@ export const MANDAL_ENDPOINTS = {
   EXPORT_CONTRIBUTIONS: '/mandal/contributions/export',
   UPDATE_CONTRIBUTION: (id) => `/mandal/contributions/${id}`,
   BULK_MARK_PAID: '/mandal/contributions/bulk-mark-paid',
+  SEND_REMINDERS: '/mandal/contributions/send-reminders',
   GET_HISTORY: '/mandal/history'
 }
 

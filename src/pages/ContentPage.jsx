@@ -7,12 +7,13 @@ import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
-import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck } from 'lucide-react'
+import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck, Eye, Download } from 'lucide-react'
 import { toast } from '../lib/toast'
 import { confirm } from '../lib/confirm'
 import api, { getCommunityFullName, assetUrl, getUsersList } from '../lib/api'
 import Modal from '../components/Modal'
 import Button from '../components/common/Button'
+import VafatCardModal from '../components/VafatCardModal'
 import NocCertificateModal from '../components/NocCertificateModal'
 
 const isSameDayAndMonth = (dateStr) => {
@@ -150,14 +151,16 @@ const definitions = {
       { key: 'person_image', label: 'Photo', type: 'image' },
       { key: 'full_name', label: 'Name' },
       { key: 'gender', label: 'Gender' },
-      { key: 'birthdate', label: 'Birthdate', render: (row) => {
-        if (!row.birthdate) return '-'
-        const d = new Date(row.birthdate)
-        if (isNaN(d.getTime())) return row.birthdate
-        const day = String(d.getDate()).padStart(2, '0')
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        return `${day}/${month}/${d.getFullYear()}`
-      }},
+      {
+        key: 'birthdate', label: 'Birthdate', render: (row) => {
+          if (!row.birthdate) return '-'
+          const d = new Date(row.birthdate)
+          if (isNaN(d.getTime())) return row.birthdate
+          const day = String(d.getDate()).padStart(2, '0')
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          return `${day}/${month}/${d.getFullYear()}`
+        }
+      },
       { key: 'marital_status', label: 'Status' },
       { key: 'city', label: 'City' },
       { key: 'mobile_number', label: 'Mobile' }
@@ -219,7 +222,7 @@ const definitions = {
               toast.error(`Phone number not available for ${row.name || 'this member'}`)
               return
             }
-            
+
             const communityName = getCommunityFullName() || 'Our Parivar Community'
             let greeting = ''
             if (isBday && isAnniv) {
@@ -288,7 +291,7 @@ const definitions = {
             days += new Date(today.getFullYear(), today.getMonth(), 0).getDate()
           }
           if (months < 0) { years--; months += 12 }
-          
+
           const parts = []
           if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
           if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
@@ -342,12 +345,12 @@ const definitions = {
           }
           if (months < 0) { years--; months += 12 }
           if (years < 0) return '-'
-          
+
           const parts = []
           if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
           if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
           if (days > 0) parts.push({ label: days === 1 ? 'Day' : 'Days', value: String(days).padStart(2, '0') })
-          
+
           if (parts.length === 0) {
             parts.push({ label: 'Days', value: '00' })
           }
@@ -367,16 +370,16 @@ const definitions = {
     ]
   },
   death: {
-    title: 'Intekal & Barsi',
+    title: 'vafat & Barsi',
     subtitle: 'Marhum members, Namaz-e-Janaza, and Kabrastan details',
     endpoint: DEATH_ENDPOINTS.GET_DEATHS,
     hideAdd: true,
     hideActions: false,
     fields: [
       { name: 'name', label: 'Name', disabled: true },
-      { name: 'death_date', label: 'Date of Intekal', type: 'date', required: true },
-      { name: 'death_time', label: 'Time of Intekal' },
-      { name: 'death_place', label: 'Place of Intekal' },
+      { name: 'death_date', label: 'Date of vafat', type: 'date', required: true },
+      { name: 'death_time', label: 'Time of vafat' },
+      { name: 'death_place', label: 'Place of vafat' },
       { name: 'janaza_date', label: 'Namaz-e-Janaza Date', type: 'date' },
       { name: 'janaza_time', label: 'Janaza Time' },
       { name: 'janaza_place', label: 'Janaza Venue / Masjid' },
@@ -449,7 +452,7 @@ const definitions = {
       },
       {
         key: 'death_date',
-        label: 'Date of Intekal',
+        label: 'Date of vafat',
         render: (row) => {
           if (!row.death_date) return '-'
           const isToday = Boolean(row.is_today || isSameDayAndMonth(row.death_date))
@@ -546,9 +549,11 @@ const definitions = {
       { name: 'description', label: 'Description', type: 'textarea', rows: 4, required: true, className: 'md:col-span-1' },
       { name: 'image', label: 'Image', type: 'file', className: 'md:col-span-1 md:row-span-2 [&>div]:h-[calc(100%-6px)] [&>div]:min-h-[140px]' },
       { name: 'qualifications', label: 'Qualifications', type: 'textarea', rows: 4, required: true, className: 'md:col-span-1' },
-      { name: 'location', label: 'Location', required: true, className: 'md:col-span-1' }, 
-      { name: 'job_type', label: 'Job Type', type: 'select', required: true, className: 'md:col-span-1',
-        options: [{ value: "full-time", label: 'Full Time' }, { value: "part-time", label: 'Part Time' }, { value: "contract", label: 'Contract' }, { value: "internship", label: 'Internship' }]},
+      { name: 'location', label: 'Location', required: true, className: 'md:col-span-1' },
+      {
+        name: 'job_type', label: 'Job Type', type: 'select', required: true, className: 'md:col-span-1',
+        options: [{ value: "full-time", label: 'Full Time' }, { value: "part-time", label: 'Part Time' }, { value: "contract", label: 'Contract' }, { value: "internship", label: 'Internship' }]
+      },
       { name: 'contact_number', label: 'Contact Number', required: true, className: 'md:col-span-1' },
       { name: 'status', label: 'Status', type: 'select', required: true, className: 'md:col-span-1', options: [{ value: 1, label: 'Approved' }, { value: 0, label: 'Inactive' }] },
       { name: 'salary', label: 'Salary', required: true, className: 'md:col-span-1' },
@@ -578,7 +583,7 @@ const definitions = {
       { name: 'qr_code', label: 'QR Code', type: 'file' },
       { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
     ],
-    columns: [  
+    columns: [
       { key: 'bank_name', label: 'Bank Name' },
       { key: 'account_name', label: 'Account Name' },
       { key: 'account_number', label: 'Account Number' },
@@ -653,7 +658,7 @@ export default function ContentPage({ type, headerLeftContent }) {
   const customFilters = (type === 'birthday' || type === 'death') ? (
     <div className="space-y-4 mb-4">
       <Select
-        label={type === 'birthday' ? "Birth Month" : "Intekal Month"}
+        label={type === 'birthday' ? "Birth Month" : "vafat Month"}
         value={draftMonth}
         onChange={setDraftMonth}
         options={[
@@ -673,7 +678,7 @@ export default function ContentPage({ type, headerLeftContent }) {
         ]}
       />
       <Input
-        label={type === 'birthday' ? "Birth Year" : "Intekal Year"}
+        label={type === 'birthday' ? "Birth Year" : "vafat Year"}
         type="number"
         placeholder={type === 'birthday' ? "e.g. 1995" : "e.g. 2024"}
         value={draftYear}
@@ -720,7 +725,7 @@ export default function ContentPage({ type, headerLeftContent }) {
       })
     }
     if (type === 'death') {
-      // Sort items: today's intekal or barsi (same day and month as today) to the VERY TOP
+      // Sort items: today's vafat or barsi (same day and month as today) to the VERY TOP
       return [...data].sort((a, b) => {
         const aToday = Boolean(a.is_today || isSameDayAndMonth(a.death_date))
         const bToday = Boolean(b.is_today || isSameDayAndMonth(b.death_date))
@@ -801,7 +806,7 @@ export default function ContentPage({ type, headerLeftContent }) {
     setSentMap(prev => ({ ...prev, [member.id || member._id || member.name]: true }))
   }
 
-  // Death / Intekal Modal State & Handlers
+  // Death / vafat Modal State & Handlers
   const [deathModalOpen, setDeathModalOpen] = useState(false)
   const [deathModalMode, setDeathModalMode] = useState('add') // 'add' | 'edit'
   const [selectedDeathMember, setSelectedDeathMember] = useState(null)
@@ -841,7 +846,7 @@ export default function ContentPage({ type, headerLeftContent }) {
         const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : [])
         if (isMounted) setUserList(list)
       } catch (err) {
-        console.error('Failed to load user list for intekal selection:', err)
+        console.error('Failed to load user list for vafat selection:', err)
       } finally {
         if (isMounted) setLoadingUsers(false)
       }
@@ -873,6 +878,12 @@ export default function ContentPage({ type, headerLeftContent }) {
     return options
   }, [userList, loadingUsers])
 
+  // Default Gujarati Vafat Dua template generator
+  const getGujaratiDuaText = (name = '', village = '') => {
+    const memberTitle = name ? `${name.toUpperCase()}${village ? ` (${village.toUpperCase()})` : ''}` : 'મરહૂમ'
+    return `${memberTitle} ગુજરી ગયા છે. બધા સાથીઓ તેમના માટે ખાસ દુઆ કરે, અલ્લાહપાક તેમની મગફિરત કરે અને તેમને જન્નતુલ ફિરદોસમાં આલા મકામ ફરમાવે અને તેમના ઘરવાળાઓને સબર આપે. આમીન!`
+  }
+
   const handleOpenAddDeathModal = () => {
     setDeathModalMode('add')
     setSelectedDeathMember(null)
@@ -894,7 +905,7 @@ export default function ContentPage({ type, headerLeftContent }) {
       janaza_time: '',
       janaza_place: '',
       kabrastan: '',
-      death_note: ''
+      death_note: getGujaratiDuaText()
     })
     setDeathModalOpen(true)
   }
@@ -927,7 +938,7 @@ export default function ContentPage({ type, headerLeftContent }) {
       return
     }
     if (!deathFormData.death_date) {
-      toast.error('Date of Intekal is required')
+      toast.error('Date of vafat is required')
       return
     }
 
@@ -962,12 +973,12 @@ export default function ContentPage({ type, headerLeftContent }) {
         await api.put(`/users/${memberId}`, deathPayload)
       }
 
-      toast.success(deathModalMode === 'edit' ? 'Intekal details updated successfully' : 'Intekal recorded successfully')
+      toast.success(deathModalMode === 'edit' ? 'vafat details updated successfully' : 'vafat recorded successfully')
       setDeathModalOpen(false)
       setRefreshTrigger(prev => prev + 1)
     } catch (err) {
-      console.error('Save Intekal Error:', err)
-      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to save intekal record')
+      console.error('Save vafat Error:', err)
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to save vafat record')
     } finally {
       setSavingDeath(false)
     }
@@ -977,7 +988,7 @@ export default function ContentPage({ type, headerLeftContent }) {
     const isFemale = String(row.gender || '').toLowerCase() === 'female'
     const prefix = isFemale ? 'Marhuma' : 'Marhum'
     const memberName = `${prefix} ${row.name || 'this member'}`
-    const confirmed = await confirm(`Are you sure you want to remove ${memberName} from Intekal records? This will restore their active member status in the Jamat.`, {
+    const confirmed = await confirm(`Are you sure you want to remove ${memberName} from vafat records? This will restore their active member status in the Jamat.`, {
       confirmText: 'Remove',
       cancelText: 'Cancel',
       type: 'danger'
@@ -1005,21 +1016,46 @@ export default function ContentPage({ type, headerLeftContent }) {
         // Fallback: If this was a manual entry deceased record or cannot be restored, remove directly
         await api.delete(`/users/${memberId}`)
       }
-      toast.success(`${memberName} removed from Intekal successfully`)
+      toast.success(`${memberName} removed from vafat successfully`)
       setRefreshTrigger(prev => prev + 1)
     } catch (err) {
-      console.error('Failed to remove intekal record:', err)
-      toast.error(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to remove intekal record')
+      console.error('Failed to remove vafat record:', err)
+      toast.error(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to remove vafat record')
     }
+  }
+
+  // vafat Notification Card Modal State
+  const [vafatCardModalOpen, setvafatCardModalOpen] = useState(false)
+  const [selectedvafatCardMember, setSelectedvafatCardMember] = useState(null)
+
+  const handleOpenvafatCard = (row) => {
+    setSelectedvafatCardMember(row)
+    setvafatCardModalOpen(true)
   }
 
   const deathRowActions = type === 'death' ? (row) => (
     <div className="flex items-center gap-1.5">
       <button
         type="button"
+        onClick={() => handleOpenvafatCard(row)}
+        className="p-2 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
+        title="View & Download vafat Card / Announcement"
+      >
+        <Eye className="w-3.5 h-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => handleOpenvafatCard(row)}
+        className="p-2 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-all cursor-pointer"
+        title="Download vafat Announcement"
+      >
+        <Download className="w-3.5 h-3.5" />
+      </button>
+      <button
+        type="button"
         onClick={() => handleOpenEditDeathModal(row)}
         className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all cursor-pointer"
-        title="Edit Intekal & Janaza Details"
+        title="Edit vafat & Janaza Details"
       >
         <Edit2 className="w-3.5 h-3.5" />
       </button>
@@ -1027,7 +1063,7 @@ export default function ContentPage({ type, headerLeftContent }) {
         type="button"
         onClick={() => handleClearDeath(row)}
         className="p-2 text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all cursor-pointer"
-        title="Remove from Intekal Records (Restore Member)"
+        title="Remove from vafat Records (Restore Member)"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -1055,7 +1091,7 @@ export default function ContentPage({ type, headerLeftContent }) {
           icon={<Plus className="w-4 h-4" />}
           className="h-10"
         >
-          Record Intekal
+          Record vafat
         </Button>
       )
     }
@@ -1096,18 +1132,18 @@ export default function ContentPage({ type, headerLeftContent }) {
 
   return (
     <>
-      <AdminCrudPage 
+      <AdminCrudPage
         key={`crud-${type}-${refreshTrigger}`}
         refreshTrigger={refreshTrigger}
-        {...definitions[type]} 
+        {...definitions[type]}
         headerLeftContent={headerLeftContent}
         customHeaderActions={customHeaderActions}
         customRowActions={type === 'matrimonies' ? matrimonyRowActions : (type === 'death' ? deathRowActions : undefined)}
         hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
         hideEdit={definitions[type].hideEdit || (type === 'death' ? true : (!permissions.canEdit && !permissions.isSuperAdmin))}
-        hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (type === 'death' ? true : (!permissions.canDelete && !permissions.isSuperAdmin)))} 
-        deleteAction={type === 'birthday' ? 'clear-dob' : (type === 'death' ? 'clear-death' : undefined)} 
-        getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} 
+        hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (type === 'death' ? true : (!permissions.canDelete && !permissions.isSuperAdmin)))}
+        deleteAction={type === 'birthday' ? 'clear-dob' : (type === 'death' ? 'clear-death' : undefined)}
+        getRowTitle={(row) => row.title || row.full_name || row.subject || row.name}
         extraParams={type === 'birthday' ? birthdayExtraParams : (type === 'death' ? deathExtraParams : undefined)}
         customFilters={customFilters}
         onClearFilters={(type === 'birthday' || type === 'death') ? handleClear : undefined}
@@ -1118,11 +1154,11 @@ export default function ContentPage({ type, headerLeftContent }) {
         rowClassName={(type === 'birthday' || type === 'death') ? rowClassName : undefined}
       />
 
-      {/* Record Intekal / Edit Death Modal */}
+      {/* Record vafat / Edit Death Modal */}
       {type === 'death' && (
         <Modal
           isOpen={deathModalOpen}
-          title={deathModalMode === 'edit' ? 'Edit Intekal Details' : 'Record Intekal'}
+          title={deathModalMode === 'edit' ? 'Edit vafat Details' : 'Record vafat'}
           onClose={() => setDeathModalOpen(false)}
           maxWidth="max-w-2xl"
         >
@@ -1158,6 +1194,13 @@ export default function ContentPage({ type, headerLeftContent }) {
                       }
                       const found = userList.find(u => String(u._id || u.id || u.member_id) === String(val))
                       setSelectedDeathMember(found || null)
+                      if (found && deathModalMode === 'add') {
+                        const mName = [found.first_name, found.middle_name, found.last_name].filter(Boolean).join(' ')
+                        setDeathFormData(prev => ({
+                          ...prev,
+                          death_note: getGujaratiDuaText(mName, found.village || found.city)
+                        }))
+                      }
                     }}
                     options={deathUserOptions}
                     searchable={true}
@@ -1245,29 +1288,29 @@ export default function ContentPage({ type, headerLeftContent }) {
               </div>
             )}
 
-            {/* Step 2: Intekal Details */}
+            {/* Step 2: vafat Details */}
             <div className="bg-surface-secondary/20 border border-border/60 rounded-xl p-3.5 space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wide">
                 <Flower2 className="w-3.5 h-3.5 text-primary" />
-                <span>Intekal Details</span>
+                <span>vafat Details</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                 <DatePicker
-                  label="Date of Intekal"
+                  label="Date of vafat"
                   required
                   value={deathFormData.death_date}
                   onChange={(val) => setDeathFormData(prev => ({ ...prev, death_date: val }))}
                   placeholder="Select date"
                 />
                 <Input
-                  label="Time of Intekal"
+                  label="Time of vafat"
                   placeholder="e.g. 05:30 AM"
                   value={deathFormData.death_time}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, death_time: e.target.value }))}
                   disabled={savingDeath}
                 />
                 <Input
-                  label="Place of Intekal"
+                  label="Place of vafat"
                   placeholder="e.g. Surat / Residence"
                   value={deathFormData.death_place}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, death_place: e.target.value }))}
@@ -1351,6 +1394,15 @@ export default function ContentPage({ type, headerLeftContent }) {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* vafat / Death Notification Card Modal */}
+      {type === 'death' && (
+        <VafatCardModal
+          isOpen={vafatCardModalOpen}
+          onClose={() => { setvafatCardModalOpen(false); setSelectedvafatCardMember(null); }}
+          member={selectedvafatCardMember}
+        />
       )}
 
       {/* Marriage NOC Certificate Modal */}
@@ -1452,11 +1504,10 @@ export default function ContentPage({ type, headerLeftContent }) {
                       <button
                         type="button"
                         onClick={() => handleSendSingleWish(member)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95 ${
-                          cleanPhone
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95 ${cleanPhone
                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                             : 'bg-surface-secondary text-text-secondary/60 hover:bg-surface-secondary/80 border border-border'
-                        }`}
+                          }`}
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-white stroke-emerald-600" />
                         <span>{cleanPhone ? 'Send WhatsApp' : 'No Number (Check)'}</span>
