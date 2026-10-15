@@ -132,9 +132,9 @@ export default function Users() {
         const mHeadId = String(m.family_head?.id || m.family_head?._id || m.family_head_id || '')
         const mParentId = String(m.parent_member_id || '')
         return (mHeadId && (mHeadId === headId || mHeadId === headMemberId)) ||
-               (mParentId && (mParentId === headMemberId || mParentId === headId))
+          (mParentId && (mParentId === headMemberId || mParentId === headId))
       })
-      
+
       result.push({
         ...head,
         isGroupParent: true,
@@ -296,7 +296,7 @@ export default function Users() {
       // Member under head: find parent head
       const headId = user.parentHeadId || user.family_head?.id || user.family_head?._id || user.family_head_id || user.parent_member_id
       let headUser = users.find(u => String(u.id || u._id) === String(headId) || (u.member_id && u.member_id === user.parent_member_id))
-      
+
       if (!headUser && headId) {
         try {
           // Fetch head user details if not found in current table page
@@ -339,11 +339,11 @@ export default function Users() {
   const handleSelectUser = (id) => {
     const targetIdStr = String(id);
     const isCurrentlySelected = selectedUsers.some(uid => String(uid) === targetIdStr);
-    
+
     // Find target user in groupedUsers
     const targetUser = groupedUsers.find(u => String(u.id || u._id) === targetIdStr);
     const isHead = targetUser && (targetUser.familyHead || targetUser.relation === 'Self' || targetUser.isGroupParent);
-    
+
     // If user is a head, find all family members under this head
     let relatedIds = [targetIdStr];
     if (isHead) {
@@ -367,7 +367,7 @@ export default function Users() {
     if (!selectedUsers.length) return
     const actionName = status === 1 ? 'activate' : 'deactivate'
     if (!await confirm(`Are you sure you want to ${actionName} ${selectedUsers.length} members?`, { confirmText: status === 1 ? 'Activate' : 'Deactivate', type: status === 1 ? 'primary' : 'danger' })) return
-    
+
     setFormLoading(true)
     try {
       await api.put(MEMBER_ENDPOINTS.BULK_UPDATE_STATUS, { userIds: selectedUsers, status }, { headers: { 'Content-Type': 'application/json' } })
@@ -387,7 +387,7 @@ export default function Users() {
     setTreeZoom(1)
     setTreePan({ x: 0, y: 0 })
     setIsViewModalOpen(true)
-    
+
     setMembersLoading(true)
     try {
       const headId = user.parentHeadId || user.family_head?.id || user.family_head?._id || user.family_head_id || user.parent_member_id || user.id || user._id
@@ -440,15 +440,29 @@ export default function Users() {
       if (filterStatus !== '') params.status = filterStatus
 
       const response = await api.get(MEMBER_ENDPOINTS.EXPORT_MEMBERS, {
-        params,
-        responseType: 'blob'
+        params
       })
 
-      const blob = new Blob([response.data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      })
-      saveAs(blob, `Family_Registry_${new Date().toISOString().slice(0, 10)}.xlsx`)
-      toast.success('Family registry exported successfully from server')
+      const resData = response.data || {}
+      const downloadUrl = resData.data?.download_url
+      const filename = resData.data?.filename || resData.filename || `Family_Registry_${new Date().toISOString().slice(0, 10)}.xlsx`
+
+      if (downloadUrl) {
+        // Direct browser download via backend download link
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', filename)
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        toast.success(resData.message || 'Family registry exported successfully')
+      } else if (response.data instanceof Blob) {
+        saveAs(response.data, filename)
+        toast.success('Family registry exported successfully')
+      } else {
+        toast.error('Download link not received from server')
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to export Excel from server')
       console.error(err)
@@ -706,7 +720,7 @@ export default function Users() {
               ]}
             />
           </FilterPopover>
-          
+
           {selectedUsers.length > 0 && (
             <div className="flex items-center gap-2 bg-surface-secondary border border-border p-1 rounded-xl shadow-sm">
               <span className="text-xs font-semibold text-text-secondary px-2">{selectedUsers.length} selected:</span>
@@ -780,8 +794,8 @@ export default function Users() {
             className: 'w-12',
             headerRender: () => (
               <div className="flex items-center justify-center">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary disabled:opacity-40 disabled:cursor-not-allowed"
                   checked={groupedUsers.length > 0 && groupedUsers.every(u => selectedUsers.map(String).includes(String(u.id || u._id)))}
                   disabled={loading || groupedUsers.length === 0}
@@ -793,8 +807,8 @@ export default function Users() {
               const uId = String(user.id || user._id);
               return (
                 <div className="flex items-center justify-center">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
                     checked={selectedUsers.map(String).includes(uId)}
                     onChange={() => handleSelectUser(uId)}
@@ -824,7 +838,7 @@ export default function Users() {
                     <div className="w-5.5 shrink-0" />
                   )}
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
-                    <div 
+                    <div
                       onClick={(e) => {
                         const imgSrc = user.image || user.profile_image ? assetUrl(user.image || user.profile_image) : ''
                         if (imgSrc) {
@@ -846,7 +860,7 @@ export default function Users() {
                     {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium shrink-0">
                         <span>Family Head (મુખ્ય)</span>
-                        <span 
+                        <span
                           className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold shrink-0 select-none"
                           style={{ lineHeight: 0 }}
                         >
@@ -926,21 +940,21 @@ export default function Users() {
             key: 'actions',
             header: 'Actions',
             align: 'left',
-            render: user=> ( <div className="flex items-center justify-start gap-2">
-                <button onClick={() => handleView(user)} className="p-2 text-indigo-500 hover:text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all" title="View Profile">
-                  <Eye className="w-3.5 h-3.5" />
+            render: user => (<div className="flex items-center justify-start gap-2">
+              <button onClick={() => handleView(user)} className="p-2 text-indigo-500 hover:text-indigo-600 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all" title="View Profile">
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleEdit(user)} className="p-2 text-primary hover:text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit Profile">
+                  <Edit2 className="w-3.5 h-3.5" />
                 </button>
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleEdit(user)} className="p-2 text-primary hover:text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit Profile">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(user.id)} className="p-2 text-error-text hover:text-error bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete Member">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleDelete(user.id)} className="p-2 text-error-text hover:text-error bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete Member">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             )
           }
         ]}
@@ -993,11 +1007,10 @@ export default function Users() {
                 <button
                   type="button"
                   onClick={() => setViewTab('chart')}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    viewTab === 'chart'
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${viewTab === 'chart'
                       ? 'bg-primary text-white shadow-xs'
                       : 'text-text-secondary hover:text-text'
-                  }`}
+                    }`}
                 >
                   <Network className="w-3.5 h-3.5" />
                   <span>Family Tree Chart</span>
@@ -1005,11 +1018,10 @@ export default function Users() {
                 <button
                   type="button"
                   onClick={() => setViewTab('details')}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    viewTab === 'details'
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${viewTab === 'details'
                       ? 'bg-primary text-white shadow-xs'
                       : 'text-text-secondary hover:text-text'
-                  }`}
+                    }`}
                 >
                   <List className="w-3.5 h-3.5" />
                   <span>Profile & Members List</span>
@@ -1078,7 +1090,7 @@ export default function Users() {
                   const allList = familyMembers.length > 0 ? familyMembers : [viewingUser]
                   const head = allList.find(m => m.relation === 'Self' || m.familyHead || String(m.id || m._id) === String(viewingUser.family_head?.id || viewingUser.id)) || viewingUser
                   const others = allList.filter(m => String(m.id || m._id) !== String(head.id || head._id) && m.relation !== 'Self')
-                  
+
                   // Categorize relatives (handling multiple naming & case variations)
                   const isMatchRelation = (rel, target) => {
                     if (!rel) return false
@@ -1135,7 +1147,7 @@ export default function Users() {
                     ...bhabhis,
                     ...rawSpouses.filter(s => String(s.id || s._id) !== String(spouse?.id || spouse?._id))
                   ]
-                  
+
                   // Uncategorized / Remaining members
                   const processedIds = new Set([
                     head?.id || head?._id,
@@ -1187,18 +1199,17 @@ export default function Users() {
                     )
                     return (
                       <div className="flex flex-col items-center">
-                        <div 
+                        <div
                           id={isFocused ? 'focused-tree-node' : undefined}
-                          className={`w-36 sm:w-40 bg-white dark:bg-slate-900 rounded-2xl transition-all duration-300 flex flex-col items-center select-none relative ${
-                            isFocused && isHead
+                          className={`w-36 sm:w-40 bg-white dark:bg-slate-900 rounded-2xl transition-all duration-300 flex flex-col items-center select-none relative ${isFocused && isHead
                               ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/30 shadow-2xl scale-105 z-30'
                               : isFocused
                                 ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/35 shadow-2xl scale-105 z-30'
-                                : isHead 
-                                  ? 'border-2 border-amber-400 dark:border-amber-400/90 shadow-lg ring-2 ring-amber-400/25 z-20' 
+                                : isHead
+                                  ? 'border-2 border-amber-400 dark:border-amber-400/90 shadow-lg ring-2 ring-amber-400/25 z-20'
                                   : 'border border-slate-300 dark:border-slate-700 shadow-xs'
-                          } p-2.5 hover:shadow-md`}>
-                          
+                            } p-2.5 hover:shadow-md`}>
+
                           {/* Focused Viewing Badge (Emerald Green) */}
                           {isFocused && (
                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg z-30 whitespace-nowrap ring-2 ring-white dark:ring-slate-900">
@@ -1216,7 +1227,7 @@ export default function Users() {
                           )}
 
                           {/* Photo Box */}
-                          <div 
+                          <div
                             className={`w-full h-24 sm:h-28 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 ${imageSrc ? 'cursor-pointer group/photo' : ''}`}
                             onClick={(e) => {
                               if (imageSrc) {
@@ -1234,9 +1245,8 @@ export default function Users() {
                                 </div>
                               </div>
                             ) : (
-                              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                                isHead ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
-                              } shrink-0`}>
+                              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isHead ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                                } shrink-0`}>
                                 <User className="w-7 h-7" />
                               </div>
                             )}
@@ -1248,11 +1258,10 @@ export default function Users() {
                           </span>
 
                           {/* Role Badge (Title Case) */}
-                          <div className={`w-full py-0.5 px-2 text-[10px] font-semibold rounded-xl text-center border truncate mt-1 ${
-                            isHead 
-                              ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 font-bold' 
+                          <div className={`w-full py-0.5 px-2 text-[10px] font-semibold rounded-xl text-center border truncate mt-1 ${isHead
+                              ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 font-bold'
                               : 'bg-blue-50/90 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-blue-100 dark:border-slate-700'
-                          }`}>
+                            }`}>
                             {formatTitleCase(displayRole)}
                           </div>
                         </div>
@@ -1308,7 +1317,7 @@ export default function Users() {
                                 <div key={idx} className="relative flex flex-col items-center px-6 sm:px-10">
                                   {/* Horizontal line starting at 50% of first child, ending at 50% of last child */}
                                   {validChildren.length > 1 && (
-                                    <div 
+                                    <div
                                       className="absolute top-0 h-[2.5px] bg-[#3B5998]"
                                       style={{
                                         left: idx === 0 ? '50%' : '0%',
@@ -1580,18 +1589,18 @@ export default function Users() {
                   const hasParents = Boolean(father || mother)
                   const parentsNode = hasParents
                     ? renderTreeNode({
-                        member1: father || mother,
-                        member2: father && mother ? mother : null,
-                        label1: father ? 'Father' : 'Mother',
-                        label2: father && mother ? 'Mother' : null,
-                        spouseBadge: 'Married',
-                        children: siblingsAndHeadNodes
-                      })
+                      member1: father || mother,
+                      member2: father && mother ? mother : null,
+                      label1: father ? 'Father' : 'Mother',
+                      label2: father && mother ? 'Mother' : null,
+                      spouseBadge: 'Married',
+                      children: siblingsAndHeadNodes
+                    })
                     : null
 
                   // 8. Grandparents Generation Tree (Level 1)
                   const hasGrandparents = Boolean(grandfather || grandmother)
-                  
+
                   const grandparentsChildrenNodes = [
                     parentsNode || (hasGrandparents ? siblingsAndHeadNodes : null),
                     ...uncleAuntNodes
@@ -1732,10 +1741,9 @@ export default function Users() {
                   }
 
                   return (
-                    <div 
-                      className={`bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-8 overflow-hidden min-h-[500px] max-h-[75vh] flex flex-col items-center justify-start relative select-none ${
-                        isTreeDragging ? 'cursor-grabbing' : 'cursor-grab'
-                      }`}
+                    <div
+                      className={`bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-8 overflow-hidden min-h-[500px] max-h-[75vh] flex flex-col items-center justify-start relative select-none ${isTreeDragging ? 'cursor-grabbing' : 'cursor-grab'
+                        }`}
                       style={{
                         scrollbarWidth: 'none',
                         msOverflowStyle: 'none'
@@ -1749,9 +1757,9 @@ export default function Users() {
                       onTouchEnd={handleTreeMouseUp}
                     >
                       {/* Main Dynamic Tree with Zoom & Pan Transform */}
-                      <div 
+                      <div
                         className="min-w-max py-4 flex flex-col items-center origin-top pointer-events-auto"
-                        style={{ 
+                        style={{
                           transform: `translate(${treePan.x}px, ${treePan.y}px) scale(${treeZoom})`,
                           transition: isTreeDragging ? 'none' : 'transform 150ms cubic-bezier(0.2, 0, 0, 1)'
                         }}
@@ -1761,9 +1769,9 @@ export default function Users() {
 
                       {/* Extra / Unlinked Members (if any) */}
                       {extraMembers.length > 0 && (
-                        <div 
+                        <div
                           className="mt-8 pt-6 border-t border-border/70 w-full flex flex-col items-center origin-top pointer-events-auto"
-                          style={{ 
+                          style={{
                             transform: `translate(${treePan.x}px, ${treePan.y}px) scale(${treeZoom})`,
                             transition: isTreeDragging ? 'none' : 'transform 150ms cubic-bezier(0.2, 0, 0, 1)'
                           }}
@@ -1865,18 +1873,17 @@ export default function Users() {
                             const isHeadMember = member.relation === 'Self' || member.familyHead
 
                             return (
-                              <tr 
-                                key={member.id || member._id || idx} 
-                                className={`transition-all text-sm ${
-                                  isCurrentViewing 
-                                    ? 'bg-primary/10 border-l-4 border-l-primary font-semibold' 
+                              <tr
+                                key={member.id || member._id || idx}
+                                className={`transition-all text-sm ${isCurrentViewing
+                                    ? 'bg-primary/10 border-l-4 border-l-primary font-semibold'
                                     : 'hover:bg-surface-secondary/40'
-                                }`}
+                                  }`}
                               >
                                 <td className="p-3.5 text-xs text-text-secondary font-mono text-center">{idx + 1}</td>
                                 <td className="p-3.5 font-medium text-text">
                                   <div className="flex items-center gap-3">
-                                    <div 
+                                    <div
                                       onClick={(e) => {
                                         const imgSrc = member.image || member.profile_image ? assetUrl(member.image || member.profile_image) : ''
                                         if (imgSrc) {
