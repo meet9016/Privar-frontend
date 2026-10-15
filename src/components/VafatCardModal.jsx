@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react'
 import Modal from './Modal'
 import Button from './common/Button'
-import { toPng, toJpeg } from 'html-to-image'
+import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { Download, Eye, Share2, Sparkles, MapPin, Calendar, Clock, HeartHandshake, ShieldCheck, Check } from 'lucide-react'
-import { assetUrl, getCommunityFullName, formatDate } from '../lib/api'
+import api, { API_BASE, assetUrl, getCommunityFullName, formatDate, getDeathCardDownloadUrl, getDeathCardLink } from '../lib/api'
 import { toast } from '../lib/toast'
 
 export default function VafatCardModal({ isOpen, onClose, member }) {
@@ -37,51 +37,42 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
     return note
   }
 
-  // Download Handler (High-Resolution Card Generation)
+  // Download Handler (Same pattern as Donation Receipt Download)
   const handleDownload = async (format = downloadFormat) => {
-    if (!cardRef.current) return
+    const id = member.id || member._id || member.member_id
+    if (!id) return
+
     setDownloading(true)
+    const safeName = memberName.replace(/[^a-zA-Z0-9_\-]/g, '_')
+    const fileName = `vafat_${titlePrefix}_${safeName}.${format === 'pdf' ? 'pdf' : 'png'}`
+
     try {
-      // 1. Generate image using html-to-image with high pixel ratio
-      const dataUrl = await toPng(cardRef.current, {
-        quality: 0.98,
-        pixelRatio: 2.5,
-        cacheBust: true,
-        style: {
-          transform: 'none'
-        }
-      })
+      // 1. Call Backend API to fetch direct death card download link
+      // Shows up in DevTools Network tab under Fetch/XHR as: GET /api/users/death/:id/download-link
+      const res = await getDeathCardLink(id)
+      const data = res.data?.data || {}
+      const downloadUrl = (format === 'pdf' ? data.pdf_url : data.png_url) || data.download_url || getDeathCardDownloadUrl(id, format)
 
-      const safeName = memberName.replace(/[^a-zA-Z0-9_\-]/g, '_')
-      const fileName = `vafat_${titlePrefix}_${safeName}`
-
-      if (format === 'pdf') {
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        })
-        const imgProps = pdf.getImageProperties(dataUrl)
-        const pdfWidth = pdf.internal.pageSize.getWidth()
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-
-        // Center vertically if smaller than A4
-        const pageHeight = pdf.internal.pageSize.getHeight()
-        const yOffset = pdfHeight < pageHeight ? (pageHeight - pdfHeight) / 2 : 10
-
-        pdf.addImage(dataUrl, 'PNG', 0, yOffset > 0 ? yOffset : 0, pdfWidth, pdfHeight)
-        pdf.save(`${fileName}.pdf`)
-        toast.success('vafat PDF downloaded successfully!')
-      } else {
-        const link = document.createElement('a')
-        link.download = `${fileName}.png`
-        link.href = dataUrl
-        link.click()
-        toast.success('vafat Card image downloaded successfully!')
-      }
+      // 2. Direct browser download from the backend link (exact same pattern as donation receipt)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.setAttribute('download', fileName)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success(`vafat ${format.toUpperCase()} downloaded successfully!`)
     } catch (err) {
-      console.error('Download vafat Card error:', err)
-      toast.error('Failed to generate image. Please try again.')
+      console.error('Failed to get death card download link, using direct URL fallback:', err)
+      const fallbackUrl = member.download_url || member.png_url || getDeathCardDownloadUrl(id, format)
+      const link = document.createElement('a')
+      link.href = fallbackUrl
+      link.setAttribute('download', fileName)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success(`vafat ${format.toUpperCase()} downloaded`)
     } finally {
       setDownloading(false)
     }
@@ -89,7 +80,21 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
 
   // WhatsApp Share handler
   const handleShareWhatsApp = () => {
-    const text = `🕊️ *إِنَّا لِلّهِ وَإِنَّـا إِلَيْهِ رَاجِعونَ*\n*Inna Lillahi wa Inna Ilayhi Raji'un*\n\nBade ranj-o-alam ke saath itla di jaati hai ki humare jamaat ke rukan *${titlePrefix} ${memberName}* ka vafat ho gaya hai.\n\n📅 *Date of vafat:* ${member.death_date ? formatDate(member.death_date) : '-'}\n📍 *Place:* ${member.death_place || '-'}\n\n🕌 *Namaz-e-Janaza:* ${member.janaza_date ? formatDate(member.janaza_date) : '-'}${member.janaza_time ? ` (${member.janaza_time})` : ''}\n📍 *Venue:* ${member.janaza_place || '-'}\n🌿 *Kabrastan:* ${member.kabrastan || '-'}\n\n🤲 *Dua:* ${member.death_note || 'Allah Ta’ala Marhum ko Jannat-ul-Firdaus me aala darja ata farmaye aur lawaheqeen ko Sabr-e-Jameel ata farmaye. Aameen!'}\n\n— *${communityName}*`
+    const memberId = member._id || member.id || member.member_id
+    const downloadUrl = member.download_url || member.png_url || (memberId ? `${API_BASE}/api/users/death/${memberId}/download?format=png` : '')
+
+    let text = `🕊️ *إِنَّا لِلّهِ وَإِنَّـا إِلَيْهِ رَاجِعونَ*\n*Inna Lillahi wa Inna Ilayhi Raji'un*\n\nBade ranj-o-alam ke saath itla di jaati hai ki humare jamaat ke rukan *${titlePrefix} ${memberName}* ka vafat ho gaya hai.\n\n📅 *Date of vafat:* ${member.death_date ? formatDate(member.death_date) : '-'}\n📍 *Place:* ${member.death_place || '-'}\n\n`
+    if (member.janaza_date || member.janaza_time || member.janaza_place) {
+      text += `🕌 *Namaz-e-Janaza:* ${member.janaza_date ? formatDate(member.janaza_date) : '-'}${member.janaza_time ? ` (${member.janaza_time})` : ''}\n📍 *Venue:* ${member.janaza_place || '-'}\n`
+    }
+    if (member.kabrastan) {
+      text += `🌿 *Kabrastan:* ${member.kabrastan}\n`
+    }
+    text += `\n🤲 *Dua:* ${member.death_note || 'Allah Ta’ala Marhum ko Jannat-ul-Firdaus me aala darja ata farmaye aur lawaheqeen ko Sabr-e-Jameel ata farmaye. Aameen!'}\n\n`
+    if (downloadUrl) {
+      text += `📄 *Download Official Vafat Card:* ${downloadUrl}\n\n`
+    }
+    text += `— *${communityName}*`
 
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
   }

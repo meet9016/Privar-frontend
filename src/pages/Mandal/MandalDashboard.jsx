@@ -5,8 +5,10 @@ import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
 import Loader from '../../components/common/Loader'
 import Button from '../../components/common/Button'
 import { getNextHaptaDate } from './MandalSetup'
+import usePermissions from '../../hooks/usePermissions'
 
 export default function MandalDashboard({ mandalId, onNavigateTab }) {
+  const { isSuperAdmin } = usePermissions('mandal')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -75,35 +77,45 @@ export default function MandalDashboard({ mandalId, onNavigateTab }) {
           <Button variant="primary" size="sm" onClick={() => onNavigateTab('contribution')} icon={<Plus className="w-4 h-4" />}>
             Contributions
           </Button>
-          <Button variant="outline" size="sm" onClick={() => onNavigateTab('members')} icon={<Users className="w-4 h-4" />}>
-            Manage Members
-          </Button>
+          {isSuperAdmin && (
+            <Button variant="outline" size="sm" onClick={() => onNavigateTab('members')} icon={<Users className="w-4 h-4" />}>
+              Manage Members
+            </Button>
+          )}
         </div>
       </div>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Total Members */}
+        {/* Total Members (Admin) / My Membership (User) */}
         <div
-          onClick={() => onNavigateTab('members')}
-          className="p-4 rounded-2xl bg-card border border-border hover:border-primary/40 cursor-pointer shadow-xs transition-all hover:shadow-sm flex flex-col justify-between"
+          onClick={() => isSuperAdmin && onNavigateTab('members')}
+          className={`p-4 rounded-2xl bg-card border border-border shadow-xs transition-all flex flex-col justify-between ${isSuperAdmin ? 'hover:border-primary/40 cursor-pointer hover:shadow-sm' : ''}`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-text-secondary text-xs font-bold uppercase tracking-wider">Total Members</span>
+            <span className="text-text-secondary text-xs font-bold uppercase tracking-wider">
+              {isSuperAdmin ? 'Total Members' : 'My Membership'}
+            </span>
             <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <Users className="w-4 h-4" />
+              {isSuperAdmin ? <Users className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
             </div>
           </div>
           <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-text tracking-tight">{metrics.total_members}</p>
-            <p className="text-[11px] text-text-secondary mt-0.5 font-medium">Enrolled in Mandal</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-text tracking-tight">
+              {isSuperAdmin ? metrics.total_members : 'Active'}
+            </p>
+            <p className="text-[11px] text-text-secondary mt-0.5 font-medium">
+              {isSuperAdmin ? 'Enrolled in Mandal' : 'Enrolled Member'}
+            </p>
           </div>
         </div>
 
         {/* Month Expected */}
         <div className="p-4 rounded-2xl bg-card border border-border shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-text-secondary text-xs font-bold uppercase tracking-wider">Month Expected</span>
+            <span className="text-text-secondary text-xs font-bold uppercase tracking-wider">
+              {isSuperAdmin ? 'Month Expected' : 'My Expected'}
+            </span>
             <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
               <Calendar className="w-4 h-4" />
             </div>
@@ -117,7 +129,9 @@ export default function MandalDashboard({ mandalId, onNavigateTab }) {
         {/* Month Collected */}
         <div className="p-4 rounded-2xl bg-card border border-emerald-500/20 bg-emerald-500/5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">Month Collected</span>
+            <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              {isSuperAdmin ? 'Month Collected' : 'My Paid'}
+            </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
@@ -138,7 +152,9 @@ export default function MandalDashboard({ mandalId, onNavigateTab }) {
         {/* Month Pending */}
         <div className="p-4 rounded-2xl bg-card border border-amber-500/20 bg-amber-500/5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">Month Pending</span>
+            <span className="text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
+              {isSuperAdmin ? 'Month Pending' : 'My Pending'}
+            </span>
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>

@@ -12,7 +12,8 @@ import {
   EXPENSE_ENDPOINTS,
   DONATION_ENDPOINTS,
   CERTIFICATE_ENDPOINTS,
-  MASTER_ENDPOINTS
+  MASTER_ENDPOINTS,
+  DEATH_ENDPOINTS
 } from '../utils/endpoints'
 
 export const API_BASE = import.meta.env.VITE_API_BASE || `http://${window.location.hostname}:5000`
@@ -180,6 +181,16 @@ export const getDonationReceiptDownloadUrl = (id) => {
 
 export const getDonationReceiptLink = (id) =>
   api.get(DONATION_ENDPOINTS.RECEIPT_LINK(id))
+
+export const getDeathCardDownloadUrl = (id, format = 'png') => {
+  if (!id) return ''
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || ''
+  const tokenQuery = token ? `&token=${encodeURIComponent(token)}` : ''
+  return `${API_BASE}/api${DEATH_ENDPOINTS.DOWNLOAD(id, format)}${tokenQuery}`
+}
+
+export const getDeathCardLink = (id) =>
+  api.get(DEATH_ENDPOINTS.DOWNLOAD_LINK(id))
 
 export const getCertificateDownloadUrl = (id) => {
   if (!id) return ''

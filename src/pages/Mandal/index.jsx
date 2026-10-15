@@ -6,6 +6,7 @@ import MandalDashboard from './MandalDashboard'
 import MandalMembers from './MandalMembers'
 import MonthlyContribution from './MonthlyContribution'
 import MandalSetup from './MandalSetup'
+import usePermissions from '../../hooks/usePermissions'
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -15,6 +16,7 @@ const TABS = [
 ]
 
 export default function Mandal({ headerLeftContent }) {
+  const { isSuperAdmin } = usePermissions('mandal')
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     return params.get('subtab') || (params.get('tab') === 'contribution' ? 'contribution' : 'dashboard')
@@ -24,6 +26,17 @@ export default function Mandal({ headerLeftContent }) {
   const [loadingMandals, setLoadingMandals] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
+
+  // Non-admins can only see Dashboard and Contributions
+  const visibleTabs = isSuperAdmin
+    ? TABS
+    : TABS.filter(t => t.id === 'dashboard' || t.id === 'contribution')
+
+  useEffect(() => {
+    if (!isSuperAdmin && (activeTab === 'setup' || activeTab === 'members')) {
+      setActiveTab('contribution')
+    }
+  }, [isSuperAdmin, activeTab])
 
   const fetchMandals = useCallback(async () => {
     setLoadingMandals(true)
@@ -68,20 +81,47 @@ export default function Mandal({ headerLeftContent }) {
       case 'dashboard':
         return <MandalDashboard mandalId={selectedMandalId} onNavigateTab={setActiveTab} />
       case 'members':
-        return <MandalMembers mandalId={selectedMandalId} mandal={selectedMandal} />
+        return isSuperAdmin ? (
+          <MandalMembers mandalId={selectedMandalId} mandal={selectedMandal} />
+        ) : (
+          <MonthlyContribution mandalId={selectedMandalId} mandal={selectedMandal} mandals={mandals} />
+        )
       case 'contribution':
         return <MonthlyContribution mandalId={selectedMandalId} mandal={selectedMandal} mandals={mandals} />
       case 'setup':
-        return (
+        return isSuperAdmin ? (
           <MandalSetup
             selectedMandalId={selectedMandalId}
             onSelectMandal={setSelectedMandalId}
             onMandalsChanged={fetchMandals}
           />
+        ) : (
+          <MonthlyContribution mandalId={selectedMandalId} mandal={selectedMandal} mandals={mandals} />
         )
       default:
         return <MandalDashboard mandalId={selectedMandalId} onNavigateTab={setActiveTab} />
     }
+  }
+
+  if (!loadingMandals && mandals.length === 0) {
+    return (
+      <div className="space-y-4 text-text animate-slide-up">
+        {headerLeftContent && (
+          <div className="flex items-center pb-3 border-b border-border/60">
+            {headerLeftContent}
+          </div>
+        )}
+        <div className="p-12 text-center bg-card border border-border rounded-2xl max-w-lg mx-auto space-y-3 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+            <Calendar className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-text">No Mandal Enrolled</h3>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            તમે હાલમાં કોઈપણ મંડળમાં જોડાયેલા નથી. જ્યારે એડમિન તમને મંડળમાં ઉમેરશે ત્યારે તમારું યોગદાન અહીં દેખાશે.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -98,7 +138,7 @@ export default function Mandal({ headerLeftContent }) {
         <div className="flex flex-wrap items-center gap-2.5 ml-auto">
           {/* Sub Navigation Tabs */}
           <div className="flex items-center gap-1 bg-surface-secondary/70 p-1 rounded-xl border border-border/60">
-            {TABS.map(tab => {
+            {visibleTabs.map(tab => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
               return (
@@ -119,8 +159,22 @@ export default function Mandal({ headerLeftContent }) {
             })}
           </div>
 
-          {/* Custom Modern Mandal Selector Dropdown */}
-          {mandals.length > 0 && (
+          {/* Single Mandal Display (if only 1 mandal) */}
+          {mandals.length === 1 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-xs">
+              <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="text-text-secondary whitespace-nowrap">Mandal:</span>
+              <span className="font-bold text-text max-w-[160px] truncate">
+                {selectedMandal?.name || 'Mandal'}
+              </span>
+              <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-extrabold text-[10px]">
+                ₹{selectedMandal?.monthly_amount || 500}
+              </span>
+            </div>
+          )}
+
+          {/* Custom Modern Mandal Selector Dropdown (if multiple mandals) */}
+          {mandals.length > 1 && (
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"

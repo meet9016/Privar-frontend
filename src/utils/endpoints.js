@@ -54,7 +54,9 @@ export const BIRTHDAY_ENDPOINTS = {
 
 // Deaths & In Memoriam Module API Endpoints
 export const DEATH_ENDPOINTS = {
-  GET_DEATHS: '/users?death'
+  GET_DEATHS: '/users?death',
+  DOWNLOAD: (id, format = 'png') => `/users/death/${id}/download?format=${format}`,
+  DOWNLOAD_LINK: (id) => `/users/death/${id}/download-link`
 }
 
 // Job Vacancies Module API Endpoints
@@ -180,6 +182,7 @@ export const MANDAL_ENDPOINTS = {
   TOGGLE_MEMBER: '/mandal/members/toggle',
   BULK_MEMBERS: '/mandal/members/bulk',
   GET_CONTRIBUTIONS: '/mandal/contributions',
+  GET_MY_CONTRIBUTIONS: '/mandal/my-contributions',
   EXPORT_CONTRIBUTIONS: '/mandal/contributions/export',
   UPDATE_CONTRIBUTION: (id) => `/mandal/contributions/${id}`,
   BULK_MARK_PAID: '/mandal/contributions/bulk-mark-paid',
@@ -203,6 +206,7 @@ export const REGISTRATION_ENDPOINTS = {
   UPDATE_STATUS: (id) => `/mobile-registration/admin/${id}/status`
 }
 
+
 export default {
   COMMITTEE: COMMITTEE_ENDPOINTS,
   ROLES: ROLES_ENDPOINTS,
@@ -222,6 +226,7 @@ export default {
   CERTIFICATE: CERTIFICATE_ENDPOINTS,
   MANDAL: MANDAL_ENDPOINTS,
   MASTER: MASTER_ENDPOINTS,
-  REGISTRATION: REGISTRATION_ENDPOINTS
+  REGISTRATION: REGISTRATION_ENDPOINTS,
+  DEATH: DEATH_ENDPOINTS
 }
 

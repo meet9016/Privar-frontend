@@ -38,6 +38,7 @@ import FilterPopover from '../../components/common/FilterPopover'
 import Modal from '../../components/Modal'
 import usePagination from '../../hooks/usePagination'
 import useDebounce from '../../hooks/useDebounce'
+import usePermissions from '../../hooks/usePermissions'
 import { toast } from '../../lib/toast'
 import { confirm } from '../../lib/confirm'
 import RecordPaymentModal from './RecordPaymentModal'
@@ -73,6 +74,7 @@ const PAYMENT_MODE_OPTIONS = [
 ]
 
 export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) {
+  const { isSuperAdmin } = usePermissions('mandal')
   const currentMonthStr = new Date().toISOString().slice(0, 7) // 'YYYY-MM'
 
   // Active Filters
@@ -509,7 +511,7 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
           </FilterPopover>
 
           {/* Send Pending Reminders Notification Button */}
-          {summary?.pending_members > 0 && (
+          {isSuperAdmin && summary?.pending_members > 0 && (
             <button
               type="button"
               onClick={handleSendReminders}
@@ -524,7 +526,7 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
           )}
 
           {/* Mark All Paid (for entire month when pending members exist) */}
-          {summary?.pending_members > 0 && selectedRows.length === 0 && (
+          {isSuperAdmin && summary?.pending_members > 0 && selectedRows.length === 0 && (
             <button
               type="button"
               onClick={handleMarkAllPaid}
@@ -563,7 +565,44 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
       </div>
 
       {/* Financial Summary Cards & Payment Breakdown */}
-      {summary && (
+      {summary && !isSuperAdmin && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-in">
+          <div className="p-4 rounded-2xl bg-card border border-border shadow-xs">
+            <span className="text-text-secondary text-xs font-bold uppercase tracking-wider block">Monthly Fee</span>
+            <p className="text-2xl sm:text-3xl font-extrabold text-primary mt-1">₹{summary.expected_amount || mandal?.monthly_amount || 500}</p>
+            <p className="text-[11px] text-text-secondary mt-0.5 font-medium">Rate per month</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-card border border-border shadow-xs">
+            <span className="text-text-secondary text-xs font-bold uppercase tracking-wider block">Status ({selectedMonth})</span>
+            <div className="mt-2">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                summary.paid_members > 0
+                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'
+              }`}>
+                {summary.paid_members > 0 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                {summary.paid_members > 0 ? 'Paid' : 'Pending'}
+              </span>
+            </div>
+            <p className="text-[11px] text-text-secondary mt-1 font-medium">{summary.paid_members > 0 ? 'Payment verified' : 'Due for this month'}</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-xs">
+            <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider block">Paid Amount</span>
+            <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">₹{Number(summary.collected_amount || 0).toLocaleString('en-IN')}</p>
+            <p className="text-[11px] text-text-secondary mt-0.5 font-medium">Amount recorded</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 shadow-xs">
+            <span className="text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider block">Pending Due</span>
+            <p className="text-2xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">₹{Number(summary.pending_amount || 0).toLocaleString('en-IN')}</p>
+            <p className="text-[11px] text-text-secondary mt-0.5 font-medium">Balance due</p>
+          </div>
+        </div>
+      )}
+
+      {summary && isSuperAdmin && (
         <div className="space-y-3">
           {/* Row 1: Cash vs Bank/Online Breakdown & All-Mandals Grand Total */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -611,7 +650,6 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
             </div>
 
             {/* Bank / Online Collection (Active Mandal) */}
-
             <div className="group relative overflow-hidden rounded-2xl border border-blue-200/70 dark:border-blue-900/50 bg-gradient-to-br from-white to-blue-50/70 dark:from-card dark:to-blue-950/20 p-5 shadow-sm transition-all duration-300 hover:shadow-md">
               {/* Header */}
               <div className="flex items-start justify-between gap-3">
@@ -656,7 +694,6 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
               </div>
             </div>
 
-
             {/* Grand Total All Mandals (Clean, Responsive & Scalable for any number of mandals) */}
             <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-card to-emerald-500/10 border border-primary/25 shadow-xs flex flex-col justify-between space-y-3">
               <div className="flex items-start justify-between gap-3">
@@ -669,9 +706,6 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
                     <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">
                       All Mandals Grand Total ({selectedMonth})
                     </span>
-                    {/* <h5 className="text-xs font-black uppercase tracking-wider text-text">
-
-                    </h5> */}
                     <p className="text-[11px] text-text-secondary font-medium">
                       Total {summary.mandals_breakdown?.length || 0} Mandals
                     </p>
@@ -706,7 +740,7 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
                 </div>
               </div>
 
-              {/* Action Button: View Full Breakdown Modal (Handles 2, 10, or 50 mandals gracefully) */}
+              {/* Action Button: View Full Breakdown Modal */}
               {Array.isArray(summary.mandals_breakdown) && summary.mandals_breakdown.length > 0 && (
                 <div className="pt-1 flex items-center justify-between gap-2">
                   <span className="text-[11px] text-text-secondary font-medium truncate">
@@ -792,7 +826,7 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
 
       {/* Contributions Table with Row Selection */}
       <Table
-        selectable={true}
+        selectable={isSuperAdmin}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         keyField="id"
@@ -896,7 +930,7 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
                     <Printer className="w-3.5 h-3.5" />
                     <span>Receipt</span>
                   </button>
-                ) : (
+                ) : isSuperAdmin ? (
                   <button
                     type="button"
                     onClick={() => handleQuickMarkPaid(c)}
@@ -906,15 +940,21 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
                     <Check className="w-3.5 h-3.5" />
                     <span>Mark Paid</span>
                   </button>
+                ) : (
+                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                    Pending
+                  </span>
                 )}
-                <button
-                  type="button"
-                  onClick={() => handleOpenPayment(c)}
-                  className="p-1.5 rounded-lg text-text-secondary hover:text-text bg-surface-secondary hover:bg-border/60 border border-border transition-all cursor-pointer"
-                  title="Edit Payment Details"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPayment(c)}
+                    className="p-1.5 rounded-lg text-text-secondary hover:text-text bg-surface-secondary hover:bg-border/60 border border-border transition-all cursor-pointer"
+                    title="Edit Payment Details"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )
           }
