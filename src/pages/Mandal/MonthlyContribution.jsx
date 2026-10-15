@@ -23,7 +23,8 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
-  Bell
+  Bell,
+  CalendarDays
 } from 'lucide-react'
 import { saveAs } from 'file-saver'
 import api, { assetUrl, formatDate } from '../../lib/api'
@@ -73,7 +74,7 @@ const PAYMENT_MODE_OPTIONS = [
 
 export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) {
   const currentMonthStr = new Date().toISOString().slice(0, 7) // 'YYYY-MM'
-  
+
   // Active Filters
   const [selectedMonth, setSelectedMonth] = useState(currentMonthStr)
   const [statusFilter, setStatusFilter] = useState('All')
@@ -567,46 +568,94 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
           {/* Row 1: Cash vs Bank/Online Breakdown & All-Mandals Grand Total */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Cash Collection (Active Mandal) */}
-            <div className="p-3.5 rounded-2xl bg-card border border-border shadow-xs flex items-center justify-between">
-              <div>
-                <span className="text-text-secondary text-[11px] font-bold uppercase tracking-wider block">
-                  Cash Collection
-                </span>
-                <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
-                  ₹{Number(summary.cash_collected || 0).toLocaleString('en-IN')}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-text-secondary font-medium">
-                  <span className="px-1.5 py-0.2 rounded bg-surface-secondary border border-border/60 font-bold text-text">
-                    Rate: ₹{mandal?.monthly_amount || summary?.mandal_monthly_amount || 500}/mo
+            <div className="group relative overflow-hidden rounded-2xl border border-emerald-200/70 dark:border-emerald-900/50 bg-gradient-to-br from-white to-emerald-50/70 dark:from-card dark:to-emerald-950/20 p-5 shadow-sm transition-all duration-300 hover:shadow-md">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                    Cash Collection
                   </span>
-                  <span>• {selectedMonth}</span>
+
+                  {/* Amount */}
+                  <p className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    ₹{Number(summary.cash_collected || 0).toLocaleString("en-IN")}
+                  </p>
+
+                  <p className="mt-1 text-xs text-text-secondary">
+                    Total cash collected
+                  </p>
+                </div>
+
+                {/* Icon */}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/10">
+                  <Banknote className="h-6 w-6" />
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                <Banknote className="w-5 h-5" />
+
+              {/* Footer Details */}
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-emerald-200/60 dark:border-emerald-900/40 pt-4">
+                <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-2.5 py-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
+                    Monthly Rate
+                  </span>
+                  <span className="text-xs font-bold text-text">
+                    ₹{mandal?.monthly_amount || summary?.mandal_monthly_amount || 500}/mo
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  <span>{selectedMonth}</span>
+                </div>
               </div>
             </div>
 
             {/* Bank / Online Collection (Active Mandal) */}
-            <div className="p-3.5 rounded-2xl bg-card border border-border shadow-xs flex items-center justify-between">
-              <div>
-                <span className="text-text-secondary text-[11px] font-bold uppercase tracking-wider block">
-                  Bank / Online Transfer
-                </span>
-                <p className="text-xl font-extrabold text-blue-600 dark:text-blue-400 mt-1">
-                  ₹{Number(summary.bank_online_collected || 0).toLocaleString('en-IN')}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-text-secondary font-medium">
-                  <span className="px-1.5 py-0.2 rounded bg-surface-secondary border border-border/60 font-bold text-text">
-                    Rate: ₹{mandal?.monthly_amount || summary?.mandal_monthly_amount || 500}/mo
-                  </span>
-                  <span>• {selectedMonth}</span>
+
+            <div className="group relative overflow-hidden rounded-2xl border border-blue-200/70 dark:border-blue-900/50 bg-gradient-to-br from-white to-blue-50/70 dark:from-card dark:to-blue-950/20 p-5 shadow-sm transition-all duration-300 hover:shadow-md">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                      Bank / Online Transfer
+                    </span>
+                  </div>
+
+                  {/* Amount */}
+                  <p className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-blue-600 dark:text-blue-400 tabular-nums">
+                    ₹{Number(summary.bank_online_collected || 0).toLocaleString("en-IN")}
+                  </p>
+
+                  <p className="mt-1 text-xs text-text-secondary">
+                    Total amount collected
+                  </p>
+                </div>
+
+                {/* Icon */}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/10">
+                  <Building2 className="h-6 w-6" />
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
-                <Building2 className="w-5 h-5" />
+
+              {/* Footer Details */}
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-blue-200/60 dark:border-blue-900/40 pt-4">
+                <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-2.5 py-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
+                    Monthly Rate
+                  </span>
+                  <span className="text-xs font-bold text-text">
+                    ₹{mandal?.monthly_amount || summary?.mandal_monthly_amount || 500}/mo
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  <span>{selectedMonth}</span>
+                </div>
               </div>
             </div>
+
 
             {/* Grand Total All Mandals (Clean, Responsive & Scalable for any number of mandals) */}
             <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-card to-emerald-500/10 border border-primary/25 shadow-xs flex flex-col justify-between space-y-3">
@@ -615,12 +664,16 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
                   <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm">
                     <Layers className="w-5 h-5" />
                   </div>
+
                   <div>
-                    <h5 className="text-xs font-black uppercase tracking-wider text-text">
+                    <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">
                       All Mandals Grand Total ({selectedMonth})
-                    </h5>
+                    </span>
+                    {/* <h5 className="text-xs font-black uppercase tracking-wider text-text">
+
+                    </h5> */}
                     <p className="text-[11px] text-text-secondary font-medium">
-                      Total {summary.mandals_breakdown?.length || 0} Mandals ka milakar collection
+                      Total {summary.mandals_breakdown?.length || 0} Mandals
                     </p>
                   </div>
                 </div>
@@ -818,11 +871,10 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
             header: 'Status',
             key: 'status',
             render: (c) => (
-              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                c.status === 'Paid'
-                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'
-              }`}>
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${c.status === 'Paid'
+                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'
+                }`}>
                 {c.status === 'Paid' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                 {c.status}
               </span>
@@ -1011,45 +1063,46 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
                 const matchedMandal = Array.isArray(mandals) ? mandals.find(item => String(item._id || item.id) === String(m.mandal_id)) : null
                 const monthlyRate = m.monthly_amount ?? matchedMandal?.monthly_amount ?? 500
                 return (
-                <div
-                  key={String(m.mandal_id)}
-                  className="p-3.5 rounded-xl bg-card border border-border hover:border-primary/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-6 h-6 rounded-lg bg-surface-secondary text-text-secondary font-bold text-xs flex items-center justify-center shrink-0">
-                      {idx + 1}
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-sm text-text">{m.name || 'Mandal'}</h4>
-                        <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-extrabold text-[10px]">
-                          ₹{Number(monthlyRate).toLocaleString('en-IN')} / mo
+                  <div
+                    key={String(m.mandal_id)}
+                    className="p-3.5 rounded-xl bg-card border border-border hover:border-primary/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-lg bg-surface-secondary text-text-secondary font-bold text-xs flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-sm text-text">{m.name || 'Mandal'}</h4>
+                          <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-extrabold text-[10px]">
+                            ₹{Number(monthlyRate).toLocaleString('en-IN')} / mo
+                          </span>
+                        </div>
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          Collection Month: <strong className="text-text font-semibold">{selectedMonth}</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs self-end sm:self-auto">
+                      <div className="text-right">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold block">
+                          Cash: ₹{Number(m.cash_collected || 0).toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold block">
+                          Bank: ₹{Number(m.bank_collected || 0).toLocaleString('en-IN')}
                         </span>
                       </div>
-                      <p className="text-xs text-text-secondary mt-0.5">
-                        Collection Month: <strong className="text-text font-semibold">{selectedMonth}</strong>
-                      </p>
+                      <div className="pl-3 border-l border-border text-right min-w-[90px]">
+                        <span className="text-[10px] text-text-secondary uppercase font-bold block">Total</span>
+                        <span className="text-base font-extrabold text-primary">
+                          ₹{Number(m.total_collected || 0).toLocaleString('en-IN')}
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-4 text-xs self-end sm:self-auto">
-                    <div className="text-right">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold block">
-                        Cash: ₹{Number(m.cash_collected || 0).toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-blue-600 dark:text-blue-400 font-semibold block">
-                        Bank: ₹{Number(m.bank_collected || 0).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                    <div className="pl-3 border-l border-border text-right min-w-[90px]">
-                      <span className="text-[10px] text-text-secondary uppercase font-bold block">Total</span>
-                      <span className="text-base font-extrabold text-primary">
-                        ₹{Number(m.total_collected || 0).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )})
+                )
+              })
             ) : (
               <div className="py-8 text-center text-text-secondary text-xs">
                 No mandal collection recorded for this month.
