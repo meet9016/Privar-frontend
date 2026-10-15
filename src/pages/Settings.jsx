@@ -453,7 +453,7 @@ export default function SettingsPage() {
 
             {/* Banner Images */}
             <div className="bg-card border border-border rounded-2xl p-6 shadow-glass-sm">
-              <SectionHeader icon={ImageIcon} title="Banner Images" />
+              <SectionHeader icon={ImageIcon} title="Banner Images (1700 * 600)" />
               <BannerImagesField
                 bannerImages={existingBanners}
                 bannerFiles={newBannerFiles}
