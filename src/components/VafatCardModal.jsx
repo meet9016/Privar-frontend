@@ -17,9 +17,23 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
   const isFemale = String(member.gender || '').toLowerCase() === 'female'
   const titlePrefix = isFemale ? 'Marhuma' : 'Marhum'
   const memberName = member.name || member.full_name || 'Community Member'
-  const communityName = getCommunityFullName() || 'Shree Halai Memon Jamat'
+  const titlePrefixGujarati = isFemale ? 'મરહૂમા' : 'મરહૂમ'
 
-  const memberImage = member.profile_image || member.image || ''
+  // Format Dua text: ensure member name is auto-prefixed by default as requested
+  const getDisplayDuaText = () => {
+    const defaultDua = `${titlePrefixGujarati} ${memberName} ગુજરી ગયા છે. બધા સાથીઓ તેમના માટે ખાસ દુઆ કરે, અલ્લાહપાક તેમની મગફિરત કરે અને તેમને જન્નતુલ ફિરદોસમાં આલા મકામ ફરમાવે અને તેમના ઘરવાળાઓને સબર આપે. આમીન!`
+    const note = String(member.death_note || '').trim()
+
+    if (!note || note === 'અલ્લાહપાક મરહૂમની મગફિરત કરે અને તેમને જન્નતુલ ફિરદોસમાં આલા મકામ ફરમાવે અને તેમના ઘરવાળાઓને સબર આપે. આમીન!') {
+      return defaultDua
+    }
+
+    if (note.startsWith('મરહૂમ ગુજરી ગયા છે') || note.startsWith('મરહૂમા ગુજરી ગયા છે')) {
+      return note.replace(/^(મરહૂમ|મરહૂમા)\s+ગુજરી ગયા છે/, `${titlePrefixGujarati} ${memberName} ગુજરી ગયા છે`)
+    }
+
+    return note
+  }
 
   // Download Handler (High-Resolution Card Generation)
   const handleDownload = async (format = downloadFormat) => {
@@ -139,27 +153,27 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
         <div className="flex justify-center overflow-x-auto py-2">
           <div
             ref={cardRef}
-            className="w-full max-w-[540px] bg-gradient-to-b from-stone-50 via-emerald-50/40 to-amber-50/30 text-stone-900 rounded-3xl border-2 border-amber-600/30 p-6 sm:p-8 shadow-xl relative overflow-hidden select-none"
+            className="w-full max-w-[540px] bg-gradient-to-b from-[#fafaf9] via-[#f5f5f4] to-[#f0efed] text-stone-900 rounded-3xl border-2 border-stone-300/80 p-6 sm:p-8 shadow-xl relative overflow-hidden select-none"
             style={{
               fontFamily: "'Outfit', 'Inter', system-ui, sans-serif"
             }}
           >
             {/* Elegant Ornamental Background Elements */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600" />
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-stone-400 via-stone-600 to-stone-400" />
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-stone-300/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-stone-300/20 rounded-full blur-3xl pointer-events-none" />
 
             {/* Corner Decorative Borders */}
-            <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-amber-700/60 rounded-tl-sm pointer-events-none" />
-            <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-amber-700/60 rounded-tr-sm pointer-events-none" />
-            <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-amber-700/60 rounded-bl-sm pointer-events-none" />
-            <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-amber-700/60 rounded-br-sm pointer-events-none" />
+            <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-stone-500/70 rounded-tl-sm pointer-events-none" />
+            <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-stone-500/70 rounded-tr-sm pointer-events-none" />
+            <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-stone-500/70 rounded-bl-sm pointer-events-none" />
+            <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-stone-500/70 rounded-br-sm pointer-events-none" />
 
             {/* Main Profile & Name Section */}
             <div className="flex flex-col items-center text-center mt-3 mb-5 space-y-3">
               {/* Member Photo (DP) */}
               <div className="relative">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl p-1 bg-gradient-to-tr from-amber-600 via-amber-300 to-amber-600 shadow-md">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl p-1 bg-gradient-to-tr from-stone-400 via-stone-200 to-stone-500 shadow-md">
                   {memberImage ? (
                     <img
                       src={assetUrl(memberImage)}
@@ -168,13 +182,13 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
                       className="w-full h-full object-cover rounded-xl bg-stone-200"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-3xl font-bold text-amber-800">
+                    <div className="w-full h-full rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-3xl font-bold text-stone-700">
                       {memberName?.slice(0, 1) || 'M'}
                     </div>
                   )}
                 </div>
                 <div className="absolute -bottom-2 inset-x-0 flex justify-center">
-                  <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-amber-300 text-[10px] font-black uppercase tracking-wider shadow-md">
+                  <span className="px-3 py-0.5 rounded-full bg-stone-900 text-stone-100 text-[10px] font-black uppercase tracking-wider shadow-md">
                     {titlePrefix}
                   </span>
                 </div>
@@ -194,12 +208,12 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
             {/* Details Cards Grid */}
             <div className="space-y-2.5 text-xs">
               {/* 1. vafat Date, Time & Place */}
-              <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 border border-stone-200/80 shadow-xs flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-amber-600/10 text-amber-800 shrink-0">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-stone-200 shadow-xs flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-stone-100 text-stone-700 shrink-0">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div className="space-y-0.5 flex-1 min-w-0">
-                  <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+                  <span className="text-[10px] font-bold text-stone-600 uppercase tracking-wider block">
                     vafat Details
                   </span>
                   <p className="font-bold text-stone-900 text-sm">
@@ -207,7 +221,7 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
                   </p>
                   {member.death_place && (
                     <p className="text-stone-600 flex items-center gap-1 text-[11px] mt-0.5 font-medium">
-                      <MapPin className="w-3 h-3 text-amber-700 shrink-0" />
+                      <MapPin className="w-3 h-3 text-stone-500 shrink-0" />
                       <span>{member.death_place}</span>
                     </p>
                   )}
@@ -216,12 +230,12 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
 
               {/* 2. Namaz-e-Janaza */}
               {(member.janaza_date || member.janaza_time || member.janaza_place) && (
-                <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 border border-stone-200/80 shadow-xs flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-emerald-600/10 text-emerald-800 shrink-0">
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-stone-200 shadow-xs flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-stone-100 text-stone-700 shrink-0">
                     <Clock className="w-4 h-4" />
                   </div>
                   <div className="space-y-0.5 flex-1 min-w-0">
-                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                    <span className="text-[10px] font-bold text-stone-600 uppercase tracking-wider block">
                       Namaz-e-Janaza
                     </span>
                     <p className="font-bold text-stone-900 text-sm">
@@ -230,7 +244,7 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
                     </p>
                     {member.janaza_place && (
                       <p className="text-stone-600 flex items-center gap-1 text-[11px] mt-0.5 font-medium">
-                        <MapPin className="w-3 h-3 text-emerald-700 shrink-0" />
+                        <MapPin className="w-3 h-3 text-stone-500 shrink-0" />
                         <span>Venue: {member.janaza_place}</span>
                       </p>
                     )}
@@ -240,12 +254,12 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
 
               {/* 3. Kabrastan / Tadfeen */}
               {member.kabrastan && (
-                <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 border border-stone-200/80 shadow-xs flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-teal-600/10 text-teal-800 shrink-0">
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-stone-200 shadow-xs flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-stone-100 text-stone-700 shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div className="space-y-0.5 flex-1 min-w-0">
-                    <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider block">
+                    <span className="text-[10px] font-bold text-stone-600 uppercase tracking-wider block">
                       Tadfeen / Kabrastan
                     </span>
                     <p className="font-bold text-stone-900 text-sm">
@@ -255,13 +269,13 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
                 </div>
               )}
 
-              {/* 4. Dua-e-Magfirat */}
-              <div className="bg-gradient-to-r from-amber-50 via-emerald-50/60 to-amber-50 rounded-2xl p-4 border border-amber-600/25 text-center space-y-1.5 shadow-xs">
-                <span className="text-[10px] font-black text-amber-900 uppercase tracking-widest block">
+              {/* 4. Dua-e-Magfirat (Card k last me default note with auto member name) */}
+              <div className="bg-white/95 rounded-2xl p-4 border border-stone-300 text-center space-y-1.5 shadow-xs">
+                <span className="text-[10px] font-black text-stone-800 uppercase tracking-widest block">
                   🤲 Dua-e-Magfirat
                 </span>
-                <p className="text-xs text-stone-800 font-medium leading-relaxed">
-                  {member.death_note || 'અલ્લાહપાક મરહૂમની મગફિરત કરે અને તેમને જન્નતુલ ફિરદોસમાં આલા મકામ ફરમાવે અને તેમના ઘરવાળાઓને સબર આપે. આમીન!'}
+                <p className="text-xs text-stone-800 font-semibold leading-relaxed">
+                  {getDisplayDuaText()}
                 </p>
               </div>
             </div>

@@ -878,9 +878,11 @@ export default function ContentPage({ type, headerLeftContent }) {
     return options
   }, [userList, loadingUsers])
 
-  // Default Gujarati Vafat Dua template generator
-  const getGujaratiDuaText = (name = '', village = '') => {
-    const memberTitle = name ? `${name.toUpperCase()}${village ? ` (${village.toUpperCase()})` : ''}` : 'મરહૂમ'
+  // Default Gujarati Vafat Dua template generator with auto member name prefixing
+  const getGujaratiDuaText = (name = '', village = '', isFemale = false) => {
+    const title = isFemale ? 'મરહૂમા' : 'મરહૂમ'
+    const cleanName = String(name || '').trim()
+    const memberTitle = cleanName ? `${title} ${cleanName}` : title
     return `${memberTitle} ગુજરી ગયા છે. બધા સાથીઓ તેમના માટે ખાસ દુઆ કરે, અલ્લાહપાક તેમની મગફિરત કરે અને તેમને જન્નતુલ ફિરદોસમાં આલા મકામ ફરમાવે અને તેમના ઘરવાળાઓને સબર આપે. આમીન!`
   }
 
@@ -909,6 +911,24 @@ export default function ContentPage({ type, headerLeftContent }) {
     })
     setDeathModalOpen(true)
   }
+
+  // Auto-sync manual member name and gender to the death note
+  useEffect(() => {
+    if (deathModalOpen && isManualEntry && deathModalMode === 'add') {
+      const mName = [manualMember.first_name, manualMember.middle_name, manualMember.last_name].filter(Boolean).join(' ').trim()
+      const isFem = String(manualMember.gender || '').toLowerCase() === 'female'
+      setDeathFormData(prev => {
+        // Auto-update if death_note is empty or starts with default Dua pattern
+        if (!prev.death_note || prev.death_note.includes('ગુજરી ગયા છે. બધા સાથીઓ')) {
+          return {
+            ...prev,
+            death_note: getGujaratiDuaText(mName, manualMember.village, isFem)
+          }
+        }
+        return prev
+      })
+    }
+  }, [deathModalOpen, isManualEntry, deathModalMode, manualMember.first_name, manualMember.middle_name, manualMember.last_name, manualMember.gender, manualMember.village])
 
   const handleOpenEditDeathModal = (row) => {
     setDeathModalMode('edit')
@@ -1195,10 +1215,11 @@ export default function ContentPage({ type, headerLeftContent }) {
                       const found = userList.find(u => String(u._id || u.id || u.member_id) === String(val))
                       setSelectedDeathMember(found || null)
                       if (found && deathModalMode === 'add') {
-                        const mName = [found.first_name, found.middle_name, found.last_name].filter(Boolean).join(' ')
+                        const mName = [found.first_name, found.middle_name, found.last_name].filter(Boolean).join(' ') || found.name || ''
+                        const isFem = String(found.gender || '').toLowerCase() === 'female'
                         setDeathFormData(prev => ({
                           ...prev,
-                          death_note: getGujaratiDuaText(mName, found.village || found.city)
+                          death_note: getGujaratiDuaText(mName, found.village || found.city, isFem)
                         }))
                       }
                     }}
