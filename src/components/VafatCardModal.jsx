@@ -155,10 +155,8 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
             <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-amber-700/60 rounded-bl-sm pointer-events-none" />
             <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-amber-700/60 rounded-br-sm pointer-events-none" />
 
-
-
             {/* Main Profile & Name Section */}
-            <div className="flex flex-col items-center text-center mt-2 mb-5 space-y-3">
+            <div className="flex flex-col items-center text-center mt-3 mb-5 space-y-3">
               {/* Member Photo (DP) */}
               <div className="relative">
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl p-1 bg-gradient-to-tr from-amber-600 via-amber-300 to-amber-600 shadow-md">
