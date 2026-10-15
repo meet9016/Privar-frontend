@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
-import { GALLERY_ENDPOINTS, BIRTHDAY_ENDPOINTS, DEATH_ENDPOINTS, JOB_VACANCY_ENDPOINTS, MATRIMONY_ENDPOINTS, FEEDBACK_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
+import { GALLERY_ENDPOINTS, BIRTHDAY_ENDPOINTS, DEATH_ENDPOINTS, JOB_VACANCY_ENDPOINTS, MATRIMONY_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
 import { formatDate } from '../lib/api'
 import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
@@ -180,23 +180,6 @@ const definitions = {
       { key: 'title', label: 'Title' },
       { key: 'category', label: 'Category' },
       { key: 'year', label: 'Year' }
-    ]
-  },
-  feedback: {
-    title: 'Feedback',
-    subtitle: 'Manage user feedback and suggestions',
-    endpoint: FEEDBACK_ENDPOINTS.GET_FEEDBACK,
-    hideAdd: true,
-    hideActions: true,
-    fields: [
-      { name: 'name', label: 'Name', required: true },
-      { name: 'email', label: 'Email', type: 'email', required: true },
-      { name: 'message', label: 'Message', type: 'textarea', required: true }
-    ],
-    columns: [
-      { key: 'name', label: 'Name' },
-      { key: 'email', label: 'Email' },
-      { key: 'message', label: 'Message' }
     ]
   },
   birthday: {

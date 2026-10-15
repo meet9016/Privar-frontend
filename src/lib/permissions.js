@@ -23,7 +23,6 @@ const legacyPermissionFor = (permission) => {
     'blood-group.': 'masters.manage',
     'event-category.': 'event-category.manage',
     'donations.': 'donations.manage',
-    'feedback.': 'feedback.manage',
     'birthday.': 'users.manage',
     'death.': 'users.manage',
     'job-vacancy.': 'job-vacancy.manage',
