@@ -73,7 +73,7 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
 
   // WhatsApp Share handler
   const handleShareWhatsApp = () => {
-    const text = `🕊️ *إِنَّا لِلّهِ وَإِنَّـا إِلَيْهِ رَاجِعونَ*\n*Inna Lillahi wa Inna Ilayhi Raji'un*\n\nBade ranj-o-alam ke saath itla di jaati hai ki humare jamaat ke rukan *${titlePrefix} ${memberName}* ka vafat ho gaya hai.\n\n📅 *Date of vafat:* ${member.death_date ? formatDate(member.death_date) : '-'}${member.death_time ? ` (${member.death_time})` : ''}\n📍 *Place:* ${member.death_place || '-'}\n\n🕌 *Namaz-e-Janaza:* ${member.janaza_date ? formatDate(member.janaza_date) : '-'}${member.janaza_time ? ` (${member.janaza_time})` : ''}\n📍 *Venue:* ${member.janaza_place || '-'}\n🌿 *Kabrastan:* ${member.kabrastan || '-'}\n\n🤲 *Dua:* ${member.death_note || 'Allah Ta’ala Marhum ko Jannat-ul-Firdaus me aala darja ata farmaye aur lawaheqeen ko Sabr-e-Jameel ata farmaye. Aameen!'}\n\n— *${communityName}*`
+    const text = `🕊️ *إِنَّا لِلّهِ وَإِنَّـا إِلَيْهِ رَاجِعونَ*\n*Inna Lillahi wa Inna Ilayhi Raji'un*\n\nBade ranj-o-alam ke saath itla di jaati hai ki humare jamaat ke rukan *${titlePrefix} ${memberName}* ka vafat ho gaya hai.\n\n📅 *Date of vafat:* ${member.death_date ? formatDate(member.death_date) : '-'}\n📍 *Place:* ${member.death_place || '-'}\n\n🕌 *Namaz-e-Janaza:* ${member.janaza_date ? formatDate(member.janaza_date) : '-'}${member.janaza_time ? ` (${member.janaza_time})` : ''}\n📍 *Venue:* ${member.janaza_place || '-'}\n🌿 *Kabrastan:* ${member.kabrastan || '-'}\n\n🤲 *Dua:* ${member.death_note || 'Allah Ta’ala Marhum ko Jannat-ul-Firdaus me aala darja ata farmaye aur lawaheqeen ko Sabr-e-Jameel ata farmaye. Aameen!'}\n\n— *${communityName}*`
 
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
   }
@@ -155,21 +155,10 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
             <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-amber-700/60 rounded-bl-sm pointer-events-none" />
             <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-amber-700/60 rounded-br-sm pointer-events-none" />
 
-            {/* Header: Quranic Ayah & Jamat */}
-            <div className="text-center space-y-1.5 pb-4 border-b border-amber-900/15">
-              <p className="text-emerald-900 font-serif text-xl font-bold tracking-wide select-all" dir="rtl">
-                إِنَّا لِلَّٰهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ
-              </p>
-              <p className="text-[11px] uppercase tracking-widest text-stone-600 font-bold">
-                Inna Lillahi wa Inna Ilayhi Raji'un
-              </p>
-              <h2 className="text-xs uppercase font-extrabold tracking-widest text-amber-800 pt-1">
-                {communityName}
-              </h2>
-            </div>
+
 
             {/* Main Profile & Name Section */}
-            <div className="flex flex-col items-center text-center mt-5 mb-5 space-y-3">
+            <div className="flex flex-col items-center text-center mt-2 mb-5 space-y-3">
               {/* Member Photo (DP) */}
               <div className="relative">
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl p-1 bg-gradient-to-tr from-amber-600 via-amber-300 to-amber-600 shadow-md">
@@ -217,7 +206,6 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
                   </span>
                   <p className="font-bold text-stone-900 text-sm">
                     {member.death_date ? formatDate(member.death_date) : 'Date not specified'}
-                    {member.death_time && <span className="text-xs font-medium text-stone-600 ml-1.5">({member.death_time})</span>}
                   </p>
                   {member.death_place && (
                     <p className="text-stone-600 flex items-center gap-1 text-[11px] mt-0.5 font-medium">
@@ -278,12 +266,6 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
                   {member.death_note || 'અલ્લાહપાક મરહૂમની મગફિરત કરે અને તેમને જન્નતુલ ફિરદોસમાં આલા મકામ ફરમાવે અને તેમના ઘરવાળાઓને સબર આપે. આમીન!'}
                 </p>
               </div>
-            </div>
-
-            {/* Footer Notice */}
-            <div className="mt-5 pt-3 border-t border-stone-200 flex items-center justify-between text-[10px] text-stone-500 font-semibold">
-              <span>Shree Parivar Jamat Management</span>
-              <span>{new Date().toLocaleDateString('en-GB')}</span>
             </div>
           </div>
         </div>
