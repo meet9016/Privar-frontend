@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { memberApi } from '../lib/api'
+import { API_BASE, getSubdomainTenant } from '../lib/api'
 
 /**
  * Hook to fetch and manage WEBSITE theme colors from backend
@@ -17,6 +17,8 @@ import { memberApi } from '../lib/api'
  *   refresh: function to manually refresh theme
  * }
  */
+
+
 export const useWebTheme = () => {
   const [theme, setTheme] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -27,11 +29,21 @@ export const useWebTheme = () => {
       setLoading(true)
       setError(null)
 
-      // Fetch theme from backend
-      const response = await memberApi.get('/get_app_theme')
-      
-      if (response.status === 200 && response.data?.data) {
-        const themeData = response.data.data
+      const tenantCode = getSubdomainTenant() || localStorage.getItem('tenant_code') || ''
+      const headers = {}
+      if (tenantCode) {
+        headers['x-tenant-id'] = tenantCode
+      }
+
+      // Fetch public theme from backend without auth token
+      const res = await fetch(`${API_BASE}/api/get_app_theme`, { headers })
+      if (!res.ok) {
+        throw new Error(`Theme fetch returned status ${res.status}`)
+      }
+      const json = await res.json()
+      const themeData = json.data || json
+
+      if (themeData) {
 
         // Store each field with 'web_' prefix in localStorage
         Object.keys(themeData).forEach((key) => {

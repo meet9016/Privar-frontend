@@ -132,45 +132,56 @@ export function AuthProvider({ children }) {
   // Initialize from localStorage and fetch theme
   useEffect(() => {
     const init = async () => {
-      // Sync tenant if subdomain is present
-      const currentSubdomain = getSubdomainTenant()
-      const storedTenant = localStorage.getItem('tenant_code')
-      if (currentSubdomain && currentSubdomain !== storedTenant) {
-        localStorage.setItem('tenant_code', currentSubdomain)
-        // Clear cached web theme of previous tenant to prevent showing wrong parivar name
-        Object.keys(localStorage)
-          .filter((k) => k.startsWith('web_'))
-          .forEach((k) => localStorage.removeItem(k))
-      }
+      try {
+        // Sync tenant if subdomain is present
+        const currentSubdomain = getSubdomainTenant()
+        const storedTenant = localStorage.getItem('tenant_code')
+        if (currentSubdomain && currentSubdomain !== storedTenant) {
+          localStorage.setItem('tenant_code', currentSubdomain)
+          // Clear cached web theme of previous tenant to prevent showing wrong parivar name
+          Object.keys(localStorage)
+            .filter((k) => k.startsWith('web_'))
+            .forEach((k) => localStorage.removeItem(k))
+        }
 
-      // Restore auth state
-      const stored = localStorage.getItem('auth_token')
-      const storedUser = localStorage.getItem('auth_user')
-      if (stored) {
-        setToken(stored)
-        setUser(storedUser ? JSON.parse(storedUser) : null)
-        // Refresh profile from backend to get fresh role & permissions
-        try {
+        // Restore auth state immediately so UI doesn't hang
+        const stored = localStorage.getItem('auth_token') || localStorage.getItem('token')
+        const storedUser = localStorage.getItem('auth_user')
+        if (stored) {
+          setToken(stored)
+          if (storedUser) {
+            try {
+              setUser(JSON.parse(storedUser))
+            } catch (_) {
+              setUser(null)
+            }
+          }
+          // Refresh profile in background without blocking initial load
           const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
           const headers = { 'Authorization': `Bearer ${stored}` }
           if (storedTenant || currentSubdomain) headers['x-tenant-id'] = currentSubdomain || storedTenant
-          const profileRes = await fetch(`${apiBase}/api/auth/me`, { headers })
-          if (profileRes.ok) {
-            const pJson = await profileRes.json()
-            const freshUser = pJson.data || pJson.user || pJson
-            if (freshUser && freshUser.id) {
-              setUser(freshUser)
-              localStorage.setItem('auth_user', JSON.stringify(freshUser))
-            }
-          }
-        } catch (_) {}
+          fetch(`${apiBase}/api/auth/me`, { headers })
+            .then(res => res.ok ? res.json() : null)
+            .then(pJson => {
+              if (pJson) {
+                const freshUser = pJson.data || pJson.user || pJson
+                if (freshUser && freshUser.id) {
+                  setUser(freshUser)
+                  localStorage.setItem('auth_user', JSON.stringify(freshUser))
+                }
+              }
+            })
+            .catch(() => {})
+        }
+
+        // Fetch website theme colors (separate from admin dashboard theme)
+        await fetchWebTheme()
+        refreshTheme()
+      } catch (err) {
+        console.error('Auth initialization error:', err)
+      } finally {
+        setLoading(false)
       }
-
-      // Fetch website theme colors (separate from admin dashboard theme)
-      await fetchWebTheme()
-      refreshTheme()
-
-      setLoading(false)
     }
 
     init()
