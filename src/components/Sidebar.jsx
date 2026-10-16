@@ -2,11 +2,12 @@ import React, { useContext, useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Shield, Database, Layers, Activity, CalendarDays, Briefcase } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
+import { useChat } from '../context/ChatContext'
 import { configurationNavigation, coreNavigation, masterNavigation, mediaNavigation, engagementNavigation, activityNavigation, servicesNavigation } from '../config/navigation'
 import { hasPermission } from '../lib/permissions'
 import { getCommunitySurname, getCommunityFullName, getSubdomainTenant, assetUrl } from '../lib/api'
 
-const LinkItem = ({ to, icon: Icon, label, end, onClick }) => {
+const LinkItem = ({ to, icon: Icon, label, end, onClick, badge }) => {
   const location = useLocation()
   const isDashboardActive = (to === '/admin' || to === '/admin/dashboard') &&
     (location.pathname === '/admin' || location.pathname === '/admin/' || location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/')
@@ -30,9 +31,17 @@ const LinkItem = ({ to, icon: Icon, label, end, onClick }) => {
           <>
             <Icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? 'text-white font-bold stroke-[2.2]' : 'text-text-secondary group-hover:text-text'}`} />
             <span className="truncate tracking-tight">{label}</span>
-            {active && (
+            {Number(badge) > 0 ? (
+              <span className={`ml-auto px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all ${
+                active 
+                  ? 'bg-white text-primary' 
+                  : 'bg-primary text-white'
+              }`}>
+                {Number(badge) > 99 ? '99+' : badge}
+              </span>
+            ) : active ? (
               <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-white shadow-sm"></span>
-            )}
+            ) : null}
           </>
         )
       }}
@@ -99,6 +108,7 @@ const CollapsibleFolder = ({ icon: Icon, label, items, parentPath, onItemClick }
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user } = useContext(AuthContext)
+  const { unreadChatCount } = useChat()
   const [webTheme, setWebTheme] = useState({ webLogo: '', name: '' })
   const visibleCoreNavigation = coreNavigation.filter((item) => hasPermission(user, item.permission))
 
@@ -182,7 +192,12 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-1">
         {visibleCoreNavigation.map((item) => (
-          <LinkItem key={item.to} {...item} onClick={handleLinkClick} />
+          <LinkItem
+            key={item.to}
+            {...item}
+            badge={item.to === '/admin/chat' ? unreadChatCount : undefined}
+            onClick={handleLinkClick}
+          />
         ))}
 
         {visibleServicesNavigation.length > 0 && (
