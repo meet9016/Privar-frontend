@@ -182,7 +182,11 @@ export const MANDAL_ENDPOINTS = {
   UPDATE_CONTRIBUTION: (id) => `/mandal/contributions/${id}`,
   BULK_MARK_PAID: '/mandal/contributions/bulk-mark-paid',
   SEND_REMINDERS: '/mandal/contributions/send-reminders',
-  GET_HISTORY: '/mandal/history'
+  GET_HISTORY: '/mandal/history',
+  RECEIPT_LINK: (id) => `/mandal/contributions/receipt-link/${id}`,
+  RECEIPT_DOWNLOAD: (id) => `/mandal/contributions/receipt/${id}/download`,
+  RECEIPTS_BULK_DOWNLOAD: '/mandal/contributions/receipts/bulk-download',
+  RECEIPTS_BULK_LINK: '/mandal/contributions/receipts/bulk-link'
 }
 
 // Certificates Module API Endpoints

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import Modal from './Modal'
 import Button from './common/Button'
 import { toPng } from 'html-to-image'
@@ -11,6 +11,11 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
   const cardRef = useRef(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadFormat, setDownloadFormat] = useState('png') // 'png' | 'pdf'
+  const [imgError, setImgError] = useState(false)
+
+  useEffect(() => {
+    setImgError(false)
+  }, [member])
 
   if (!member) return null
 
@@ -19,7 +24,7 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
   const memberName = member.name || member.full_name || 'Community Member'
   const titlePrefixGujarati = isFemale ? 'મરહૂમા' : 'મરહૂમ'
   const communityName = getCommunityFullName() || 'Shree Halai Memon Jamat'
-  const memberImage = member.profile_image || member.image || ''
+  const memberImage = member.profile_image || member.image || member.photo || member.avatar || ''
 
   // Format Dua text: ensure member name is auto-prefixed by default as requested
   const getDisplayDuaText = () => {
@@ -175,11 +180,11 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
               {/* Member Photo (DP) */}
               <div className="relative">
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl p-1 bg-gradient-to-tr from-amber-600 via-amber-300 to-amber-600 shadow-lg shadow-amber-950/15">
-                  {memberImage ? (
+                  {memberImage && !imgError ? (
                     <img
                       src={assetUrl(memberImage)}
                       alt={memberName}
-                      crossOrigin="anonymous"
+                      onError={() => setImgError(true)}
                       className="w-full h-full object-cover rounded-xl bg-amber-50"
                     />
                   ) : (

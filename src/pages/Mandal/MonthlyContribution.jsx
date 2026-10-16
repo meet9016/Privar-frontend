@@ -24,10 +24,12 @@ import {
   ChevronRight,
   Eye,
   Bell,
-  CalendarDays
+  CalendarDays,
+  FileDown,
+  Loader2
 } from 'lucide-react'
 import { saveAs } from 'file-saver'
-import api, { assetUrl, formatDate } from '../../lib/api'
+import api, { assetUrl, formatDate, getCommunityFullName, getContributionReceiptDownloadUrl, getContributionReceiptLink, getBulkContributionReceiptsDownloadUrl, getBulkContributionReceiptsLink } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
 import Table from '../../components/common/Table'
 import SearchInput from '../../components/common/SearchInput'
@@ -107,6 +109,8 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
+  const [downloadingId, setDownloadingId] = useState(null)
+  const [bulkReceiptDownloading, setBulkReceiptDownloading] = useState(false)
 
   // Single Edit Modal
   const [activeContribution, setActiveContribution] = useState(null)
@@ -335,73 +339,321 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
     }
   }
 
+  // Download Official PDF Receipt (Exact same pattern as Donation Receipt)
+  const handleDownloadReceipt = async (c) => {
+    const id = c.id || c._id
+    if (!id) return
+
+    setDownloadingId(id)
+    try {
+      // 1. Call Backend API to fetch direct receipt download link
+      // Shows up in DevTools Network tab as: GET /api/mandal/contributions/receipt-link/:id
+      const res = await getContributionReceiptLink(id)
+      const data = res.data?.data || {}
+      const downloadUrl = data.download_url || c.receipt_url || c.download_url || getContributionReceiptDownloadUrl(id)
+
+      // 2. Direct browser download from the backend link (zero client-side conversion)
+      const safeMember = (c.member_name || 'Member').replace(/[^a-zA-Z0-9_\-]/g, '_')
+      const fileName = `Mandal_Contribution_Receipt_${safeMember}_${data.receipt_number || id}.pdf`
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.setAttribute('download', fileName)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success('Contribution receipt downloaded successfully')
+    } catch (err) {
+      console.error('Failed to get contribution receipt link:', err)
+      // Fallback direct url
+      const fallbackUrl = c.receipt_url || c.download_url || getContributionReceiptDownloadUrl(id)
+      const link = document.createElement('a')
+      link.href = fallbackUrl
+      link.setAttribute('download', `Mandal_Contribution_Receipt_${id}.pdf`)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success('Contribution receipt downloaded')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
+  // Download Bulk Receipts (for selected members or all paid members)
+  const handleBulkDownloadReceipts = async (specificIds = null) => {
+    setBulkReceiptDownloading(true)
+    try {
+      const isSelected = Array.isArray(specificIds) && specificIds.length > 0
+      const payload = {
+        mandal_id: mandalId,
+        month: selectedMonth,
+        status: 'Paid',
+        payment_mode: paymentModeFilter !== 'All' ? paymentModeFilter : undefined,
+        search: debouncedSearch
+      }
+      if (isSelected) {
+        payload.ids = specificIds
+      }
+
+      // 1. Call Backend API to fetch direct bulk download link
+      const res = await getBulkContributionReceiptsLink(payload)
+      const data = res.data?.data || {}
+      const downloadUrl = data.download_url || getBulkContributionReceiptsDownloadUrl(payload)
+
+      // 2. Direct browser download
+      const safeMonth = selectedMonth.replace(/[^a-zA-Z0-9_\-]/g, '_')
+      const fileName = isSelected
+        ? `Mandal_Contribution_Receipts_Selected_${specificIds.length}.pdf`
+        : `Mandal_Contribution_Receipts_${safeMonth}_All.pdf`
+
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.setAttribute('download', fileName)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success(isSelected ? `${specificIds.length} receipts downloaded successfully!` : 'All paid receipts downloaded successfully!')
+    } catch (err) {
+      console.error('Failed to get bulk receipt link:', err)
+      // Fallback direct url
+      const isSelected = Array.isArray(specificIds) && specificIds.length > 0
+      const payload = {
+        mandal_id: mandalId,
+        month: selectedMonth,
+        status: 'Paid',
+        payment_mode: paymentModeFilter !== 'All' ? paymentModeFilter : undefined,
+        search: debouncedSearch
+      }
+      if (isSelected) payload.ids = specificIds
+
+      const fallbackUrl = getBulkContributionReceiptsDownloadUrl(payload)
+      const fileName = isSelected
+        ? `Mandal_Contribution_Receipts_Selected_${specificIds.length}.pdf`
+        : `Mandal_Contribution_Receipts_${selectedMonth}_All.pdf`
+
+      const link = document.createElement('a')
+      link.href = fallbackUrl
+      link.setAttribute('download', fileName)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success('Receipts downloaded')
+    } finally {
+      setBulkReceiptDownloading(false)
+    }
+  }
+
+  // Print Receipt in printable window with automated print dialog
   const handlePrintReceipt = (c) => {
     const printWindow = window.open('', '_blank')
-    if (!printWindow) return
+    if (!printWindow) {
+      const id = c.id || c._id
+      const fallbackUrl = c.receipt_url || c.download_url || getContributionReceiptDownloadUrl(id)
+      window.open(`${fallbackUrl}${fallbackUrl.includes('?') ? '&' : '?'}view=true`, '_blank')
+      return
+    }
 
-    const mandalTitle = mandal?.name || 'Mandal'
+    const mandalTitle = mandal?.name || c.mandal_name || 'મંડળ (Mandal)'
     const receiptNo = c.receipt_number || `MNDL-${(c.id || c._id).slice(-6).toUpperCase()}`
+    const amt = Number(c.amount || c.expected_amount || 0).toLocaleString('en-IN')
+    const payDate = c.payment_date ? formatDate(c.payment_date) : '-'
+    const communityTitle = getCommunityFullName() || 'શ્રી પરિવાર જમાત'
 
     printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8" />
           <title>Mandal Contribution Receipt - ${c.member_name}</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1e293b; background: #fff; }
-            .receipt-box { max-width: 480px; margin: 0 auto; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 28px; }
-            .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
-            .title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
-            .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
-            .row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 13px; }
-            .label { color: #64748b; font-weight: 500; }
-            .val { font-weight: 700; color: #0f172a; }
-            .amount-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px; text-align: center; margin: 18px 0; }
-            .amount { font-size: 24px; font-weight: 900; color: #16a34a; }
-            .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 12px; }
+            @page { size: A5 landscape; margin: 8mm; }
+            * { box-sizing: border-box; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Gujarati", sans-serif;
+              padding: 20px;
+              color: #1e293b;
+              background: #fff;
+              margin: 0;
+            }
+            .receipt-box {
+              max-width: 650px;
+              margin: 0 auto;
+              border: 2px solid #1e3a8a;
+              border-radius: 12px;
+              padding: 24px;
+              background: #ffffff;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #1e3a8a;
+              padding-bottom: 12px;
+              margin-bottom: 16px;
+            }
+            .org-title {
+              font-size: 20px;
+              font-weight: 800;
+              color: #1e3a8a;
+              margin: 0;
+            }
+            .subtitle {
+              font-size: 13px;
+              color: #475569;
+              font-weight: 700;
+              margin-top: 4px;
+            }
+            .badge-bar {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              background: #f8fafc;
+              border: 1px solid #cbd5e1;
+              border-radius: 8px;
+              padding: 8px 14px;
+              margin-bottom: 16px;
+              font-size: 13px;
+              font-weight: 700;
+            }
+            .table-box {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 16px;
+            }
+            .table-box td {
+              padding: 8px 12px;
+              border: 1px solid #e2e8f0;
+              font-size: 13.5px;
+            }
+            .label-cell {
+              background: #f8fafc;
+              color: #475569;
+              font-weight: 700;
+              width: 32%;
+            }
+            .val-cell {
+              font-weight: 800;
+              color: #0f172a;
+            }
+            .amount-highlight {
+              font-size: 18px;
+              color: #16a34a;
+              font-weight: 900;
+            }
+            .badge-mode {
+              display: inline-block;
+              font-size: 11px;
+              padding: 2px 8px;
+              border-radius: 4px;
+              background: #eff6ff;
+              border: 1px solid #bfdbfe;
+              color: #1e3a8a;
+              margin-left: 10px;
+            }
+            .message-box {
+              background: #eff6ff;
+              border: 1px solid #bfdbfe;
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-size: 12px;
+              font-weight: 700;
+              color: #1e40af;
+              text-align: center;
+              margin-bottom: 24px;
+            }
+            .signatures {
+              display: flex;
+              justify-content: space-between;
+              margin-top: 24px;
+              padding: 0 20px;
+            }
+            .sig-col {
+              text-align: center;
+              width: 160px;
+            }
+            .sig-line {
+              border-top: 1.5px solid #334155;
+              padding-top: 4px;
+              font-size: 12px;
+              font-weight: 800;
+              color: #0f172a;
+            }
+            .sig-sub {
+              font-size: 10px;
+              color: #64748b;
+            }
+            .footer {
+              text-align: center;
+              font-size: 10px;
+              color: #94a3b8;
+              margin-top: 18px;
+              border-top: 1px solid #f1f5f9;
+              padding-top: 8px;
+            }
+            @media print {
+              body { padding: 0; }
+              .receipt-box { border: 2px solid #1e3a8a; box-shadow: none; }
+            }
           </style>
         </head>
         <body>
           <div class="receipt-box">
             <div class="header">
-              <h2 class="title">${mandalTitle}</h2>
-              <div class="subtitle">Monthly Contribution Receipt</div>
-            </div>
-            
-            <div class="row">
-              <span class="label">Receipt No:</span>
-              <span class="val">${receiptNo}</span>
-            </div>
-            <div class="row">
-              <span class="label">Member Name:</span>
-              <span class="val">${c.member_name}</span>
-            </div>
-            <div class="row">
-              <span class="label">Contribution Month:</span>
-              <span class="val">${c.month}</span>
-            </div>
-            <div class="row">
-              <span class="label">Payment Date:</span>
-              <span class="val">${c.payment_date ? formatDate(c.payment_date) : '-'}</span>
-            </div>
-            <div class="row">
-              <span class="label">Payment Mode:</span>
-              <span class="val">${c.payment_mode || 'Cash'}</span>
+              <div class="org-title">${communityTitle}</div>
+              <div class="subtitle">${mandalTitle} - Monthly Contribution Receipt (માસિક ફાળો પહોંચ)</div>
             </div>
 
-            <div class="amount-box">
-              <div style="font-size: 11px; text-transform: uppercase; color: #15803d; font-weight: 700;">Amount Paid</div>
-              <div class="amount">₹${Number(c.amount || c.expected_amount || 500).toLocaleString('en-IN')}</div>
+            <div class="badge-bar">
+              <div><span style="color:#64748b;">Receipt No:</span> <strong style="color:#1e3a8a;">${receiptNo}</strong></div>
+              <div><span style="color:#64748b;">Date:</span> <strong>${payDate}</strong></div>
             </div>
 
-            ${c.notes ? `<div class="row"><span class="label">Notes:</span><span class="val">${c.notes}</span></div>` : ''}
+            <table class="table-box">
+              <tr>
+                <td class="label-cell">સભ્યશ્રીનું નામ (Member):</td>
+                <td class="val-cell">${c.member_name} ${c.member_number ? `<span style="font-size:12px;color:#64748b;">(${c.member_number})</span>` : ''}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">યોગદાન માસ (Month):</td>
+                <td class="val-cell">${c.month}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">ભરેલ રકમ (Amount):</td>
+                <td class="val-cell">
+                  <span class="amount-highlight">₹ ${amt} /-</span>
+                  <span class="badge-mode">${c.payment_mode || 'Cash'}</span>
+                </td>
+              </tr>
+              ${c.notes ? `<tr><td class="label-cell">નોંધ / રિમાર્ક (Notes):</td><td class="val-cell">${c.notes}</td></tr>` : ''}
+              ${c.transaction_id ? `<tr><td class="label-cell">Transaction ID:</td><td class="val-cell">${c.transaction_id}</td></tr>` : ''}
+            </table>
+
+            <div class="message-box">
+              આપના નિયમિત માસિક સહયોગ અને મંડળ પ્રત્યેની નિષ્ઠા બદલ મંડળ કમિટી આપનો હૃદયપૂર્વક આભાર વ્યક્ત કરે છે.
+            </div>
+
+            <div class="signatures">
+              <div class="sig-col">
+                <div style="height:25px;"></div>
+                <div class="sig-line">મંડળ સંયોજક / પ્રમુખ</div>
+                <div class="sig-sub">(Mandal Head)</div>
+              </div>
+              <div class="sig-col">
+                <div style="height:25px;"></div>
+                <div class="sig-line">ખજાનચી / એડમિન</div>
+                <div class="sig-sub">(Treasurer / Admin)</div>
+              </div>
+            </div>
 
             <div class="footer">
-              <p>Thank you for your active participation & support!</p>
-              <p>Parivar Community Platform</p>
+              * આ કમ્પ્યુટરાઈઝ્ડ સત્તાવાર ઈ-પહોંચ છે • Parivar Community Platform
             </div>
           </div>
           <script>
-            window.onload = function() { window.print(); }
+            window.onload = function() {
+              window.print();
+            };
           </script>
         </body>
       </html>
@@ -445,6 +697,20 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>Mark Paid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkDownloadReceipts(selectedRows)}
+                disabled={bulkReceiptDownloading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                title="Download receipts for selected members as combined PDF"
+              >
+                {bulkReceiptDownloading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <FileDown className="w-3.5 h-3.5" />
+                )}
+                <span>Download Receipts ({selectedRows.length})</span>
               </button>
               <button
                 type="button"
@@ -540,6 +806,23 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
             </button>
           )}
 
+          {/* Download All Paid Receipts Button */}
+          <button
+            type="button"
+            onClick={() => handleBulkDownloadReceipts(null)}
+            disabled={bulkReceiptDownloading}
+            className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 transition-colors cursor-pointer shadow-xs disabled:opacity-50 text-xs font-bold"
+            title="Download all paid contribution receipts for this month as PDF"
+          >
+            {bulkReceiptDownloading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+            ) : (
+              <FileDown className="w-4 h-4 text-emerald-600" />
+            )}
+            <span className="hidden sm:inline">All Receipts (PDF)</span>
+            <span className="sm:hidden">All Receipts</span>
+          </button>
+
           {/* Download Button */}
           <button
             type="button"
@@ -549,7 +832,7 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
             title="Download contributions Excel"
           >
             <Download className={`w-4 h-4 ${exportLoading ? 'animate-spin text-primary' : ''}`} />
-            <span className="hidden sm:inline">{exportLoading ? 'Downloading...' : 'Download'}</span>
+            <span className="hidden sm:inline">{exportLoading ? 'Downloading...' : 'Excel'}</span>
           </button>
 
           {/* Refresh Button */}
@@ -826,7 +1109,7 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
 
       {/* Contributions Table with Row Selection */}
       <Table
-        selectable={isSuperAdmin}
+        selectable={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         keyField="id"
@@ -921,15 +1204,31 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
             render: (c) => (
               <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                 {c.status === 'Paid' ? (
-                  <button
-                    type="button"
-                    onClick={() => handlePrintReceipt(c)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all cursor-pointer shadow-xs"
-                    title="Print / View Receipt"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Receipt</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handlePrintReceipt(c)}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all cursor-pointer shadow-xs"
+                      title="Print / View Receipt"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Print</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadReceipt(c)}
+                      disabled={downloadingId === (c.id || c._id)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                      title="Download PDF Receipt (પહોંચ ડાઉનલોડ)"
+                    >
+                      {downloadingId === (c.id || c._id) ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FileDown className="w-3.5 h-3.5" />
+                      )}
+                      <span>Download</span>
+                    </button>
+                  </>
                 ) : isSuperAdmin ? (
                   <button
                     type="button"

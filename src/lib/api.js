@@ -13,7 +13,8 @@ import {
   DONATION_ENDPOINTS,
   CERTIFICATE_ENDPOINTS,
   MASTER_ENDPOINTS,
-  DEATH_ENDPOINTS
+  DEATH_ENDPOINTS,
+  MANDAL_ENDPOINTS
 } from '../utils/endpoints'
 
 export const API_BASE = import.meta.env.VITE_API_BASE || `http://${window.location.hostname}:5000`
@@ -181,6 +182,33 @@ export const getDonationReceiptDownloadUrl = (id) => {
 
 export const getDonationReceiptLink = (id) =>
   api.get(DONATION_ENDPOINTS.RECEIPT_LINK(id))
+
+export const getContributionReceiptDownloadUrl = (id) => {
+  if (!id) return ''
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || ''
+  const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : ''
+  return `${API_BASE}/api${MANDAL_ENDPOINTS.RECEIPT_DOWNLOAD(id)}${tokenQuery}`
+}
+
+export const getContributionReceiptLink = (id) =>
+  api.get(MANDAL_ENDPOINTS.RECEIPT_LINK(id))
+
+export const getBulkContributionReceiptsDownloadUrl = (params = {}) => {
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || ''
+  const q = new URLSearchParams()
+  if (token) q.set('token', token)
+  if (Array.isArray(params.ids) && params.ids.length > 0) q.set('ids', params.ids.join(','))
+  else if (params.ids) q.set('ids', params.ids)
+  if (params.month) q.set('month', params.month)
+  if (params.mandal_id) q.set('mandal_id', params.mandal_id)
+  if (params.payment_mode && params.payment_mode !== 'All') q.set('payment_mode', params.payment_mode)
+  if (params.search) q.set('search', params.search)
+  const qs = q.toString() ? `?${q.toString()}` : ''
+  return `${API_BASE}/api${MANDAL_ENDPOINTS.RECEIPTS_BULK_DOWNLOAD}${qs}`
+}
+
+export const getBulkContributionReceiptsLink = (params = {}) =>
+  api.post(MANDAL_ENDPOINTS.RECEIPTS_BULK_LINK, params)
 
 export const getDeathCardDownloadUrl = (id, format = 'png') => {
   if (!id) return ''
