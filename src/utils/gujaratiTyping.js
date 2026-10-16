@@ -123,7 +123,7 @@ const gujaratiWordMap = {
   'friday': 'શુક્રવાર',
   'saturday': 'શનિવાર',
 
-  // Months
+  // Gregorian Months
   'january': 'જાન્યુઆરી',
   'february': 'ફેબ્રુઆરી',
   'march': 'માર્ચ',
@@ -136,6 +136,32 @@ const gujaratiWordMap = {
   'october': 'ઓક્ટોબર',
   'november': 'નવેમ્બર',
   'december': 'ડિસેમ્બર',
+
+  // Islamic Months
+  'muharram': 'મોહર્રમ',
+  'moharram': 'મોહર્રમ',
+  'safar': 'સફર',
+  'rabi': 'રબીઉલ',
+  'rabbi': 'રબીઉલ',
+  'awwal': 'અવ્વલ',
+  'awal': 'અવ્વલ',
+  'thani': 'આખિર',
+  'sani': 'આખિર',
+  'aakhir': 'આખિર',
+  'jumada': 'જમાદિલ',
+  'jamadil': 'જમાદિલ',
+  'rajab': 'રજબ',
+  'shaban': 'શાબાન',
+  'shaaban': 'શાબાન',
+  'ramzan': 'રમઝાન',
+  'ramadan': 'રમઝાન',
+  'shawwal': 'શવ્વાલ',
+  'shavval': 'શવ્વાલ',
+  'dhulqadah': 'ઝીલકાદ',
+  'zilqad': 'ઝીલકાદ',
+  'dhulhijjah': 'ઝીલહિજ્જા',
+  'zilhajj': 'ઝીલહિજ્જા',
+  'zilhijja': 'ઝીલહિજ્જા',
 
   // Common Names
   'mohammad': 'મોહમ્મદ',

@@ -7,7 +7,7 @@ import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
-import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck, Eye, Download } from 'lucide-react'
+import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck, Eye, Download, Copy } from 'lucide-react'
 import { toast } from '../lib/toast'
 import { confirm } from '../lib/confirm'
 import api, { getCommunityFullName, assetUrl, getUsersList } from '../lib/api'
@@ -15,6 +15,7 @@ import Modal from '../components/Modal'
 import Button from '../components/common/Button'
 import VafatCardModal from '../components/VafatCardModal'
 import NocCertificateModal from '../components/NocCertificateModal'
+import { toGujarati } from '../utils/gujaratiTyping'
 
 const isSameDayAndMonth = (dateStr) => {
   if (!dateStr) return false
@@ -43,6 +44,87 @@ const isSameDayAndMonth = (dateStr) => {
     (d.getDate() === todayDay && (d.getMonth() + 1) === todayMonth)
   )
 }
+
+export const ISLAMIC_MONTHS = [
+  { value: 'મોહર્રમ', label: '૧. મોહર્રમ (Muharram)', num: 1 },
+  { value: 'સફર', label: '૨. સફર (Safar)', num: 2 },
+  { value: 'રબીઉલ અવ્વલ', label: '૩. રબીઉલ અવ્વલ (Rabi\' al-Awwal)', num: 3 },
+  { value: 'રબીઉલ આખિર', label: '૪. રબીઉલ આખિર (Rabi\' al-Thani)', num: 4 },
+  { value: 'જમાદિલ અવ્વલ', label: '૫. જમાદિલ અવ્વલ (Jumada al-Awwal)', num: 5 },
+  { value: 'જમાદિલ આખિર', label: '૬. જમાદિલ આખિર (Jumada al-Thani)', num: 6 },
+  { value: 'રજબ', label: '૭. રજબ (Rajab)', num: 7 },
+  { value: 'શાબાન', label: '૮. શાબાન (Sha\'ban)', num: 8 },
+  { value: 'રમઝાન', label: '૯. રમઝાન (Ramadan)', num: 9 },
+  { value: 'શવ્વાલ', label: '૧૦. શવ્વાલ (Shawwal)', num: 10 },
+  { value: 'ઝીલકાદ', label: '૧૧. ઝીલકાદ (Dhul Qadah)', num: 11 },
+  { value: 'ઝીલહિજ્જા', label: '૧૨. ઝીલહિજ્જા (Dhul Hijjah)', num: 12 }
+]
+
+export const GUJARATI_DAYS = [
+  'રવિવાર',
+  'સોમવાર',
+  'મંગળવાર',
+  'બુધવાર',
+  'ગુરુવાર',
+  'શુક્રવાર',
+  'શનિવાર'
+]
+
+export const parseAnyDate = (dateStr) => {
+  if (!dateStr) return null
+  if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr
+  const str = String(dateStr).trim()
+  if (!str) return null
+  if (str.includes('/')) {
+    const parts = str.split(' ')[0].split('/')
+    if (parts.length === 3) {
+      const d = parseInt(parts[0], 10)
+      const m = parseInt(parts[1], 10) - 1
+      const y = parseInt(parts[2], 10)
+      const res = new Date(y, m, d, 12, 0, 0)
+      return isNaN(res.getTime()) ? null : res
+    }
+  }
+  if (str.includes('-')) {
+    const cleanStr = str.split('T')[0].split(' ')[0]
+    const parts = cleanStr.split('-')
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        const y = parseInt(parts[0], 10)
+        const m = parseInt(parts[1], 10) - 1
+        const d = parseInt(parts[2], 10)
+        const res = new Date(y, m, d, 12, 0, 0)
+        return isNaN(res.getTime()) ? null : res
+      }
+      const d = parseInt(parts[0], 10)
+      const m = parseInt(parts[1], 10) - 1
+      const y = parseInt(parts[2], 10)
+      const res = new Date(y, m, d, 12, 0, 0)
+      return isNaN(res.getTime()) ? null : res
+    }
+  }
+  const res = new Date(str)
+  return isNaN(res.getTime()) ? null : res
+}
+
+export const getGujaratiDay = (dateStr) => {
+  const d = parseAnyDate(dateStr)
+  if (!d) return ''
+  return GUJARATI_DAYS[d.getDay()] || ''
+}
+
+export const getAutoIslamicDate = (dateStr) => {
+  const d = parseAnyDate(dateStr)
+  if (!d) return ''
+  const day = d.getDate()
+  const month = d.getMonth() + 1 // 1 to 12
+  const monthObj = ISLAMIC_MONTHS[month - 1]
+  const monthName = monthObj ? monthObj.value : ''
+  return monthName ? `${day} ${monthName}` : ''
+}
+
+const MAYYAT_DEFAULT_DUA = `અલ્લાહ પાક.. એના પ્યારા હબીબ મોહમ્મદ મુસ્તફા સલ્લલ્લાહુ અલયહી વસલ્લમના સદકામા... બુઝુરગાને દીન રહમતુલ્લાહી તઆલા અલયહીના વસીલાથી મગફીરત ફરમાવે... એમની આગળની મંઝીલો આસાન ફરમાવે... દરજાત બુલંદ ફરમાવે...ઘરવાળાઓને સબ્રે જમીલ અતા ફરમાવે...`
+
 
 const definitions = {
   festivals: {
@@ -464,7 +546,7 @@ const definitions = {
                 {row.death_time && <span className="text-xs text-text-secondary">({row.death_time})</span>}
                 {isToday && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border font-semibold text-xs bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20 whitespace-nowrap shadow-xs">
-                    🕯️ Today's Barsi
+                    🕯️ Today
                   </span>
                 )}
               </div>
@@ -809,11 +891,15 @@ export default function ContentPage({ type, headerLeftContent }) {
     death_date: '',
     death_time: '',
     death_place: '',
+    village: '',
+    address: '',
+    vaar: '',
+    islamic_date: '',
     janaza_date: '',
     janaza_time: '',
     janaza_place: '',
     kabrastan: '',
-    death_note: ''
+    death_note: MAYYAT_DEFAULT_DUA
   })
   const [savingDeath, setSavingDeath] = useState(false)
 
@@ -882,52 +968,71 @@ export default function ContentPage({ type, headerLeftContent }) {
       village: '',
       relation: ''
     })
+    const todayStr = new Date().toISOString().split('T')[0]
     setDeathFormData({
-      death_date: new Date().toISOString().split('T')[0],
+      death_date: todayStr,
       death_time: '',
       death_place: '',
+      village: '',
+      address: '',
+      vaar: getGujaratiDay(todayStr),
+      islamic_date: getAutoIslamicDate(todayStr),
       janaza_date: '',
       janaza_time: '',
       janaza_place: '',
       kabrastan: '',
-      death_note: getGujaratiDuaText()
+      death_note: MAYYAT_DEFAULT_DUA
     })
     setDeathModalOpen(true)
   }
 
-  // Auto-sync manual member name and gender to the death note
+  // Auto-sync manual member name and village to form
   useEffect(() => {
     if (deathModalOpen && isManualEntry && deathModalMode === 'add') {
-      const mName = [manualMember.first_name, manualMember.middle_name, manualMember.last_name].filter(Boolean).join(' ').trim()
-      const isFem = String(manualMember.gender || '').toLowerCase() === 'female'
-      setDeathFormData(prev => {
-        // Auto-update if death_note is empty or starts with default Dua pattern
-        if (!prev.death_note || prev.death_note.includes('ગુજરી ગયા છે. બધા સાથીઓ')) {
-          return {
-            ...prev,
-            death_note: getGujaratiDuaText(mName, manualMember.village, isFem)
-          }
-        }
-        return prev
-      })
+      if (manualMember.village) {
+        setDeathFormData(prev => ({
+          ...prev,
+          village: prev.village || manualMember.village
+        }))
+      }
     }
-  }, [deathModalOpen, isManualEntry, deathModalMode, manualMember.first_name, manualMember.middle_name, manualMember.last_name, manualMember.gender, manualMember.village])
+  }, [deathModalOpen, isManualEntry, deathModalMode, manualMember.village])
 
   const handleOpenEditDeathModal = (row) => {
     setDeathModalMode('edit')
     setSelectedDeathMember(row)
     setIsManualEntry(false)
+    const rowDate = row.death_date ? (row.death_date.includes('T') ? row.death_date.split('T')[0] : row.death_date) : ''
+    const calculatedVaar = rowDate ? getGujaratiDay(rowDate) : ''
+    const calculatedIslamic = rowDate ? getAutoIslamicDate(rowDate) : ''
+    const hasValidGujMonth = row.islamic_date && ISLAMIC_MONTHS.some(m => row.islamic_date.includes(m.value))
+
     setDeathFormData({
-      death_date: row.death_date ? (row.death_date.includes('T') ? row.death_date.split('T')[0] : row.death_date) : '',
+      death_date: rowDate,
       death_time: row.death_time || '',
       death_place: row.death_place || '',
+      village: row.village || row.native_place || '',
+      address: row.address || '',
+      vaar: calculatedVaar || row.vaar || '',
+      islamic_date: (hasValidGujMonth ? row.islamic_date : calculatedIslamic) || '',
       janaza_date: row.janaza_date ? (row.janaza_date.includes('T') ? row.janaza_date.split('T')[0] : row.janaza_date) : '',
       janaza_time: row.janaza_time || '',
       janaza_place: row.janaza_place || '',
       kabrastan: row.kabrastan || '',
-      death_note: row.death_note || ''
+      death_note: row.death_note || MAYYAT_DEFAULT_DUA
     })
     setDeathModalOpen(true)
+  }
+
+  const handleDeathDateChange = (val) => {
+    const vaarVal = getGujaratiDay(val)
+    const islamicVal = getAutoIslamicDate(val)
+    setDeathFormData(prev => ({
+      ...prev,
+      death_date: val,
+      vaar: vaarVal,
+      islamic_date: islamicVal
+    }))
   }
 
   const handleSaveDeath = async (e) => {
@@ -952,6 +1057,10 @@ export default function ContentPage({ type, headerLeftContent }) {
         death_date: deathFormData.death_date,
         death_time: deathFormData.death_time,
         death_place: deathFormData.death_place,
+        village: deathFormData.village,
+        address: deathFormData.address,
+        vaar: deathFormData.vaar,
+        islamic_date: deathFormData.islamic_date,
         janaza_date: deathFormData.janaza_date || null,
         janaza_time: deathFormData.janaza_time,
         janaza_place: deathFormData.janaza_place,
@@ -1036,8 +1145,71 @@ export default function ContentPage({ type, headerLeftContent }) {
     setvafatCardModalOpen(true)
   }
 
+  const copyMayyatText = (row) => {
+    const isFemale = String(row.gender || '').toLowerCase() === 'female'
+    const titlePrefixGujarati = isFemale ? 'મરહૂમા' : 'મરહૂમ'
+    const memberName = [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ') || row.name || row.full_name || 'Community Member'
+    const villageText = row.village || row.native_place || '-'
+    const rawDate = row.death_date ? formatDate(row.death_date) : '-'
+    const islamicDateText = row.islamic_date ? ` (${row.islamic_date})` : (row.death_date ? ` (${getAutoIslamicDate(row.death_date)})` : '')
+    const dateDisplay = `${rawDate}${islamicDateText}`
+    const vaarText = row.vaar || (row.death_date ? getGujaratiDay(row.death_date) : '-')
+    const janazaTime = row.janaza_time || '...'
+    const janazaPlace = row.janaza_place ? `${row.janaza_place} માં` : '... માં'
+    const addressText = row.address || row.death_place || '-'
+
+    let text = `મૈયત સમાચાર\n\n`
+    text += `ગામ - ${villageText}\n\n`
+    text += `તારીખ: ${dateDisplay}\n\n`
+    text += `વાર: ${vaarText}\n\n`
+    text += ` * ${titlePrefixGujarati} ${memberName} * \n\n\n`
+    text += `જનાઝા ની નમાઝ નો ટાઇમ ${janazaTime} વાગે ${janazaPlace} ઇન્શાઅલ્લાહ નક્કી થયેલ છે.\n\n`
+    text += `*એડ્રેસ: ${addressText}*\n\n\n`
+    text += `ઈન્ના લિલ્લાહી વ ઈન્ના ઈલયહી રાજેઊન...\n\n`
+    text += `અલ્લાહ પાક.. એના પ્યારા હબીબ મોહમ્મદ મુસ્તફા સલ્લલ્લાહુ અલયહી વસલ્લમના સદકામા... બુઝુરગાને દીન રહમતુલ્લાહી તઆલા અલયહીના વસીલાથી મગફીરત ફરમાવે... એમની આગળની મંઝીલો આસાન ફરમાવે... દરજાત બુલંદ ફરમાવે...ઘરવાળાઓને સબ્રે જમીલ અતા ફરમાવે...\n\n`
+    text += `آمین بجاه شفیع المذنبین ﷺ\n`
+    text += `આમીન... યા રબ્બુલ આલમીન.`
+
+    const copyToClipboard = (str) => {
+      if (navigator?.clipboard?.writeText) {
+        return navigator.clipboard.writeText(str)
+      }
+      return new Promise((resolve, reject) => {
+        try {
+          const ta = document.createElement('textarea')
+          ta.value = str
+          ta.style.position = 'fixed'
+          ta.style.opacity = '0'
+          document.body.appendChild(ta)
+          ta.select()
+          document.execCommand('copy')
+          document.body.removeChild(ta)
+          resolve()
+        } catch (e) {
+          reject(e)
+        }
+      })
+    }
+
+    copyToClipboard(text)
+      .then(() => {
+        toast.success('મૈયત સમાચાર મેસેજ કોપી થઈ ગયો!')
+      })
+      .catch(() => {
+        toast.error('Copy failed')
+      })
+  }
+
   const deathRowActions = type === 'death' ? (row) => (
     <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => copyMayyatText(row)}
+        className="p-2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all cursor-pointer"
+        title="Copy Mayyat Samachar Message"
+      >
+        <Copy className="w-3.5 h-3.5" />
+      </button>
       <button
         type="button"
         onClick={() => handleOpenvafatCard(row)}
@@ -1161,18 +1333,18 @@ export default function ContentPage({ type, headerLeftContent }) {
       {type === 'death' && (
         <Modal
           isOpen={deathModalOpen}
-          title={deathModalMode === 'edit' ? 'Edit vafat Details' : 'Record vafat'}
+          title={deathModalMode === 'edit' ? 'Edit vafat Details (મૈયત સમાચાર સંપાદિત કરો)' : 'Record New vafat (નવા મૈયત સમાચાર ઉમેરો)'}
           onClose={() => setDeathModalOpen(false)}
-          maxWidth="max-w-2xl"
+          maxWidth="max-w-3xl"
         >
           <form onSubmit={handleSaveDeath} className="space-y-4 text-text">
             {/* Step 1: Member Selection (Add mode) */}
             {deathModalMode === 'add' ? (
-              <div className="bg-surface-secondary/40 border border-border/80 rounded-2xl p-4 space-y-3">
+              <div className="bg-surface-secondary/40 border border-border/80 rounded-2xl p-4 sm:p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wide">
                     <UsersIcon className="w-4 h-4" />
-                    <span>Select Community Member *</span>
+                    <span>Select Community Member * (સભ્ય પસંદ કરો)</span>
                   </div>
                   <button
                     type="button"
@@ -1182,7 +1354,7 @@ export default function ContentPage({ type, headerLeftContent }) {
                     }}
                     className="text-xs text-primary font-semibold hover:underline cursor-pointer"
                   >
-                    {isManualEntry ? 'Select registered member' : '+ Or enter member manually'}
+                    {isManualEntry ? '← Select registered member' : '+ Or enter member manually'}
                   </button>
                 </div>
 
@@ -1268,53 +1440,166 @@ export default function ContentPage({ type, headerLeftContent }) {
               </div>
             ) : (
               /* Edit mode: Display Selected Member Details */
-              <div className="bg-surface-secondary/40 border border-border/80 rounded-2xl p-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-r from-primary/5 via-primary/[0.02] to-transparent border border-primary/20 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-3.5">
                   {selectedDeathMember?.profile_image || selectedDeathMember?.image ? (
-                    <img src={assetUrl(selectedDeathMember.profile_image || selectedDeathMember.image)} alt="" className="h-9 w-9 rounded-lg object-cover border border-border" />
+                    <img src={assetUrl(selectedDeathMember.profile_image || selectedDeathMember.image)} alt="" className="h-11 w-11 rounded-xl object-cover border border-border shadow-xs" />
                   ) : (
-                    <div className="h-9 w-9 rounded-lg bg-surface-secondary flex items-center justify-center text-sm font-semibold text-text-secondary">
-                      {selectedDeathMember?.name?.slice(0, 1) || 'M'}
+                    <div className="h-11 w-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-base font-bold text-primary shadow-xs">
+                      {selectedDeathMember?.name?.slice(0, 1) || selectedDeathMember?.first_name?.slice(0, 1) || 'M'}
                     </div>
                   )}
                   <div>
-                    <div className="font-semibold text-text text-sm">
-                      <span className="text-xs text-primary font-medium mr-1">
-                        {String(selectedDeathMember?.gender || '').toLowerCase() === 'female' ? 'Marhuma' : 'Marhum'}
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-primary/15 text-primary border border-primary/20 uppercase tracking-wide">
+                        {String(selectedDeathMember?.gender || '').toLowerCase() === 'female' ? 'Marhuma (મરહૂમા)' : 'Marhum (મરહૂમ)'}
                       </span>
-                      {selectedDeathMember?.name || `${selectedDeathMember?.first_name || ''} ${selectedDeathMember?.middle_name || ''} ${selectedDeathMember?.last_name || ''}`.trim()}
+                      <h3 className="font-bold text-text text-base">
+                        {selectedDeathMember?.name || `${selectedDeathMember?.first_name || ''} ${selectedDeathMember?.middle_name || ''} ${selectedDeathMember?.last_name || ''}`.trim()}
+                      </h3>
                     </div>
-                    <div className="text-xs text-text-secondary mt-0.5">
-                      {[selectedDeathMember?.number, selectedDeathMember?.village].filter(Boolean).join(' • ')}
+                    <div className="flex items-center gap-3 text-xs text-text-secondary mt-1">
+                      {selectedDeathMember?.number && (
+                        <span className="flex items-center gap-1 font-medium">
+                          <Phone className="w-3 h-3 text-text-secondary" />
+                          {selectedDeathMember.number}
+                        </span>
+                      )}
+                      {selectedDeathMember?.village && (
+                        <span className="flex items-center gap-1 font-medium">
+                          📍 {selectedDeathMember.village}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Step 2: vafat Details */}
-            <div className="bg-surface-secondary/20 border border-border/60 rounded-xl p-3.5 space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wide">
-                <Flower2 className="w-3.5 h-3.5 text-primary" />
-                <span>vafat Details</span>
+            {/* Step 2: Mayyat Samachar & Vafat Details Card */}
+            <div className="bg-surface-secondary/20 border border-border/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xs">
+              <div className="flex items-center gap-2 pb-2.5 border-b border-border/70">
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                  <Flower2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-text">Mayyat Details (મૈયત સમાચાર વિગત)</h4>
+                  <p className="text-xs text-text-secondary">વફાતની તારીખ, વાર, ઇસ્લામિક મહિનો અને રહેઠાણ</p>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <DatePicker
-                  label="Date of vafat"
+                  label="Date of Vafat (તારીખ)"
                   required
                   value={deathFormData.death_date}
-                  onChange={(val) => setDeathFormData(prev => ({ ...prev, death_date: val }))}
+                  onChange={handleDeathDateChange}
                   placeholder="Select date"
                 />
+                <Select
+                  label="Day of Week (વાર)"
+                  value={deathFormData.vaar}
+                  onChange={(val) => setDeathFormData(prev => ({ ...prev, vaar: val }))}
+                  options={GUJARATI_DAYS.map(d => ({ value: d, label: d }))}
+                  placeholder="Select Vaar"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                  Islamic Month / Date (ઇસ્લામિક મહિનો)
+                </label>
+                <div className="flex gap-2.5 items-center">
+                  <div className="flex-1 min-w-0">
+                    <input
+                      type="text"
+                      placeholder="દા.ત. ૧૬ શવ્વાલ / 16 શવ્વાલ"
+                      value={deathFormData.islamic_date}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setDeathFormData(prev => ({ ...prev, islamic_date: val }))
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === ' ' || e.keyCode === 32) {
+                          const raw = e.target.value
+                          if (raw && /[a-zA-Z]/.test(raw)) {
+                            e.preventDefault()
+                            const converted = toGujarati(raw) + ' '
+                            setDeathFormData(prev => ({ ...prev, islamic_date: converted }))
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const raw = e.target.value
+                        if (raw && /[a-zA-Z]/.test(raw)) {
+                          const converted = toGujarati(raw)
+                          setDeathFormData(prev => ({ ...prev, islamic_date: converted }))
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/15 rounded-xl text-sm outline-none transition-all font-medium placeholder:text-text-secondary/50"
+                      disabled={savingDeath}
+                    />
+                  </div>
+                  <select
+                    className="px-3.5 py-2.5 bg-input-bg border border-border rounded-xl text-xs font-semibold text-text outline-none focus:border-primary/50 cursor-pointer hover:border-primary/40 transition-colors shrink-0 min-w-[170px]"
+                    title="Quick Pick Islamic Month"
+                    value={ISLAMIC_MONTHS.find(m => deathFormData.islamic_date?.includes(m.value))?.value || ''}
+                    onChange={(e) => {
+                      if (!e.target.value) return
+                      const chosenMonth = e.target.value
+                      setDeathFormData(prev => {
+                        let dayPart = ''
+                        if (prev.islamic_date) {
+                          const match = prev.islamic_date.match(/^([0-9૦-૯]+)/)
+                          if (match) dayPart = match[1]
+                        }
+                        if (!dayPart && prev.death_date) {
+                          const d = parseAnyDate(prev.death_date)
+                          if (d) dayPart = String(d.getDate())
+                        }
+                        if (!dayPart) dayPart = '1'
+                        return {
+                          ...prev,
+                          islamic_date: `${dayPart} ${chosenMonth}`
+                        }
+                      })
+                    }}
+                  >
+                    <option value="" disabled>મહિનો... (Months)</option>
+                    {ISLAMIC_MONTHS.map(m => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Time of vafat"
+                  label="Village / Native Town (ગામ)"
+                  placeholder="e.g. Bagsara / Surat"
+                  value={deathFormData.village}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, village: e.target.value }))}
+                  disabled={savingDeath}
+                />
+                <Input
+                  label="Residence Address (એડ્રેસ)"
+                  placeholder="e.g. 104, Madina Apartment, Surat"
+                  value={deathFormData.address}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, address: e.target.value }))}
+                  disabled={savingDeath}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Time of Vafat (વફાત નો સમય)"
                   placeholder="e.g. 05:30 AM"
                   value={deathFormData.death_time}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, death_time: e.target.value }))}
                   disabled={savingDeath}
                 />
                 <Input
-                  label="Place of vafat"
+                  label="Place of Vafat (વફાત નું સ્થળ)"
                   placeholder="e.g. Surat / Residence"
                   value={deathFormData.death_place}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, death_place: e.target.value }))}
@@ -1323,37 +1608,44 @@ export default function ContentPage({ type, headerLeftContent }) {
               </div>
             </div>
 
-            {/* Step 3: Namaz-e-Janaza & Kabrastan */}
-            <div className="bg-surface-secondary/20 border border-border/60 rounded-xl p-3.5 space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wide">
-                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                <span>Namaz-e-Janaza & Kabrastan</span>
+            {/* Step 3: Namaz-e-Janaza & Kabrastan Card */}
+            <div className="bg-surface-secondary/20 border border-border/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xs">
+              <div className="flex items-center gap-2 pb-2.5 border-b border-border/70">
+                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-text">Namaz-e-Janaza & Kabrastan (જનાઝા ની નમાઝ અને કબ્રસ્તાન)</h4>
+                  <p className="text-xs text-text-secondary">જનાઝા નો સમય, મસ્જિદ/જગ્યા અને દફનવિધિ કબ્રસ્તાન</p>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Janaza Time (જનાઝા નો ટાઇમ)"
+                  placeholder="e.g. 10:00 / Baad Namaz-e-Zuhr"
+                  value={deathFormData.janaza_time}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_time: e.target.value }))}
+                  disabled={savingDeath}
+                />
+                <Input
+                  label="Janaza Venue / Masjid (જનાઝા ની જગ્યા / મસ્જિદ)"
+                  placeholder="e.g. Memon Jamat Masjid / Jama Masjid"
+                  value={deathFormData.janaza_place}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_place: e.target.value }))}
+                  disabled={savingDeath}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <DatePicker
-                  label="Janaza Date"
+                  label="Janaza Date (જનાઝા ની તારીખ)"
                   value={deathFormData.janaza_date}
                   onChange={(val) => setDeathFormData(prev => ({ ...prev, janaza_date: val }))}
                   placeholder="Select date"
                 />
                 <Input
-                  label="Janaza Time"
-                  placeholder="e.g. Baad Namaz-e-Zuhr"
-                  value={deathFormData.janaza_time}
-                  onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_time: e.target.value }))}
-                  disabled={savingDeath}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <Input
-                  label="Janaza Venue / Masjid"
-                  placeholder="e.g. Memon Jamat Masjid"
-                  value={deathFormData.janaza_place}
-                  onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_place: e.target.value }))}
-                  disabled={savingDeath}
-                />
-                <Input
-                  label="Kabrastan / Burial Place"
+                  label="Kabrastan / Burial Place (કબ્રસ્તાન)"
                   placeholder="e.g. Memon Kabrastan"
                   value={deathFormData.kabrastan}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, kabrastan: e.target.value }))}
@@ -1362,26 +1654,42 @@ export default function ContentPage({ type, headerLeftContent }) {
               </div>
             </div>
 
-            {/* Step 4: Dua / Remarks */}
-            <div>
-              <label className="block text-sm font-semibold text-text-secondary mb-1.5">
-                Dua / Special Remarks
-              </label>
+            {/* Step 4: Dua / Remarks Card */}
+            <div className="bg-surface-secondary/20 border border-border/80 rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-border/70">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <span className="text-sm">🤲</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-text">Dua / Special Remarks (દુઆ-એ-મગફિરત)</h4>
+                    <p className="text-xs text-text-secondary">કાર્ડમાં દર્શાવવામાં આવતી ખાસ દુઆ</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDeathFormData(prev => ({ ...prev, death_note: MAYYAT_DEFAULT_DUA }))}
+                  className="text-xs text-primary hover:underline font-semibold cursor-pointer"
+                >
+                  Reset Default Dua
+                </button>
+              </div>
               <textarea
                 rows={3}
                 value={deathFormData.death_note}
                 onChange={(e) => setDeathFormData(prev => ({ ...prev, death_note: e.target.value }))}
-                placeholder="e.g. May Allah grant magfirah and Jannat-ul-Firdaus..."
-                className="w-full px-3 py-2 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary/20 transition-all custom-scrollbar"
+                placeholder="Dua-e-Magfirat..."
+                className="w-full px-3.5 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/15 rounded-xl text-sm outline-none transition-all custom-scrollbar leading-relaxed font-medium"
                 disabled={savingDeath}
               />
             </div>
 
             {/* Modal Footer Buttons */}
-            <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border mt-3">
               <Button
                 type="button"
                 variant="outline"
+                size="md"
                 onClick={() => setDeathModalOpen(false)}
                 disabled={savingDeath}
               >
@@ -1390,10 +1698,12 @@ export default function ContentPage({ type, headerLeftContent }) {
               <Button
                 type="submit"
                 variant="primary"
+                size="md"
                 isLoading={savingDeath}
                 disabled={savingDeath}
+                className="min-w-[130px]"
               >
-                {savingDeath ? 'Saving...' : (deathModalMode === 'edit' ? 'Update' : 'Save')}
+                {savingDeath ? 'Saving...' : (deathModalMode === 'edit' ? 'Update Details' : 'Save Record')}
               </Button>
             </div>
           </form>
