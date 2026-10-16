@@ -110,7 +110,13 @@ export default function Sidebar({ isOpen, onClose }) {
   const { user } = useContext(AuthContext)
   const { unreadChatCount } = useChat()
   const [webTheme, setWebTheme] = useState({ webLogo: '', name: '' })
-  const visibleCoreNavigation = coreNavigation.filter((item) => hasPermission(user, item.permission))
+  const visibleCoreNavigation = coreNavigation.filter((item) => {
+    if (item.to === '/admin/chat' || item.allowedEmail) {
+      const allowed = item.allowedEmail || 'chat@gmail.com'
+      return user?.email?.trim().toLowerCase() === allowed.toLowerCase()
+    }
+    return hasPermission(user, item.permission)
+  })
 
   useEffect(() => {
     const loadWebTheme = () => {

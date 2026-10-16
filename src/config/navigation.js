@@ -24,7 +24,7 @@ export const coreNavigation = [
   { to: '/admin/committee', label: 'Committee Members', icon: UserCog, title: 'Committee Members', permission: 'committee.list' },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheck, title: 'Roles & Permissions', permission: 'roles.list' },
   { to: '/admin/users', label: 'Members', icon: Users, title: 'Member Directory', permission: 'members.list' },
-  { to: '/admin/chat', label: 'Messages', icon: MessageSquare, title: 'Chats' }
+  { to: '/admin/chat', label: 'Messages', icon: MessageSquare, title: 'Chats', allowedEmail: 'chat@gmail.com' }
 ]
 
 export const activityNavigation = [

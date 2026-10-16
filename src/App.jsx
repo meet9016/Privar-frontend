@@ -100,7 +100,7 @@ export default function App() {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<PermissionRoute permission="dashboard.view"><Dashboard /></PermissionRoute>} />
               <Route path="registrations" element={<PermissionRoute permission={['registrations.list', 'members.list', 'users.manage']}><RegistrationsPage /></PermissionRoute>} />
-              <Route path="chat" element={<ChatPage />} />
+              <Route path="chat" element={<ChatRoute><ChatPage /></ChatRoute>} />
               <Route path="committee" element={<PermissionRoute permission="committee.list"><CommitteeMembers /></PermissionRoute>} />
               <Route path="roles" element={<PermissionRoute permission="roles.list"><Roles /></PermissionRoute>} />
               <Route path="users" element={<PermissionRoute permission="members.list"><Users /></PermissionRoute>} />
@@ -163,3 +163,14 @@ function PermissionRoute({ permission, children }) {
 
   return children
 }
+
+function ChatRoute({ children }) {
+  const { user } = useContext(AuthContext)
+
+  if (user?.email?.trim().toLowerCase() !== 'chat@gmail.com') {
+    return <Navigate to="/admin/dashboard" replace />
+  }
+
+  return children
+}
+
