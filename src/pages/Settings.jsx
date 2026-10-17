@@ -576,8 +576,7 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2">
                   <Bell className="w-4 h-4 text-primary" />
                   <div>
-                    <h3 className="text-sm font-semibold text-text">સાપ્તાહિક પુશ નોટિફિકેશન શેડ્યૂલ (Weekly Auto Push)</h3>
-                    <p className="text-xs text-text-secondary">Monday dynamic time push &amp; Friday auto push (10:00 AM) with custom key</p>
+                    <h3 className="text-sm font-semibold text-text">Weekly Auto Push</h3>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -598,8 +597,7 @@ export default function SettingsPage() {
                           <Calendar className="w-4 h-4" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-text">સોમવાર (Monday Push)</h4>
-                          <span className="text-[11px] text-text-secondary">ડાયનેમિક ટાઇમ સેટિંગ (Dynamic Time)</span>
+                          <h4 className="text-sm font-bold text-text">Monday Push</h4>
                         </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -615,7 +613,7 @@ export default function SettingsPage() {
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-primary" /> સોમવાર પુશ ટાઈમ (Time) *
+                        <Clock className="w-3.5 h-3.5 text-primary" /> Monday Time 
                       </label>
                       <input
                         type="time"
@@ -623,7 +621,6 @@ export default function SettingsPage() {
                         onChange={(e) => handleConfigChange('mondayPushTime', e.target.value)}
                         className="bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-primary transition-colors font-medium max-w-sm"
                       />
-                      <span className="text-[11px] text-text-secondary">દર સોમવારે આ સમયે બધા જ યુઝર્સને ઓટોમેટિક પુશ નોટિફિકેશન જશે</span>
                     </div>
                   </div>
 
@@ -638,7 +635,7 @@ export default function SettingsPage() {
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                     >
                       <Send className="w-3 h-3" />
-                      {testingPushDay === 'monday' ? 'ટેસ્ટ પુશ મોકલાઈ રહ્યું છે...' : 'ટેસ્ટ સોમવાર પુશ (Test Send)'}
+                      {testingPushDay === 'monday' ? 'Test Push Sending...' : 'Test Monday Push'}
                     </button>
                   </div>
                 </div>
@@ -652,8 +649,7 @@ export default function SettingsPage() {
                           <Calendar className="w-4 h-4" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-text">શુક્રવાર (Friday Push)</h4>
-                          <span className="text-[11px] text-text-secondary font-semibold text-emerald-600">૧૦:૦૦ AM ઓટો પુશ (Auto 10:00 AM)</span>
+                          <h4 className="text-sm font-bold text-text">Friday Push</h4>
                         </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -670,7 +666,7 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                          કી / Key (Friday Custom Key) *
+                        Friday Custom Key 
                         </label>
                         <input
                           type="text"
@@ -679,12 +675,11 @@ export default function SettingsPage() {
                           onChange={(e) => handleConfigChange('fridayPushKey', e.target.value)}
                           className="bg-input-bg text-text text-sm py-2 px-3 border-2 border-emerald-400/60 rounded-xl outline-none focus:border-emerald-600 transition-colors font-mono font-semibold shadow-sm"
                         />
-                        <span className="text-[11px] text-emerald-600 font-medium">આ કી પુશ પેલોડ અને FCM માં પાસ થશે</span>
                       </div>
 
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-emerald-600" /> પુશ સમય (10:00 AM Auto)
+                          <Clock className="w-3.5 h-3.5 text-emerald-600" /> Time)
                         </label>
                         <input
                           type="time"
@@ -692,7 +687,6 @@ export default function SettingsPage() {
                           onChange={(e) => handleConfigChange('fridayPushTime', e.target.value)}
                           className="bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 transition-colors font-medium"
                         />
-                        <span className="text-[11px] text-text-secondary">ડિફોલ્ટ 10:00 (10:00 AM) સેટ છે</span>
                       </div>
                     </div>
                   </div>
@@ -708,7 +702,7 @@ export default function SettingsPage() {
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                     >
                       <Send className="w-3 h-3" />
-                      {testingPushDay === 'friday' ? 'ટેસ્ટ પુશ મોકલાઈ રહ્યું છે...' : 'ટેસ્ટ શુક્રવાર પુશ (Test Send)'}
+                      {testingPushDay === 'friday' ? 'Test Push Sending...' : 'Test Friday Push'}
                     </button>
                   </div>
                 </div>
