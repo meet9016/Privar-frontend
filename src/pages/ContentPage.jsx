@@ -1370,7 +1370,7 @@ export default function ContentPage({ type, headerLeftContent }) {
       {type === 'death' && (
         <Modal
           isOpen={deathModalOpen}
-          title={deathModalMode === 'edit' ? 'Edit vafat Details (મૈયત સમાચાર સંપાદિત કરો)' : 'Record New vafat (નવા મૈયત સમાચાર ઉમેરો)'}
+          title={deathModalMode === 'edit' ? 'Edit Vafat Details' : 'Record New Vafat'}
           onClose={() => setDeathModalOpen(false)}
           maxWidth="max-w-3xl"
         >
@@ -1381,7 +1381,7 @@ export default function ContentPage({ type, headerLeftContent }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wide">
                     <UsersIcon className="w-4 h-4" />
-                    <span>Select Community Member * (સભ્ય પસંદ કરો)</span>
+                    <span>Select Community Member *</span>
                   </div>
                   <button
                     type="button"
@@ -1524,75 +1524,55 @@ export default function ContentPage({ type, headerLeftContent }) {
                   <Flower2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-text">Mayyat Details (મૈયત સમાચાર વિગત)</h4>
-                  <p className="text-xs text-text-secondary">વફાતની તારીખ, વાર, ઇસ્લામિક મહિનો અને રહેઠાણ</p>
+                  <h4 className="text-sm font-bold text-text">Mayyat Details</h4>
+                  <p className="text-xs text-text-secondary">Date, Islamic date and residence details</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <DatePicker
-                  label="Date of Vafat (તારીખ)"
+                  label="Date of Vafat"
                   required
                   value={deathFormData.death_date}
                   onChange={handleDeathDateChange}
                   placeholder="Select date"
                 />
+
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-text-secondary">
-                      Day of Week (વાર)
+                    <label className="block text-sm font-semibold text-text-secondary">
+                      Islamic Month / Date
                     </label>
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                      Auto
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                        Auto
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (deathFormData.death_date) {
+                            const autoDate = getAutoIslamicDate(deathFormData.death_date)
+                            const autoVaar = getGujaratiDay(deathFormData.death_date)
+                            setDeathFormData(prev => ({
+                              ...prev,
+                              islamic_date: autoDate,
+                              vaar: autoVaar || prev.vaar
+                            }))
+                            toast.success(`Auto-fetched: ${autoDate}`)
+                          }
+                        }}
+                        title="Re-calculate Islamic Date from Date of Vafat"
+                        className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-md transition-colors"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Auto Fetch
+                      </button>
+                    </div>
                   </div>
-                  <Select
-                    label=""
-                    value={deathFormData.vaar}
-                    onChange={(val) => setDeathFormData(prev => ({ ...prev, vaar: val }))}
-                    options={GUJARATI_DAYS.map(d => ({ value: d, label: d }))}
-                    placeholder="Select Vaar"
-                    disabled={savingDeath}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-text-secondary">
-                    Islamic Month / Date (ઇસ્લામિક મહિનો)
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                      Auto
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (deathFormData.death_date) {
-                          const autoDate = getAutoIslamicDate(deathFormData.death_date)
-                          const autoVaar = getGujaratiDay(deathFormData.death_date)
-                          setDeathFormData(prev => ({
-                            ...prev,
-                            islamic_date: autoDate,
-                            vaar: autoVaar || prev.vaar
-                          }))
-                          toast.success(`Auto-fetched: ${autoDate}`)
-                        }
-                      }}
-                      title="Re-calculate Islamic Date from Date of Vafat"
-                      className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-md transition-colors"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      Auto Fetch
-                    </button>
-                  </div>
-                </div>
-                <div className="flex gap-2.5 items-center">
-                  <div className="flex-1 min-w-0">
+                  <div className="flex gap-2 items-center">
                     <input
                       type="text"
-                      placeholder="દા.ત. ૬ જમાદિલ અવ્વલ / 6 જમાદિલ અવ્વલ"
+                      placeholder="e.g. 6 જમાદિલ અવ્વલ"
                       value={deathFormData.islamic_date}
                       onChange={(e) => {
                         const val = e.target.value
@@ -1618,51 +1598,51 @@ export default function ContentPage({ type, headerLeftContent }) {
                       className="w-full px-3.5 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/15 rounded-xl text-sm outline-none transition-all font-medium placeholder:text-text-secondary/50"
                       disabled={savingDeath}
                     />
+                    <select
+                      className="px-2.5 py-2.5 bg-input-bg border border-border rounded-xl text-xs font-semibold text-text outline-none focus:border-primary/50 cursor-pointer hover:border-primary/40 transition-colors shrink-0 max-w-[150px]"
+                      title="Quick Pick Islamic Month"
+                      value={findIslamicMonth(deathFormData.islamic_date)?.value || ''}
+                      onChange={(e) => {
+                        if (!e.target.value) return
+                        const chosenMonth = e.target.value
+                        setDeathFormData(prev => {
+                          let dayPart = ''
+                          if (prev.islamic_date) {
+                            const match = prev.islamic_date.match(/^([0-9૦-૯]+)/)
+                            if (match) dayPart = match[1]
+                          }
+                          if (!dayPart && prev.death_date) {
+                            const auto = getAutoIslamicDate(prev.death_date)
+                            const match = auto?.match(/^([0-9૦-૯]+)/)
+                            if (match) dayPart = match[1]
+                          }
+                          if (!dayPart) dayPart = '1'
+                          return {
+                            ...prev,
+                            islamic_date: `${dayPart} ${chosenMonth}`
+                          }
+                        })
+                      }}
+                    >
+                      <option value="" disabled>Month...</option>
+                      {ISLAMIC_MONTHS.map(m => (
+                        <option key={m.value} value={m.value}>{m.label}</option>
+                      ))}
+                    </select>
                   </div>
-                  <select
-                    className="px-3.5 py-2.5 bg-input-bg border border-border rounded-xl text-xs font-semibold text-text outline-none focus:border-primary/50 cursor-pointer hover:border-primary/40 transition-colors shrink-0 min-w-[170px]"
-                    title="Quick Pick Islamic Month"
-                    value={findIslamicMonth(deathFormData.islamic_date)?.value || ''}
-                    onChange={(e) => {
-                      if (!e.target.value) return
-                      const chosenMonth = e.target.value
-                      setDeathFormData(prev => {
-                        let dayPart = ''
-                        if (prev.islamic_date) {
-                          const match = prev.islamic_date.match(/^([0-9૦-૯]+)/)
-                          if (match) dayPart = match[1]
-                        }
-                        if (!dayPart && prev.death_date) {
-                          const auto = getAutoIslamicDate(prev.death_date)
-                          const match = auto?.match(/^([0-9૦-૯]+)/)
-                          if (match) dayPart = match[1]
-                        }
-                        if (!dayPart) dayPart = '1'
-                        return {
-                          ...prev,
-                          islamic_date: `${dayPart} ${chosenMonth}`
-                        }
-                      })
-                    }}
-                  >
-                    <option value="" disabled>મહિનો... (Months)</option>
-                    {ISLAMIC_MONTHS.map(m => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
-                    ))}
-                  </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Village / Native Town (ગામ)"
+                  label="Village / Native Town"
                   placeholder="e.g. Bagsara / Surat"
                   value={deathFormData.village}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, village: e.target.value }))}
                   disabled={savingDeath}
                 />
                 <Input
-                  label="Residence Address (એડ્રેસ)"
+                  label="Residence Address"
                   placeholder="e.g. 104, Madina Apartment, Surat"
                   value={deathFormData.address}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, address: e.target.value }))}
@@ -1672,14 +1652,14 @@ export default function ContentPage({ type, headerLeftContent }) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Time of Vafat (વફાત નો સમય)"
+                  label="Time of Vafat"
                   placeholder="e.g. 05:30 AM"
                   value={deathFormData.death_time}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, death_time: e.target.value }))}
                   disabled={savingDeath}
                 />
                 <Input
-                  label="Place of Vafat (વફાત નું સ્થળ)"
+                  label="Place of Vafat"
                   placeholder="e.g. Surat / Residence"
                   value={deathFormData.death_place}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, death_place: e.target.value }))}
@@ -1695,20 +1675,20 @@ export default function ContentPage({ type, headerLeftContent }) {
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-text">Namaz-e-Janaza & Kabrastan </h4>
+                  <h4 className="text-sm font-bold text-text">Namaz-e-Janaza & Kabrastan</h4>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Janaza Time (જનાઝા નો ટાઇમ)"
+                  label="Janaza Time"
                   placeholder="e.g. 10:00 / Baad Namaz-e-Zuhr"
                   value={deathFormData.janaza_time}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_time: e.target.value }))}
                   disabled={savingDeath}
                 />
                 <Input
-                  label="Janaza Venue / Masjid (જનાઝા ની જગ્યા / મસ્જિદ)"
+                  label="Janaza Venue / Masjid"
                   placeholder="e.g. Memon Jamat Masjid / Jama Masjid"
                   value={deathFormData.janaza_place}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_place: e.target.value }))}
@@ -1718,13 +1698,13 @@ export default function ContentPage({ type, headerLeftContent }) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <DatePicker
-                  label="Janaza Date (જનાઝા ની તારીખ)"
+                  label="Janaza Date"
                   value={deathFormData.janaza_date}
                   onChange={(val) => setDeathFormData(prev => ({ ...prev, janaza_date: val }))}
                   placeholder="Select date"
                 />
                 <Input
-                  label="Kabrastan / Burial Place (કબ્રસ્તાન)"
+                  label="Kabrastan / Burial Place"
                   placeholder="e.g. Memon Kabrastan"
                   value={deathFormData.kabrastan}
                   onChange={(e) => setDeathFormData(prev => ({ ...prev, kabrastan: e.target.value }))}

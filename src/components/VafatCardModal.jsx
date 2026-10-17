@@ -268,14 +268,8 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
               </div>
             )}
 
-            {/* Inna Lillahi Calligraphy & Text */}
+            {/* Inna Lillahi Text */}
             <div className="text-center my-2.5 pt-2.5 border-t border-stone-200">
-              <div
-                className="text-xl sm:text-2xl font-bold text-stone-900 tracking-wide mb-1"
-                style={{ fontFamily: "'Amiri', 'Traditional Arabic', serif" }}
-              >
-                إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ
-              </div>
               <p className="text-xs sm:text-sm font-bold text-stone-800">
                 ઈન્ના લિલ્લાહી વ ઈન્ના ઈલયહી રાજેઊન...
               </p>
@@ -297,11 +291,6 @@ export default function VafatCardModal({ isOpen, onClose, member }) {
               <p className="text-xs sm:text-sm font-bold text-stone-800 mt-0.5">
                 આમીન... યા રબ્બુલ આલમીન.
               </p>
-            </div>
-
-            {/* Community Footer Signature */}
-            <div className="text-center pt-2 mt-2.5 border-t border-stone-200 text-xs font-bold text-stone-500 tracking-wider">
-              — {communityName} —
             </div>
           </div>
         </div>

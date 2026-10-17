@@ -25,6 +25,156 @@ const DEFAULT_COLORS = {
   gradientEnd: '#0D47A1',
 }
 
+// Time helpers for 12-hour AM/PM and 24-hour conversion
+const to24Hour = (timeStr) => {
+  if (!timeStr) return '09:00';
+  const trimmed = String(timeStr).trim();
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!match) return trimmed;
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const period = match[3]?.toUpperCase();
+  if (period === 'PM' && hours < 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  return `${String(hours).padStart(2, '0')}:${minutes}`;
+};
+
+const to12Hour = (timeStr) => {
+  if (!timeStr) return '09:00 AM';
+  const trimmed = String(timeStr).trim();
+  if (/am|pm/i.test(trimmed)) return trimmed.toUpperCase();
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return trimmed;
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const period = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  if (hours === 0) hours = 12; // 00:00 becomes 12:00 AM
+  return `${String(hours).padStart(2, '0')}:${minutes} ${period}`;
+};
+
+// 12-Hour Custom Time Picker (Hour: 01-12, Minute: 00-59, AM/PM at end - No 24h wheel!)
+const TimePicker12Hour = ({ value, onChange, themeColor = 'primary' }) => {
+  const parseVal = (str) => {
+    let hours = '09';
+    let minutes = '00';
+    let period = 'AM';
+
+    if (str) {
+      const trimmed = String(str).trim();
+      const match = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      if (match) {
+        let h = parseInt(match[1], 10);
+        minutes = match[2];
+        const p = match[3]?.toUpperCase();
+
+        if (p) {
+          hours = String(h === 0 ? 12 : h > 12 ? h - 12 : h).padStart(2, '0');
+          period = p;
+        } else {
+          // If 24-hour format like "00:06" or "14:30"
+          period = h >= 12 ? 'PM' : 'AM';
+          h = h % 12;
+          if (h === 0) h = 12;
+          hours = String(h).padStart(2, '0');
+        }
+      }
+    }
+    return { hours, minutes, period };
+  };
+
+  const { hours, minutes, period } = parseVal(value);
+
+  const update = (newH, newM, newP) => {
+    const formatted = `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')} ${newP}`;
+    onChange(formatted);
+  };
+
+  const hourOptions = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+  const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+  const allMinutes = minuteOptions;
+
+  const isEmerald = themeColor === 'emerald';
+
+  return (
+    <div className="inline-flex items-center gap-1.5 flex-nowrap shrink-0">
+      {/* Hour select (01 to 12) */}
+      <div className="relative shrink-0">
+        <select
+          value={hours}
+          onChange={(e) => update(e.target.value, minutes, period)}
+          className={`bg-input-bg text-text text-sm font-bold py-1.5 pl-2.5 pr-6 border rounded-xl outline-none cursor-pointer appearance-none ${
+            isEmerald 
+              ? 'border-border focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600' 
+              : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
+          }`}
+          title="Select Hour (1 to 12)"
+        >
+          {hourOptions.map((h) => (
+            <option key={h} value={h} className="bg-surface text-text">
+              {h}
+            </option>
+          ))}
+        </select>
+        <span className="absolute right-1.5 top-2.5 pointer-events-none text-text-secondary text-[9px]">▼</span>
+      </div>
+
+      <span className="text-text font-black text-sm select-none">:</span>
+
+      {/* Minute select (00 to 59) */}
+      <div className="relative shrink-0">
+        <select
+          value={minutes}
+          onChange={(e) => update(hours, e.target.value, period)}
+          className={`bg-input-bg text-text text-sm font-bold py-1.5 pl-2.5 pr-6 border rounded-xl outline-none cursor-pointer appearance-none ${
+            isEmerald 
+              ? 'border-border focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600' 
+              : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
+          }`}
+          title="Select Minutes"
+        >
+          {allMinutes.map((m) => (
+            <option key={m} value={m} className="bg-surface text-text">
+              {m}
+            </option>
+          ))}
+        </select>
+        <span className="absolute right-1.5 top-2.5 pointer-events-none text-text-secondary text-[9px]">▼</span>
+      </div>
+
+      {/* AM / PM Selector at the end */}
+      <div className="inline-flex rounded-xl p-0.5 bg-surface-secondary border border-border shadow-xs shrink-0">
+        <button
+          type="button"
+          onClick={() => update(hours, minutes, 'AM')}
+          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            period === 'AM'
+              ? isEmerald
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-primary text-white shadow-xs'
+              : 'text-text-secondary hover:text-text'
+          }`}
+        >
+          AM
+        </button>
+        <button
+          type="button"
+          onClick={() => update(hours, minutes, 'PM')}
+          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            period === 'PM'
+              ? isEmerald
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-primary text-white shadow-xs'
+              : 'text-text-secondary hover:text-text'
+          }`}
+        >
+          PM
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const DEFAULT_CONFIG = {
   ...DEFAULT_COLORS,
   appLogo: '',
@@ -41,17 +191,10 @@ const DEFAULT_CONFIG = {
   playStoreUrl: '',
   appStoreUrl: '',
   bannerImages: [],
-  // Monday & Friday Push Notification Config
-  mondayPushEnabled: true,
-  mondayPushTime: '09:00',
-  mondayPushKey: 'monday_weekly',
-  mondayPushTitle: '',
-  mondayPushBody: '',
-  fridayPushEnabled: true,
+  // Monday & Friday Push Notification Config - ONLY 3 Keys
+  mondayPushTime: '09:00 AM',
   fridayPushKey: 'jummah_mubarak',
-  fridayPushTime: '10:00',
-  fridayPushTitle: '',
-  fridayPushBody: '',
+  fridayPushTime: '10:00 AM',
 }
 
 const WEB_THEME_KEYS = [
@@ -77,16 +220,9 @@ const WEB_THEME_KEYS = [
   'playStoreUrl',
   'appStoreUrl',
   'bannerImages',
-  'mondayPushEnabled',
   'mondayPushTime',
-  'mondayPushKey',
-  'mondayPushTitle',
-  'mondayPushBody',
-  'fridayPushEnabled',
   'fridayPushKey',
-  'fridayPushTime',
-  'fridayPushTitle',
-  'fridayPushBody'
+  'fridayPushTime'
 ]
 
 const persistWebThemeToLocalStorage = (theme) => {
@@ -305,17 +441,10 @@ export default function SettingsPage() {
         playStoreUrl: data.playStoreUrl || data.playstore_url || data.android_app_link || '',
         appStoreUrl: data.appStoreUrl || data.appstore_url || data.ios_app_link || '',
         bannerImages: Array.isArray(data.bannerImages) ? data.bannerImages : [],
-        // Monday & Friday Push Notification Config
-        mondayPushEnabled: data.mondayPushEnabled !== false,
-        mondayPushTime: data.mondayPushTime || data.monday_push_time || '09:00',
-        mondayPushKey: data.mondayPushKey || data.monday_push_key || 'monday_weekly',
-        mondayPushTitle: data.mondayPushTitle || data.monday_push_title || '',
-        mondayPushBody: data.mondayPushBody || data.monday_push_body || '',
-        fridayPushEnabled: data.fridayPushEnabled !== false,
-        fridayPushKey: data.fridayPushKey || data.friday_push_key || 'jummah_mubarak',
-        fridayPushTime: data.fridayPushTime || data.friday_push_time || '10:00',
-        fridayPushTitle: data.fridayPushTitle || data.friday_push_title || '',
-        fridayPushBody: data.fridayPushBody || data.friday_push_body || '',
+        // Monday & Friday Push Notification Config - ONLY 3 Keys
+        mondayPushTime: to12Hour(data.mondayPushTime || '09:00 AM'),
+        fridayPushKey: data.fridayPushKey || 'jummah_mubarak',
+        fridayPushTime: to12Hour(data.fridayPushTime || '10:00 AM'),
       })
       setLogoFiles({ appLogo: null, webLogo: null, favicon: null })
       setNewBannerFiles([])
@@ -386,16 +515,14 @@ export default function SettingsPage() {
         'primaryColor','secondaryColor','backgroundColor','textColor','buttonColor','fontColor','borderColor',
         'gradientStart','gradientEnd','name','email','phone','facebook','twitter','instagram','youtube','whatsapp',
         'playStoreUrl','appStoreUrl',
-        'mondayPushEnabled','mondayPushTime','mondayPushKey','mondayPushTitle','mondayPushBody',
-        'fridayPushEnabled','fridayPushKey','fridayPushTime','fridayPushTitle','fridayPushBody'
+        'mondayPushTime','fridayPushKey','fridayPushTime'
       ]
       textFields.forEach(key => payload.append(key, config[key] ?? ''))
       payload.append('playstore_url', config.playStoreUrl ?? '')
       payload.append('appstore_url', config.appStoreUrl ?? '')
-      payload.append('monday_push_time', config.mondayPushTime ?? '09:00')
-      payload.append('monday_push_key', config.mondayPushKey ?? 'monday_weekly')
+      payload.append('monday_push_time', to12Hour(config.mondayPushTime ?? '09:00 AM'))
       payload.append('friday_push_key', config.fridayPushKey ?? 'jummah_mubarak')
-      payload.append('friday_push_time', config.fridayPushTime ?? '10:00')
+      payload.append('friday_push_time', to12Hour(config.fridayPushTime ?? '10:00 AM'))
 
       // Logo files or existing URLs
       ;['appLogo', 'webLogo', 'favicon'].forEach(field => {
@@ -589,8 +716,8 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* ── Monday Card ────────────────────────────────────── */}
-                <div className="p-5 rounded-2xl bg-surface-secondary/70 border border-border space-y-4 relative flex flex-col justify-between">
-                  <div className="space-y-4">
+                <div className="p-4 sm:p-5 rounded-2xl bg-surface-secondary/70 border border-border space-y-3 relative flex flex-col justify-between">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between pb-2 border-b border-border/60">
                       <div className="flex items-center gap-2">
                         <div className="p-2 bg-blue-500/10 text-blue-600 rounded-xl">
@@ -598,51 +725,43 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <h4 className="text-sm font-bold text-text">Monday Push</h4>
+                          <p className="text-[11px] text-text-secondary">Weekly Monday automated push time</p>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={config.mondayPushEnabled}
-                          onChange={(e) => handleConfigChange('mondayPushEnabled', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-primary" /> Monday Time 
+                        <Clock className="w-3.5 h-3.5 text-primary" /> Monday Push Time
                       </label>
-                      <input
-                        type="time"
-                        value={config.mondayPushTime || '09:00'}
-                        onChange={(e) => handleConfigChange('mondayPushTime', e.target.value)}
-                        className="bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-primary transition-colors font-medium max-w-sm"
+                      <TimePicker12Hour
+                        value={config.mondayPushTime || '09:00 AM'}
+                        onChange={(val) => handleConfigChange('mondayPushTime', val)}
+                        themeColor="primary"
                       />
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-border/60 flex items-center justify-between">
-                    <span className="text-[11px] text-text-secondary flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-primary" /> {config.mondayPushTime || '09:00'} IST
+                  <div className="pt-2.5 border-t border-border/60 flex items-center justify-between">
+                    <span className="text-xs text-text-secondary flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-primary" /> 
+                      Scheduled: <strong className="text-primary font-bold">{to12Hour(config.mondayPushTime || '09:00 AM')} IST</strong>
                     </span>
                     <button
                       type="button"
                       disabled={testingPushDay === 'monday'}
                       onClick={() => handleTestPush('monday')}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       <Send className="w-3 h-3" />
-                      {testingPushDay === 'monday' ? 'Test Push Sending...' : 'Test Monday Push'}
+                      {testingPushDay === 'monday' ? 'Sending...' : 'Test Monday Push'}
                     </button>
                   </div>
                 </div>
 
                 {/* ── Friday Card ────────────────────────────────────── */}
-                <div className="p-5 rounded-2xl bg-surface-secondary/70 border border-border space-y-4 relative flex flex-col justify-between">
-                  <div className="space-y-4">
+                <div className="p-4 sm:p-5 rounded-2xl bg-surface-secondary/70 border border-border space-y-3 relative flex flex-col justify-between">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between pb-2 border-b border-border/60">
                       <div className="flex items-center gap-2">
                         <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl">
@@ -650,59 +769,51 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <h4 className="text-sm font-bold text-text">Friday Push</h4>
+                          <p className="text-[11px] text-text-secondary">Weekly Friday automated push</p>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={config.fridayPushEnabled}
-                          onChange={(e) => handleConfigChange('fridayPushEnabled', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                      </label>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                        Friday Custom Key 
+                          Friday Push Key
                         </label>
                         <input
                           type="text"
                           value={config.fridayPushKey || 'jummah_mubarak'}
-                          placeholder="e.g. jummah_mubarak or promo_key"
+                          placeholder="e.g. jummah_mubarak"
                           onChange={(e) => handleConfigChange('fridayPushKey', e.target.value)}
-                          className="bg-input-bg text-text text-sm py-2 px-3 border-2 border-emerald-400/60 rounded-xl outline-none focus:border-emerald-600 transition-colors font-mono font-semibold shadow-sm"
+                          className="bg-input-bg text-text text-sm py-1.5 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 transition-colors font-mono font-semibold"
                         />
                       </div>
 
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-emerald-600" /> Time)
+                          <Clock className="w-3.5 h-3.5 text-emerald-600" /> Friday Time
                         </label>
-                        <input
-                          type="time"
-                          value={config.fridayPushTime || '10:00'}
-                          onChange={(e) => handleConfigChange('fridayPushTime', e.target.value)}
-                          className="bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 transition-colors font-medium"
+                        <TimePicker12Hour
+                          value={config.fridayPushTime || '10:00 AM'}
+                          onChange={(val) => handleConfigChange('fridayPushTime', val)}
+                          themeColor="emerald"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-border/60 flex items-center justify-between">
-                    <span className="text-[11px] text-text-secondary flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-emerald-600" /> {config.fridayPushTime || '10:00'} (10:00 AM IST)
+                  <div className="pt-2.5 border-t border-border/60 flex items-center justify-between">
+                    <span className="text-xs text-text-secondary flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                      Scheduled: <strong className="text-emerald-700 font-bold">{to12Hour(config.fridayPushTime || '10:00 AM')} IST</strong>
                     </span>
                     <button
                       type="button"
                       disabled={testingPushDay === 'friday'}
                       onClick={() => handleTestPush('friday')}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       <Send className="w-3 h-3" />
-                      {testingPushDay === 'friday' ? 'Test Push Sending...' : 'Test Friday Push'}
+                      {testingPushDay === 'friday' ? 'Sending...' : 'Test Friday Push'}
                     </button>
                   </div>
                 </div>
