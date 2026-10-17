@@ -4,7 +4,7 @@ import {
   Upload, X, Globe, Smartphone, Star,
   Image as ImageIcon, Mail, Phone,
   Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2,
-  Apple, Play
+  Apple, Play, Bell, Clock, Calendar, Send
 } from 'lucide-react'
 import api, { assetUrl, getSubdomainTenant } from '../lib/api'
 import Loader from '../components/common/Loader'
@@ -41,6 +41,17 @@ const DEFAULT_CONFIG = {
   playStoreUrl: '',
   appStoreUrl: '',
   bannerImages: [],
+  // Monday & Friday Push Notification Config
+  mondayPushEnabled: true,
+  mondayPushTime: '09:00',
+  mondayPushKey: 'monday_weekly',
+  mondayPushTitle: '',
+  mondayPushBody: '',
+  fridayPushEnabled: true,
+  fridayPushKey: 'jummah_mubarak',
+  fridayPushTime: '10:00',
+  fridayPushTitle: '',
+  fridayPushBody: '',
 }
 
 const WEB_THEME_KEYS = [
@@ -65,7 +76,17 @@ const WEB_THEME_KEYS = [
   'whatsapp',
   'playStoreUrl',
   'appStoreUrl',
-  'bannerImages'
+  'bannerImages',
+  'mondayPushEnabled',
+  'mondayPushTime',
+  'mondayPushKey',
+  'mondayPushTitle',
+  'mondayPushBody',
+  'fridayPushEnabled',
+  'fridayPushKey',
+  'fridayPushTime',
+  'fridayPushTitle',
+  'fridayPushBody'
 ]
 
 const persistWebThemeToLocalStorage = (theme) => {
@@ -284,6 +305,17 @@ export default function SettingsPage() {
         playStoreUrl: data.playStoreUrl || data.playstore_url || data.android_app_link || '',
         appStoreUrl: data.appStoreUrl || data.appstore_url || data.ios_app_link || '',
         bannerImages: Array.isArray(data.bannerImages) ? data.bannerImages : [],
+        // Monday & Friday Push Notification Config
+        mondayPushEnabled: data.mondayPushEnabled !== false,
+        mondayPushTime: data.mondayPushTime || data.monday_push_time || '09:00',
+        mondayPushKey: data.mondayPushKey || data.monday_push_key || 'monday_weekly',
+        mondayPushTitle: data.mondayPushTitle || data.monday_push_title || '',
+        mondayPushBody: data.mondayPushBody || data.monday_push_body || '',
+        fridayPushEnabled: data.fridayPushEnabled !== false,
+        fridayPushKey: data.fridayPushKey || data.friday_push_key || 'jummah_mubarak',
+        fridayPushTime: data.fridayPushTime || data.friday_push_time || '10:00',
+        fridayPushTitle: data.fridayPushTitle || data.friday_push_title || '',
+        fridayPushBody: data.fridayPushBody || data.friday_push_body || '',
       })
       setLogoFiles({ appLogo: null, webLogo: null, favicon: null })
       setNewBannerFiles([])
@@ -292,6 +324,20 @@ export default function SettingsPage() {
       setError('Failed to fetch platform configurations')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const [testingPushDay, setTestingPushDay] = useState(null)
+
+  const handleTestPush = async (day) => {
+    try {
+      setTestingPushDay(day)
+      const res = await api.post('/update_app_theme/test_push', { day })
+      toast.success(res.data?.message || `${day === 'friday' ? 'Friday' : 'Monday'} test push sent successfully!`)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to trigger test push')
+    } finally {
+      setTestingPushDay(null)
     }
   }
 
@@ -336,10 +382,20 @@ export default function SettingsPage() {
       const payload = new FormData()
 
       // Colors + text fields
-      const textFields = ['primaryColor','secondaryColor','backgroundColor','textColor','buttonColor','fontColor','borderColor','gradientStart','gradientEnd','name','email','phone','facebook','twitter','instagram','youtube','whatsapp','playStoreUrl','appStoreUrl']
+      const textFields = [
+        'primaryColor','secondaryColor','backgroundColor','textColor','buttonColor','fontColor','borderColor',
+        'gradientStart','gradientEnd','name','email','phone','facebook','twitter','instagram','youtube','whatsapp',
+        'playStoreUrl','appStoreUrl',
+        'mondayPushEnabled','mondayPushTime','mondayPushKey','mondayPushTitle','mondayPushBody',
+        'fridayPushEnabled','fridayPushKey','fridayPushTime','fridayPushTitle','fridayPushBody'
+      ]
       textFields.forEach(key => payload.append(key, config[key] ?? ''))
       payload.append('playstore_url', config.playStoreUrl ?? '')
       payload.append('appstore_url', config.appStoreUrl ?? '')
+      payload.append('monday_push_time', config.mondayPushTime ?? '09:00')
+      payload.append('monday_push_key', config.mondayPushKey ?? 'monday_weekly')
+      payload.append('friday_push_key', config.fridayPushKey ?? 'jummah_mubarak')
+      payload.append('friday_push_time', config.fridayPushTime ?? '10:00')
 
       // Logo files or existing URLs
       ;['appLogo', 'webLogo', 'favicon'].forEach(field => {
@@ -511,6 +567,151 @@ export default function SettingsPage() {
                   placeholder="https://apps.apple.com/app/..."
                   onChange={handleConfigChange}
                 />
+              </div>
+            </div>
+
+            {/* Weekly Scheduled Push Notifications (Monday & Friday Cron Loop) */}
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-glass-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-primary" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-text">સાપ્તાહિક પુશ નોટિફિકેશન શેડ્યૂલ (Weekly Auto Push)</h3>
+                    <p className="text-xs text-text-secondary">Monday dynamic time push &amp; Friday auto push (10:00 AM) with custom key</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Cron Active (Every 1 min)
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ── Monday Card ────────────────────────────────────── */}
+                <div className="p-5 rounded-2xl bg-surface-secondary/70 border border-border space-y-4 relative flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-blue-500/10 text-blue-600 rounded-xl">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-text">સોમવાર (Monday Push)</h4>
+                          <span className="text-[11px] text-text-secondary">ડાયનેમિક ટાઇમ સેટિંગ (Dynamic Time)</span>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.mondayPushEnabled}
+                          onChange={(e) => handleConfigChange('mondayPushEnabled', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-primary" /> સોમવાર પુશ ટાઈમ (Time) *
+                      </label>
+                      <input
+                        type="time"
+                        value={config.mondayPushTime || '09:00'}
+                        onChange={(e) => handleConfigChange('mondayPushTime', e.target.value)}
+                        className="bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-primary transition-colors font-medium max-w-sm"
+                      />
+                      <span className="text-[11px] text-text-secondary">દર સોમવારે આ સમયે બધા જ યુઝર્સને ઓટોમેટિક પુશ નોટિફિકેશન જશે</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-border/60 flex items-center justify-between">
+                    <span className="text-[11px] text-text-secondary flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-primary" /> {config.mondayPushTime || '09:00'} IST
+                    </span>
+                    <button
+                      type="button"
+                      disabled={testingPushDay === 'monday'}
+                      onClick={() => handleTestPush('monday')}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      <Send className="w-3 h-3" />
+                      {testingPushDay === 'monday' ? 'ટેસ્ટ પુશ મોકલાઈ રહ્યું છે...' : 'ટેસ્ટ સોમવાર પુશ (Test Send)'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Friday Card ────────────────────────────────────── */}
+                <div className="p-5 rounded-2xl bg-surface-secondary/70 border border-border space-y-4 relative flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-text">શુક્રવાર (Friday Push)</h4>
+                          <span className="text-[11px] text-text-secondary font-semibold text-emerald-600">૧૦:૦૦ AM ઓટો પુશ (Auto 10:00 AM)</span>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.fridayPushEnabled}
+                          onChange={(e) => handleConfigChange('fridayPushEnabled', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
+                          કી / Key (Friday Custom Key) *
+                        </label>
+                        <input
+                          type="text"
+                          value={config.fridayPushKey || 'jummah_mubarak'}
+                          placeholder="e.g. jummah_mubarak or promo_key"
+                          onChange={(e) => handleConfigChange('fridayPushKey', e.target.value)}
+                          className="bg-input-bg text-text text-sm py-2 px-3 border-2 border-emerald-400/60 rounded-xl outline-none focus:border-emerald-600 transition-colors font-mono font-semibold shadow-sm"
+                        />
+                        <span className="text-[11px] text-emerald-600 font-medium">આ કી પુશ પેલોડ અને FCM માં પાસ થશે</span>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-emerald-600" /> પુશ સમય (10:00 AM Auto)
+                        </label>
+                        <input
+                          type="time"
+                          value={config.fridayPushTime || '10:00'}
+                          onChange={(e) => handleConfigChange('fridayPushTime', e.target.value)}
+                          className="bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 transition-colors font-medium"
+                        />
+                        <span className="text-[11px] text-text-secondary">ડિફોલ્ટ 10:00 (10:00 AM) સેટ છે</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-border/60 flex items-center justify-between">
+                    <span className="text-[11px] text-text-secondary flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-emerald-600" /> {config.fridayPushTime || '10:00'} (10:00 AM IST)
+                    </span>
+                    <button
+                      type="button"
+                      disabled={testingPushDay === 'friday'}
+                      onClick={() => handleTestPush('friday')}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      <Send className="w-3 h-3" />
+                      {testingPushDay === 'friday' ? 'ટેસ્ટ પુશ મોકલાઈ રહ્યું છે...' : 'ટેસ્ટ શુક્રવાર પુશ (Test Send)'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

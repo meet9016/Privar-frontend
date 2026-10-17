@@ -46,19 +46,30 @@ const isSameDayAndMonth = (dateStr) => {
 }
 
 export const ISLAMIC_MONTHS = [
-  { value: 'મોહર્રમ', label: '૧. મોહર્રમ (Muharram)', num: 1 },
-  { value: 'સફર', label: '૨. સફર (Safar)', num: 2 },
-  { value: 'રબીઉલ અવ્વલ', label: '૩. રબીઉલ અવ્વલ (Rabi\' al-Awwal)', num: 3 },
-  { value: 'રબીઉલ આખિર', label: '૪. રબીઉલ આખિર (Rabi\' al-Thani)', num: 4 },
-  { value: 'જમાદિલ અવ્વલ', label: '૫. જમાદિલ અવ્વલ (Jumada al-Awwal)', num: 5 },
-  { value: 'જમાદિલ આખિર', label: '૬. જમાદિલ આખિર (Jumada al-Thani)', num: 6 },
-  { value: 'રજબ', label: '૭. રજબ (Rajab)', num: 7 },
-  { value: 'શાબાન', label: '૮. શાબાન (Sha\'ban)', num: 8 },
-  { value: 'રમઝાન', label: '૯. રમઝાન (Ramadan)', num: 9 },
-  { value: 'શવ્વાલ', label: '૧૦. શવ્વાલ (Shawwal)', num: 10 },
-  { value: 'ઝીલકાદ', label: '૧૧. ઝીલકાદ (Dhul Qadah)', num: 11 },
-  { value: 'ઝીલહિજ્જા', label: '૧૨. ઝીલહિજ્જા (Dhul Hijjah)', num: 12 }
+  { value: 'મોહર્રમ', label: '૧. મોહર્રમ (Muharram)', num: 1, en: 'Muharram', aliases: ['muharram', 'moharram'] },
+  { value: 'સફર', label: '૨. સફર (Safar)', num: 2, en: 'Safar', aliases: ['safar'] },
+  { value: 'રબીઉલ અવ્વલ', label: '૩. રબીઉલ અવ્વલ (Rabi\' al-Awwal)', num: 3, en: 'Rabi\' al-Awwal', aliases: ['rabi al-awwal', 'rabi 1', 'rabi i', 'rabiul awwal'] },
+  { value: 'રબીઉલ આખિર', label: '૪. રબીઉલ આખિર (Rabi\' al-Thani)', num: 4, en: 'Rabi\' al-Thani', aliases: ['rabi al-thani', 'rabi 2', 'rabi ii', 'rabiul aakhir', 'rabiul sani'] },
+  { value: 'જમાદિલ અવ્વલ', label: '૫. જમાદિલ અવ્વલ (Jumada al-Awwal)', num: 5, en: 'Jumada al-Awwal', aliases: ['jumada al-awwal', 'jumada 1', 'jumada i', 'jumada awwal', 'jamadil awwal'] },
+  { value: 'જમાદિલ આખિર', label: '૬. જમાદિલ આખિર (Jumada al-Thani)', num: 6, en: 'Jumada al-Thani', aliases: ['jumada al-thani', 'jumada 2', 'jumada ii', 'jumada aakhir', 'jamadil aakhir', 'jamadil sani'] },
+  { value: 'રજબ', label: '૭. રજબ (Rajab)', num: 7, en: 'Rajab', aliases: ['rajab'] },
+  { value: 'શાબાન', label: '૮. શાબાન (Sha\'ban)', num: 8, en: 'Sha\'ban', aliases: ['shaban', 'sha\'ban', 'shabaan'] },
+  { value: 'રમઝાન', label: '૯. રમઝાન (Ramadan)', num: 9, en: 'Ramadan', aliases: ['ramzan', 'ramadan'] },
+  { value: 'શવ્વાલ', label: '૧૦. શવ્વાલ (Shawwal)', num: 10, en: 'Shawwal', aliases: ['shawwal', 'shavval'] },
+  { value: 'ઝીલકાદ', label: '૧૧. ઝીલકાદ (Dhul Qadah)', num: 11, en: 'Dhul Qadah', aliases: ['dhul qadah', 'dhul-qadah', 'zilqad', 'zulqadah'] },
+  { value: 'ઝીલહિજ્જા', label: '૧૨. ઝીલહિજ્જા (Dhul Hijjah)', num: 12, en: 'Dhul Hijjah', aliases: ['dhul hijjah', 'dhul-hijjah', 'zilhajj', 'zulhijjah'] }
 ]
+
+export const findIslamicMonth = (str) => {
+  if (!str) return null
+  const s = String(str).toLowerCase().trim()
+  return ISLAMIC_MONTHS.find(m => {
+    if (m.value && s.includes(m.value.toLowerCase())) return true
+    if (m.en && s.includes(m.en.toLowerCase())) return true
+    if (m.aliases && m.aliases.some(a => s.includes(a))) return true
+    return false
+  }) || null
+}
 
 export const GUJARATI_DAYS = [
   'રવિવાર',
@@ -116,11 +127,36 @@ export const getGujaratiDay = (dateStr) => {
 export const getAutoIslamicDate = (dateStr) => {
   const d = parseAnyDate(dateStr)
   if (!d) return ''
-  const day = d.getDate()
-  const month = d.getMonth() + 1 // 1 to 12
-  const monthObj = ISLAMIC_MONTHS[month - 1]
-  const monthName = monthObj ? monthObj.value : ''
-  return monthName ? `${day} ${monthName}` : ''
+  try {
+    const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric'
+    })
+    const parts = formatter.formatToParts(d)
+    const day = parts.find(p => p.type === 'day')?.value
+    const month = parseInt(parts.find(p => p.type === 'month')?.value, 10)
+    const m = ISLAMIC_MONTHS[month - 1]
+    if (day && m) {
+      return `${day} ${m.value}`
+    }
+  } catch (e) {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-u-ca-islamic', {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric'
+      })
+      const parts = formatter.formatToParts(d)
+      const day = parts.find(p => p.type === 'day')?.value
+      const month = parseInt(parts.find(p => p.type === 'month')?.value, 10)
+      const m = ISLAMIC_MONTHS[month - 1]
+      if (day && m) {
+        return `${day} ${m.value}`
+      }
+    } catch (_) {}
+  }
+  return ''
 }
 
 const MAYYAT_DEFAULT_DUA = `અલ્લાહ પાક.. એના પ્યારા હબીબ મોહમ્મદ મુસ્તફા સલ્લલ્લાહુ અલયહી વસલ્લમના સદકામા... બુઝુરગાને દીન રહમતુલ્લાહી તઆલા અલયહીના વસીલાથી મગફીરત ફરમાવે... એમની આગળની મંઝીલો આસાન ફરમાવે... દરજાત બુલંદ ફરમાવે...ઘરવાળાઓને સબ્રે જમીલ અતા ફરમાવે...`
@@ -977,7 +1013,7 @@ export default function ContentPage({ type, headerLeftContent }) {
       address: '',
       vaar: getGujaratiDay(todayStr),
       islamic_date: getAutoIslamicDate(todayStr),
-      janaza_date: '',
+      janaza_date: todayStr,
       janaza_time: '',
       janaza_place: '',
       kabrastan: '',
@@ -1013,7 +1049,7 @@ export default function ContentPage({ type, headerLeftContent }) {
       death_place: row.death_place || '',
       village: row.village || row.native_place || '',
       address: row.address || '',
-      vaar: calculatedVaar || row.vaar || '',
+      vaar: row.vaar || calculatedVaar || '',
       islamic_date: (hasValidGujMonth ? row.islamic_date : calculatedIslamic) || '',
       janaza_date: row.janaza_date ? (row.janaza_date.includes('T') ? row.janaza_date.split('T')[0] : row.janaza_date) : '',
       janaza_time: row.janaza_time || '',
@@ -1031,7 +1067,8 @@ export default function ContentPage({ type, headerLeftContent }) {
       ...prev,
       death_date: val,
       vaar: vaarVal,
-      islamic_date: islamicVal
+      islamic_date: islamicVal,
+      janaza_date: prev.janaza_date || val
     }))
   }
 
@@ -1158,14 +1195,14 @@ export default function ContentPage({ type, headerLeftContent }) {
     const janazaPlace = row.janaza_place ? `${row.janaza_place} માં` : '... માં'
     const addressText = row.address || row.death_place || '-'
 
-    let text = `મૈયત સમાચાર\n\n`
-    text += `ગામ - ${villageText}\n\n`
-    text += `તારીખ: ${dateDisplay}\n\n`
-    text += `વાર: ${vaarText}\n\n`
-    text += ` * ${titlePrefixGujarati} ${memberName} * \n\n\n`
+    let text = `🕊️ *મૈયત સમાચાર*\n\n`
+    text += `*ગામ -* ${villageText}  |  *તારીખ:* ${dateDisplay}  |  *વાર:* ${vaarText}\n\n`
+    text += `* *${titlePrefixGujarati} ${memberName}* *\n\n`
     text += `જનાઝા ની નમાઝ નો ટાઇમ ${janazaTime} વાગે ${janazaPlace} ઇન્શાઅલ્લાહ નક્કી થયેલ છે.\n\n`
-    text += `*એડ્રેસ: ${addressText}*\n\n\n`
-    text += `ઈન્ના લિલ્લાહી વ ઈન્ના ઈલયહી રાજેઊન...\n\n`
+    if (addressText && addressText !== '-') {
+      text += `*એડ્રેસ: ${addressText}*\n\n`
+    }
+    text += `*ઈન્ના લિલ્લાહી વ ઈન્ના ઈલયહી રાજેઊન...*\n\n`
     text += `અલ્લાહ પાક.. એના પ્યારા હબીબ મોહમ્મદ મુસ્તફા સલ્લલ્લાહુ અલયહી વસલ્લમના સદકામા... બુઝુરગાને દીન રહમતુલ્લાહી તઆલા અલયહીના વસીલાથી મગફીરત ફરમાવે... એમની આગળની મંઝીલો આસાન ફરમાવે... દરજાત બુલંદ ફરમાવે...ઘરવાળાઓને સબ્રે જમીલ અતા ફરમાવે...\n\n`
     text += `آمین بجاه شفیع المذنبین ﷺ\n`
     text += `આમીન... યા રબ્બુલ આલમીન.`
@@ -1372,9 +1409,13 @@ export default function ContentPage({ type, headerLeftContent }) {
                       if (found && deathModalMode === 'add') {
                         const mName = [found.first_name, found.middle_name, found.last_name].filter(Boolean).join(' ') || found.name || ''
                         const isFem = String(found.gender || '').toLowerCase() === 'female'
+                        const mVillage = found.village || found.native_place || found.city || ''
+                        const mAddress = found.address || found.residential_address || ''
                         setDeathFormData(prev => ({
                           ...prev,
-                          death_note: getGujaratiDuaText(mName, found.village || found.city, isFem)
+                          village: prev.village || mVillage,
+                          address: prev.address || mAddress,
+                          death_note: getGujaratiDuaText(mName, mVillage, isFem)
                         }))
                       }
                     }}
@@ -1496,24 +1537,62 @@ export default function ContentPage({ type, headerLeftContent }) {
                   onChange={handleDeathDateChange}
                   placeholder="Select date"
                 />
-                <Select
-                  label="Day of Week (વાર)"
-                  value={deathFormData.vaar}
-                  onChange={(val) => setDeathFormData(prev => ({ ...prev, vaar: val }))}
-                  options={GUJARATI_DAYS.map(d => ({ value: d, label: d }))}
-                  placeholder="Select Vaar"
-                />
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-text-secondary">
+                      Day of Week (વાર)
+                    </label>
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                      Auto
+                    </span>
+                  </div>
+                  <Select
+                    label=""
+                    value={deathFormData.vaar}
+                    onChange={(val) => setDeathFormData(prev => ({ ...prev, vaar: val }))}
+                    options={GUJARATI_DAYS.map(d => ({ value: d, label: d }))}
+                    placeholder="Select Vaar"
+                    disabled={savingDeath}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-text-secondary mb-1.5">
-                  Islamic Month / Date (ઇસ્લામિક મહિનો)
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-text-secondary">
+                    Islamic Month / Date (ઇસ્લામિક મહિનો)
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                      Auto
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (deathFormData.death_date) {
+                          const autoDate = getAutoIslamicDate(deathFormData.death_date)
+                          const autoVaar = getGujaratiDay(deathFormData.death_date)
+                          setDeathFormData(prev => ({
+                            ...prev,
+                            islamic_date: autoDate,
+                            vaar: autoVaar || prev.vaar
+                          }))
+                          toast.success(`Auto-fetched: ${autoDate}`)
+                        }
+                      }}
+                      title="Re-calculate Islamic Date from Date of Vafat"
+                      className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-md transition-colors"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Auto Fetch
+                    </button>
+                  </div>
+                </div>
                 <div className="flex gap-2.5 items-center">
                   <div className="flex-1 min-w-0">
                     <input
                       type="text"
-                      placeholder="દા.ત. ૧૬ શવ્વાલ / 16 શવ્વાલ"
+                      placeholder="દા.ત. ૬ જમાદિલ અવ્વલ / 6 જમાદિલ અવ્વલ"
                       value={deathFormData.islamic_date}
                       onChange={(e) => {
                         const val = e.target.value
@@ -1543,7 +1622,7 @@ export default function ContentPage({ type, headerLeftContent }) {
                   <select
                     className="px-3.5 py-2.5 bg-input-bg border border-border rounded-xl text-xs font-semibold text-text outline-none focus:border-primary/50 cursor-pointer hover:border-primary/40 transition-colors shrink-0 min-w-[170px]"
                     title="Quick Pick Islamic Month"
-                    value={ISLAMIC_MONTHS.find(m => deathFormData.islamic_date?.includes(m.value))?.value || ''}
+                    value={findIslamicMonth(deathFormData.islamic_date)?.value || ''}
                     onChange={(e) => {
                       if (!e.target.value) return
                       const chosenMonth = e.target.value
@@ -1554,8 +1633,9 @@ export default function ContentPage({ type, headerLeftContent }) {
                           if (match) dayPart = match[1]
                         }
                         if (!dayPart && prev.death_date) {
-                          const d = parseAnyDate(prev.death_date)
-                          if (d) dayPart = String(d.getDate())
+                          const auto = getAutoIslamicDate(prev.death_date)
+                          const match = auto?.match(/^([0-9૦-૯]+)/)
+                          if (match) dayPart = match[1]
                         }
                         if (!dayPart) dayPart = '1'
                         return {
@@ -1615,8 +1695,7 @@ export default function ContentPage({ type, headerLeftContent }) {
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-text">Namaz-e-Janaza & Kabrastan (જનાઝા ની નમાઝ અને કબ્રસ્તાન)</h4>
-                  <p className="text-xs text-text-secondary">જનાઝા નો સમય, મસ્જિદ/જગ્યા અને દફનવિધિ કબ્રસ્તાન</p>
+                  <h4 className="text-sm font-bold text-text">Namaz-e-Janaza & Kabrastan </h4>
                 </div>
               </div>
 
@@ -1662,8 +1741,7 @@ export default function ContentPage({ type, headerLeftContent }) {
                     <span className="text-sm">🤲</span>
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-text">Dua / Special Remarks (દુઆ-એ-મગફિરત)</h4>
-                    <p className="text-xs text-text-secondary">કાર્ડમાં દર્શાવવામાં આવતી ખાસ દુઆ</p>
+                    <h4 className="text-sm font-bold text-text">Dua / Special Remarks</h4>
                   </div>
                 </div>
                 <button

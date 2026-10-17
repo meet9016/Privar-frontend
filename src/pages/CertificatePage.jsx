@@ -3918,53 +3918,7 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
   // Common Footer Component with Signatures & Terms
   const renderFooter = () => (
     <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%', marginBottom: 12 }}>
-      {/* Bottom Signature Row: Pramukh | Seal | Secretary */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
-          padding: '2px 44px 2px',
-          borderTop: '1px solid #e2e8f0',
-          marginTop: 2,
-        }}
-      >
-        {/* Pramukh */}
-        <div style={{ textAlign: 'center', minWidth: 120 }}>
-          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 10 }} />
-          <div style={{ fontWeight: 900, fontSize: 11.5, color: '#8b181b', fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>પ્રમુખશ્રી</div>
-          <div style={{ fontSize: 10, color: '#333', fontWeight: 700, fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>રાધનપુર મેમણ જમાત</div>
-        </div>
 
-        {/* Official Seal */}
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            border: '1.5px dashed #b8860b',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 8.5,
-            fontWeight: 900,
-            color: '#8b181b',
-            textAlign: 'center',
-            lineHeight: 1.2,
-            background: 'rgba(184, 134, 11, 0.04)',
-            fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif',
-          }}
-        >
-          સહી સિક્કો<br />(Seal)
-        </div>
-
-        {/* Secretary */}
-        <div style={{ textAlign: 'center', minWidth: 120 }}>
-          <div style={{ borderTop: '1.2px solid #8b181b', paddingTop: 2, marginBottom: 2, marginTop: 10 }} />
-          <div style={{ fontWeight: 900, fontSize: 11.5, color: '#8b181b', fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>સેક્રેટરીશ્રી</div>
-          <div style={{ fontSize: 10, color: '#333', fontWeight: 700, fontFamily: '"Noto Sans Gujarati", "Anek Gujarati", sans-serif' }}>રાધનપુર મેમણ જમાત</div>
-        </div>
-      </div>
 
       {/* Footer: Terms & Conditions */}
       <div
@@ -4119,7 +4073,7 @@ const LetterheadSheet = memo(function LetterheadSheet({ data, onChange, printRef
                     fontStyle: 'italic',
                   }}
                 >
-                  [ પૃષ્ઠ {toGujaratiDigits(pageIdx + 1)} / {toGujaratiDigits(totalPages)} &bull; આગળનું લખાણ {pageIdx + 2 === totalPages ? 'તથા સહી-સિક્કો પાછળના પૃષ્ઠ' : 'આગળના પૃષ્ઠ'} {toGujaratiDigits(pageIdx + 2)} પર જુઓ &rarr; ]
+                  [ પૃષ્ઠ {toGujaratiDigits(pageIdx + 1)} / {toGujaratiDigits(totalPages)} &bull; આગળનું લખાણ {pageIdx + 2 === totalPages ? 'પાછળના પૃષ્ઠ' : 'આગળના પૃષ્ઠ'} {toGujaratiDigits(pageIdx + 2)} પર જુઓ &rarr; ]
                 </div>
               )}
             </div>
