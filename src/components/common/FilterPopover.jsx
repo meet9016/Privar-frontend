@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useRef } from 'react'
+import ReactDOM from 'react-dom'
 import { Filter, X, Check, RotateCcw } from 'lucide-react'
 
 export default function FilterPopover({
@@ -14,7 +15,7 @@ export default function FilterPopover({
   className = ''
 }) {
   return (
-    <div className={`relative ${isOpen ? 'z-30' : 'z-10'} ${className}`}>
+    <div className={`relative ${isOpen ? 'z-[100]' : 'z-10'} ${className}`}>
       {/* Trigger Button */}
       <button
         type="button"
@@ -36,15 +37,19 @@ export default function FilterPopover({
 
       {isOpen && (
         <>
-          {/* Backdrop Overlay to close on outside click */}
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity duration-200"
-            onClick={onClose}
-          />
+          {/* Backdrop Overlay to cover entire screen including header and blur it */}
+          {ReactDOM.createPortal(
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[99] transition-opacity duration-200 animate-fade-in"
+              onClick={onClose}
+              aria-hidden="true"
+            />,
+            document.body
+          )}
 
           {/* Modern Sleek Filter Card */}
           <div
-            className={`absolute right-0 top-full mt-2 ${width} bg-surface border border-border rounded-xl shadow-2xl z-50 animate-fade-in overflow-hidden`}
+            className={`absolute right-0 top-full mt-2 ${width} bg-surface border border-border rounded-xl shadow-2xl z-[100] animate-fade-in overflow-hidden`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">

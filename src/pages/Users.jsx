@@ -969,6 +969,8 @@ export default function Users() {
           actionLabel: (permissions.canAdd || permissions.isSuperAdmin) ? 'Add Member' : undefined,
           onAction: (permissions.canAdd || permissions.isSuperAdmin) ? handleCreate : undefined
         }}
+
+        
         pagination={{
           currentPage,
           totalPages,

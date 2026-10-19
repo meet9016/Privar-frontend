@@ -466,7 +466,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         village: user.village || user.village_id || '',
         address: user.address || '',
         image: user.image || user.profile_image || '',
-        status: user.status !== undefined ? Number(user.status) : 1
+        status: user.status !== undefined ? Number(user.status) : 1,
+        amount: user.amount !== undefined ? user.amount : ''
       })
       const headId = user.id || user._id
       if (headId) {
@@ -542,7 +543,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         city_id: '',
         village: '',
         address: '',
-        status: 1
+        status: 1,
+        amount: ''
       })
       setMembers([])
       setDeletedMemberIds([])
@@ -1083,8 +1085,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           )}
         </div>
 
-        {/* Row 4: Date of Birth, Anniversary Date, Address, Status (4 inputs/columns) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
+        {/* Row 4: Date of Birth, Anniversary Date, Address, Status & Amount (Responsive grid) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 items-end">
           <DatePicker
             label="Date of Birth"
             required
@@ -1115,6 +1117,15 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             disabled={isLoading}
             activeLabel="Active"
             inactiveLabel="Inactive"
+          />
+          <Input
+            type="number"
+            label="Amount (₹)"
+            placeholder="e.g. 500"
+            value={formData.amount}
+            onChange={(e) => handleChange('amount', e.target.value)}
+            disabled={isLoading}
+            min="0"
           />
         </div>
       </div>

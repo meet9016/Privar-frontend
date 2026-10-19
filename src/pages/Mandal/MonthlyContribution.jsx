@@ -380,11 +380,16 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
     }
   }
 
-  // Download Bulk Receipts (for selected members or all paid members)
+  // Download Bulk Receipts / All Receipts as PDF
   const handleBulkDownloadReceipts = async (specificIds = null) => {
     setBulkReceiptDownloading(true)
     try {
       const isSelected = Array.isArray(specificIds) && specificIds.length > 0
+      const safeMonth = selectedMonth.replace(/[^a-zA-Z0-9_\-]/g, '_')
+      const fileName = isSelected
+        ? `Mandal_Contribution_Receipts_Selected_${specificIds.length}.pdf`
+        : `Mandal_Contribution_Receipts_${safeMonth}_All.pdf`
+
       const payload = {
         mandal_id: mandalId,
         month: selectedMonth,
@@ -396,51 +401,24 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
         payload.ids = specificIds
       }
 
-      // 1. Call Backend API to fetch direct bulk download link
-      const res = await getBulkContributionReceiptsLink(payload)
-      const data = res.data?.data || {}
-      const downloadUrl = data.download_url || getBulkContributionReceiptsDownloadUrl(payload)
+      // Download directly as blob using authenticated API instance
+      const response = await api.post(MANDAL_ENDPOINTS.RECEIPTS_BULK_DOWNLOAD, payload, {
+        responseType: 'blob'
+      })
 
-      // 2. Direct browser download
-      const safeMonth = selectedMonth.replace(/[^a-zA-Z0-9_\-]/g, '_')
-      const fileName = isSelected
-        ? `Mandal_Contribution_Receipts_Selected_${specificIds.length}.pdf`
-        : `Mandal_Contribution_Receipts_${safeMonth}_All.pdf`
-
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.setAttribute('download', fileName)
-      link.style.display = 'none'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      toast.success(isSelected ? `${specificIds.length} receipts downloaded successfully!` : 'All paid receipts downloaded successfully!')
-    } catch (err) {
-      console.error('Failed to get bulk receipt link:', err)
-      // Fallback direct url
-      const isSelected = Array.isArray(specificIds) && specificIds.length > 0
-      const payload = {
-        mandal_id: mandalId,
-        month: selectedMonth,
-        status: 'Paid',
-        payment_mode: paymentModeFilter !== 'All' ? paymentModeFilter : undefined,
-        search: debouncedSearch
+      if (response.data?.type === 'application/json') {
+        const text = await response.data.text()
+        const json = JSON.parse(text)
+        toast.error(json.message || 'No receipts found to download')
+        return
       }
-      if (isSelected) payload.ids = specificIds
 
-      const fallbackUrl = getBulkContributionReceiptsDownloadUrl(payload)
-      const fileName = isSelected
-        ? `Mandal_Contribution_Receipts_Selected_${specificIds.length}.pdf`
-        : `Mandal_Contribution_Receipts_${selectedMonth}_All.pdf`
-
-      const link = document.createElement('a')
-      link.href = fallbackUrl
-      link.setAttribute('download', fileName)
-      link.style.display = 'none'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      toast.success('Receipts downloaded')
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      saveAs(blob, fileName)
+      toast.success(isSelected ? `${specificIds.length} receipts downloaded successfully!` : 'PDF receipts downloaded successfully!')
+    } catch (err) {
+      console.error('Failed to download bulk receipts PDF:', err)
+      toast.error(err.response?.data?.message || 'Failed to download PDF receipts')
     } finally {
       setBulkReceiptDownloading(false)
     }
@@ -599,33 +577,30 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
             </button>
           )}
 
-          {/* Download All Paid Receipts Button */}
+          {/* Download PDF Button */}
           <button
             type="button"
             onClick={() => handleBulkDownloadReceipts(null)}
             disabled={bulkReceiptDownloading}
-            className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 transition-colors cursor-pointer shadow-xs disabled:opacity-50 text-xs font-bold"
-            title="Download all paid contribution receipts for this month as PDF"
+            className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-700 dark:text-red-400 transition-colors cursor-pointer shadow-xs disabled:opacity-50 text-xs font-semibold"
+            title="Download PDF report & receipts"
           >
-            {bulkReceiptDownloading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-            ) : (
-              <FileDown className="w-4 h-4 text-emerald-600" />
-            )}
-            <span className="hidden sm:inline">All Receipts (PDF)</span>
-            <span className="sm:hidden">All Receipts</span>
+            <FileDown className={`w-4 h-4 text-red-600 dark:text-red-400 ${bulkReceiptDownloading ? 'animate-bounce' : ''}`} />
+            <span className="hidden sm:inline">{bulkReceiptDownloading ? 'Downloading...' : 'PDF'}</span>
+            <span className="sm:hidden">PDF</span>
           </button>
 
-          {/* Download Button */}
+          {/* Download Excel Button */}
           <button
             type="button"
             onClick={handleDownload}
             disabled={exportLoading}
-            className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl border border-border bg-input-bg hover:bg-surface-secondary text-text-secondary hover:text-text transition-colors cursor-pointer shadow-xs disabled:opacity-50 text-xs font-semibold"
+            className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 transition-colors cursor-pointer shadow-xs disabled:opacity-50 text-xs font-semibold"
             title="Download contributions Excel"
           >
-            <Download className={`w-4 h-4 ${exportLoading ? 'animate-spin text-primary' : ''}`} />
+            <Download className={`w-4 h-4 text-emerald-600 dark:text-emerald-400 ${exportLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{exportLoading ? 'Downloading...' : 'Excel'}</span>
+            <span className="sm:hidden">Excel</span>
           </button>
 
           {/* Refresh Button */}
