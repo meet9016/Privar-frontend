@@ -12,13 +12,21 @@ export const confirm = (message = 'Are you sure?', options = {}) => {
 
     pendingResolve = resolve
 
+    let msg = message
+    let opts = options
+    if (typeof message === 'object' && message !== null) {
+      msg = message.message || 'Are you sure?'
+      opts = { ...message, ...options }
+    }
+
     window.dispatchEvent(new CustomEvent(CONFIRM_EVENT, {
       detail: {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        message,
-        confirmText: options.confirmText || 'Delete',
-        cancelText: options.cancelText || 'Cancel',
-        type: options.type || 'danger'
+        title: opts.title || 'Confirm Action',
+        message: typeof msg === 'string' ? msg : 'Are you sure?',
+        confirmText: opts.confirmText || 'Delete',
+        cancelText: opts.cancelText || 'Cancel',
+        type: opts.type || opts.variant || 'danger'
       }
     }))
   })

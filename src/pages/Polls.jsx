@@ -218,13 +218,14 @@ export default function Polls() {
   }
 
   const handleDelete = async (id) => {
-    const isConfirmed = await confirm({
-      title: 'Delete Poll',
-      message: 'Are you sure you want to delete this poll? All responses and votes associated with it will be permanently removed.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      variant: 'danger'
-    })
+    const isConfirmed = await confirm(
+      'Are you sure you want to delete this poll? All responses and votes associated with it will be permanently removed.',
+      {
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        type: 'danger'
+      }
+    )
 
     if (!isConfirmed) return
 

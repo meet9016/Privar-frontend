@@ -55,8 +55,12 @@ export default function ConfirmDialog() {
           <AlertTriangle className={`h-8 w-8 ${isDanger ? 'text-error' : 'text-primary'}`} strokeWidth={2.5} />
         </div>
 
-        <h3 className="text-xl font-bold text-text mb-2 tracking-tight">Confirm Action</h3>
-        <p className="text-sm text-text-secondary/90 leading-relaxed mb-8 px-2">{dialog.message}</p>
+        <h3 className="text-xl font-bold text-text mb-2 tracking-tight">
+          {dialog.title || 'Confirm Action'}
+        </h3>
+        <p className="text-sm text-text-secondary/90 leading-relaxed mb-8 px-2">
+          {typeof dialog.message === 'string' ? dialog.message : (dialog.message?.message || '')}
+        </p>
 
         <div className="flex items-center justify-center gap-3 w-full">
           <button
