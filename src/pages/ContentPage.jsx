@@ -6,6 +6,7 @@ import { formatDate } from '../lib/api'
 import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
+import TimePicker from '../components/common/TimePicker'
 import DatePicker from '../components/DatePicker'
 import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck, Eye, Download, Copy } from 'lucide-react'
 import { toast } from '../lib/toast'
@@ -1598,37 +1599,35 @@ export default function ContentPage({ type, headerLeftContent }) {
                       className="w-full px-3.5 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/15 rounded-xl text-sm outline-none transition-all font-medium placeholder:text-text-secondary/50"
                       disabled={savingDeath}
                     />
-                    <select
-                      className="px-2.5 py-2.5 bg-input-bg border border-border rounded-xl text-xs font-semibold text-text outline-none focus:border-primary/50 cursor-pointer hover:border-primary/40 transition-colors shrink-0 max-w-[150px]"
-                      title="Quick Pick Islamic Month"
-                      value={findIslamicMonth(deathFormData.islamic_date)?.value || ''}
-                      onChange={(e) => {
-                        if (!e.target.value) return
-                        const chosenMonth = e.target.value
-                        setDeathFormData(prev => {
-                          let dayPart = ''
-                          if (prev.islamic_date) {
-                            const match = prev.islamic_date.match(/^([0-9૦-૯]+)/)
-                            if (match) dayPart = match[1]
-                          }
-                          if (!dayPart && prev.death_date) {
-                            const auto = getAutoIslamicDate(prev.death_date)
-                            const match = auto?.match(/^([0-9૦-૯]+)/)
-                            if (match) dayPart = match[1]
-                          }
-                          if (!dayPart) dayPart = '1'
-                          return {
-                            ...prev,
-                            islamic_date: `${dayPart} ${chosenMonth}`
-                          }
-                        })
-                      }}
-                    >
-                      <option value="" disabled>Month...</option>
-                      {ISLAMIC_MONTHS.map(m => (
-                        <option key={m.value} value={m.value}>{m.label}</option>
-                      ))}
-                    </select>
+                    <div className="w-48 sm:w-56 shrink-0">
+                      <Select
+                        placeholder="Month..."
+                        value={findIslamicMonth(deathFormData.islamic_date)?.value || ''}
+                        options={ISLAMIC_MONTHS}
+                        searchable={true}
+                        onChange={(chosenMonth) => {
+                          if (!chosenMonth) return
+                          setDeathFormData(prev => {
+                            let dayPart = ''
+                            if (prev.islamic_date) {
+                              const match = prev.islamic_date.match(/^([0-9૦-૯]+)/)
+                              if (match) dayPart = match[1]
+                            }
+                            if (!dayPart && prev.death_date) {
+                              const auto = getAutoIslamicDate(prev.death_date)
+                              const match = auto?.match(/^([0-9૦-૯]+)/)
+                              if (match) dayPart = match[1]
+                            }
+                            if (!dayPart) dayPart = '1'
+                            return {
+                              ...prev,
+                              islamic_date: `${dayPart} ${chosenMonth}`
+                            }
+                          })
+                        }}
+                        disabled={savingDeath}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1651,11 +1650,11 @@ export default function ContentPage({ type, headerLeftContent }) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
+                <TimePicker
                   label="Time of Vafat"
-                  placeholder="e.g. 05:30 AM"
+                  placeholder="Select time (e.g. 05:30 AM)"
                   value={deathFormData.death_time}
-                  onChange={(e) => setDeathFormData(prev => ({ ...prev, death_time: e.target.value }))}
+                  onChange={(val) => setDeathFormData(prev => ({ ...prev, death_time: val }))}
                   disabled={savingDeath}
                 />
                 <Input
@@ -1680,11 +1679,11 @@ export default function ContentPage({ type, headerLeftContent }) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
+                <TimePicker
                   label="Janaza Time"
-                  placeholder="e.g. 10:00 / Baad Namaz-e-Zuhr"
+                  placeholder="Select time (e.g. 01:30 PM)"
                   value={deathFormData.janaza_time}
-                  onChange={(e) => setDeathFormData(prev => ({ ...prev, janaza_time: e.target.value }))}
+                  onChange={(val) => setDeathFormData(prev => ({ ...prev, janaza_time: val }))}
                   disabled={savingDeath}
                 />
                 <Input

@@ -43,12 +43,18 @@ export default function Select({
     const availableHeight = isDropUp ? spaceAbove - 16 : spaceBelow - 16;
     const calculatedMaxHeight = Math.max(120, Math.min(menuMaxHeight + 50, availableHeight));
 
+    const menuWidth = Math.max(rect.width, 180);
+    let left = rect.left;
+    if (left + menuWidth > window.innerWidth - 12) {
+      left = Math.max(12, window.innerWidth - menuWidth - 12);
+    }
+
     if (isDropUp) {
       setMenuStyle({
         position: 'fixed',
         bottom: `${window.innerHeight - rect.top + 4}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
+        left: `${left}px`,
+        width: `${menuWidth}px`,
         maxHeight: `${calculatedMaxHeight}px`,
         zIndex: 999999,
       });
@@ -56,8 +62,8 @@ export default function Select({
       setMenuStyle({
         position: 'fixed',
         top: `${rect.bottom + 4}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
+        left: `${left}px`,
+        width: `${menuWidth}px`,
         maxHeight: `${calculatedMaxHeight}px`,
         zIndex: 999999,
       });
