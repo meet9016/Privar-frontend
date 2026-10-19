@@ -110,11 +110,6 @@ export const NEWS_ENDPOINTS = {
   DELETE_NEWS: (id) => `/news/${id}`
 }
 
-// Feedback Module API Endpoints
-export const FEEDBACK_ENDPOINTS = {
-  GET_FEEDBACK: '/feedback'
-}
-
 // Expenses Module API Endpoints
 export const EXPENSE_ENDPOINTS = {
   GET_EXPENSES: '/expenses',
@@ -180,7 +175,6 @@ export default {
   MATRIMONY: MATRIMONY_ENDPOINTS,
   POST: POST_ENDPOINTS,
   NEWS: NEWS_ENDPOINTS,
-  FEEDBACK: FEEDBACK_ENDPOINTS,
   EXPENSE: EXPENSE_ENDPOINTS,
   DONATION: DONATION_ENDPOINTS,
   MANDAL: MANDAL_ENDPOINTS,
