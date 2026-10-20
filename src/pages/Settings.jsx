@@ -4,7 +4,8 @@ import {
   Upload, X, Globe, Smartphone, Star,
   Image as ImageIcon, Mail, Phone,
   Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2,
-  Apple, Play, Bell, Clock, Calendar, Send
+  Apple, Play, Bell, Clock, Calendar, Send,
+  Moon, Sun, Sunrise, Sunset, Download, Share2
 } from 'lucide-react'
 import api, { assetUrl, getSubdomainTenant } from '../lib/api'
 import Loader from '../components/common/Loader'
@@ -12,6 +13,7 @@ import { toast } from '../lib/toast'
 import { AuthContext } from '../context/AuthContext'
 import { confirm } from '../lib/confirm'
 import { compressImage } from '../lib/imageCompressor'
+import NamazTimetableCard from '../components/NamazTimetableCard'
 
 const DEFAULT_COLORS = {
   primaryColor: '#1565C0',
@@ -175,6 +177,26 @@ const TimePicker12Hour = ({ value, onChange, themeColor = 'primary' }) => {
   );
 };
 
+const DEFAULT_PRAYER_TIMES = {
+  enabled: true,
+  showOnWebsite: true,
+  title: 'રાધનપુર મેમણ જમાત',
+  subTitle: 'રાધનપુર',
+  logo: '',
+  fajr: { name: 'ફજર', azan: '05:26', jamat: '05:45', qaza: '06:42', qazaLabel: 'સુધી' },
+  zohr: { name: 'ઝોહર', azan: '12:28', jamat: '12:45', qaza: '04:36', qazaLabel: 'સુધી' },
+  asr: { name: 'અસર', azan: '04:36', jamat: '04:50', qaza: '06:16', qazaLabel: 'સુધી' },
+  maghrib: { name: 'મગરીબ', azan: '06:16', jamat: '06:18', qaza: '07:29', qazaLabel: 'સુધી' },
+  isha: { name: 'ઈશા', azan: '07:29', jamat: '07:45', qaza: '05:25', qazaLabel: 'સુધી' },
+  tahajjudEnd: '05:25',
+  sehriEnd: '05:25',
+  sunrise: '06:42',
+  ishraq: '06:57',
+  chasht: '08:30',
+  iftar: '06:16',
+  note: ''
+}
+
 const DEFAULT_CONFIG = {
   ...DEFAULT_COLORS,
   appLogo: '',
@@ -195,6 +217,8 @@ const DEFAULT_CONFIG = {
   mondayPushTime: '09:00 AM',
   fridayPushKey: 'jummah_mubarak',
   fridayPushTime: '10:00 AM',
+  // Dynamic Namaz Timetable Config
+  prayerTimes: DEFAULT_PRAYER_TIMES,
 }
 
 const WEB_THEME_KEYS = [
@@ -222,7 +246,8 @@ const WEB_THEME_KEYS = [
   'bannerImages',
   'mondayPushTime',
   'fridayPushKey',
-  'fridayPushTime'
+  'fridayPushTime',
+  'prayerTimes'
 ]
 
 const persistWebThemeToLocalStorage = (theme) => {
@@ -391,6 +416,9 @@ export default function SettingsPage() {
   // New file objects (not yet uploaded)
   const [logoFiles, setLogoFiles] = useState({ appLogo: null, webLogo: null, favicon: null })
   const [newBannerFiles, setNewBannerFiles] = useState([])
+  const [prayerLogoFile, setPrayerLogoFile] = useState(null)
+  const [downloadingCard, setDownloadingCard] = useState(false)
+  const cardPreviewRef = useRef(null)
   // Track which existing banner URLs were deleted
   const [deletedBannerUrls, setDeletedBannerUrls] = useState([])
 
@@ -445,8 +473,11 @@ export default function SettingsPage() {
         mondayPushTime: to12Hour(data.mondayPushTime || '09:00 AM'),
         fridayPushKey: data.fridayPushKey || 'jummah_mubarak',
         fridayPushTime: to12Hour(data.fridayPushTime || '10:00 AM'),
+        // Dynamic Namaz Timetable Config
+        prayerTimes: data.prayerTimes || DEFAULT_PRAYER_TIMES,
       })
       setLogoFiles({ appLogo: null, webLogo: null, favicon: null })
+      setPrayerLogoFile(null)
       setNewBannerFiles([])
       setDeletedBannerUrls([])
     } catch (err) {
@@ -471,6 +502,151 @@ export default function SettingsPage() {
   }
 
   const handleConfigChange = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
+
+  const handlePrayerChange = (path, val) => {
+    setConfig(prev => {
+      const current = { ...(prev.prayerTimes || DEFAULT_PRAYER_TIMES) };
+      if (path.includes('.')) {
+        const [parent, child] = path.split('.');
+        current[parent] = {
+          ...(current[parent] || {}),
+          [child]: val
+        };
+      } else {
+        current[path] = val;
+      }
+      return { ...prev, prayerTimes: current };
+    });
+  }
+
+  const handlePrayerLogoChange = async (file) => {
+    if (!file) return;
+    const compressed = await compressImage(file, { maxWidth: 512, maxHeight: 512, quality: 0.85 });
+    setPrayerLogoFile(compressed);
+  }
+
+  const handlePrayerLogoDelete = () => {
+    setPrayerLogoFile(null);
+    handlePrayerChange('logo', '');
+  }
+
+  const handleResetPrayerTimes = async () => {
+    if (!await confirm('Reset prayer timetable to defaults (Radhanpur Memon Jamat timings)?', { confirmText: 'Reset', type: 'warning' })) return;
+    setConfig(prev => ({
+      ...prev,
+      prayerTimes: { ...DEFAULT_PRAYER_TIMES }
+    }));
+    setPrayerLogoFile(null);
+    toast.success('Prayer times reset to defaults');
+  }
+
+  const handleDownloadCard = async () => {
+    if (!cardPreviewRef.current) return;
+    setDownloadingCard(true);
+
+    // Create an off-screen container with fixed 440px width to ensure full card capture without sidebar/flex clipping
+    const offscreenContainer = document.createElement('div');
+    offscreenContainer.style.position = 'fixed';
+    offscreenContainer.style.left = '-9999px';
+    offscreenContainer.style.top = '0';
+    offscreenContainer.style.width = '440px';
+    offscreenContainer.style.minWidth = '440px';
+    offscreenContainer.style.maxWidth = '440px';
+    offscreenContainer.style.zIndex = '-99999';
+    offscreenContainer.style.overflow = 'visible';
+    offscreenContainer.style.background = 'transparent';
+
+    const clone = cardPreviewRef.current.cloneNode(true);
+    clone.style.width = '440px';
+    clone.style.minWidth = '440px';
+    clone.style.maxWidth = '440px';
+    clone.style.margin = '0';
+    clone.style.transform = 'none';
+    clone.style.boxShadow = 'none';
+
+    offscreenContainer.appendChild(clone);
+    document.body.appendChild(offscreenContainer);
+
+    try {
+      // 1. Wait for fonts to be loaded
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      // 2. Wait for all images inside clone to be ready
+      const imgs = Array.from(clone.querySelectorAll('img'));
+      await Promise.all(
+        imgs.map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((res) => {
+            img.onload = res;
+            img.onerror = res;
+          });
+        })
+      );
+
+      let dataUrl = null;
+
+      // 3. Primary export with html-to-image (skipFonts prevents cross-origin cssRules SecurityError)
+      try {
+        const { toPng } = await import('html-to-image');
+        dataUrl = await toPng(clone, {
+          skipFonts: true,
+          pixelRatio: 2.5,
+          cacheBust: false,
+          backgroundColor: '#F9F6ED',
+          width: 440,
+          height: clone.scrollHeight || clone.offsetHeight,
+          style: {
+            width: '440px',
+            minWidth: '440px',
+            maxWidth: '440px',
+            margin: '0',
+            transform: 'none'
+          }
+        });
+      } catch (errHtmlToImage) {
+        console.warn('html-to-image export failed, attempting html2canvas:', errHtmlToImage);
+      }
+
+      // 4. Secondary fallback with html2canvas
+      if (!dataUrl) {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(clone, {
+          scale: 2.5,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#F9F6ED',
+          width: 440,
+          windowWidth: 1200
+        });
+        dataUrl = canvas.toDataURL('image/png');
+      }
+
+      if (!dataUrl) throw new Error('Failed to generate image data URL');
+
+      // 5. Trigger download safely
+      const safeTitle = (config.prayerTimes?.title || 'Jamat')
+        .replace(/[/\\?%*:|"<>]/g, '-')
+        .trim();
+      const link = document.createElement('a');
+      link.download = `Namaz-Timetable-${safeTitle}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Namaz timetable flyer downloaded successfully!');
+    } catch (err) {
+      console.error('Download flyer error:', err);
+      toast.error('Failed to download timetable flyer. Please try again.');
+    } finally {
+      if (offscreenContainer.parentNode) {
+        offscreenContainer.parentNode.removeChild(offscreenContainer);
+      }
+      setDownloadingCard(false);
+    }
+  };
 
   const handleLogoChange = async (field, file) => {
     if (!file) return
@@ -523,6 +699,12 @@ export default function SettingsPage() {
       payload.append('monday_push_time', to12Hour(config.mondayPushTime ?? '09:00 AM'))
       payload.append('friday_push_key', config.fridayPushKey ?? 'jummah_mubarak')
       payload.append('friday_push_time', to12Hour(config.fridayPushTime ?? '10:00 AM'))
+
+      // Dynamic Prayer Times config
+      payload.append('prayerTimes', JSON.stringify(config.prayerTimes || DEFAULT_PRAYER_TIMES))
+      if (prayerLogoFile) {
+        payload.append('prayerLogo', prayerLogoFile)
+      }
 
       // Logo files or existing URLs
       ;['appLogo', 'webLogo', 'favicon'].forEach(field => {
@@ -577,22 +759,28 @@ export default function SettingsPage() {
     <div className="space-y-6 animate-slide-up text-text">
 
       {/* Tab Bar */}
-      <div className="flex gap-2 border-b border-border">
+      <div className="flex gap-2 border-b border-border overflow-x-auto pb-1">
         {[
           { key: 'branding', label: 'Branding & Info', icon: Building2 },
           { key: 'theme', label: 'Theme Colors', icon: Settings },
+          { key: 'prayer', label: 'Namaz Timetable', icon: Clock, badge: 'Active' },
         ].map(tab => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap cursor-pointer
               ${activeTab === tab.key
                 ? 'border-primary text-primary'
                 : 'border-transparent text-text-secondary hover:text-text'}`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
+            {tab.badge && (
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                {tab.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -931,6 +1119,272 @@ export default function SettingsPage() {
               <div className="mt-6 p-3.5 rounded-xl bg-surface-secondary border border-border text-sm text-text-secondary leading-relaxed flex gap-2">
                 <Info className="w-4 h-4 text-primary shrink-0" />
                 <span>Theme tokens are synchronized dynamically with both web and mobile environments.</span>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ── TAB: NAMAZ TIMETABLE (PRAYER TIMES) ────────────────────────── */}
+        {activeTab === 'prayer' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            {/* Left 7 Columns: Timetable Form Controls */}
+            <div className="lg:col-span-7 space-y-6">
+
+              {/* Card 1: Timetable Header */}
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-glass-sm flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text">Namaz Timetable Config</h3>
+                  <p className="text-xs text-text-secondary">Configure daily 5 prayers, Sehri, Iftar and special timings</p>
+                </div>
+              </div>
+
+              {/* Card 2: 5 Farz Prayers Timings */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-glass-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div className="flex items-center gap-2">
+                    <Moon className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-sm font-bold text-text">5 Daily Farz Prayers</h4>
+                  </div>
+                  <span className="text-[11px] font-semibold text-text-secondary">12-hour or 24-hour format supported</span>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    { key: 'fajr', label: 'Fajr', icon: Sunrise, defaultName: 'Fajr' },
+                    { key: 'zohr', label: 'Zohr', icon: Sun, defaultName: 'Zohr' },
+                    { key: 'asr', label: 'Asr', icon: Sun, defaultName: 'Asr' },
+                    { key: 'maghrib', label: 'Maghrib', icon: Sunset, defaultName: 'Maghrib' },
+                    { key: 'isha', label: 'Isha', icon: Moon, defaultName: 'Isha' },
+                  ].map(({ key, label, icon: Icon, defaultName }) => {
+                    const prayer = config.prayerTimes?.[key] || {};
+                    return (
+                      <div key={key} className="p-4 rounded-xl bg-surface-secondary/70 border border-border space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <span className="text-sm font-bold text-text">{label}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                          {/* Azan */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[11px] font-bold text-text-secondary flex items-center gap-1">
+                              <span>Azan</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={prayer.azan || ''}
+                              placeholder="05:26"
+                              onChange={(e) => handlePrayerChange(`${key}.azan`, e.target.value)}
+                              className="bg-input-bg text-text text-sm font-mono font-bold text-center py-1.5 px-2 border border-border rounded-lg outline-none focus:border-emerald-600"
+                            />
+                          </div>
+
+                          {/* Jamat */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[11px] font-bold text-text-secondary flex items-center gap-1">
+                              <span>Jamat</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={prayer.jamat || ''}
+                              placeholder="05:45"
+                              onChange={(e) => handlePrayerChange(`${key}.jamat`, e.target.value)}
+                              className="bg-input-bg text-text text-sm font-mono font-bold text-center py-1.5 px-2 border border-border rounded-lg outline-none focus:border-emerald-600"
+                            />
+                          </div>
+
+                          {/* Qaza */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[11px] font-bold text-text-secondary flex items-center gap-1">
+                              <span>Qaza Until</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={prayer.qaza || ''}
+                              placeholder="06:42"
+                              onChange={(e) => handlePrayerChange(`${key}.qaza`, e.target.value)}
+                              className="bg-input-bg text-text text-sm font-mono font-bold text-center py-1.5 px-2 border border-border rounded-lg outline-none focus:border-emerald-600"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Card 3: Additional Timings (Tahajjud, Sehri, Sunrise, Ishraq, Chasht, Iftar) */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-glass-sm space-y-4">
+                <div className="flex items-center gap-2 border-b border-border pb-3">
+                  <Sun className="w-4 h-4 text-amber-500" />
+                  <h4 className="text-sm font-bold text-text">Additional Timings (Sehri, Iftar, Sunrise, etc.)</h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Tahajjud */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-text-secondary">Tahajjud End Time</label>
+                    <input
+                      type="text"
+                      value={config.prayerTimes?.tahajjudEnd || ''}
+                      placeholder="05:25"
+                      onChange={(e) => handlePrayerChange('tahajjudEnd', e.target.value)}
+                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  {/* Sehri */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-text-secondary">Sehri End Time</label>
+                    <input
+                      type="text"
+                      value={config.prayerTimes?.sehriEnd || ''}
+                      placeholder="05:25"
+                      onChange={(e) => handlePrayerChange('sehriEnd', e.target.value)}
+                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  {/* Sunrise */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-text-secondary">Sunrise Time</label>
+                    <input
+                      type="text"
+                      value={config.prayerTimes?.sunrise || ''}
+                      placeholder="06:42"
+                      onChange={(e) => handlePrayerChange('sunrise', e.target.value)}
+                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  {/* Ishraq */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-text-secondary">Ishraq Time</label>
+                    <input
+                      type="text"
+                      value={config.prayerTimes?.ishraq || ''}
+                      placeholder="06:57"
+                      onChange={(e) => handlePrayerChange('ishraq', e.target.value)}
+                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  {/* Chasht */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-text-secondary">Chasht Time</label>
+                    <input
+                      type="text"
+                      value={config.prayerTimes?.chasht || ''}
+                      placeholder="08:30"
+                      onChange={(e) => handlePrayerChange('chasht', e.target.value)}
+                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  {/* Iftar */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-text-secondary">Iftar Time</label>
+                    <input
+                      type="text"
+                      value={config.prayerTimes?.iftar || ''}
+                      placeholder="06:16"
+                      onChange={(e) => handlePrayerChange('iftar', e.target.value)}
+                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Custom Announcement / Note */}
+                <div className="pt-2">
+                  <label className="text-xs font-semibold text-text-secondary">Special Note / Announcement (Optional)</label>
+                  <input
+                    type="text"
+                    value={config.prayerTimes?.note || ''}
+                    placeholder="e.g. Friday Jummah Khutbah starts at 01:15 PM."
+                    onChange={(e) => handlePrayerChange('note', e.target.value)}
+                    className="mt-1 bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Form Action Buttons */}
+              <div className="flex items-center justify-between gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={handleResetPrayerTimes}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-secondary hover:bg-surface text-text-secondary hover:text-text font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Reset to Defaults</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={saveLoading}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{saveLoading ? 'Saving...' : 'Save Timetable'}</span>
+                </button>
+              </div>
+
+            </div>
+
+            {/* Right 5 Columns: Sticky Live Flyer Preview */}
+            <div className="lg:col-span-5 sticky top-6 space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-glass-sm space-y-4">
+                
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-sm font-bold text-text">Live Flyer Preview</h4>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                    Real-time
+                  </span>
+                </div>
+
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  This preview updates in real-time with your configured timings. Download as an HD image to share directly to WhatsApp.
+                </p>
+
+                {/* Rendered Namaz Timetable Card */}
+                <div className="flex justify-center p-1 bg-surface-secondary/40 rounded-2xl border border-border/80 overflow-x-auto">
+                  <NamazTimetableCard
+                    ref={cardPreviewRef}
+                    prayerTimes={config.prayerTimes}
+                  />
+                </div>
+
+                {/* Actions Under Card */}
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadCard}
+                    disabled={downloadingCard}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#1E5733] to-[#144225] hover:from-[#266D40] hover:to-[#1B522E] text-white font-bold text-sm shadow transition-all cursor-pointer active:scale-98 disabled:opacity-60"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{downloadingCard ? 'Downloading...' : 'Download Timetable (PNG HD)'}</span>
+                  </button>
+                </div>
+
+                <div className="p-3 bg-surface-secondary/80 rounded-xl border border-border text-[11px] text-text-secondary leading-relaxed flex items-start gap-2">
+                  <Info className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                  <span>
+                    Timings saved here are dynamically synchronized across all mobile apps and API endpoints.
+                  </span>
+                </div>
+
               </div>
             </div>
 
