@@ -37,6 +37,7 @@ import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
 import FilterPopover from '../components/common/FilterPopover'
 import Tooltip from '../components/common/Tooltip'
+import DatePicker from '../components/DatePicker'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
@@ -181,6 +182,15 @@ export default function Polls() {
     const cleanOptions = formData.options.map(o => o.trim()).filter(Boolean)
     if (cleanOptions.length < 2) {
       errors.options = 'Please provide at least 2 non-empty options'
+    }
+
+    if (formData.end_date) {
+      const selectedEnd = new Date(formData.end_date)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (selectedEnd < today) {
+        errors.end_date = 'End date cannot be in the past'
+      }
     }
 
     if (Object.keys(errors).length > 0) {
@@ -644,12 +654,16 @@ export default function Polls() {
               <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider block mb-1.5">
                 End Date (Optional)
               </label>
-              <input
-                type="date"
-                className="w-full bg-surface border border-border rounded-xl px-3.5 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              <DatePicker
                 value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                onChange={(val) => {
+                  setFormData(prev => ({ ...prev, end_date: val }))
+                  if (fieldErrors.end_date) setFieldErrors(prev => ({ ...prev, end_date: null }))
+                }}
+                placeholder="Select end date"
+                disablePast
                 disabled={saving}
+                error={fieldErrors.end_date}
               />
             </div>
           </div>
