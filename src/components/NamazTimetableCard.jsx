@@ -132,23 +132,23 @@ const PrayerRow = ({
 
       <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] shadow-xs px-2 sm:px-3 pt-5 sm:pt-6 pb-2.5 flex items-center justify-between text-[#1A2E16]">
         
-        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold pr-1.5 border-r border-[#CBD8BF]">
+        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold pr-1 border-r border-[#CBD8BF]">
           {azanIcon}
           <span className="font-black text-[#1F3A1A] whitespace-nowrap">અઝાન:</span>
-          <span className="font-black text-[#10240E] font-mono text-[13px] sm:text-[15px]">{azan}</span>
+          <span className="font-black text-[#10240E] font-mono text-[11.5px] sm:text-[13px] whitespace-nowrap">{azan}</span>
         </div>
 
-        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold px-1.5 border-r border-[#CBD8BF]">
+        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold px-1 border-r border-[#CBD8BF]">
           <MosqueIcon className="w-4 h-4 text-[#B89237] shrink-0" />
           <span className="font-black text-[#1F3A1A] whitespace-nowrap">જમાત:</span>
-          <span className="font-black text-[#10240E] font-mono text-[13px] sm:text-[15px]">{jamat}</span>
+          <span className="font-black text-[#10240E] font-mono text-[11.5px] sm:text-[13px] whitespace-nowrap">{jamat}</span>
         </div>
 
-        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold pl-1.5">
+        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold pl-1">
           {qazaIcon}
           <span className="font-black text-[#1F3A1A] whitespace-nowrap">કઝા:</span>
-          <span className="font-black text-[#10240E] font-mono text-[13px] sm:text-[15px]">{qaza}</span>
-          {qazaLabel && <span className="text-[11px] font-bold text-[#3B5A33] whitespace-nowrap">{qazaLabel}</span>}
+          <span className="font-black text-[#10240E] font-mono text-[11.5px] sm:text-[13px] whitespace-nowrap">{qaza}</span>
+          {qazaLabel && <span className="text-[10px] font-bold text-[#3B5A33] whitespace-nowrap">{qazaLabel}</span>}
         </div>
       </div>
     </div>

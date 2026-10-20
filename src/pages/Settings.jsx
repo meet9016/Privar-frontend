@@ -14,6 +14,7 @@ import { AuthContext } from '../context/AuthContext'
 import { confirm } from '../lib/confirm'
 import { compressImage } from '../lib/imageCompressor'
 import NamazTimetableCard from '../components/NamazTimetableCard'
+import Select from '../components/common/Select'
 
 const DEFAULT_COLORS = {
   primaryColor: '#1565C0',
@@ -177,24 +178,93 @@ const TimePicker12Hour = ({ value, onChange, themeColor = 'primary' }) => {
   );
 };
 
+// Dedicated Time Input component with integrated AM / PM selector and auto-save
+const PrayerTimeInput = ({ value, onChange, placeholder = "05:00", defaultPeriod = "AM" }) => {
+  const raw = String(value || '').trim();
+  const hasPM = /PM/i.test(raw);
+  const hasAM = /AM/i.test(raw);
+  const currentPeriod = hasPM ? 'PM' : (hasAM ? 'AM' : defaultPeriod);
+  const timePart = raw.replace(/\s*(AM|PM)/gi, '').trim();
+
+  const handleTimeChange = (e) => {
+    let val = e.target.value.trim();
+    if (!val) {
+      onChange('');
+      return;
+    }
+    const inlineMatch = val.match(/^(\d{1,2}:\d{2})\s*(AM|PM)?$/i);
+    if (inlineMatch && inlineMatch[2]) {
+      onChange(`${inlineMatch[1]} ${inlineMatch[2].toUpperCase()}`);
+    } else {
+      onChange(`${val} ${currentPeriod}`);
+    }
+  };
+
+  const handlePeriodSelect = (period) => {
+    const t = timePart || placeholder;
+    onChange(`${t} ${period}`);
+  };
+
+  return (
+    <div className="flex items-center rounded-xl border border-border bg-input-bg overflow-hidden focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600 transition-all shadow-xs w-full">
+      <input
+        type="text"
+        value={timePart}
+        placeholder={placeholder}
+        onChange={handleTimeChange}
+        className="w-full min-w-0 bg-transparent text-text text-xs sm:text-sm font-mono font-bold text-center py-1.5 px-2 outline-none"
+      />
+      <div className="flex items-center border-l border-border bg-surface shrink-0 p-0.5 gap-0.5">
+        <button
+          type="button"
+          onClick={() => handlePeriodSelect('AM')}
+          className={`px-1.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+            currentPeriod === 'AM'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-text-secondary hover:text-text hover:bg-surface-secondary'
+          }`}
+          title="Set AM"
+        >
+          AM
+        </button>
+        <button
+          type="button"
+          onClick={() => handlePeriodSelect('PM')}
+          className={`px-1.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+            currentPeriod === 'PM'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-text-secondary hover:text-text hover:bg-surface-secondary'
+          }`}
+          title="Set PM"
+        >
+          PM
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const DEFAULT_PRAYER_TIMES = {
   enabled: true,
   showOnWebsite: true,
   title: 'રાધનપુર મેમણ જમાત',
   subTitle: 'રાધનપુર',
   logo: '',
-  fajr: { name: 'ફજર', azan: '05:26', jamat: '05:45', qaza: '06:42', qazaLabel: 'સુધી' },
-  zohr: { name: 'ઝોહર', azan: '12:28', jamat: '12:45', qaza: '04:36', qazaLabel: 'સુધી' },
-  asr: { name: 'અસર', azan: '04:36', jamat: '04:50', qaza: '06:16', qazaLabel: 'સુધી' },
-  maghrib: { name: 'મગરીબ', azan: '06:16', jamat: '06:18', qaza: '07:29', qazaLabel: 'સુધી' },
-  isha: { name: 'ઈશા', azan: '07:29', jamat: '07:45', qaza: '05:25', qazaLabel: 'સુધી' },
-  tahajjudEnd: '05:25',
-  sehriEnd: '05:25',
-  sunrise: '06:42',
-  ishraq: '06:57',
-  chasht: '08:30',
-  iftar: '06:16',
-  note: ''
+  fajr: { name: 'ફજર', azan: '05:26 AM', jamat: '05:40 AM', qaza: '06:42 AM', qazaLabel: 'સુધી' },
+  zohr: { name: 'ઝોહર', azan: '12:28 PM', jamat: '12:45 PM', qaza: '04:36 PM', qazaLabel: 'સુધી' },
+  asr: { name: 'અસર', azan: '04:36 PM', jamat: '04:50 PM', qaza: '06:16 PM', qazaLabel: 'સુધી' },
+  maghrib: { name: 'મગરીબ', azan: '06:16 PM', jamat: '06:18 PM', qaza: '07:29 PM', qazaLabel: 'સુધી' },
+  isha: { name: 'ઈશા', azan: '07:29 PM', jamat: '07:45 PM', qaza: '05:20 AM', qazaLabel: 'સુધી' },
+  tahajjudEnd: '05:25 AM',
+  sehriEnd: '05:25 AM',
+  sunrise: '06:42 AM',
+  ishraq: '06:57 AM',
+  chasht: '08:30 AM',
+  iftar: '06:16 PM',
+  note: '',
+  azanOffsetMinutes: 25,
+  jamatOffsetMinutes: 15,
+  qazaOffsetMinutes: 15
 }
 
 const DEFAULT_CONFIG = {
@@ -498,6 +568,26 @@ export default function SettingsPage() {
       toast.error(err.response?.data?.message || 'Failed to trigger test push')
     } finally {
       setTestingPushDay(null)
+    }
+  }
+
+  const [testingPrayer, setTestingPrayer] = useState('fajr')
+  const [testingPrayerType, setTestingPrayerType] = useState('azan')
+  const [testingPrayerLoading, setTestingPrayerLoading] = useState(false)
+
+  const handleTestPrayerAlert = async () => {
+    try {
+      setTestingPrayerLoading(true)
+      const res = await api.post('/update_app_theme/test_push', {
+        day: 'prayer',
+        prayer: testingPrayer,
+        alertType: testingPrayerType
+      })
+      toast.success(res.data?.message || `Test ${testingPrayerType.toUpperCase()} alert sent successfully! (Key: ${res.data?.key})`)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to trigger test prayer alert')
+    } finally {
+      setTestingPrayerLoading(false)
     }
   }
 
@@ -1150,17 +1240,16 @@ export default function SettingsPage() {
                     <Moon className="w-4 h-4 text-emerald-600" />
                     <h4 className="text-sm font-bold text-text">5 Daily Farz Prayers</h4>
                   </div>
-                  <span className="text-[11px] font-semibold text-text-secondary">12-hour or 24-hour format supported</span>
                 </div>
 
                 <div className="space-y-4">
                   {[
-                    { key: 'fajr', label: 'Fajr', icon: Sunrise, defaultName: 'Fajr' },
-                    { key: 'zohr', label: 'Zohr', icon: Sun, defaultName: 'Zohr' },
-                    { key: 'asr', label: 'Asr', icon: Sun, defaultName: 'Asr' },
-                    { key: 'maghrib', label: 'Maghrib', icon: Sunset, defaultName: 'Maghrib' },
-                    { key: 'isha', label: 'Isha', icon: Moon, defaultName: 'Isha' },
-                  ].map(({ key, label, icon: Icon, defaultName }) => {
+                    { key: 'fajr', label: 'Fajr', icon: Sunrise, defaultPeriod: 'AM', qazaPeriod: 'AM', defaultAzan: '05:26', defaultJamat: '05:40', defaultQaza: '06:42' },
+                    { key: 'zohr', label: 'Zohr', icon: Sun, defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '12:28', defaultJamat: '12:45', defaultQaza: '04:36' },
+                    { key: 'asr', label: 'Asr', icon: Sun, defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '04:36', defaultJamat: '04:50', defaultQaza: '06:16' },
+                    { key: 'maghrib', label: 'Maghrib', icon: Sunset, defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '06:16', defaultJamat: '06:18', defaultQaza: '07:29' },
+                    { key: 'isha', label: 'Isha', icon: Moon, defaultPeriod: 'PM', qazaPeriod: 'AM', defaultAzan: '07:29', defaultJamat: '07:45', defaultQaza: '05:20' },
+                  ].map(({ key, label, icon: Icon, defaultPeriod, qazaPeriod, defaultAzan, defaultJamat, defaultQaza }) => {
                     const prayer = config.prayerTimes?.[key] || {};
                     return (
                       <div key={key} className="p-4 rounded-xl bg-surface-secondary/70 border border-border space-y-3">
@@ -1173,18 +1262,17 @@ export default function SettingsPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           {/* Azan */}
                           <div className="flex flex-col gap-1">
                             <label className="text-[11px] font-bold text-text-secondary flex items-center gap-1">
                               <span>Azan</span>
                             </label>
-                            <input
-                              type="text"
+                            <PrayerTimeInput
                               value={prayer.azan || ''}
-                              placeholder="05:26"
-                              onChange={(e) => handlePrayerChange(`${key}.azan`, e.target.value)}
-                              className="bg-input-bg text-text text-sm font-mono font-bold text-center py-1.5 px-2 border border-border rounded-lg outline-none focus:border-emerald-600"
+                              placeholder={defaultAzan}
+                              defaultPeriod={defaultPeriod}
+                              onChange={(val) => handlePrayerChange(`${key}.azan`, val)}
                             />
                           </div>
 
@@ -1193,12 +1281,11 @@ export default function SettingsPage() {
                             <label className="text-[11px] font-bold text-text-secondary flex items-center gap-1">
                               <span>Jamat</span>
                             </label>
-                            <input
-                              type="text"
+                            <PrayerTimeInput
                               value={prayer.jamat || ''}
-                              placeholder="05:45"
-                              onChange={(e) => handlePrayerChange(`${key}.jamat`, e.target.value)}
-                              className="bg-input-bg text-text text-sm font-mono font-bold text-center py-1.5 px-2 border border-border rounded-lg outline-none focus:border-emerald-600"
+                              placeholder={defaultJamat}
+                              defaultPeriod={defaultPeriod}
+                              onChange={(val) => handlePrayerChange(`${key}.jamat`, val)}
                             />
                           </div>
 
@@ -1207,12 +1294,11 @@ export default function SettingsPage() {
                             <label className="text-[11px] font-bold text-text-secondary flex items-center gap-1">
                               <span>Qaza Until</span>
                             </label>
-                            <input
-                              type="text"
+                            <PrayerTimeInput
                               value={prayer.qaza || ''}
-                              placeholder="06:42"
-                              onChange={(e) => handlePrayerChange(`${key}.qaza`, e.target.value)}
-                              className="bg-input-bg text-text text-sm font-mono font-bold text-center py-1.5 px-2 border border-border rounded-lg outline-none focus:border-emerald-600"
+                              placeholder={defaultQaza}
+                              defaultPeriod={qazaPeriod}
+                              onChange={(val) => handlePrayerChange(`${key}.qaza`, val)}
                             />
                           </div>
                         </div>
@@ -1233,72 +1319,66 @@ export default function SettingsPage() {
                   {/* Tahajjud */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-text-secondary">Tahajjud End Time</label>
-                    <input
-                      type="text"
+                    <PrayerTimeInput
                       value={config.prayerTimes?.tahajjudEnd || ''}
                       placeholder="05:25"
-                      onChange={(e) => handlePrayerChange('tahajjudEnd', e.target.value)}
-                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                      defaultPeriod="AM"
+                      onChange={(val) => handlePrayerChange('tahajjudEnd', val)}
                     />
                   </div>
 
                   {/* Sehri */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-text-secondary">Sehri End Time</label>
-                    <input
-                      type="text"
+                    <PrayerTimeInput
                       value={config.prayerTimes?.sehriEnd || ''}
                       placeholder="05:25"
-                      onChange={(e) => handlePrayerChange('sehriEnd', e.target.value)}
-                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                      defaultPeriod="AM"
+                      onChange={(val) => handlePrayerChange('sehriEnd', val)}
                     />
                   </div>
 
                   {/* Sunrise */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-text-secondary">Sunrise Time</label>
-                    <input
-                      type="text"
+                    <PrayerTimeInput
                       value={config.prayerTimes?.sunrise || ''}
                       placeholder="06:42"
-                      onChange={(e) => handlePrayerChange('sunrise', e.target.value)}
-                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                      defaultPeriod="AM"
+                      onChange={(val) => handlePrayerChange('sunrise', val)}
                     />
                   </div>
 
                   {/* Ishraq */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-text-secondary">Ishraq Time</label>
-                    <input
-                      type="text"
+                    <PrayerTimeInput
                       value={config.prayerTimes?.ishraq || ''}
                       placeholder="06:57"
-                      onChange={(e) => handlePrayerChange('ishraq', e.target.value)}
-                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                      defaultPeriod="AM"
+                      onChange={(val) => handlePrayerChange('ishraq', val)}
                     />
                   </div>
 
                   {/* Chasht */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-text-secondary">Chasht Time</label>
-                    <input
-                      type="text"
+                    <PrayerTimeInput
                       value={config.prayerTimes?.chasht || ''}
                       placeholder="08:30"
-                      onChange={(e) => handlePrayerChange('chasht', e.target.value)}
-                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                      defaultPeriod="AM"
+                      onChange={(val) => handlePrayerChange('chasht', val)}
                     />
                   </div>
 
                   {/* Iftar */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-text-secondary">Iftar Time</label>
-                    <input
-                      type="text"
+                    <PrayerTimeInput
                       value={config.prayerTimes?.iftar || ''}
                       placeholder="06:16"
-                      onChange={(e) => handlePrayerChange('iftar', e.target.value)}
-                      className="bg-input-bg text-text text-sm font-mono font-bold py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600"
+                      defaultPeriod="PM"
+                      onChange={(val) => handlePrayerChange('iftar', val)}
                     />
                   </div>
                 </div>
@@ -1313,6 +1393,114 @@ export default function SettingsPage() {
                     onChange={(e) => handlePrayerChange('note', e.target.value)}
                     className="mt-1 bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 w-full"
                   />
+                </div>
+              </div>
+
+              {/* Compact Sleek Automated Cron & Test Strip */}
+              <div className="bg-surface-secondary/70 border border-border/80 rounded-2xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Bell className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-bold text-text">Automated Cron</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      1m Loop Active
+                    </span>
+                  </div>
+
+                  <span className="text-text-muted text-xs hidden sm:inline">•</span>
+
+                  {/* Dynamic Offsets Inputs */}
+                  <div className="flex items-center gap-2 text-xs flex-wrap">
+                    {/* Azan Offset */}
+                    <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-2 py-1 shadow-xs" title="Minutes prior to Azan time to trigger notification">
+                      <span className="text-text-secondary font-bold text-[11px]">Azan:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        value={config.prayerTimes?.azanOffsetMinutes ?? 25}
+                        onChange={(e) => handlePrayerChange('azanOffsetMinutes', parseInt(e.target.value, 10) || '')}
+                        className="w-10 bg-input-bg text-emerald-600 font-bold font-mono text-center text-xs border border-border rounded-lg py-0.5 outline-none focus:border-emerald-600"
+                      />
+                      <span className="text-text-muted text-[10px] font-semibold">min prior</span>
+                    </div>
+
+                    {/* Jamat Offset */}
+                    <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-2 py-1 shadow-xs" title="Minutes prior to Jamat time to trigger notification">
+                      <span className="text-text-secondary font-bold text-[11px]">Jamat:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        value={config.prayerTimes?.jamatOffsetMinutes ?? 15}
+                        onChange={(e) => handlePrayerChange('jamatOffsetMinutes', parseInt(e.target.value, 10) || '')}
+                        className="w-10 bg-input-bg text-emerald-600 font-bold font-mono text-center text-xs border border-border rounded-lg py-0.5 outline-none focus:border-emerald-600"
+                      />
+                      <span className="text-text-muted text-[10px] font-semibold">min prior</span>
+                    </div>
+
+                    {/* Qaza Offset */}
+                    <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-2 py-1 shadow-xs" title="Minutes prior to Qaza time to trigger notification">
+                      <span className="text-text-secondary font-bold text-[11px]">Qaza:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        value={config.prayerTimes?.qazaOffsetMinutes ?? 15}
+                        onChange={(e) => handlePrayerChange('qazaOffsetMinutes', parseInt(e.target.value, 10) || '')}
+                        className="w-10 bg-input-bg text-amber-600 font-bold font-mono text-center text-xs border border-border rounded-lg py-0.5 outline-none focus:border-emerald-600"
+                      />
+                      <span className="text-text-muted text-[10px] font-semibold">min prior</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inline Compact Test Controls using project's custom Select component */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-semibold text-text-secondary hidden sm:inline">Test Key:</span>
+                  <div className="w-36">
+                    <Select
+                      value={testingPrayer}
+                      onChange={(val) => setTestingPrayer(val)}
+                      options={[
+                        { value: 'fajr', label: 'Fajr (ફજર)' },
+                        { value: 'zohr', label: 'Zohr (ઝોહર)' },
+                        { value: 'asr', label: 'Asr (અસર)' },
+                        { value: 'maghrib', label: 'Maghrib (મગરીબ)' },
+                        { value: 'isha', label: 'Isha (ઈશા)' },
+                      ]}
+                      searchable={false}
+                      className="text-xs"
+                      placement="up"
+                    />
+                  </div>
+
+                  <div className="w-44">
+                    <Select
+                      value={testingPrayerType}
+                      onChange={(val) => setTestingPrayerType(val)}
+                      options={[
+                        { value: 'azan', label: `Azan (-${config.prayerTimes?.azanOffsetMinutes ?? 25}m)` },
+                        { value: 'jamat', label: `Jamat (-${config.prayerTimes?.jamatOffsetMinutes ?? 15}m)` },
+                        { value: 'qaza', label: `Qaza (-${config.prayerTimes?.qazaOffsetMinutes ?? 15}m)` },
+                      ]}
+                      searchable={false}
+                      className="text-xs"
+                      placement="up"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={testingPrayerLoading}
+                    onClick={handleTestPrayerAlert}
+                    className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 shrink-0 h-10"
+                    title={`Broadcast test key: ${testingPrayer}_${testingPrayerType}`}
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{testingPrayerLoading ? 'Sending...' : `Test [${testingPrayer}_${testingPrayerType}]`}</span>
+                  </button>
                 </div>
               </div>
 
