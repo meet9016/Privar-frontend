@@ -260,7 +260,9 @@ export default function Users() {
       setSelectedUser(null)
       await fetchUsers()
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to save member')
+      const errMsg = err.response?.data?.message || err.message || 'Failed to save member';
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setFormLoading(false)
     }
@@ -990,7 +992,7 @@ export default function Users() {
         onClose={handleCloseModal}
         maxWidth="max-w-6xl"
       >
-        <UserForm user={selectedUser} targetMemberId={editTargetMemberId} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} onCancel={handleCloseModal} />
+        <UserForm user={selectedUser} targetMemberId={editTargetMemberId} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} onCancel={handleCloseModal} serverError={error} />
       </Modal>
 
       {/* View Details & Family Tree Modal */}

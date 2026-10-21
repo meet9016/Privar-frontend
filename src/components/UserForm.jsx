@@ -9,7 +9,7 @@ import Switch from './common/Switch'
 import Button from './common/Button'
 import DatePicker from './DatePicker'
 import { isValidEmail } from '../lib/validation'
-import { Users as UsersIcon, Plus, Trash2, User, ChevronDown, ChevronUp, Edit2, Check, Camera, Image as ImageIcon, X, RefreshCw, Eye, HelpCircle, Languages, Sparkles } from 'lucide-react'
+import { Users as UsersIcon, Plus, Trash2, User, ChevronDown, ChevronUp, Edit2, Check, Camera, Image as ImageIcon, X, RefreshCw, Eye, HelpCircle, Languages, Sparkles, AlertCircle } from 'lucide-react'
 import { toast } from '../lib/toast'
 import ImagePreviewModal from './common/ImagePreviewModal'
 import RelationshipGuideModal from './common/RelationshipGuideModal'
@@ -312,7 +312,7 @@ export const capitalizeWords = (str) => {
     .join(' ')
 }
 
-export default function UserForm({ user, targetMemberId = null, roles = [], onSubmit, isLoading, onCancel }) {
+export default function UserForm({ user, targetMemberId = null, roles = [], onSubmit, isLoading, onCancel, serverError = '' }) {
   const { user: loggedInUser } = useContext(AuthContext)
   const [countries, setCountries] = useState(cachedMasters ? cachedMasters.countries : [])
   const [states, setStates] = useState(cachedMasters ? cachedMasters.states : [])
@@ -826,6 +826,11 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     if (!formData.city_id) newErrors.city_id = 'City is required'
     if (!formData.dob) newErrors.dob = 'Date of Birth is required'
 
+    const headNumber = (formData.number || '').trim()
+    const headEmail = (formData.email || '').trim().toLowerCase()
+    const seenNumbers = new Set(headNumber ? [headNumber] : [])
+    const seenEmails = new Set(headEmail ? [headEmail] : [])
+
     // Validate family members if any are added
     membersToValidate.forEach((m, idx) => {
       if (!m.first_name || !m.first_name.trim()) {
@@ -834,8 +839,30 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       if (!m.relation) {
         newErrors[`member_${idx}_relation`] = 'Required'
       }
-      if (m.number && m.number.trim().length > 0 && m.number.trim().length < 10) {
-        newErrors[`member_${idx}_number`] = '10 digits'
+      const mNum = (m.number || '').trim()
+      if (mNum) {
+        if (mNum.length < 10) {
+          newErrors[`member_${idx}_number`] = '10 digits'
+        } else if (headNumber && mNum === headNumber) {
+          newErrors[`member_${idx}_number`] = 'Cannot be same as Head number'
+        } else if (seenNumbers.has(mNum)) {
+          newErrors[`member_${idx}_number`] = 'Duplicate mobile number in form'
+        } else {
+          seenNumbers.add(mNum)
+        }
+      }
+
+      const mMail = (m.email || '').trim().toLowerCase()
+      if (mMail) {
+        if (!isValidEmail(mMail)) {
+          newErrors[`member_${idx}_email`] = 'Valid email required'
+        } else if (headEmail && mMail === headEmail) {
+          newErrors[`member_${idx}_email`] = 'Cannot be same as Head email'
+        } else if (seenEmails.has(mMail)) {
+          newErrors[`member_${idx}_email`] = 'Duplicate email in form'
+        } else {
+          seenEmails.add(mMail)
+        }
       }
     })
 
@@ -920,6 +947,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 px-0.5 text-text">
+      {serverError && (
+        <div className="p-3.5 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-xs sm:text-sm font-semibold flex items-center gap-2.5 shadow-xs">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+          <span>{serverError}</span>
+        </div>
+      )}
+
       {/* ─── SECTION 1: FAMILY HEAD DETAILS (COMPACT 4 ITEMS PER LINE) ─────────── */}
       <div className="bg-card border border-border rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/60">
@@ -1196,7 +1230,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
               const fNameErr = errors[`member_${idx}_first_name`]
               const relErr = errors[`member_${idx}_relation`]
               const numErr = errors[`member_${idx}_number`]
-              const hasRowError = fNameErr || relErr || numErr
+              const emailErr = errors[`member_${idx}_email`]
+              const hasRowError = fNameErr || relErr || numErr || emailErr
 
               return (
                 <div key={m._id || m.id || idx} className="bg-card transition-colors">
@@ -1619,8 +1654,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                         )
                       })()}
 
-                      {/* Row 2: Gender, Date of Birth, Anniversary Date, Blood Group, Mobile Number (Balanced 5 columns or clean 2+3 layout) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 items-start">
+                      {/* Row 2: Gender, Date of Birth, Anniversary Date, Blood Group, Mobile Number, Email */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-start">
                         <Select
                           label="Gender"
                           value={editingMember.gender || 'Male'}
@@ -1650,9 +1685,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           disabled={isLoading}
                           searchable={true}
                         />
-                        <div className="col-span-1 sm:col-span-2 md:col-span-4 lg:col-span-1">
+                        <div>
                           <Input
-                            label="Mobile Number (Optional)"
+                            label="Mobile (Optional)"
                             type="tel"
                             maxLength={10}
                             placeholder="10 digit number"
@@ -1660,6 +1695,17 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                             onChange={(e) => handleEditingMemberChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
                             disabled={isLoading}
                             error={numErr}
+                          />
+                        </div>
+                        <div>
+                          <Input
+                            label="Email (Optional)"
+                            type="email"
+                            placeholder="email@example.com"
+                            value={editingMember.email || ''}
+                            onChange={(e) => handleEditingMemberChange('email', e.target.value)}
+                            disabled={isLoading}
+                            error={emailErr}
                           />
                         </div>
                       </div>
