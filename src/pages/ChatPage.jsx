@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { toast } from '../lib/toast';
+import { confirm } from '../lib/confirm';
 
 const cleanPhone = (num) => {
   if (!num) return '';
@@ -640,7 +641,13 @@ export default function ChatPage() {
 
   // Remove Member from Group
   const handleRemoveMember = async (memberUserId, memberName) => {
-    if (!activeChat?._id || !window.confirm(`Remove ${memberName || 'this member'} from group?`)) return;
+    if (!activeChat?._id) return;
+    const ok = await confirm(`Remove ${memberName || 'this member'} from group?`, {
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+    if (!ok) return;
     try {
       await memberApi.delete(`/chat/${activeChat._id}/members/${memberUserId}`);
       toast.success('Member removed');
@@ -652,7 +659,13 @@ export default function ChatPage() {
 
   // Leave Group
   const handleLeaveGroup = async () => {
-    if (!activeChat?._id || !window.confirm('Are you sure you want to leave this group?')) return;
+    if (!activeChat?._id) return;
+    const ok = await confirm('Are you sure you want to leave this group?', {
+      confirmText: 'Leave Group',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+    if (!ok) return;
     try {
       await memberApi.post(`/chat/${activeChat._id}/leave`);
       toast.success('Left group');
