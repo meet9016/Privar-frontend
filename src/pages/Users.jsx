@@ -260,9 +260,9 @@ export default function Users() {
       setSelectedUser(null)
       await fetchUsers()
     } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || 'Failed to save member';
-      setError(errMsg);
-      toast.error(errMsg);
+      if (!err.response?.data?.message && !err.response?.data?.error) {
+        toast.error(err.message || 'Failed to save member');
+      }
     } finally {
       setFormLoading(false)
     }
@@ -775,13 +775,6 @@ export default function Users() {
         </div>
       </div>
 
-      {/* Operation Status alerts */}
-      {error && (
-        <div className="rounded-xl border border-error-border bg-error-bg p-3 text-sm text-error-text flex items-center justify-between">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError('')} className="text-xs font-semibold underline cursor-pointer">Dismiss</button>
-        </div>
-      )}
 
 
       {/* Removed the inline filter panel, moved it into a dropdown below the button */}
@@ -992,7 +985,7 @@ export default function Users() {
         onClose={handleCloseModal}
         maxWidth="max-w-6xl"
       >
-        <UserForm user={selectedUser} targetMemberId={editTargetMemberId} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} onCancel={handleCloseModal} serverError={error} />
+        <UserForm user={selectedUser} targetMemberId={editTargetMemberId} roles={roles} onSubmit={handleSubmit} isLoading={formLoading} onCancel={handleCloseModal} />
       </Modal>
 
       {/* View Details & Family Tree Modal */}

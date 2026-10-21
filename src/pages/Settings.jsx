@@ -278,7 +278,8 @@ const DEFAULT_PRAYER_TIMES = {
   note: '',
   azanOffsetMinutes: 25,
   jamatOffsetMinutes: 15,
-  qazaOffsetMinutes: 15
+  qazaOffsetMinutes: 15,
+  notificationsEnabled: true
 }
 
 const DEFAULT_CONFIG = {
@@ -588,6 +589,10 @@ export default function SettingsPage() {
   const [testingPrayerLoading, setTestingPrayerLoading] = useState(false)
 
   const handleTestPrayerAlert = async () => {
+    if (config.prayerTimes?.notificationsEnabled === false) {
+      toast.warning('Push Notifications are currently turned OFF. Turn ON the switch to send notifications.')
+      return
+    }
     try {
       setTestingPrayerLoading(true)
       const res = await api.post('/update_app_theme/test_push', {
@@ -1505,11 +1510,53 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Active
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 transition-all ${
+                    (config.prayerTimes?.notificationsEnabled !== false)
+                      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                      : 'bg-slate-500/10 text-slate-500 border-slate-500/20'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      (config.prayerTimes?.notificationsEnabled !== false)
+                        ? 'bg-emerald-500 animate-pulse'
+                        : 'bg-slate-400'
+                    }`}></span>
+                    {(config.prayerTimes?.notificationsEnabled !== false) ? 'Active' : 'Off'}
+                  </span>
+
+                  <label className="relative inline-flex items-center cursor-pointer select-none" title="Toggle Push Notifications ON / OFF">
+                    <input
+                      type="checkbox"
+                      checked={config.prayerTimes?.notificationsEnabled !== false}
+                      onChange={async (e) => {
+                        const newEnabled = e.target.checked
+                        handlePrayerChange('notificationsEnabled', newEnabled)
+                        try {
+                          const updatedPrayerTimes = {
+                            ...(config.prayerTimes || DEFAULT_PRAYER_TIMES),
+                            notificationsEnabled: newEnabled
+                          }
+                          const fd = new FormData()
+                          fd.append('prayerTimes', JSON.stringify(updatedPrayerTimes))
+                          await api.put('/update_app_theme', fd)
+                          toast.success(newEnabled ? 'Push Notifications turned ON' : 'Push Notifications turned OFF')
+                        } catch (err) {
+                          console.error('Failed to toggle notification status:', err)
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
+                  </label>
+                </div>
               </div>
+
+              {config.prayerTimes?.notificationsEnabled === false && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  <span>Push notifications are currently turned <strong>OFF</strong>. Members will not receive any Azan, Jamat, or Qaza reminders on mobile.</span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
                 {/* Left: Advance Reminder Timing (7 cols) */}
@@ -1625,11 +1672,17 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={handleTestPrayerAlert}
-                      disabled={testingPrayerLoading}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-60"
+                      disabled={testingPrayerLoading || config.prayerTimes?.notificationsEnabled === false}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Bell className="w-3.5 h-3.5" />
-                      <span>{testingPrayerLoading ? 'Sending Alert...' : 'Send Test Alert'}</span>
+                      <span>
+                        {config.prayerTimes?.notificationsEnabled === false
+                          ? 'Notifications Disabled (Turn ON to Send)'
+                          : testingPrayerLoading
+                            ? 'Sending Alert...'
+                            : 'Send Test Alert'}
+                      </span>
                     </button>
                   </div>
                 </div>

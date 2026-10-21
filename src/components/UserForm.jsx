@@ -947,12 +947,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 px-0.5 text-text">
-      {serverError && (
-        <div className="p-3.5 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-xs sm:text-sm font-semibold flex items-center gap-2.5 shadow-xs">
-          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-          <span>{serverError}</span>
-        </div>
-      )}
 
       {/* ─── SECTION 1: FAMILY HEAD DETAILS (COMPACT 4 ITEMS PER LINE) ─────────── */}
       <div className="bg-card border border-border rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3">
