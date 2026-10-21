@@ -195,36 +195,37 @@ const PrayerTimeInput = ({ value, onChange, placeholder = "05:00", defaultPeriod
     onChange(`${t} ${period}`);
   };
   return (
-    <div className={`flex items-center rounded-xl border border-border bg-input-bg hover:border-emerald-500/60 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 transition-all shadow-xs ${className || 'w-full'}`}>
+    <div className={`inline-flex items-center gap-1 px-1.5 py-1 rounded-xl bg-surface border border-border/80 hover:border-emerald-500/50 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/15 shadow-xs transition-all shrink-0 ${className}`}>
       <input
         type="text"
         value={timePart}
         placeholder={placeholder}
         onChange={handleTimeChange}
-        className="flex-1 min-w-0 bg-transparent text-text text-sm sm:text-base font-mono font-bold text-center py-2 px-1 outline-none tracking-wide"
+        className="w-12 bg-transparent text-text font-mono font-bold text-center text-xs sm:text-sm outline-none tracking-tight placeholder:text-text-muted/40"
       />
-      <div className="flex items-center bg-surface-secondary/90 p-0.5 rounded-lg border border-border/70 shrink-0 mr-1.5 gap-0.5">
+      <span className="w-px h-3.5 bg-border/80 shrink-0" aria-hidden="true" />
+      <div className="inline-flex items-center p-0.5 rounded-lg bg-surface-secondary/70 border border-border/50 shrink-0">
         <button
           type="button"
           onClick={() => handlePeriodSelect('AM')}
-          className={`px-2 py-1 text-[10px] sm:text-[11px] font-extrabold rounded transition-all cursor-pointer ${
+          className={`px-1.5 py-0.5 font-bold rounded text-[10px] transition-all cursor-pointer ${
             currentPeriod === 'AM'
               ? 'bg-emerald-600 text-white shadow-xs'
-              : 'text-text-secondary hover:text-text hover:bg-surface'
+              : 'text-text-muted hover:text-text'
           }`}
-          title="Select AM"
+          title="AM"
         >
           AM
         </button>
         <button
           type="button"
           onClick={() => handlePeriodSelect('PM')}
-          className={`px-2 py-1 text-[10px] sm:text-[11px] font-extrabold rounded transition-all cursor-pointer ${
+          className={`px-1.5 py-0.5 font-bold rounded text-[10px] transition-all cursor-pointer ${
             currentPeriod === 'PM'
               ? 'bg-emerald-600 text-white shadow-xs'
-              : 'text-text-secondary hover:text-text hover:bg-surface'
+              : 'text-text-muted hover:text-text'
           }`}
-          title="Select PM"
+          title="PM"
         >
           PM
         </button>
@@ -1202,144 +1203,195 @@ export default function SettingsPage() {
         )}
 
         {/* ── TAB: NAMAZ TIMETABLE (PRAYER TIMES) ────────────────────────── */}
-        {/* ─── TAB: NAMAZ TIMETABLE (PRAYER TIMES) ──────────────────────────────────────────────── */}
         {activeTab === 'prayer' && (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start w-full">
 
-            {/* Left & Center: Full Configuration Controls (7 cols on XL, 8 cols on 2XL) */}
-            <div className="xl:col-span-7 2xl:col-span-8 space-y-6">
+            {/* Left & Center: Full Configuration in One Unified Master Box */}
+            {/* Left & Center: 5 Daily Farz Prayers + Additional Timings side-by-side in One Box, followed by Push Notifications */}
+            <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8 space-y-5">
 
-              {/* Card 1: Header with Live Status & Quick Save/Reset */}
-              <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-glass-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base sm:text-lg font-bold text-text">Namaz Timetable Config</h3>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Live Synced
-                      </span>
-                    </div>
-                    <p className="text-xs text-text-secondary mt-0.5">
-                      Configure daily 5 Farz prayers, additional timings & automated mobile push alerts
-                    </p>
-                  </div>
-                </div>
+              {/* ── BOX 1: 5 Daily Farz Prayers & Additional Timings Side-by-Side ── */}
+              <div className="bg-card border border-border rounded-2xl shadow-glass-sm overflow-hidden divide-y divide-border/80">
 
-                <div className="flex items-center gap-2.5 self-end sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={handleResetPrayerTimes}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-surface-secondary hover:bg-surface text-text-secondary hover:text-text font-bold text-xs transition-all cursor-pointer shadow-xs"
-                    title="Reset prayer times to defaults"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Defaults</span>
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={saveLoading}
-                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer disabled:opacity-60"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>{saveLoading ? 'Saving...' : 'Save Timetable'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Card 2: 5 Daily Farz Prayers Table View (Spacious, full width, zero text clipping) */}
-              <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-glass-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-border pb-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-                      <Moon className="w-4 h-4" />
+                {/* Section 1: Master Header */}
+                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-secondary/30">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0">
+                      <Clock className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm sm:text-base font-bold text-text">5 Daily Farz Prayers (રોજીંદી ૫ ફરજ નમાઝ)</h4>
-                      <p className="text-xs text-text-secondary">Set Azan, Jamat & Qaza timings for all 5 daily prayers</p>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base sm:text-lg font-bold text-text">5 Daily Farz Prayers & Additional Timings</h3>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          Live Synced
+                        </span>
+                      </div>
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        Set Azan, Jamat & Qaza for daily prayers, plus Sehri, Iftar & Sunnah timings
+                      </p>
                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleResetPrayerTimes}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-surface hover:bg-surface-secondary text-text-secondary hover:text-text font-bold text-xs transition-all cursor-pointer shadow-xs"
+                      title="Reset prayer times to defaults"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Defaults</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={saveLoading}
+                      className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer disabled:opacity-60"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{saveLoading ? 'Saving...' : 'Save Timetable'}</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* Structured Timetable Table with ample width */}
-                <div className="overflow-x-auto -mx-1 sm:mx-0">
-                  <table className="w-full text-left border-collapse min-w-[560px]">
-                    <thead>
-                      <tr className="border-b border-border text-[11px] font-bold text-text-secondary uppercase tracking-wider bg-surface-secondary/50">
-                        <th className="py-3 px-3.5 rounded-l-xl w-[25%]">Prayer (નમાઝ)</th>
-                        <th className="py-3 px-3 text-center w-[25%]">Azan (અઝાન)</th>
-                        <th className="py-3 px-3 text-center w-[25%]">Jamat (જમાત)</th>
-                        <th className="py-3 px-3.5 text-center w-[25%] rounded-r-xl">Qaza Until (કઝા)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50 text-sm">
-                      {[
-                        { key: 'fajr', label: 'Fajr', gujName: 'ફજર', icon: Sunrise, iconColor: 'text-amber-500 bg-amber-500/10', defaultPeriod: 'AM', qazaPeriod: 'AM', defaultAzan: '05:26', defaultJamat: '05:40', defaultQaza: '06:42' },
-                        { key: 'zohr', label: 'Zohr', gujName: 'ઝોહર', icon: Sun, iconColor: 'text-amber-600 bg-amber-600/10', defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '12:28', defaultJamat: '12:45', defaultQaza: '04:36' },
-                        { key: 'asr', label: 'Asr', gujName: 'અસર', icon: Sun, iconColor: 'text-orange-500 bg-orange-500/10', defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '04:36', defaultJamat: '04:50', defaultQaza: '06:16' },
-                        { key: 'maghrib', label: 'Maghrib', gujName: 'મગરીબ', icon: Sunset, iconColor: 'text-rose-500 bg-rose-500/10', defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '06:16', defaultJamat: '06:18', defaultQaza: '07:29' },
-                        { key: 'isha', label: 'Isha', gujName: 'ઈશા', icon: Moon, iconColor: 'text-emerald-600 bg-emerald-500/10', defaultPeriod: 'PM', qazaPeriod: 'AM', defaultAzan: '07:29', defaultJamat: '07:45', defaultQaza: '05:20' },
-                      ].map(({ key, label, gujName, icon: Icon, iconColor, defaultPeriod, qazaPeriod, defaultAzan, defaultJamat, defaultQaza }) => {
-                        const prayer = config.prayerTimes?.[key] || {};
-                        return (
-                          <tr key={key} className="hover:bg-surface-secondary/40 transition-colors">
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className={`p-2 rounded-xl shrink-0 ${iconColor}`}>
-                                  <Icon className="w-4 h-4" />
-                                </div>
-                                <div>
-                                  <div className="font-bold text-text text-sm leading-tight">{label}</div>
-                                  <div className="text-[11px] font-semibold text-text-secondary leading-none mt-0.5">{gujName}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-2">
-                              <div className="flex justify-center w-full">
-                                <PrayerTimeInput
-                                  value={prayer.azan || ''}
-                                  placeholder={defaultAzan}
-                                  defaultPeriod={defaultPeriod}
-                                  className="w-full max-w-[200px]"
-                                  onChange={(val) => handlePrayerChange(`${key}.azan`, val)}
-                                />
-                              </div>
-                            </td>
-                            <td className="py-3 px-2">
-                              <div className="flex justify-center w-full">
-                                <PrayerTimeInput
-                                  value={prayer.jamat || ''}
-                                  placeholder={defaultJamat}
-                                  defaultPeriod={defaultPeriod}
-                                  className="w-full max-w-[200px]"
-                                  onChange={(val) => handlePrayerChange(`${key}.jamat`, val)}
-                                />
-                              </div>
-                            </td>
-                            <td className="py-3 px-2">
-                              <div className="flex justify-center w-full">
-                                <PrayerTimeInput
-                                  value={prayer.qaza || ''}
-                                  placeholder={defaultQaza}
-                                  defaultPeriod={qazaPeriod}
-                                  className="w-full max-w-[200px]"
-                                  onChange={(val) => handlePrayerChange(`${key}.qaza`, val)}
-                                />
-                              </div>
-                            </td>
+                {/* Section 2: SIDE-BY-SIDE (Baju-Baju Me) 5 Farz Prayers + Additional Timings */}
+                <div className="grid grid-cols-1 xl:grid-cols-12 divide-y xl:divide-y-0 xl:divide-x divide-border/80">
+
+                  {/* Left Column (xl:col-span-7): 5 Daily Farz Prayers Structured Table */}
+                  <div className="xl:col-span-7 p-3.5 sm:p-5 space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <h4 className="text-xs font-bold text-text uppercase tracking-wider">
+                        5 Daily Farz Prayers
+                      </h4>
+                    </div>
+                    <div className="overflow-x-auto -mx-1 sm:mx-0">
+                      <table className="w-full text-left border-collapse min-w-[380px]">
+                        <thead>
+                          <tr className="border-b border-border text-[11px] font-bold text-text-secondary uppercase tracking-wider bg-surface-secondary/40">
+                            <th className="py-2.5 px-3 rounded-l-xl">Prayer</th>
+                            <th className="py-2.5 px-1.5 text-center">Azan</th>
+                            <th className="py-2.5 px-1.5 text-center">Jamat</th>
+                            <th className="py-2.5 px-2 text-center rounded-r-xl">Qaza Until</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody className="divide-y divide-border/50 text-sm">
+                          {[
+                            { key: 'fajr', label: 'Fajr', icon: Sunrise, iconColor: 'text-amber-500 bg-amber-500/10', defaultPeriod: 'AM', qazaPeriod: 'AM', defaultAzan: '05:26', defaultJamat: '05:40', defaultQaza: '06:42' },
+                            { key: 'zohr', label: 'Zohr', icon: Sun, iconColor: 'text-amber-600 bg-amber-600/10', defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '12:28', defaultJamat: '12:45', defaultQaza: '04:36' },
+                            { key: 'asr', label: 'Asr', icon: Sun, iconColor: 'text-orange-500 bg-orange-500/10', defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '04:36', defaultJamat: '04:50', defaultQaza: '06:16' },
+                            { key: 'maghrib', label: 'Maghrib', icon: Sunset, iconColor: 'text-rose-500 bg-rose-500/10', defaultPeriod: 'PM', qazaPeriod: 'PM', defaultAzan: '06:16', defaultJamat: '06:18', defaultQaza: '07:29' },
+                            { key: 'isha', label: 'Isha', icon: Moon, iconColor: 'text-emerald-600 bg-emerald-500/10', defaultPeriod: 'PM', qazaPeriod: 'AM', defaultAzan: '07:29', defaultJamat: '07:45', defaultQaza: '05:20' },
+                          ].map(({ key, label, icon: Icon, iconColor, defaultPeriod, qazaPeriod, defaultAzan, defaultJamat, defaultQaza }) => {
+                            const prayer = config.prayerTimes?.[key] || {};
+                            return (
+                              <tr key={key} className="hover:bg-surface-secondary/40 transition-colors">
+                                <td className="py-2.5 px-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`p-1.5 rounded-lg shrink-0 ${iconColor}`}>
+                                      <Icon className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div className="font-bold text-text text-xs sm:text-sm">{label}</div>
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-1 text-center">
+                                  <div className="flex justify-center">
+                                    <PrayerTimeInput
+                                      value={prayer.azan || ''}
+                                      placeholder={defaultAzan}
+                                      defaultPeriod={defaultPeriod}
+                                      onChange={(val) => handlePrayerChange(`${key}.azan`, val)}
+                                    />
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-1 text-center">
+                                  <div className="flex justify-center">
+                                    <PrayerTimeInput
+                                      value={prayer.jamat || ''}
+                                      placeholder={defaultJamat}
+                                      defaultPeriod={defaultPeriod}
+                                      onChange={(val) => handlePrayerChange(`${key}.jamat`, val)}
+                                    />
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-1 text-center">
+                                  <div className="flex justify-center">
+                                    <PrayerTimeInput
+                                      value={prayer.qaza || ''}
+                                      placeholder={defaultQaza}
+                                      defaultPeriod={qazaPeriod}
+                                      onChange={(val) => handlePrayerChange(`${key}.qaza`, val)}
+                                    />
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Right Column (xl:col-span-5): Additional Timings + Note (Baju Me) */}
+                  <div className="xl:col-span-5 p-3.5 sm:p-5 bg-surface-secondary/15 flex flex-col justify-between space-y-3.5">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-border/70">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
+                            <Sun className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs sm:text-sm font-bold text-text">Additional Timings</h4>
+                            <p className="text-[10px] text-text-secondary">Tahajjud, Sehri, Sunrise, Ishraq, Chasht & Iftar</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-semibold text-text-muted">6 Sunnah Timings</span>
+                      </div>
+
+                      {/* 2-Column Grid of 6 Timings */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-2">
+                        {[
+                          { key: 'tahajjudEnd', label: 'Tahajjud End', placeholder: '05:25', defaultPeriod: 'AM' },
+                          { key: 'sehriEnd', label: 'Sehri End', placeholder: '05:25', defaultPeriod: 'AM' },
+                          { key: 'sunrise', label: 'Sunrise', placeholder: '06:42', defaultPeriod: 'AM' },
+                          { key: 'ishraq', label: 'Ishraq', placeholder: '06:57', defaultPeriod: 'AM' },
+                          { key: 'chasht', label: 'Chasht', placeholder: '08:30', defaultPeriod: 'AM' },
+                          { key: 'iftar', label: 'Iftar Time', placeholder: '06:16', defaultPeriod: 'PM' },
+                        ].map(({ key, label, placeholder, defaultPeriod }) => (
+                          <div key={key} className="p-2 rounded-xl bg-surface border border-border/80 hover:border-emerald-500/40 flex items-center justify-between gap-2 transition-all">
+                            <span className="text-xs font-bold text-text truncate">{label}</span>
+                            <PrayerTimeInput
+                              value={config.prayerTimes?.[key] || ''}
+                              placeholder={placeholder}
+                              defaultPeriod={defaultPeriod}
+                              onChange={(val) => handlePrayerChange(key, val)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Special Note / Announcement inside Right Column */}
+                    <div className="pt-2.5 border-t border-border/70">
+                      <label className="text-[11px] font-bold text-text flex items-center justify-between mb-1.5">
+                        <span>Special Note / Announcement</span>
+                        <span className="text-[10px] font-normal text-text-muted">Displays on Flyer</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={config.prayerTimes?.note || ''}
+                        placeholder="e.g. Friday Jummah Khutbah starts at 01:15 PM."
+                        onChange={(e) => handlePrayerChange('note', e.target.value)}
+                        className="bg-input-bg text-text text-xs py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 w-full shadow-xs transition-colors"
+                      />
+                    </div>
+                  </div>
+
                 </div>
 
-                {/* Bottom Action strip */}
-                <div className="flex items-center justify-between pt-3 border-t border-border/70 text-xs">
+                {/* Section 4: Bottom Save & Status Bar */}
+                <div className="p-3 sm:px-5 flex items-center justify-between text-xs bg-surface-secondary/30">
                   <span className="text-text-muted text-[11px] flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     Changes preview live on the flyer in real-time
@@ -1353,230 +1405,162 @@ export default function SettingsPage() {
                     <span>{saveLoading ? 'Saving...' : 'Save Timetable'}</span>
                   </button>
                 </div>
+
               </div>
 
-              {/* Row 3: 2-Column Responsive Subgrid for Additional Timings & Notifications */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-                {/* Card 3: Additional Timings */}
-                <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-glass-sm space-y-3.5 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
-                          <Sun className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-text">Additional Timings (વધારાના સમય)</h4>
-                          <p className="text-[11px] text-text-secondary">Sehri, Iftar, Sunrise, Ishraq & Chasht</p>
-                        </div>
-                      </div>
+              {/* ── BOX 2: Dedicated Push Notification Alerts Card ── */}
+              <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-glass-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-border/70">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
+                      <Bell className="w-4 h-4" />
                     </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                      {[
-                        { key: 'tahajjudEnd', label: 'Tahajjud End', gujName: 'તહજુદ છેલ્લો', placeholder: '05:25', defaultPeriod: 'AM' },
-                        { key: 'sehriEnd', label: 'Sehri End', gujName: 'સેહરી છેલ્લો', placeholder: '05:25', defaultPeriod: 'AM' },
-                        { key: 'sunrise', label: 'Sunrise', gujName: 'સૂર્યોદય', placeholder: '06:42', defaultPeriod: 'AM' },
-                        { key: 'ishraq', label: 'Ishraq', gujName: 'ઈશરાક', placeholder: '06:57', defaultPeriod: 'AM' },
-                        { key: 'chasht', label: 'Chasht', gujName: 'ચાશ્ત', placeholder: '08:30', defaultPeriod: 'AM' },
-                        { key: 'iftar', label: 'Iftar Time', gujName: 'ઇફતારી સમય', placeholder: '06:16', defaultPeriod: 'PM' },
-                      ].map(({ key, label, gujName, placeholder, defaultPeriod }) => (
-                        <div key={key} className="p-2 rounded-xl bg-surface-secondary/60 border border-border/80 flex flex-col justify-between gap-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-text leading-tight">{label}</span>
-                            <span className="text-[9px] text-text-muted leading-none">{gujName}</span>
-                          </div>
-                          <PrayerTimeInput
-                            value={config.prayerTimes?.[key] || ''}
-                            placeholder={placeholder}
-                            defaultPeriod={defaultPeriod}
-                            className="w-full text-xs"
-                            onChange={(val) => handlePrayerChange(key, val)}
-                          />
-                        </div>
-                      ))}
+                    <div>
+                      <h4 className="text-sm font-bold text-text">Push Notification Alerts</h4>
+                      <p className="text-xs text-text-secondary">
+                        Automatic reminders sent to members' mobile devices
+                      </p>
                     </div>
                   </div>
-
-                  {/* Special Note / Announcement */}
-                  <div className="pt-3 border-t border-border/70 mt-2">
-                    <label className="text-xs font-bold text-text flex items-center justify-between mb-1.5">
-                      <span>Special Note / Announcement (વિશેષ નોંધ)</span>
-                      <span className="text-[10px] font-normal text-text-muted">Displays on Flyer</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={config.prayerTimes?.note || ''}
-                      placeholder="e.g. Friday Jummah Khutbah starts at 01:15 PM."
-                      onChange={(e) => handlePrayerChange('note', e.target.value)}
-                      className="bg-input-bg text-text text-xs sm:text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 w-full shadow-xs transition-colors"
-                    />
-                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Active
+                  </span>
                 </div>
 
-                {/* Card 4: Automated Prayer Notification Reminders & Testing */}
-                <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-glass-sm space-y-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600">
-                          <Bell className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-text">Push Notification Alerts</h4>
-                          <p className="text-[11px] text-text-secondary">
-                            Automatic reminders sent to members' mobile devices
-                          </p>
-                        </div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Active
-                      </span>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                  {/* Left: Advance Reminder Timing (7 cols) */}
+                  <div className="md:col-span-7 space-y-2">
+                    <div className="text-xs font-bold text-text flex items-center justify-between">
+                      <span>Advance Reminder Timing</span>
+                      <span className="text-[10px] text-text-muted">Offsets before prayer</span>
                     </div>
-
-                    {/* Part A: Advance Reminder Timing Inputs */}
-                    <div className="space-y-2">
-                      <div className="text-xs font-bold text-text">
-                        Advance Reminder Timing (કેટલા સમય પહેલા એલર્ટ મોકલવું)
+                    <div className="grid grid-cols-3 gap-2.5">
+                      {/* Azan Offset */}
+                      <div className="p-2.5 rounded-xl bg-surface border border-border/70 flex flex-col justify-between gap-1.5">
+                        <span className="text-xs font-bold text-text leading-tight">Azan Alert</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="1"
+                            max="120"
+                            value={config.prayerTimes?.azanOffsetMinutes ?? 25}
+                            onChange={(e) => handlePrayerChange('azanOffsetMinutes', parseInt(e.target.value, 10) || '')}
+                            className="w-12 bg-input-bg text-emerald-600 font-bold font-mono text-center text-xs py-1 border border-border rounded-lg outline-none focus:border-emerald-600 shadow-xs"
+                          />
+                          <span className="text-[10px] font-semibold text-text-secondary">min</span>
+                        </div>
+                        <p className="text-[9px] text-text-muted leading-tight">
+                          Before Azan
+                        </p>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {/* Azan Offset */}
-                        <div className="p-2.5 rounded-xl bg-surface-secondary/60 border border-border/80 flex flex-col justify-between gap-1.5">
-                          <span className="text-xs font-bold text-text leading-tight">Azan Alert</span>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              min="1"
-                              max="120"
-                              value={config.prayerTimes?.azanOffsetMinutes ?? 25}
-                              onChange={(e) => handlePrayerChange('azanOffsetMinutes', parseInt(e.target.value, 10) || '')}
-                              className="w-11 bg-input-bg text-emerald-600 font-bold font-mono text-center text-xs sm:text-sm border border-border rounded-lg py-1 outline-none focus:border-emerald-600"
-                            />
-                            <span className="text-[10px] font-semibold text-text-secondary">min</span>
-                          </div>
-                          <p className="text-[9px] text-text-muted leading-tight">
-                            Before Azan
-                          </p>
-                        </div>
 
-                        {/* Jamat Offset */}
-                        <div className="p-2.5 rounded-xl bg-surface-secondary/60 border border-border/80 flex flex-col justify-between gap-1.5">
-                          <span className="text-xs font-bold text-text leading-tight">Jamat Alert</span>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              min="1"
-                              max="120"
-                              value={config.prayerTimes?.jamatOffsetMinutes ?? 15}
-                              onChange={(e) => handlePrayerChange('jamatOffsetMinutes', parseInt(e.target.value, 10) || '')}
-                              className="w-11 bg-input-bg text-emerald-600 font-bold font-mono text-center text-xs sm:text-sm border border-border rounded-lg py-1 outline-none focus:border-emerald-600"
-                            />
-                            <span className="text-[10px] font-semibold text-text-secondary">min</span>
-                          </div>
-                          <p className="text-[9px] text-text-muted leading-tight">
-                            Before Jamat
-                          </p>
+                      {/* Jamat Offset */}
+                      <div className="p-2.5 rounded-xl bg-surface border border-border/70 flex flex-col justify-between gap-1.5">
+                        <span className="text-xs font-bold text-text leading-tight">Jamat Alert</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="1"
+                            max="120"
+                            value={config.prayerTimes?.jamatOffsetMinutes ?? 15}
+                            onChange={(e) => handlePrayerChange('jamatOffsetMinutes', parseInt(e.target.value, 10) || '')}
+                            className="w-12 bg-input-bg text-emerald-600 font-bold font-mono text-center text-xs py-1 border border-border rounded-lg outline-none focus:border-emerald-600 shadow-xs"
+                          />
+                          <span className="text-[10px] font-semibold text-text-secondary">min</span>
                         </div>
+                        <p className="text-[9px] text-text-muted leading-tight">
+                          Before Jamat
+                        </p>
+                      </div>
 
-                        {/* Qaza Offset */}
-                        <div className="p-2.5 rounded-xl bg-surface-secondary/60 border border-border/80 flex flex-col justify-between gap-1.5">
-                          <span className="text-xs font-bold text-text leading-tight">Qaza Warn</span>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              min="1"
-                              max="120"
-                              value={config.prayerTimes?.qazaOffsetMinutes ?? 15}
-                              onChange={(e) => handlePrayerChange('qazaOffsetMinutes', parseInt(e.target.value, 10) || '')}
-                              className="w-11 bg-input-bg text-amber-600 font-bold font-mono text-center text-xs sm:text-sm border border-border rounded-lg py-1 outline-none focus:border-amber-600"
-                            />
-                            <span className="text-[10px] font-semibold text-text-secondary">min</span>
-                          </div>
-                          <p className="text-[9px] text-text-muted leading-tight">
-                            Before Qaza
-                          </p>
+                      {/* Qaza Offset */}
+                      <div className="p-2.5 rounded-xl bg-surface border border-border/70 flex flex-col justify-between gap-1.5">
+                        <span className="text-xs font-bold text-text leading-tight">Qaza Warn</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="1"
+                            max="120"
+                            value={config.prayerTimes?.qazaOffsetMinutes ?? 15}
+                            onChange={(e) => handlePrayerChange('qazaOffsetMinutes', parseInt(e.target.value, 10) || '')}
+                            className="w-12 bg-input-bg text-amber-600 font-bold font-mono text-center text-xs py-1 border border-border rounded-lg outline-none focus:border-amber-600 shadow-xs"
+                          />
+                          <span className="text-[10px] font-semibold text-text-secondary">min</span>
                         </div>
+                        <p className="text-[9px] text-text-muted leading-tight">
+                          Before Qaza
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Part B: Test Broadcast Section */}
-                  <div className="pt-3 border-t border-border/70 mt-2">
-                    <div className="flex items-center justify-between gap-1 mb-2">
-                      <span className="text-xs font-bold text-text">Test Alert (મોબાઈલ પર ટેસ્ટ)</span>
-                      <span className="text-[10px] text-text-muted">Verify notification</span>
+                  {/* Right: Test Alert Broadcast (5 cols) */}
+                  <div className="md:col-span-5 space-y-2">
+                    <div className="text-xs font-bold text-text flex items-center justify-between">
+                      <span>Test Alert Broadcast</span>
+                      <span className="text-[10px] text-text-muted">Instant verify</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 min-w-[100px]">
-                        <Select
-                          value={testingPrayer}
-                          onChange={(val) => setTestingPrayer(val)}
-                          options={[
-                            { value: 'fajr', label: 'Fajr (ફજર)' },
-                            { value: 'zohr', label: 'Zohr (ઝોહર)' },
-                            { value: 'asr', label: 'Asr (અસર)' },
-                            { value: 'maghrib', label: 'Maghrib (મગરીબ)' },
-                            { value: 'isha', label: 'Isha (ઈશા)' },
-                          ]}
-                          searchable={false}
-                          className="text-xs"
-                          placement="up"
-                        />
-                      </div>
+                    <div className="p-3 rounded-xl bg-surface border border-border/70 space-y-2.5">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="min-w-0">
+                          <label className="text-[10px] font-semibold text-text-muted mb-1 block">Prayer</label>
+                          <Select
+                            value={testingPrayer}
+                            onChange={(val) => setTestingPrayer(val)}
+                            options={[
+                              { value: 'fajr', label: 'Fajr' },
+                              { value: 'zohr', label: 'Zohr' },
+                              { value: 'asr', label: 'Asr' },
+                              { value: 'maghrib', label: 'Maghrib' },
+                              { value: 'isha', label: 'Isha' },
+                            ]}
+                            searchable={false}
+                            className="text-xs"
+                            placement="up"
+                          />
+                        </div>
 
-                      <div className="flex-1 min-w-[110px]">
-                        <Select
-                          value={testingPrayerType}
-                          onChange={(val) => setTestingPrayerType(val)}
-                          options={[
-                            { value: 'azan', label: `Azan (${config.prayerTimes?.azanOffsetMinutes ?? 25}m)` },
-                            { value: 'jamat', label: `Jamat (${config.prayerTimes?.jamatOffsetMinutes ?? 15}m)` },
-                            { value: 'qaza', label: `Qaza (${config.prayerTimes?.qazaOffsetMinutes ?? 15}m)` },
-                          ]}
-                          searchable={false}
-                          className="text-xs"
-                          placement="up"
-                        />
+                        <div className="min-w-0">
+                          <label className="text-[10px] font-semibold text-text-muted mb-1 block">Type</label>
+                          <Select
+                            value={testingPrayerType}
+                            onChange={(val) => setTestingPrayerType(val)}
+                            options={[
+                              { value: 'azan', label: `Azan (${config.prayerTimes?.azanOffsetMinutes ?? 25}m)` },
+                              { value: 'jamat', label: `Jamat (${config.prayerTimes?.jamatOffsetMinutes ?? 15}m)` },
+                              { value: 'qaza', label: `Qaza (${config.prayerTimes?.qazaOffsetMinutes ?? 15}m)` },
+                            ]}
+                            searchable={false}
+                            className="text-xs"
+                            placement="up"
+                          />
+                        </div>
                       </div>
 
                       <button
                         type="button"
-                        disabled={testingPrayerLoading}
                         onClick={handleTestPrayerAlert}
-                        className="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 shrink-0 h-9"
-                        title="Broadcast test notification"
+                        disabled={testingPrayerLoading}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-60"
                       >
-                        <Send className="w-3 h-3" />
-                        <span>{testingPrayerLoading ? '...' : 'Send'}</span>
+                        <Bell className="w-3.5 h-3.5" />
+                        <span>{testingPrayerLoading ? 'Sending Alert...' : 'Send Test Alert'}</span>
                       </button>
                     </div>
                   </div>
                 </div>
-
               </div>
 
             </div>
 
-            {/* Right: Sticky Live Flyer Preview (5 cols on XL, 4 cols on 2XL) */}
-            <div className="xl:col-span-5 2xl:col-span-4 xl:sticky top-6 space-y-4">
+            {/* Right: Sticky Live Flyer Preview */}
+            <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 lg:sticky top-4 space-y-4">
               <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-glass-sm space-y-3.5">
-                
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    <h4 className="text-sm font-bold text-text">Live Flyer Preview</h4>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                    Real-time
-                  </span>
-                </div>
+            
 
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  This preview updates in real-time with your configured timings. Download as an HD image to share directly to WhatsApp.
-                </p>
+               
 
                 {/* Rendered Namaz Timetable Card */}
                 <div className="flex justify-center p-2 bg-surface-secondary/40 rounded-2xl border border-border/80 overflow-x-auto">
@@ -1601,12 +1585,7 @@ export default function SettingsPage() {
                   </button>
                 </div>
 
-                <div className="p-3 bg-surface-secondary/80 rounded-xl border border-border text-[11px] text-text-secondary leading-relaxed flex items-start gap-2">
-                  <Info className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                  <span>
-                    Timings saved here are dynamically synchronized across all mobile apps and API endpoints.
-                  </span>
-                </div>
+                                                                                                                                             
 
               </div>
             </div>
