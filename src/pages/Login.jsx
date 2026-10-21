@@ -40,20 +40,51 @@ export default function Login() {
   }, [])
 
   useEffect(() => {
-    const loadWebTheme = () => {
+    const loadWebTheme = async () => {
       const actualSubdomain = getActualSubdomain()
       let name = localStorage.getItem('web_name') || ''
+      let cachedLogo =
+        localStorage.getItem('web_logo') ||
+        localStorage.getItem('web_webLogo') ||
+        localStorage.getItem('web_appLogo') ||
+        ''
+
       if (actualSubdomain && name && !name.toLowerCase().includes(actualSubdomain.toLowerCase())) {
         name = `${actualSubdomain.charAt(0).toUpperCase() + actualSubdomain.slice(1)} Parivar`
         localStorage.setItem('web_name', name)
       }
 
       setWebTheme({
-        webLogo: localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || '',
+        webLogo: cachedLogo,
         name: actualSubdomain
           ? `${actualSubdomain.charAt(0).toUpperCase() + actualSubdomain.slice(1)} Parivar`
-          : (localStorage.getItem('web_name') || getDomainCommunityName() || 'Chovatiya Parivar')
+          : (name || getDomainCommunityName() || 'Chaudhary Parivar')
       })
+
+      // Fetch fresh theme from backend to guarantee logo is always present
+      try {
+        const res = await api.get('/get_app_theme')
+        const data = res.data?.data || res.data || {}
+        const serverLogo = data.webLogo || data.appLogo || ''
+        const serverName = data.name || ''
+
+        if (serverLogo) {
+          localStorage.setItem('web_webLogo', serverLogo)
+          localStorage.setItem('web_logo', serverLogo)
+        }
+        if (serverName && !actualSubdomain) {
+          localStorage.setItem('web_name', serverName)
+        }
+
+        setWebTheme(prev => ({
+          webLogo: serverLogo || prev.webLogo,
+          name: actualSubdomain
+            ? `${actualSubdomain.charAt(0).toUpperCase() + actualSubdomain.slice(1)} Parivar`
+            : (serverName || prev.name)
+        }))
+      } catch (err) {
+        console.warn('Could not fetch app theme on login:', err)
+      }
     }
 
     loadWebTheme()
@@ -100,8 +131,18 @@ export default function Login() {
   const titleName = webTheme.name || (
     actualSubdomain
       ? `${actualSubdomain.charAt(0).toUpperCase() + actualSubdomain.slice(1)} Parivar`
-      : (domainName ? (domainName.toLowerCase().includes('parivar') ? domainName : `${domainName} Parivar`) : 'Chovatiya Parivar')
+      : (domainName ? (domainName.toLowerCase().includes('parivar') ? domainName : `${domainName} Parivar`) : 'Chaudhary Parivar')
   )
+
+  const resolveLogoUrl = (url) => {
+    if (!url) return 'https://service.digitalks.co.in/s3docs/parivar/webLogo/4a9af31273ab4b789503406e4787da2f.webp'
+    if (/^https?:\/\//i.test(url)) return url
+    if (url.startsWith('/')) return url
+    return assetUrl(url)
+  }
+
+  const rawLogo = webTheme.webLogo || localStorage.getItem('web_webLogo') || localStorage.getItem('web_logo') || localStorage.getItem('web_appLogo') || 'https://service.digitalks.co.in/s3docs/parivar/webLogo/4a9af31273ab4b789503406e4787da2f.webp'
+  const displayLogo = resolveLogoUrl(rawLogo)
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] dark:bg-background text-text relative overflow-hidden font-sans p-4">
@@ -120,24 +161,26 @@ export default function Login() {
         <div className="h-1.5 w-full bg-[#1E6FD9]"></div>
 
         <div className="p-6 sm:p-8">
-          {/* Logo container */}
+          {/* Logo container - Full, proper, prominent visibility */}
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-surface-secondary border border-slate-100 dark:border-border/80 flex items-center justify-center shadow-xs mb-3 overflow-hidden p-1.5">
-              {webTheme.webLogo ? (
-                <img
-                  src={assetUrl(webTheme.webLogo)}
-                  alt={titleName}
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <Building2 className="w-7 h-7 text-[#1E6FD9]" />
-              )}
+            <div className="mb-3 flex items-center justify-center w-full">
+              <img
+                src={displayLogo}
+                alt={titleName}
+                className="h-24 sm:h-28 w-auto max-w-[280px] object-contain drop-shadow-md transition-transform hover:scale-105"
+                onError={(e) => {
+                  const fallback = 'https://service.digitalks.co.in/s3docs/parivar/webLogo/4a9af31273ab4b789503406e4787da2f.webp'
+                  if (e.currentTarget.src !== fallback) {
+                    e.currentTarget.src = fallback
+                  }
+                }}
+              />
             </div>
 
-            <h1 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-text tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-text tracking-tight">
               {titleName}
             </h1>
-            <p className="text-xs text-slate-400 dark:text-text-secondary mt-0.5 font-medium">
+            <p className="text-xs text-slate-400 dark:text-text-secondary mt-1 font-medium">
               Admin Portal Sign In
             </p>
           </div>
