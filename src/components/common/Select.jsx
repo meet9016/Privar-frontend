@@ -1,12 +1,17 @@
 import React, { useState, useRef, useEffect, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, ChevronDown, Plus } from 'lucide-react';
+import { Search, ChevronDown, Plus, Loader2, X } from 'lucide-react';
 
 export default function Select({
   label,
   options = [],
   value,
   onChange,
+  onSearch,
+  loading = false,
+  onLoadMore,
+  hasMore = false,
+  loadingMore = false,
   onCreateOption,
   creatable = false,
   createPrompt = 'Add',
@@ -92,6 +97,7 @@ export default function Select({
       ) {
         setIsOpen(false);
         setSearchTerm('');
+        if (onSearch) onSearch('');
       }
     };
 
@@ -109,6 +115,7 @@ export default function Select({
     if (disabled) return;
     if (!isOpen) {
       setSearchTerm('');
+      if (onSearch) onSearch('');
       updatePosition();
     }
     setIsOpen(!isOpen);
@@ -122,9 +129,31 @@ export default function Select({
     return [];
   }, [value, isMultiple]);
 
-  const filteredOptions = options.filter(option => 
-    String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOptions = useMemo(() => {
+    if (onSearch) {
+      if (searchTerm.trim().length >= 3) {
+        return options.filter(opt => opt && opt.value !== '' && opt.value !== undefined);
+      }
+      return options;
+    }
+
+    if (!searchTerm.trim()) return options;
+
+    const tokens = searchTerm.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    return options.filter(option => {
+      if (!option || option.value === '') return false;
+      const targetText = `${option.label || ''} ${option.sublabel || ''} ${option.description || ''} ${option.meaning || ''} ${option.value || ''}`.toLowerCase();
+      return tokens.every(token => targetText.includes(token));
+    });
+  }, [options, searchTerm, onSearch]);
+
+  const handleScroll = (e) => {
+    if (!onLoadMore || loadingMore || !hasMore) return;
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 50) {
+      onLoadMore();
+    }
+  };
 
   const isHexId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val.trim());
 
@@ -169,6 +198,7 @@ export default function Select({
     onChange(val);
     setIsOpen(false);
     setSearchTerm('');
+    if (onSearch) onSearch('');
   };
 
   const handleRemoveItem = (val, e) => {
@@ -297,17 +327,51 @@ export default function Select({
               <input 
                 type="text"
                 className="w-full bg-transparent text-sm outline-none text-text placeholder:text-text-secondary/60"
-                placeholder="Search..."
+                placeholder={onSearch ? "Search (min. 3 characters)..." : "Search..."}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchTerm(val);
+                  if (onSearch) onSearch(val);
+                }}
                 onClick={(e) => e.stopPropagation()}
                 autoFocus
               />
+              {loading && <Loader2 size={15} className="text-primary animate-spin shrink-0" />}
+              {searchTerm && !loading && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSearchTerm('');
+                    if (onSearch) onSearch('');
+                  }}
+                  className="text-text-secondary hover:text-text p-0.5 rounded-full"
+                  title="Clear"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {onSearch && searchTerm.trim().length > 0 && searchTerm.trim().length < 3 && (
+            <div className="px-3 py-1.5 bg-primary/5 text-primary text-[11px] font-medium border-b border-border/40 flex items-center justify-between">
+              <span>Type at least 3 characters to search...</span>
+              <span className="text-[10px] font-semibold opacity-75">({searchTerm.trim().length}/3)</span>
             </div>
           )}
           
-          <div className="overflow-y-auto flex-1 custom-scrollbar max-h-48 divide-y divide-border/20">
-            {filteredOptions.length > 0 ? (
+          <div 
+            className="overflow-y-auto flex-1 custom-scrollbar max-h-48 divide-y divide-border/20"
+            onScroll={handleScroll}
+          >
+            {loading && filteredOptions.length === 0 ? (
+              <div className="px-3 py-6 text-sm text-text-secondary text-center flex flex-col items-center justify-center gap-2">
+                <Loader2 size={18} className="animate-spin text-primary" />
+                <span className="text-xs">Searching members...</span>
+              </div>
+            ) : filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
                 const isSelected = isMultiple
                   ? selectedValues.includes(String(option.value))
@@ -384,6 +448,13 @@ export default function Select({
                 <div className="truncate text-xs">
                   {createPrompt} <span className="font-bold">"{trimmedSearch}"</span>
                 </div>
+              </div>
+            )}
+
+            {loadingMore && (
+              <div className="px-3 py-2 text-xs text-text-secondary flex items-center justify-center gap-2 bg-surface-secondary/20 border-t border-border/20">
+                <Loader2 size={13} className="animate-spin text-primary shrink-0" />
+                <span>Loading more...</span>
               </div>
             )}
           </div>
