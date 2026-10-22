@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import Input from './common/Input'
 import Select from './common/Select'
@@ -10,11 +10,19 @@ import { User as UserIcon, Phone, Mail, ShieldCheck } from 'lucide-react'
 export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLoading, onCancel }) {
   const { user: loggedInUser } = useContext(AuthContext)
   const [userList, setUserList] = useState([])
+  const [userPage, setUserPage] = useState(1)
+  const [hasMoreUsers, setHasMoreUsers] = useState(false)
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [loadingMoreUsers, setLoadingMoreUsers] = useState(false)
+  const [selectedUserObj, setSelectedUserObj] = useState(null)
+  const searchTimerRef = useRef(null)
+  const searchQueryRef = useRef('')
+  const isFetchingRef = useRef(false)
+  const defaultUsersRef = useRef({ list: [], hasMore: false })
   const [stateList, setStateList] = useState([])
   const [districtList, setDistrictList] = useState([])
   const [cityList, setCityList] = useState([])
   const [villageList, setVillageList] = useState([])
-  const [loadingUsers, setLoadingUsers] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState('')
 
   const [formData, setFormData] = useState({
@@ -39,25 +47,129 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
   })
   const [errors, setErrors] = useState({})
 
-  // Fetch community users for dropdown selection
+  // Fetch initial community users (first 20) for dropdown selection
   useEffect(() => {
     let isMounted = true
-    const fetchUsers = async () => {
+    const fetchFirstBatch = async () => {
       setLoadingUsers(true)
       try {
-        const res = await getUsersList({ limit: 500, flat: 'true' })
+        const res = await getUsersList({ page: 1, limit: 20, flat: 'true' })
         const raw = res.data?.data || res.data?.members || res.data || []
         const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : [])
-        if (isMounted) setUserList(list)
+        const pagination = res.data?.pagination
+        const hasMore = pagination ? pagination.page < pagination.totalPages : list.length === 20
+        if (isMounted) {
+          setUserList(list)
+          setUserPage(1)
+          setHasMoreUsers(hasMore)
+          defaultUsersRef.current = { list, hasMore }
+        }
       } catch (err) {
-        console.error('Failed to load user list for committee selection:', err)
+        console.error('Failed to load initial user list for committee selection:', err)
       } finally {
         if (isMounted) setLoadingUsers(false)
       }
     }
-    fetchUsers()
+    fetchFirstBatch()
     return () => { isMounted = false }
   }, [])
+
+  // Cleanup search timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current)
+      }
+    }
+  }, [])
+
+  // Debounced backend search for community members: only queries backend when 3 or more chars are typed
+  const handleUserSearch = useCallback((searchTerm) => {
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current)
+    }
+
+    const query = (searchTerm || '').trim()
+
+    // If query has less than 3 characters, do not search backend
+    if (query.length < 3) {
+      setLoadingUsers(false)
+      // If previous search was active (>= 3 chars), restore default initial list
+      if (searchQueryRef.current !== '') {
+        searchQueryRef.current = ''
+        setUserList(defaultUsersRef.current.list || [])
+        setUserPage(1)
+        setHasMoreUsers(defaultUsersRef.current.hasMore ?? false)
+      }
+      return
+    }
+
+    searchQueryRef.current = query
+    setLoadingUsers(true)
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await getUsersList({
+          page: 1,
+          limit: 20,
+          search: query,
+          flat: 'true'
+        })
+        const raw = res.data?.data || res.data?.members || res.data || []
+        const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : [])
+        const pagination = res.data?.pagination
+        const hasMore = pagination ? pagination.page < pagination.totalPages : list.length === 20
+
+        setUserList(list)
+        setUserPage(1)
+        setHasMoreUsers(hasMore)
+      } catch (err) {
+        console.error('Failed to search members:', err)
+      } finally {
+        setLoadingUsers(false)
+      }
+    }, 300)
+  }, [])
+
+  // Infinite scroll: fetch next 20 community members when user scrolls dropdown to bottom
+  const handleLoadMoreUsers = useCallback(async () => {
+    if (loadingUsers || loadingMoreUsers || !hasMoreUsers || isFetchingRef.current) {
+      return
+    }
+
+    isFetchingRef.current = true
+    setLoadingMoreUsers(true)
+    const nextPage = userPage + 1
+
+    try {
+      const res = await getUsersList({
+        page: nextPage,
+        limit: 20,
+        search: searchQueryRef.current && searchQueryRef.current.length >= 3 ? searchQueryRef.current : undefined,
+        flat: 'true'
+      })
+      const raw = res.data?.data || res.data?.members || res.data || []
+      const newItems = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : [])
+
+      if (newItems.length === 0) {
+        setHasMoreUsers(false)
+      } else {
+        const pagination = res.data?.pagination
+        const hasMore = pagination ? pagination.page < pagination.totalPages : newItems.length === 20
+        setHasMoreUsers(hasMore)
+        setUserPage(nextPage)
+        setUserList(prev => {
+          const existingIds = new Set(prev.map(u => String(u._id || u.id || u.member_id)))
+          const unique = newItems.filter(u => !existingIds.has(String(u._id || u.id || u.member_id)))
+          return [...prev, ...unique]
+        })
+      }
+    } catch (err) {
+      console.error('Failed to load more members on scroll:', err)
+    } finally {
+      setLoadingMoreUsers(false)
+      isFetchingRef.current = false
+    }
+  }, [loadingUsers, loadingMoreUsers, hasMoreUsers, userPage])
 
   // Fetch location masters for dropdown selection
   useEffect(() => {
@@ -149,6 +261,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     })
 
     if (!userId) {
+      setSelectedUserObj(null)
       setFormData(prev => ({
         ...prev,
         user_id: '',
@@ -161,9 +274,13 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
       return
     }
 
-    const found = userList.find(u => String(u._id || u.id || u.member_id) === String(userId))
+    const found = userList.find(u => String(u._id || u.id || u.member_id) === String(userId)) ||
+                  selectedUserObj
     if (found) {
-      const userEmail = found.email ? String(found.email).trim() : ''
+      setSelectedUserObj(found)
+      const userEmail = found.email
+        ? String(found.email).trim()
+        : (found.occupation_details?.business_email ? String(found.occupation_details.business_email).trim() : '')
       setFormData(prev => ({
         ...prev,
         user_id: String(found._id || found.id || found.member_id),
@@ -172,8 +289,14 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         last_name: found.last_name || '',
         number: found.number || found.phone || '',
         email: userEmail || prev.email || '',
-        village: found.village || found.village_name || '',
-        village_id: found.village_id || '',
+        village: found.village || found.village_name || prev.village || '',
+        village_id: found.village_id || prev.village_id || '',
+        city: found.city || prev.city || '',
+        city_id: found.city_id || prev.city_id || '',
+        district: found.district || prev.district || '',
+        district_id: found.district_id || prev.district_id || '',
+        state: found.state || prev.state || '',
+        state_id: found.state_id || prev.state_id || '',
         image: found.image || found.profile_image || ''
       }))
       if (userEmail) {
@@ -301,12 +424,27 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     const options = [
       { label: loadingUsers ? 'Loading members...' : 'Select a Member...', value: '' }
     ]
+
+    const map = new Map()
+    if (selectedUserObj) {
+      const selId = String(selectedUserObj._id || selectedUserObj.id || selectedUserObj.member_id)
+      map.set(selId, selectedUserObj)
+    }
     userList.forEach(u => {
+      const id = String(u._id || u.id || u.member_id)
+      if (!map.has(id)) {
+        map.set(id, u)
+      }
+    })
+
+    map.forEach(u => {
       const id = String(u._id || u.id || u.member_id)
       const fullName = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ')
       const phone = u.number || u.phone || ''
       const village = u.village || u.city || ''
-      const sub = [phone, village].filter(Boolean).join(' • ')
+      const relation = u.relation && u.relation !== 'Self' ? `(${u.relation}${u.family_head?.name ? ` of ${u.family_head.name}` : ''})` : ''
+      const memberNo = u.member_id ? `#${u.member_id}` : ''
+      const sub = [memberNo, phone, village, relation].filter(Boolean).join(' • ')
       const initials = (u.first_name?.[0] || '') + (u.last_name?.[0] || '')
 
       options.push({
@@ -318,7 +456,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
       })
     })
     return options
-  }, [userList, loadingUsers])
+  }, [userList, selectedUserObj, loadingUsers])
 
   const roleOptions = useMemo(() => [
     { label: 'Select Assigned Role', value: '' },
@@ -424,11 +562,16 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
             label=""
             value={selectedUserId}
             onChange={handleUserSelect}
+            onSearch={handleUserSearch}
+            loading={loadingUsers}
+            onLoadMore={handleLoadMoreUsers}
+            hasMore={hasMoreUsers}
+            loadingMore={loadingMoreUsers}
             options={userOptions}
             searchable={true}
-            placeholder="Search and select community member..."
+            placeholder="Search member (type at least 3 characters)..."
             error={errors.user_id}
-            disabled={isLoading || loadingUsers}
+            disabled={isLoading}
           />
         </div>
       ) : null}
