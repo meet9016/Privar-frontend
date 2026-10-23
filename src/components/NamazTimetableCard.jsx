@@ -55,7 +55,7 @@ const MoonIcon = ({ className = "w-4 h-4 text-[#D6A02B]" }) => (
 const CartoucheBadge = ({ label }) => {
   const gradId = React.useId ? React.useId().replace(/[^a-zA-Z0-9]/g, '') : `grad_${label}`;
   return (
-    <div className="relative inline-flex items-center justify-center select-none min-w-[128px] sm:min-w-[140px] h-[30px] sm:h-[34px] px-6">
+    <div className="relative inline-flex items-center justify-center select-none min-w-[110px] sm:min-w-[140px] h-[28px] sm:h-[34px] px-3 sm:px-6">
       {/* SVG ornamental cartouche with side-notches and gold bevel */}
       <svg viewBox="0 0 160 38" className="absolute inset-0 w-full h-full overflow-visible">
         <defs>
@@ -84,7 +84,7 @@ const CartoucheBadge = ({ label }) => {
         {/* Inner highlight line */}
         <path d="M 22 4 L 138 4" stroke="#87BF74" strokeWidth="0.9" strokeLinecap="round" opacity="0.6" />
       </svg>
-      <span className="relative z-10 text-white font-['Noto_Sans_Gujarati'] font-black text-[15px] sm:text-[17px] tracking-wide pb-0.5">
+      <span className="relative z-10 text-white font-['Noto_Sans_Gujarati'] font-black text-[13px] sm:text-[17px] tracking-wide pb-0.5">
         {label}
       </span>
     </div>
@@ -103,24 +103,24 @@ const PrayerRow = ({
   qazaLabel = "સુધી",
   iconType = "fajr"
 }) => {
-  let azanIcon = <SunIcon className="w-4 h-4 text-[#C98A28] shrink-0" />;
-  let qazaIcon = <SunIcon className="w-4 h-4 text-[#C98A28] shrink-0" />;
+  let azanIcon = <SunIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C98A28] shrink-0" />;
+  let qazaIcon = <SunIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C98A28] shrink-0" />;
 
   if (iconType === 'fajr') {
-    azanIcon = <SunriseIcon className="w-4 h-4 text-[#D88D23] shrink-0" />;
-    qazaIcon = <SunIcon className="w-4 h-4 text-[#D88D23] shrink-0" />;
+    azanIcon = <SunriseIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D88D23] shrink-0" />;
+    qazaIcon = <SunIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D88D23] shrink-0" />;
   } else if (iconType === 'zohr') {
-    azanIcon = <SunIcon className="w-4 h-4 text-[#D3841C] shrink-0" />;
-    qazaIcon = <SunIcon className="w-4 h-4 text-[#D3841C] shrink-0" />;
+    azanIcon = <SunIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D3841C] shrink-0" />;
+    qazaIcon = <SunIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D3841C] shrink-0" />;
   } else if (iconType === 'asr') {
-    azanIcon = <SunIcon className="w-4 h-4 text-[#CF7D1C] shrink-0" />;
-    qazaIcon = <SunIcon className="w-4 h-4 text-[#CF7D1C] shrink-0" />;
+    azanIcon = <SunIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#CF7D1C] shrink-0" />;
+    qazaIcon = <SunIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#CF7D1C] shrink-0" />;
   } else if (iconType === 'maghrib') {
-    azanIcon = <SunsetIcon className="w-4 h-4 text-[#D67118] shrink-0" />;
-    qazaIcon = <MoonIcon className="w-4 h-4 text-[#D6A02B] shrink-0" />;
+    azanIcon = <SunsetIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D67118] shrink-0" />;
+    qazaIcon = <MoonIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D6A02B] shrink-0" />;
   } else if (iconType === 'isha') {
-    azanIcon = <MoonIcon className="w-4 h-4 text-[#D6A02B] shrink-0" />;
-    qazaIcon = <MoonIcon className="w-4 h-4 text-[#D6A02B] shrink-0" />;
+    azanIcon = <MoonIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D6A02B] shrink-0" />;
+    qazaIcon = <MoonIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D6A02B] shrink-0" />;
   }
 
   return (
@@ -130,25 +130,25 @@ const PrayerRow = ({
         <CartoucheBadge label={name} />
       </div>
 
-      <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] shadow-xs px-2 sm:px-3 pt-5 sm:pt-6 pb-2.5 flex items-center justify-between text-[#1A2E16]">
+      <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] shadow-xs px-1.5 sm:px-3 pt-5 sm:pt-6 pb-2 sm:pb-2.5 flex items-center justify-between text-[#1A2E16]">
         
-        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold pr-1 border-r border-[#CBD8BF]">
+        <div className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1.5 text-[11px] sm:text-xs md:text-sm font-semibold pr-0.5 sm:pr-1 border-r border-[#CBD8BF]">
           {azanIcon}
           <span className="font-black text-[#1F3A1A] whitespace-nowrap">અઝાન:</span>
-          <span className="font-black text-[#10240E] font-mono text-[11.5px] sm:text-[13px] whitespace-nowrap">{azan}</span>
+          <span className="font-black text-[#10240E] font-mono text-[10.5px] sm:text-[12px] md:text-[13px] whitespace-nowrap">{azan}</span>
         </div>
 
-        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold px-1 border-r border-[#CBD8BF]">
-          <MosqueIcon className="w-4 h-4 text-[#B89237] shrink-0" />
+        <div className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1.5 text-[11px] sm:text-xs md:text-sm font-semibold px-0.5 sm:px-1 border-r border-[#CBD8BF]">
+          <MosqueIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B89237] shrink-0" />
           <span className="font-black text-[#1F3A1A] whitespace-nowrap">જમાત:</span>
-          <span className="font-black text-[#10240E] font-mono text-[11.5px] sm:text-[13px] whitespace-nowrap">{jamat}</span>
+          <span className="font-black text-[#10240E] font-mono text-[10.5px] sm:text-[12px] md:text-[13px] whitespace-nowrap">{jamat}</span>
         </div>
 
-        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold pl-1">
+        <div className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1.5 text-[11px] sm:text-xs md:text-sm font-semibold pl-0.5 sm:pl-1">
           {qazaIcon}
           <span className="font-black text-[#1F3A1A] whitespace-nowrap">કઝા:</span>
-          <span className="font-black text-[#10240E] font-mono text-[11.5px] sm:text-[13px] whitespace-nowrap">{qaza}</span>
-          {qazaLabel && <span className="text-[10px] font-bold text-[#3B5A33] whitespace-nowrap">{qazaLabel}</span>}
+          <span className="font-black text-[#10240E] font-mono text-[10.5px] sm:text-[12px] md:text-[13px] whitespace-nowrap">{qaza}</span>
+          {qazaLabel && <span className="text-[9px] sm:text-[10px] font-bold text-[#3B5A33] whitespace-nowrap">{qazaLabel}</span>}
         </div>
       </div>
     </div>
@@ -181,14 +181,14 @@ const NamazTimetableCard = forwardRef(({ prayerTimes = {}, className = "" }, ref
   return (
     <div
       ref={ref}
-      className={`relative w-full max-w-[440px] mx-auto rounded-[32px] overflow-hidden p-3.5 sm:p-5 shadow-2xl transition-all border-4 border-[#789664]/60 font-['Noto_Sans_Gujarati'] select-none ${className}`}
+      className={`relative w-full max-w-[440px] mx-auto rounded-[24px] sm:rounded-[32px] overflow-hidden p-2.5 sm:p-5 shadow-2xl transition-all border-2 sm:border-4 border-[#789664]/60 font-['Noto_Sans_Gujarati'] select-none ${className}`}
       style={{
         background: 'linear-gradient(180deg, #FAF7EE 0%, #F5F1E2 50%, #ECE7D2 100%)',
         boxShadow: '0 20px 40px -15px rgba(22, 45, 20, 0.25), 0 0 0 1px rgba(112, 142, 94, 0.3) inset'
       }}
     >
       {/* Decorative Inner Olive Border Line */}
-      <div className="absolute inset-2 sm:inset-3 rounded-[24px] border border-[#A7BE93]/70 pointer-events-none z-0"></div>
+      <div className="absolute inset-1.5 sm:inset-3 rounded-[18px] sm:rounded-[24px] border border-[#A7BE93]/70 pointer-events-none z-0"></div>
 
       {/* Authentic Watercolor Olive Leaves in Top Left Corner */}
       <div className="absolute top-0 left-0 w-24 sm:w-28 pointer-events-none select-none z-10">
@@ -315,50 +315,50 @@ const NamazTimetableCard = forwardRef(({ prayerTimes = {}, className = "" }, ref
         </div>
 
         {/* 2x2 Bottom Grid */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-2.5 mt-1">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5 mt-1">
           {/* Box 1: Tahajjud End Time */}
-          <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] py-2.5 px-2 flex flex-col items-center justify-between text-center shadow-xs min-h-[76px]">
-            <span className="text-[12px] sm:text-[13px] font-black text-[#1E3A1A] whitespace-nowrap leading-tight">
+          <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] py-2 sm:py-2.5 px-1.5 sm:px-2 flex flex-col items-center justify-between text-center shadow-xs min-h-[68px] sm:min-h-[76px]">
+            <span className="text-[11px] sm:text-[13px] font-black text-[#1E3A1A] whitespace-nowrap leading-tight">
               તહજુદ છેલ્લો સમય:
             </span>
-            <span className="text-xl sm:text-2xl font-black text-[#10240E] font-mono tracking-tight mt-0.5">
+            <span className="text-lg sm:text-2xl font-black text-[#10240E] font-mono tracking-tight mt-0.5">
               {pt.tahajjudEnd}
             </span>
           </div>
 
           {/* Box 2: Sehri End Time */}
-          <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] py-2.5 px-2 flex flex-col items-center justify-between text-center shadow-xs min-h-[76px]">
-            <span className="text-[12px] sm:text-[13px] font-black text-[#1E3A1A] whitespace-nowrap leading-tight">
+          <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] py-2 sm:py-2.5 px-1.5 sm:px-2 flex flex-col items-center justify-between text-center shadow-xs min-h-[68px] sm:min-h-[76px]">
+            <span className="text-[11px] sm:text-[13px] font-black text-[#1E3A1A] whitespace-nowrap leading-tight">
               સેહરી છેલ્લો સમય:
             </span>
-            <span className="text-xl sm:text-2xl font-black text-[#10240E] font-mono tracking-tight mt-0.5">
+            <span className="text-lg sm:text-2xl font-black text-[#10240E] font-mono tracking-tight mt-0.5">
               {pt.sehriEnd}
             </span>
           </div>
 
           {/* Box 3: Sunrise, Ishraq & Chasht */}
-          <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] py-2 px-2 flex flex-col items-center justify-between text-center shadow-xs min-h-[76px]">
-            <div className="flex items-center justify-center gap-1.5 leading-tight">
-              <span className="text-[12px] sm:text-[13px] font-black text-[#1E3A1A] whitespace-nowrap">
+          <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] py-1.5 sm:py-2 px-1 sm:px-2 flex flex-col items-center justify-between text-center shadow-xs min-h-[68px] sm:min-h-[76px]">
+            <div className="flex items-center justify-center gap-1 sm:gap-1.5 leading-tight">
+              <span className="text-[11px] sm:text-[13px] font-black text-[#1E3A1A] whitespace-nowrap">
                 સૂર્યોદય:
               </span>
-              <span className="text-base sm:text-lg font-black text-[#10240E] font-mono tracking-tight">
+              <span className="text-sm sm:text-lg font-black text-[#10240E] font-mono tracking-tight">
                 {pt.sunrise}
               </span>
             </div>
-            <div className="flex items-center justify-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-[#2A4725] leading-tight pt-1 border-t border-[#CBD8BF]/70 w-full whitespace-nowrap">
-              <span>ઈશરાક: <span className="font-mono font-black">{pt.ishraq}</span></span>
-              <span className="text-[#8EAB7F]">•</span>
-              <span>ચાશ્ત: <span className="font-mono font-black">{pt.chasht}</span></span>
+            <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 text-[9px] sm:text-[11px] font-bold text-[#2A4725] leading-tight pt-1 border-t border-[#CBD8BF]/70 w-full">
+              <span className="whitespace-nowrap">ઈશરાક: <span className="font-mono font-black">{pt.ishraq}</span></span>
+              <span className="text-[#8EAB7F] hidden min-[360px]:inline">•</span>
+              <span className="whitespace-nowrap">ચાશ્ત: <span className="font-mono font-black">{pt.chasht}</span></span>
             </div>
           </div>
 
           {/* Box 4: Iftar Time */}
-          <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] py-2.5 px-2 flex flex-col items-center justify-between text-center shadow-xs min-h-[76px]">
-            <span className="text-[12px] sm:text-[13px] font-black text-[#1E3A1A] whitespace-nowrap leading-tight">
+          <div className="bg-[#FFFFFF]/95 rounded-2xl border-2 border-[#8EAB7F] py-2 sm:py-2.5 px-1.5 sm:px-2 flex flex-col items-center justify-between text-center shadow-xs min-h-[68px] sm:min-h-[76px]">
+            <span className="text-[11px] sm:text-[13px] font-black text-[#1E3A1A] whitespace-nowrap leading-tight">
               ઈફ્તારી સમય:
             </span>
-            <span className="text-xl sm:text-2xl font-black text-[#10240E] font-mono tracking-tight mt-0.5">
+            <span className="text-lg sm:text-2xl font-black text-[#10240E] font-mono tracking-tight mt-0.5">
               {pt.iftar}
             </span>
           </div>
