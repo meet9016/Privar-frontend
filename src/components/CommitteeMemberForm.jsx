@@ -275,7 +275,7 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
     }
 
     const found = userList.find(u => String(u._id || u.id || u.member_id) === String(userId)) ||
-                  selectedUserObj
+      selectedUserObj
     if (found) {
       setSelectedUserObj(found)
       const userEmail = found.email
@@ -289,14 +289,6 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         last_name: found.last_name || '',
         number: found.number || found.phone || '',
         email: userEmail || prev.email || '',
-        village: found.village || found.village_name || prev.village || '',
-        village_id: found.village_id || prev.village_id || '',
-        city: found.city || prev.city || '',
-        city_id: found.city_id || prev.city_id || '',
-        district: found.district || prev.district || '',
-        district_id: found.district_id || prev.district_id || '',
-        state: found.state || prev.state || '',
-        state_id: found.state_id || prev.state_id || '',
         image: found.image || found.profile_image || ''
       }))
       if (userEmail) {
@@ -318,33 +310,33 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
         else if (!isValidEmail(value.trim())) updated.email = 'Please enter a valid email address (e.g. user@gmail.com)'
         else delete updated.email
       }
-    if (field === 'role_id') {
-      if (value) delete updated.role_id
-      // Clear irrelevant jurisdiction fields when role changes
-      const roleObj = roles.find(r => String(r.id || r._id) === String(value))
-      const rName = (roleObj?.name || '').toLowerCase()
-      const isStateRole = rName.includes('state') || rName.includes('rajya')
-      const isDistrictRole = rName.includes('district') || rName.includes('jilla') || rName.includes('zilla')
-      const isCityRole = rName.includes('city') || rName.includes('shahar')
-      const isVillageRole = rName.includes('village') || rName.includes('gam') || rName.includes('gaam')
+      if (field === 'role_id') {
+        if (value) delete updated.role_id
+        // Clear irrelevant jurisdiction fields when role changes
+        const roleObj = roles.find(r => String(r.id || r._id) === String(value))
+        const rName = (roleObj?.name || '').toLowerCase()
+        const isStateRole = rName.includes('state') || rName.includes('rajya')
+        const isDistrictRole = rName.includes('district') || rName.includes('jilla') || rName.includes('zilla')
+        const isCityRole = rName.includes('city') || rName.includes('shahar')
+        const isVillageRole = rName.includes('village') || rName.includes('gam') || rName.includes('gaam')
 
-      setFormData(prev => ({
-        ...prev,
-        role_id: value,
-        state_id: isStateRole || isDistrictRole || isCityRole || isVillageRole ? prev.state_id : '',
-        state: isStateRole || isDistrictRole || isCityRole || isVillageRole ? prev.state : '',
-        district_id: isDistrictRole ? prev.district_id : '',
-        district: isDistrictRole ? prev.district : '',
-        city_id: isCityRole ? prev.city_id : '',
-        city: isCityRole ? prev.city : '',
-        village: isVillageRole ? prev.village : '',
-        village_id: isVillageRole ? prev.village_id : ''
-      }))
-    }
-    if (field === 'status' && value !== '') delete updated.status
-    return updated
-  })
-}
+        setFormData(prev => ({
+          ...prev,
+          role_id: value,
+          state_id: isStateRole || isDistrictRole || isCityRole || isVillageRole ? prev.state_id : '',
+          state: isStateRole || isDistrictRole || isCityRole || isVillageRole ? prev.state : '',
+          district_id: isDistrictRole ? prev.district_id : '',
+          district: isDistrictRole ? prev.district : '',
+          city_id: isCityRole ? prev.city_id : '',
+          city: isCityRole ? prev.city : '',
+          village: isVillageRole ? prev.village : '',
+          village_id: isVillageRole ? prev.village_id : ''
+        }))
+      }
+      if (field === 'status' && value !== '') delete updated.status
+      return updated
+    })
+  }
 
   const validate = () => {
     const nextErrors = {}
