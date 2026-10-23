@@ -19,7 +19,6 @@ export default function Header({ onToggleSidebar }) {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
-  
   // Password Form State
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -47,7 +46,6 @@ export default function Header({ onToggleSidebar }) {
       confirmText: 'Yes',
       cancelText: 'Cancel'
     })
-    
     if (isConfirmed) {
       logout()
       navigate('/login')
@@ -137,10 +135,13 @@ export default function Header({ onToggleSidebar }) {
                   <span>{user?.name || 'Administrator'}</span>
                   <ChevronDown className={`w-3.5 h-3.5 text-text-secondary transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </div>
-                <div className="text-xs text-primary font-bold flex items-center gap-1 mt-0.5">
+                <div className="text-xs text-text-secondary font-medium truncate max-w-[160px]" title={user?.email}>
+                  {user?.email}
+                </div>
+                {/* <div className="text-xs text-primary font-bold flex items-center gap-1 mt-0.5">
                   <Sparkles className="w-3.5 h-3.5 text-primary/80" />
                   <span>{roleLabel || 'Admin'}</span>
-                </div>
+                </div> */}
               </div>
             </button>
 
@@ -190,7 +191,6 @@ export default function Header({ onToggleSidebar }) {
       {isPasswordModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-md bg-surface border border-border rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 animate-scale-up relative">
-            
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2.5">
@@ -249,13 +249,12 @@ export default function Header({ onToggleSidebar }) {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password"
-                    className={`w-full pl-3.5 pr-10 py-2.5 bg-input-bg text-text placeholder-text-secondary/40 border rounded-xl text-sm outline-none transition-all ${
-                      confirmPassword && newPassword !== confirmPassword
-                        ? 'border-rose-400 focus:border-rose-500'
-                        : confirmPassword && newPassword === confirmPassword
+                    className={`w-full pl-3.5 pr-10 py-2.5 bg-input-bg text-text placeholder-text-secondary/40 border rounded-xl text-sm outline-none transition-all ${confirmPassword && newPassword !== confirmPassword
+                      ? 'border-rose-400 focus:border-rose-500'
+                      : confirmPassword && newPassword === confirmPassword
                         ? 'border-emerald-400 focus:border-emerald-500'
                         : 'border-border focus:border-primary'
-                    }`}
+                      }`}
                   />
                   <button
                     type="button"
