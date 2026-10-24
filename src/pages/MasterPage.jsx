@@ -23,7 +23,7 @@ const parentFieldsConfig = {
 export default function MasterPage({ type, headerLeftContent }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const isEducationMaster = type === 'standard-level' || type === 'dini-talim'
-  
+
   const currentTab = isEducationMaster
     ? (searchParams.get('tab') === 'dini-talim' || type === 'dini-talim' ? 'dini-talim' : 'standard-level')
     : type
@@ -32,7 +32,7 @@ export default function MasterPage({ type, headerLeftContent }) {
   const label = masterLabels[activeType] || masterLabels[type]
   const parentConfig = parentFieldsConfig[activeType]
   const permissions = usePermissions('masters')
-  
+
   const [filterValue, setFilterValue] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [parentOptions, setParentOptions] = useState([])
@@ -66,7 +66,7 @@ export default function MasterPage({ type, headerLeftContent }) {
       },
       {
         name: 'name',
-        label: 'Name / Degree Title',
+        label: 'Degree Title',
         required: true,
         placeholder: 'e.g. 10th, 12th, B.Com, B.Sc, M.Sc, MBA'
       }
@@ -93,8 +93,8 @@ export default function MasterPage({ type, headerLeftContent }) {
         { name: 'hindi_name', label: 'Hindi Name (हिंदी नाम - Optional)', required: false, placeholder: 'દા.ત. दामाद, बहन', transliterate: 'hi' },
         { name: 'description', label: 'Relationship Meaning / Details (સમજૂતી)', type: 'textarea', required: false, placeholder: 'દા.ત. દીકરીના પતિ, પિતાની બહેન...', transliterate: 'gu' }
       ] : []),
-      ...(parentConfig ? [{ 
-        name: 'parent_id', 
+      ...(parentConfig ? [{
+        name: 'parent_id',
         label: parentConfig.label,
         type: 'select-remote',
         required: true,
@@ -123,7 +123,7 @@ export default function MasterPage({ type, headerLeftContent }) {
           );
         }
       },
-      { key: 'name', label: 'Name / Degree Title' }
+      { key: 'name', label: 'Degree Title' }
     ] : activeType === 'dini-talim' ? [
       {
         key: 'name',
@@ -139,7 +139,7 @@ export default function MasterPage({ type, headerLeftContent }) {
       },
       {
         key: 'description',
-        label: 'Meaning / Details (સમજૂતી)',
+        label: 'Details',
         render: (row) => row.description ? (
           <span className="text-xs text-text-secondary max-w-sm block truncate" title={row.description}>
             {row.description}
@@ -214,11 +214,10 @@ export default function MasterPage({ type, headerLeftContent }) {
         <button
           type="button"
           onClick={() => handleTabChange('standard-level')}
-          className={`relative flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 outline-none whitespace-nowrap cursor-pointer ${
-            currentTab === 'standard-level'
-              ? 'bg-primary text-white shadow-sm'
-              : 'text-text-secondary hover:text-text hover:bg-surface/60'
-          }`}
+          className={`relative flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 outline-none whitespace-nowrap cursor-pointer ${currentTab === 'standard-level'
+            ? 'bg-primary text-white shadow-sm'
+            : 'text-text-secondary hover:text-text hover:bg-surface/60'
+            }`}
         >
           <GraduationCap className="w-4 h-4" />
           <span>Standard / Level</span>
@@ -227,11 +226,10 @@ export default function MasterPage({ type, headerLeftContent }) {
         <button
           type="button"
           onClick={() => handleTabChange('dini-talim')}
-          className={`relative flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 outline-none whitespace-nowrap cursor-pointer ${
-            currentTab === 'dini-talim'
-              ? 'bg-primary text-white shadow-sm'
-              : 'text-text-secondary hover:text-text hover:bg-surface/60'
-          }`}
+          className={`relative flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 outline-none whitespace-nowrap cursor-pointer ${currentTab === 'dini-talim'
+            ? 'bg-primary text-white shadow-sm'
+            : 'text-text-secondary hover:text-text hover:bg-surface/60'
+            }`}
         >
           <BookOpen className="w-4 h-4" />
           <span>Dini Talim (દીની તાલીમ)</span>
@@ -252,7 +250,7 @@ export default function MasterPage({ type, headerLeftContent }) {
       getRowTitle={(row) => row.name}
       customFilters={customFilters}
       extraParams={extraParams}
-      onApplyFilters={() => {}}
+      onApplyFilters={() => { }}
       onClearFilters={() => setFilterValue('')}
       onToggleFilters={() => setShowFilters(s => !s)}
       extraActiveFiltersCount={filterValue ? 1 : 0}

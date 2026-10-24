@@ -471,20 +471,6 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
               </button>
               <button
                 type="button"
-                onClick={() => handleBulkDownloadReceipts(selectedRows)}
-                disabled={bulkReceiptDownloading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                title="Download receipts for selected members as combined PDF"
-              >
-                {bulkReceiptDownloading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <FileDown className="w-3.5 h-3.5" />
-                )}
-                <span>Download Receipts ({selectedRows.length})</span>
-              </button>
-              <button
-                type="button"
                 onClick={() => setSelectedRows([])}
                 className="p-1 rounded-md text-text-secondary hover:text-text hover:bg-surface transition-colors cursor-pointer"
                 title="Clear selection"
@@ -627,11 +613,10 @@ export default function MonthlyContribution({ mandalId, mandal, mandals = [] }) 
           <div className="p-4 rounded-2xl bg-card border border-border shadow-xs">
             <span className="text-text-secondary text-xs font-bold uppercase tracking-wider block">Status ({selectedMonth})</span>
             <div className="mt-2">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                summary.paid_members > 0
-                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'
-              }`}>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${summary.paid_members > 0
+                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'
+                }`}>
                 {summary.paid_members > 0 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                 {summary.paid_members > 0 ? 'Paid' : 'Pending'}
               </span>

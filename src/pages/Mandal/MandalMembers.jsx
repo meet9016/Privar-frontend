@@ -94,50 +94,6 @@ export default function MandalMembers({ mandalId, mandal }) {
     }
   }
 
-  const handleEnrollAll = async () => {
-    const isConfirmed = await confirm(
-      `Are you sure you want to enroll ALL registered community members into ${mandal?.name || 'Mandal'}?`,
-      {
-        confirmText: 'Enroll All',
-        type: 'info'
-      }
-    )
-    if (!isConfirmed) return
-    setBulkLoading(true)
-    try {
-      const res = await api.post(MANDAL_ENDPOINTS.BULK_MEMBERS, {
-        action: 'enroll_all',
-        mandal_id: mandalId
-      })
-      toast.success(res.data?.message || 'All members enrolled successfully')
-      setSelectedIds([])
-      fetchMembers()
-    } catch {
-      try {
-        const allUsersRes = await api.get(MANDAL_ENDPOINTS.GET_MEMBERS, {
-          params: { mandal_id: mandalId, limit: 5000, filter_type: 'all' }
-        })
-        const allIds = (allUsersRes.data?.data?.data || []).map(m => m.id || m._id)
-        if (allIds.length > 0) {
-          await api.post(MANDAL_ENDPOINTS.BULK_MEMBERS, {
-            action: 'add',
-            member_ids: allIds,
-            mandal_id: mandalId
-          })
-          toast.success(`Successfully enrolled all ${allIds.length} members into Mandal`)
-          setSelectedIds([])
-          fetchMembers()
-        } else {
-          toast.error('No members found to enroll')
-        }
-      } catch (innerErr) {
-        toast.error(innerErr.response?.data?.message || 'Failed to enroll all members')
-      }
-    } finally {
-      setBulkLoading(false)
-    }
-  }
-
   const isAllPageSelected = members.length > 0 && members.every(m => selectedIds.includes(m.id || m._id))
 
   const toggleSelectAll = () => {
@@ -163,17 +119,6 @@ export default function MandalMembers({ mandalId, mandal }) {
             <Users className="w-4 h-4" />
             <span>Enrolled: <strong className="font-bold text-sm">{totalMandalMembers}</strong></span>
           </div>
-
-          <button
-            type="button"
-            onClick={handleEnrollAll}
-            disabled={bulkLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-            title="Enroll all community members into this Mandal at once"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>{bulkLoading ? 'Enrolling All...' : 'Enroll All Members'}</span>
-          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -222,15 +167,6 @@ export default function MandalMembers({ mandalId, mandal }) {
               icon={<UserCheck className="w-4 h-4" />}
             >
               Enroll Selected
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleBulkAction('remove')}
-              disabled={bulkLoading}
-              icon={<UserMinus className="w-4 h-4 text-rose-500" />}
-            >
-              Remove Selected
             </Button>
             <Button
               size="sm"
@@ -291,7 +227,6 @@ export default function MandalMembers({ mandalId, mandal }) {
                   </div>
                   <div>
                     <p className="font-bold text-text text-sm leading-snug">{member.name || member.full_name || '-'}</p>
-                    <p className="text-xs text-text-secondary">{member.member_id || member.id_number || member.number || '-'}</p>
                   </div>
                 </div>
               )
@@ -351,11 +286,10 @@ export default function MandalMembers({ mandalId, mandal }) {
                   type="button"
                   onClick={() => handleToggle(id)}
                   disabled={isActionLoading}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs ${
-                    isEnrolled
-                      ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                      : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/30'
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs ${isEnrolled
+                    ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                    : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/30'
+                    }`}
                 >
                   {isEnrolled ? (
                     <>

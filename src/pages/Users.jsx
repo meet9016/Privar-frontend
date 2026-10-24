@@ -31,7 +31,7 @@ export default function Users() {
   const [previewImage, setImagePreview] = useState(null)
   const [guideRelation, setGuideRelation] = useState(null)
   const [limit, setLimit] = useState(15)
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 15 })
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, total_heads: 0, total_members: 0, limit: 15 })
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchValue] = useState('')
@@ -176,6 +176,13 @@ export default function Users() {
   const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
+  const totalHeadsCount = Number(pagination.total_heads ?? pagination.total ?? 0)
+  const totalMembersCount = Number(
+    pagination.total_members > 0
+      ? pagination.total_members
+      : users.reduce((acc, u) => acc + 1 + (Array.isArray(u.members) ? u.members.length : 0), 0)
+  )
+
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
@@ -183,6 +190,8 @@ export default function Users() {
       const rows = res.data?.data || res.data || []
       const pg = res.data?.pagination || {}
       const total = Number(pg.total || 0)
+      const totalHeads = Number(pg.total_heads ?? pg.total ?? 0)
+      const totalMembers = Number(pg.total_members ?? 0)
       const pageLimit = Number(pg.limit || limit)
       const totalPages = Number(
         pg.totalPages ||
@@ -197,6 +206,8 @@ export default function Users() {
         page: currentPage,
         totalPages: Number.isFinite(totalPages) && totalPages > 0 ? totalPages : 1,
         total,
+        total_heads: totalHeads,
+        total_members: totalMembers,
         limit: pageLimit,
         hasPrevPage: Boolean(pg.hasPrevPage ?? currentPage > 1),
         hasNextPage: Boolean(pg.hasNextPage ?? currentPage < totalPages)
@@ -207,7 +218,7 @@ export default function Users() {
       }
     } catch (err) {
       setUsers([])
-      setPagination({ page, totalPages: 1, total: 0, limit, hasPrevPage: false, hasNextPage: false })
+      setPagination({ page, totalPages: 1, total: 0, total_heads: 0, total_members: 0, limit, hasPrevPage: false, hasNextPage: false })
       setError(err.response?.data?.message || 'Failed to load users')
     } finally {
       setLoading(false)
@@ -666,10 +677,42 @@ export default function Users() {
   return (
     <div className="space-y-4">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-text tracking-tight">Family Registry</h2>
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          <h2 className="text-2xl font-bold text-text tracking-tight whitespace-nowrap">Family Member</h2>
+
+          <div className="h-5 w-px bg-border hidden sm:block" />
+
+          {/* Total Members & Total Heads counts */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-secondary border border-border shadow-xs hover:border-primary/30 transition-all select-none"
+              title="Total community members (heads + dependents)"
+            >
+              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <UsersIcon className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex items-baseline gap-1.5 text-xs">
+                <span className="font-medium text-text-secondary">Total Members:</span>
+                <span className="font-bold text-sm text-text">{loading ? '...' : totalMembersCount}</span>
+              </div>
+            </div>
+
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-xs hover:bg-primary/15 transition-all select-none"
+              title="Total family heads (families)"
+            >
+              <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                <Crown className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex items-baseline gap-1.5 text-xs">
+                <span className="font-medium text-text-secondary">Total Heads:</span>
+                <span className="font-bold text-sm text-primary">{loading ? '...' : totalHeadsCount}</span>
+              </div>
+            </div>
+          </div>
         </div>
+
         <div className="flex flex-wrap items-center gap-3">
           <SearchInput
             placeholder="Search by name, phone..."
@@ -727,25 +770,6 @@ export default function Users() {
             />
           </FilterPopover>
 
-          {selectedUsers.length > 0 && (
-            <div className="flex items-center gap-2 bg-surface-secondary border border-border p-1 rounded-xl shadow-sm">
-              <span className="text-xs font-semibold text-text-secondary px-2">{selectedUsers.length} selected:</span>
-              <button
-                onClick={() => handleBulkUpdateStatus(1)}
-                disabled={formLoading}
-                className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm cursor-pointer"
-              >
-                <CheckCircle className="w-3.5 h-3.5" /> Active
-              </button>
-              <button
-                onClick={() => handleBulkUpdateStatus(0)}
-                disabled={formLoading}
-                className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm cursor-pointer"
-              >
-                <XCircle className="w-3.5 h-3.5" /> Inactive
-              </button>
-            </div>
-          )}
           <Button
             onClick={handleExportExcel}
             disabled={exporting}
@@ -778,6 +802,46 @@ export default function Users() {
           )}
         </div>
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedUsers.length > 0 && (
+        <div className="p-3 bg-surface-secondary border border-border rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm animate-fade-in shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-lg bg-primary text-white text-xs font-bold">
+              {selectedUsers.length}
+            </span>
+            <span className="font-semibold text-text">
+              {selectedUsers.length === 1 ? '1 member selected' : `${selectedUsers.length} members selected`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedUsers([])}
+              className="text-xs text-text-secondary hover:text-text underline cursor-pointer ml-1"
+            >
+              Deselect All
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleBulkUpdateStatus(1)}
+              disabled={formLoading}
+              className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 shadow-xs cursor-pointer"
+            >
+              <CheckCircle className="w-3.5 h-3.5" /> Active
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkUpdateStatus(0)}
+              disabled={formLoading}
+              className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 shadow-xs cursor-pointer"
+            >
+              <XCircle className="w-3.5 h-3.5" /> Inactive
+            </button>
+          </div>
+        </div>
+      )}
 
 
 
@@ -969,7 +1033,7 @@ export default function Users() {
           onAction: (permissions.canAdd || permissions.isSuperAdmin) ? handleCreate : undefined
         }}
 
-        
+
         pagination={{
           currentPage,
           totalPages,
@@ -1009,8 +1073,8 @@ export default function Users() {
                   type="button"
                   onClick={() => setViewTab('chart')}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${viewTab === 'chart'
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'text-text-secondary hover:text-text'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-text-secondary hover:text-text'
                     }`}
                 >
                   <Network className="w-3.5 h-3.5" />
@@ -1020,8 +1084,8 @@ export default function Users() {
                   type="button"
                   onClick={() => setViewTab('details')}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${viewTab === 'details'
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'text-text-secondary hover:text-text'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-text-secondary hover:text-text'
                     }`}
                 >
                   <List className="w-3.5 h-3.5" />
@@ -1203,12 +1267,12 @@ export default function Users() {
                         <div
                           id={isFocused ? 'focused-tree-node' : undefined}
                           className={`w-36 sm:w-40 bg-white dark:bg-slate-900 rounded-2xl transition-all duration-300 flex flex-col items-center select-none relative ${isFocused && isHead
-                              ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/30 shadow-2xl scale-105 z-30'
-                              : isFocused
-                                ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/35 shadow-2xl scale-105 z-30'
-                                : isHead
-                                  ? 'border-2 border-amber-400 dark:border-amber-400/90 shadow-lg ring-2 ring-amber-400/25 z-20'
-                                  : 'border border-slate-300 dark:border-slate-700 shadow-xs'
+                            ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/30 shadow-2xl scale-105 z-30'
+                            : isFocused
+                              ? 'border-2 border-emerald-500 ring-4 ring-emerald-500/35 shadow-2xl scale-105 z-30'
+                              : isHead
+                                ? 'border-2 border-amber-400 dark:border-amber-400/90 shadow-lg ring-2 ring-amber-400/25 z-20'
+                                : 'border border-slate-300 dark:border-slate-700 shadow-xs'
                             } p-2.5 hover:shadow-md`}>
 
                           {/* Focused Viewing Badge (Emerald Green) */}
@@ -1260,8 +1324,8 @@ export default function Users() {
 
                           {/* Role Badge (Title Case) */}
                           <div className={`w-full py-0.5 px-2 text-[10px] font-semibold rounded-xl text-center border truncate mt-1 ${isHead
-                              ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 font-bold'
-                              : 'bg-blue-50/90 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-blue-100 dark:border-slate-700'
+                            ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 font-bold'
+                            : 'bg-blue-50/90 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-blue-100 dark:border-slate-700'
                             }`}>
                             {formatTitleCase(displayRole)}
                           </div>
@@ -1879,8 +1943,8 @@ export default function Users() {
                               <tr
                                 key={member.id || member._id || idx}
                                 className={`transition-all text-sm ${isCurrentViewing
-                                    ? 'bg-primary/10 border-l-4 border-l-primary font-semibold'
-                                    : 'hover:bg-surface-secondary/40'
+                                  ? 'bg-primary/10 border-l-4 border-l-primary font-semibold'
+                                  : 'hover:bg-surface-secondary/40'
                                   }`}
                               >
                                 <td className="p-3.5 text-xs text-text-secondary font-mono text-center">{idx + 1}</td>
@@ -1930,11 +1994,10 @@ export default function Users() {
                                 <td className="p-3.5 text-text-secondary">{member.gender || '-'}</td>
                                 <td className="p-3.5 text-text-secondary">
                                   {member.marital_status ? (
-                                    <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${
-                                      member.marital_status === 'Married' ? 'bg-primary/10 text-primary border border-primary/20' :
-                                      member.marital_status === 'Unmarried' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
-                                      'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                                    }`}>
+                                    <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${member.marital_status === 'Married' ? 'bg-primary/10 text-primary border border-primary/20' :
+                                        member.marital_status === 'Unmarried' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+                                          'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                      }`}>
                                       {member.marital_status}
                                     </span>
                                   ) : (

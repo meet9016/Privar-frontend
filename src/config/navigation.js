@@ -51,18 +51,18 @@ export const engagementNavigation = [
 ]
 
 export const masterNavigation = [
-  { type: 'standard-level', label: 'Standard / Level', permission: 'masters.list' },
   { type: 'business', label: 'Business', permission: 'masters.list' },
   { type: 'bank-details', label: 'Bank Details', permission: 'masters.list', to: '/admin/bank-details' },
   { type: 'relationship', label: 'Relationship', permission: 'masters.list' },
+  { type: 'blood-group', label: 'Blood Group', permission: 'masters.list' },
+  { type: 'event-category', label: 'Event Category', permission: 'masters.list' },
+  { type: 'gallery-category', label: 'Gallery Category', permission: 'masters.list' },
+  { type: 'expense-category', label: 'Expense Category', permission: 'masters.list' },
+  { type: 'standard-level', label: 'Standard / Level', permission: 'masters.list' },
   { type: 'country', label: 'Country', permission: 'masters.list' },
   { type: 'state', label: 'State', permission: 'masters.list' },
   { type: 'city', label: 'City', permission: 'masters.list' },
   { type: 'village', label: 'Village', permission: 'masters.list' },
-  { type: 'blood-group', label: 'Blood Group', permission: 'masters.list' },
-  { type: 'event-category', label: 'Event Category', permission: 'masters.list' },
-  { type: 'gallery-category', label: 'Gallery Category', permission: 'masters.list' },
-  { type: 'expense-category', label: 'Expense Category', permission: 'masters.list' }
 ]
 
 export const configurationNavigation = [
