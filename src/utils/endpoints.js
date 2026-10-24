@@ -35,7 +35,8 @@ export const MEMBER_ENDPOINTS = {
   MASTERS_VILLAGE: '/masters/village',
   MASTERS_PATTI_PARA_PARGANA: '/masters/patti-para-pargana',
   MASTERS_SUB_CASTE: '/masters/sub-caste',
-  MASTERS_RELATIONSHIP: '/masters/relationship'
+  MASTERS_RELATIONSHIP: '/masters/relationship',
+  MASTERS_DINI_TALIM: '/masters/dini-talim'
 }
 
 // Gallery Module API Endpoints
@@ -160,6 +161,7 @@ export const MASTER_ENDPOINTS = {
   RELATIONSHIP: '/masters/relationship',
   STANDARD_LEVEL: '/masters/standard-level',
   STANDARD: '/masters/standard',
+  DINI_TALIM: '/masters/dini-talim',
   DEGREE: '/masters/degree',
   BACHELOR_DEGREE: '/masters/bachelor-degree',
   MASTER_DEGREE: '/masters/master-degree',

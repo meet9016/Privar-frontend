@@ -339,6 +339,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const [educationOptions, setEducationOptions] = useState(
     cachedMasters?.educationLevels?.length ? cachedMasters.educationLevels : []
   )
+  const [diniTalimOptions, setDiniTalimOptions] = useState(
+    cachedMasters?.diniTalimOptions?.length ? cachedMasters.diniTalimOptions : []
+  )
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -353,6 +356,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     education: '',
     education_id: '',
     dinitalim: '',
+    dinitalim_id: '',
     marital_status: '',
     relation: 'Self',
     is_committee: false,
@@ -390,6 +394,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         if (cachedMasters.educationLevels?.length) {
           setEducationOptions(cachedMasters.educationLevels)
         }
+        if (cachedMasters.diniTalimOptions?.length) {
+          setDiniTalimOptions(cachedMasters.diniTalimOptions)
+        }
         return
       }
 
@@ -400,12 +407,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           api.get(MEMBER_ENDPOINTS.MASTERS_CITY),
           api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } })),
-          api.get('/masters/standard-level', { params: { status: 1, limit: 500 } }).catch(() => ({ data: { data: [] } }))
+          api.get('/masters/standard-level', { params: { status: 1, limit: 500 } }).catch(() => ({ data: { data: [] } })),
+          api.get('/masters/dini-talim', { params: { status: 1, limit: 500 } }).catch(() => ({ data: { data: [] } }))
         ])
       }
 
       try {
-        const [cRes, sRes, ciRes, vRes, relRes, eduRes] = await mastersPromise
+        const [cRes, sRes, ciRes, vRes, relRes, eduRes, diniRes] = await mastersPromise
         const countryList = cRes.data?.data || []
         
         // Merge backend relationships with default RELATION_OPTIONS
@@ -435,13 +443,26 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             }
           })
 
+        const fetchedDini = (diniRes?.data?.data || diniRes?.data || [])
+          .filter(d => Number(d.status ?? 1) === 1)
+          .map(d => {
+            const masterId = String(d._id || d.id)
+            return {
+              label: d.name,
+              value: masterId,
+              id: masterId,
+              name: d.name
+            }
+          })
+
         cachedMasters = {
           countries: countryList,
           states: sRes.data?.data || [],
           cities: ciRes.data?.data || [],
           villages: vRes.data?.data || [],
           relationships: mergedRelations,
-          educationLevels: fetchedEdu
+          educationLevels: fetchedEdu,
+          diniTalimOptions: fetchedDini
         }
 
         setCountries(cachedMasters.countries)
@@ -450,6 +471,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setVillages(cachedMasters.villages)
         setRelationOptions(mergedRelations)
         setEducationOptions(fetchedEdu)
+        setDiniTalimOptions(fetchedDini)
 
         // If country or state not yet selected, default to India and Gujarat
         setFormData(prev => {
@@ -501,6 +523,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         education: user.education || '',
         education_id: user.education_id || '',
         dinitalim: user.dinitalim || '',
+        dinitalim_id: user.dinitalim_id || '',
         marital_status: normalizeMaritalStatus(user.marital_status || ''),
         relation: 'Self',
         is_committee: user.is_committee || false,
@@ -528,6 +551,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                 education: headRecord.education || prev.education || '',
                 education_id: headRecord.education_id || prev.education_id || '',
                 dinitalim: headRecord.dinitalim !== undefined ? headRecord.dinitalim : prev.dinitalim,
+                dinitalim_id: headRecord.dinitalim_id !== undefined ? headRecord.dinitalim_id : prev.dinitalim_id,
                 marital_status: headRecord.marital_status ? normalizeMaritalStatus(headRecord.marital_status) : prev.marital_status
               }))
             }
@@ -559,6 +583,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                 education: m.education || '',
                 education_id: m.education_id || '',
                 dinitalim: m.dinitalim || '',
+                dinitalim_id: m.dinitalim_id || '',
                 marital_status: normalizeMaritalStatus(m.marital_status || ''),
                 number: m.number || '',
                 email: m.email || '',
@@ -598,6 +623,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         education: '',
         education_id: '',
         dinitalim: '',
+        dinitalim_id: '',
         marital_status: '',
         relation: 'Self',
         is_committee: false,
@@ -646,6 +672,34 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     }
     return list
   }, [educationOptions, editingMember?.education, editingMember?.education_id])
+
+  const headDiniTalimOptions = useMemo(() => {
+    const list = [{ label: 'Select Dini Talim', value: '' }, ...diniTalimOptions]
+    const curId = formData.dinitalim_id || ''
+    const curName = formData.dinitalim || ''
+    const isMatched = diniTalimOptions.some(o =>
+      (curId && (String(o.value) === String(curId) || String(o.id) === String(curId))) ||
+      (curName && String(o.name).toLowerCase() === String(curName).toLowerCase())
+    )
+    if ((curId || curName) && !isMatched) {
+      list.push({ label: curName || curId, value: curId || curName, id: curId || curName, name: curName || curId })
+    }
+    return list
+  }, [diniTalimOptions, formData.dinitalim, formData.dinitalim_id])
+
+  const memberDiniTalimOptions = useMemo(() => {
+    const list = [{ label: 'Select Dini Talim', value: '' }, ...diniTalimOptions]
+    const curId = editingMember?.dinitalim_id || ''
+    const curName = editingMember?.dinitalim || ''
+    const isMatched = diniTalimOptions.some(o =>
+      (curId && (String(o.value) === String(curId) || String(o.id) === String(curId))) ||
+      (curName && String(o.name).toLowerCase() === String(curName).toLowerCase())
+    )
+    if ((curId || curName) && !isMatched) {
+      list.push({ label: curName || curId, value: curId || curName, id: curId || curName, name: curName || curId })
+    }
+    return list
+  }, [diniTalimOptions, editingMember?.dinitalim, editingMember?.dinitalim_id])
   const isEditingSelf = Boolean(user && loggedInUser && [
     user._id,
     user.id,
@@ -721,6 +775,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       education: '',
       education_id: '',
       dinitalim: '',
+      dinitalim_id: '',
       marital_status: 'Married',
       number: '',
       email: '',
@@ -1009,7 +1064,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       last_name: capitalizeWords(formData.last_name),
       education: (formData.education_id || formData.education || '').trim(),
       education_id: (formData.education_id || formData.education || '').trim(),
-      dinitalim: (formData.dinitalim || '').trim(),
+      dinitalim: (formData.dinitalim_id || formData.dinitalim || '').trim(),
+      dinitalim_id: (formData.dinitalim_id || formData.dinitalim || '').trim(),
       marital_status: formData.marital_status || '',
       familyHead: true,
       relation: 'Self',
@@ -1027,7 +1083,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         blood_group: m.blood_group || '',
         education: (m.education_id || m.education || '').trim(),
         education_id: (m.education_id || m.education || '').trim(),
-        dinitalim: (m.dinitalim || '').trim(),
+        dinitalim: (m.dinitalim_id || m.dinitalim || '').trim(),
+        dinitalim_id: (m.dinitalim_id || m.dinitalim || '').trim(),
         marital_status: m.marital_status || '',
         number: (m.number || '').trim(),
         email: (m.email || '').trim(),
@@ -1190,12 +1247,26 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             disabled={isLoading}
             searchable={true}
           />
-          <Input
+          <Select
             label="Dini Talim"
-            placeholder="e.g. Hafiz, Alim, Nazra"
-            value={formData.dinitalim}
-            onChange={(e) => handleChange('dinitalim', e.target.value)}
+            placeholder="Select Dini Talim"
+            value={(() => {
+              const curId = formData.dinitalim_id || ''
+              const curName = formData.dinitalim || ''
+              const match = diniTalimOptions.find(o =>
+                (curId && (String(o.value) === String(curId) || String(o.id) === String(curId))) ||
+                (curName && String(o.name).toLowerCase() === String(curName).toLowerCase())
+              )
+              return match ? match.value : (curId || curName)
+            })()}
+            onChange={(val) => {
+              const selectedOpt = diniTalimOptions.find(o => String(o.value) === String(val) || String(o.id) === String(val))
+              handleChange('dinitalim', selectedOpt?.name || val)
+              handleChange('dinitalim_id', val)
+            }}
+            options={headDiniTalimOptions}
             disabled={isLoading}
+            searchable={true}
           />
           <DatePicker
             label="Date of Birth"
@@ -1839,12 +1910,26 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           disabled={isLoading}
                           searchable={true}
                         />
-                        <Input
+                        <Select
                           label="Dini Talim"
-                          placeholder="e.g. Hafiz, Alim, Nazra"
-                          value={editingMember.dinitalim || ''}
-                          onChange={(e) => handleEditingMemberChange('dinitalim', e.target.value)}
+                          placeholder="Select Dini Talim"
+                          value={(() => {
+                            const curId = editingMember?.dinitalim_id || ''
+                            const curName = editingMember?.dinitalim || ''
+                            const match = diniTalimOptions.find(o =>
+                              (curId && (String(o.value) === String(curId) || String(o.id) === String(curId))) ||
+                              (curName && String(o.name).toLowerCase() === String(curName).toLowerCase())
+                            )
+                            return match ? match.value : (curId || curName)
+                          })()}
+                          onChange={(val) => {
+                            const selectedOpt = diniTalimOptions.find(o => String(o.value) === String(val) || String(o.id) === String(val))
+                            handleEditingMemberChange('dinitalim', selectedOpt?.name || val)
+                            handleEditingMemberChange('dinitalim_id', val)
+                          }}
+                          options={memberDiniTalimOptions}
                           disabled={isLoading}
+                          searchable={true}
                         />
                         <Select
                           label="Blood Group"

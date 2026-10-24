@@ -79,7 +79,11 @@ export const routeTitles = [
   ...configurationNavigation
 ].reduce((acc, item) => ({ ...acc, [item.to]: item.title }), {})
 
-export const masterLabels = masterNavigation.reduce(
-  (acc, item) => ({ ...acc, [item.type]: item.label }),
-  {}
-)
+export const masterLabels = {
+  ...masterNavigation.reduce(
+    (acc, item) => ({ ...acc, [item.type]: item.label }),
+    {}
+  ),
+  'dini-talim': 'Dini Talim',
+  'dinitalim': 'Dini Talim'
+}

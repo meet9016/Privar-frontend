@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import AdminCrudPage from './AdminCrudPage'
 import { masterLabels } from '../config/navigation'
-import { Filter } from 'lucide-react'
+import { GraduationCap, BookOpen, Filter } from 'lucide-react'
 import Select from '../components/common/Select'
 import api from '../lib/api'
 import { MASTER_ENDPOINTS } from '../utils/endpoints'
@@ -20,8 +21,16 @@ const parentFieldsConfig = {
 }
 
 export default function MasterPage({ type, headerLeftContent }) {
-  const label = masterLabels[type]
-  const parentConfig = parentFieldsConfig[type]
+  const [searchParams, setSearchParams] = useSearchParams()
+  const isEducationMaster = type === 'standard-level' || type === 'dini-talim'
+  
+  const currentTab = isEducationMaster
+    ? (searchParams.get('tab') === 'dini-talim' || type === 'dini-talim' ? 'dini-talim' : 'standard-level')
+    : type
+
+  const activeType = isEducationMaster ? currentTab : type
+  const label = masterLabels[activeType] || masterLabels[type]
+  const parentConfig = parentFieldsConfig[activeType]
   const permissions = usePermissions('masters')
   
   const [filterValue, setFilterValue] = useState('')
@@ -37,10 +46,16 @@ export default function MasterPage({ type, headerLeftContent }) {
         setParentOptions(data.map(d => ({ label: d.name || d.title, value: d.id || d._id })))
       }).catch(console.error)
     }
-  }, [type, parentConfig])
+  }, [activeType, parentConfig])
+
+  const handleTabChange = (newTab) => {
+    setFilterValue('')
+    setShowFilters(false)
+    setSearchParams({ tab: newTab }, { replace: true })
+  }
 
   const fields = useMemo(() => [
-    ...(type === 'standard-level' ? [
+    ...(activeType === 'standard-level' ? [
       {
         name: 'level',
         label: 'Standard / Level',
@@ -54,6 +69,21 @@ export default function MasterPage({ type, headerLeftContent }) {
         label: 'Name / Degree Title',
         required: true,
         placeholder: 'e.g. 10th, 12th, B.Com, B.Sc, M.Sc, MBA'
+      }
+    ] : activeType === 'dini-talim' ? [
+      {
+        name: 'name',
+        label: 'Dini Talim Title',
+        required: true,
+        placeholder: 'e.g. Hafiz, Alim, Nazra, Qari, Mufti'
+      },
+      {
+        name: 'description',
+        label: 'Meaning / Details (સમજૂતી - Optional)',
+        type: 'textarea',
+        required: false,
+        placeholder: 'દા.ત. કુરાન શરીફ હિફ્ઝ (મોઢે યાદ કરનાર)...',
+        transliterate: 'gu'
       }
     ] : [
       ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*', className: 'sm:col-span-2' }] : []),
@@ -72,10 +102,10 @@ export default function MasterPage({ type, headerLeftContent }) {
       }] : [])
     ]),
     { name: 'status', label: 'Status', type: 'select', required: true, defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
-  ], [label, type, parentConfig])
+  ], [label, activeType, type, parentConfig])
 
   const columns = useMemo(() => [
-    ...(type === 'standard-level' ? [
+    ...(activeType === 'standard-level' ? [
       {
         key: 'level',
         label: 'Standard / Level',
@@ -94,6 +124,28 @@ export default function MasterPage({ type, headerLeftContent }) {
         }
       },
       { key: 'name', label: 'Name / Degree Title' }
+    ] : activeType === 'dini-talim' ? [
+      {
+        key: 'name',
+        label: 'Dini Talim Title',
+        render: (row) => (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-center font-bold text-xs shrink-0">
+              <BookOpen className="w-4 h-4" />
+            </div>
+            <span className="font-semibold text-text text-sm">{row.name}</span>
+          </div>
+        )
+      },
+      {
+        key: 'description',
+        label: 'Meaning / Details (સમજૂતી)',
+        render: (row) => row.description ? (
+          <span className="text-xs text-text-secondary max-w-sm block truncate" title={row.description}>
+            {row.description}
+          </span>
+        ) : '-'
+      }
     ] : [
       ...(type === 'business' ? [{ key: 'image', label: 'Image', type: 'image' }] : []),
       { key: 'name', label: type === 'relationship' ? 'Relationship (English)' : 'Name' },
@@ -105,7 +157,7 @@ export default function MasterPage({ type, headerLeftContent }) {
       ...(parentConfig ? [{ key: 'parent_name', label: parentConfig.label, render: (row) => (row.parent_name && !/^[0-9a-fA-F]{24}$/.test(row.parent_name) ? row.parent_name : '-') }] : [])
     ]),
     { key: 'status', label: 'Status' }
-  ], [type, parentConfig])
+  ], [activeType, type, parentConfig])
 
   if (!label) {
     return (
@@ -122,7 +174,7 @@ export default function MasterPage({ type, headerLeftContent }) {
       placeholder={`All ${parentConfig.label}s`}
       options={[{ label: `All ${parentConfig.label}s`, value: '' }, ...parentOptions]}
     />
-  ) : type === 'standard-level' ? (
+  ) : activeType === 'standard-level' ? (
     <Select
       value={filterValue}
       onChange={setFilterValue}
@@ -132,17 +184,71 @@ export default function MasterPage({ type, headerLeftContent }) {
   ) : null;
 
   const extraParams = filterValue
-    ? (type === 'standard-level' ? { level: filterValue } : { parent_id: filterValue })
+    ? (activeType === 'standard-level' ? { level: filterValue } : (parentConfig ? { parent_id: filterValue } : {}))
     : {};
+
+  const educationHeaderTabs = isEducationMaster ? (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+      <div>
+        <h2 className="text-lg sm:text-xl font-bold text-text flex items-center gap-2">
+          {currentTab === 'standard-level' ? (
+            <>
+              <GraduationCap className="w-5 h-5 text-primary" />
+              <span>Standard / Level Master</span>
+            </>
+          ) : (
+            <>
+              <BookOpen className="w-5 h-5 text-primary" />
+              <span>Dini Talim Master (દીની તાલીમ)</span>
+            </>
+          )}
+        </h2>
+        <p className="text-xs text-text-secondary mt-0.5">
+          {currentTab === 'standard-level'
+            ? 'Manage school standards, graduation degrees, and post-graduation programs'
+            : 'Manage Islamic & religious education qualifications (e.g. Nazra, Hafiz, Alim, Qari)'}
+        </p>
+      </div>
+
+      <div className="inline-flex items-center p-1 bg-surface-secondary/80 backdrop-blur-md rounded-xl border border-border shadow-2xs w-fit">
+        <button
+          type="button"
+          onClick={() => handleTabChange('standard-level')}
+          className={`relative flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 outline-none whitespace-nowrap cursor-pointer ${
+            currentTab === 'standard-level'
+              ? 'bg-primary text-white shadow-sm'
+              : 'text-text-secondary hover:text-text hover:bg-surface/60'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4" />
+          <span>Standard / Level</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleTabChange('dini-talim')}
+          className={`relative flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 outline-none whitespace-nowrap cursor-pointer ${
+            currentTab === 'dini-talim'
+              ? 'bg-primary text-white shadow-sm'
+              : 'text-text-secondary hover:text-text hover:bg-surface/60'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Dini Talim (દીની તાલીમ)</span>
+        </button>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <AdminCrudPage
+      key={activeType}
       title={`${label} Master`}
       subtitle={`Manage ${label.toLowerCase()} master records`}
-      endpoint={MASTER_ENDPOINTS.GET_MASTER(type)}
+      endpoint={MASTER_ENDPOINTS.GET_MASTER(activeType)}
       fields={fields}
       columns={columns}
-      headerLeftContent={headerLeftContent}
+      headerLeftContent={headerLeftContent || educationHeaderTabs}
       getRowTitle={(row) => row.name}
       customFilters={customFilters}
       extraParams={extraParams}
@@ -150,7 +256,7 @@ export default function MasterPage({ type, headerLeftContent }) {
       onClearFilters={() => setFilterValue('')}
       onToggleFilters={() => setShowFilters(s => !s)}
       extraActiveFiltersCount={filterValue ? 1 : 0}
-      hideFilter={type === 'country'}
+      hideFilter={activeType === 'country' || activeType === 'dini-talim'}
       hideAdd={!permissions.canAdd && !permissions.isSuperAdmin}
       hideEdit={!permissions.canEdit && !permissions.isSuperAdmin}
       hideDelete={!permissions.canDelete && !permissions.isSuperAdmin}
