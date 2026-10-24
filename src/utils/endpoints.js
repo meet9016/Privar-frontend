@@ -4,7 +4,8 @@ export const COMMITTEE_ENDPOINTS = {
   CREATE_MEMBER: '/committee-members',
   UPDATE_MEMBER: (id) => `/committee-members/${id}`,
   DELETE_MEMBER: (id) => `/committee-members/${id}`,
-  GET_ROLES: '/roles'
+  GET_ROLES: '/roles',
+  EXPORT: '/committee-members/export'
 }
 
 // Roles & Permissions Module API Endpoints
@@ -45,7 +46,8 @@ export const GALLERY_ENDPOINTS = {
 
 // Birthdays Module API Endpoints
 export const BIRTHDAY_ENDPOINTS = {
-  GET_BIRTHDAYS: '/users?birthday'
+  GET_BIRTHDAYS: '/users?birthday',
+  EXPORT: '/users/birthday/export'
 }
 
 // Job Vacancies Module API Endpoints
@@ -53,7 +55,8 @@ export const JOB_VACANCY_ENDPOINTS = {
   GET_VACANCIES: '/job-vacancy',
   CREATE_VACANCY: '/job-vacancy',
   UPDATE_VACANCY: (id) => `/job-vacancy/${id}`,
-  DELETE_VACANCY: (id) => `/job-vacancy/${id}`
+  DELETE_VACANCY: (id) => `/job-vacancy/${id}`,
+  EXPORT: '/job-vacancy/export'
 }
 
 // Events Module API Endpoints
@@ -75,7 +78,8 @@ export const BUSINESS_ENDPOINTS = {
   CREATE_BUSINESS: '/businesses',
   UPDATE_BUSINESS: (id) => `/businesses/${id}`,
   DELETE_BUSINESS: (id) => `/businesses/${id}`,
-  GET_CATEGORIES: '/business-categories'
+  GET_CATEGORIES: '/business-categories',
+  EXPORT: '/businesses/export'
 }
 
 // Students Module API Endpoints
@@ -83,7 +87,8 @@ export const STUDENT_ENDPOINTS = {
   GET_STUDENTS: '/students',
   CREATE_STUDENT: '/students',
   UPDATE_STUDENT: (id) => `/students/${id}`,
-  DELETE_STUDENT: (id) => `/students/${id}`
+  DELETE_STUDENT: (id) => `/students/${id}`,
+  EXPORT: '/students/export'
 }
 
 // Matrimonies Module API Endpoints
@@ -91,7 +96,8 @@ export const MATRIMONY_ENDPOINTS = {
   GET_MATRIMONIES: '/matrimonies',
   CREATE_MATRIMONY: '/matrimonies',
   UPDATE_MATRIMONY: (id) => `/matrimonies/${id}`,
-  DELETE_MATRIMONY: (id) => `/matrimonies/${id}`
+  DELETE_MATRIMONY: (id) => `/matrimonies/${id}`,
+  EXPORT: '/matrimonies/export'
 }
 
 // Posts Module API Endpoints
@@ -116,6 +122,7 @@ export const EXPENSE_ENDPOINTS = {
   CREATE_EXPENSE: '/expenses',
   UPDATE_EXPENSE: (id) => `/expenses/${id}`,
   DELETE_EXPENSE: (id) => `/expenses/${id}`,
+  EXPORT: '/expenses/export',
   EXPORT_EXCEL: '/expenses/export',
   GET_CATEGORIES: '/masters/expense-category'
 }
@@ -126,6 +133,7 @@ export const DONATION_ENDPOINTS = {
   CREATE_DONATION: '/donations',
   UPDATE_DONATION: (id) => `/donations/${id}`,
   DELETE_DONATION: (id) => `/donations/${id}`,
+  EXPORT: '/donations/export',
   EXPORT_EXCEL: '/donations/export'
 }
 

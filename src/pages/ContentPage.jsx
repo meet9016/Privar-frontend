@@ -84,6 +84,7 @@ const definitions = {
     title: 'Matrimonies',
     subtitle: 'Create and manage matrimony profiles',
     endpoint: MATRIMONY_ENDPOINTS.GET_MATRIMONIES,
+    exportEndpoint: MATRIMONY_ENDPOINTS.EXPORT,
     hideFilter: true,
     fields: [
       { name: 'full_name', label: 'Full Name', required: true },
@@ -181,6 +182,7 @@ const definitions = {
     title: 'Birthdays',
     subtitle: 'View and manage member birthdays and anniversaries',
     endpoint: BIRTHDAY_ENDPOINTS.GET_BIRTHDAYS,
+    exportEndpoint: BIRTHDAY_ENDPOINTS.EXPORT,
     hideAdd: true,
     hideActions: true,
     fields: [{ name: 'name', label: 'Name', disabled: true }, { name: 'dob', label: 'Date of Birth', type: 'date', required: true }, { name: 'anniversary', label: 'Anniversary', type: 'date' }],
@@ -351,6 +353,7 @@ const definitions = {
     title: 'Job Vacancy',
     subtitle: 'Post and manage job vacancy listings',
     endpoint: JOB_VACANCY_ENDPOINTS.GET_VACANCIES,
+    exportEndpoint: JOB_VACANCY_ENDPOINTS.EXPORT,
     gridCols: 'md:grid-cols-2',
     fields: [
       { name: 'title', label: 'Title', required: true, className: 'md:col-span-1' },

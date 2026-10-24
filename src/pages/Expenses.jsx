@@ -240,6 +240,48 @@ export default function Expenses({ headerLeftContent }) {
 
 
 
+  const [exporting, setExporting] = useState(false)
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true)
+      const params = { _t: Date.now() }
+      if (search) params.search = search
+      if (filters.month) params.month = filters.month
+      if (filters.category) params.category = filters.category
+
+      const response = await api.get(EXPENSE_ENDPOINTS.EXPORT_EXCEL, { params })
+
+      const payload = response.data?.data || response.data
+      const downloadUrl = payload?.download_url
+      const filename = payload?.filename || `Expenses_${new Date().toISOString().slice(0, 10)}.xlsx`
+
+      if (downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else if (response.data instanceof Blob) {
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      }
+
+      toast.success(response.data?.message || 'Expenses exported successfully')
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to export expenses')
+      console.error(err)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const handleSearchChange = (e) => {
     setSearch(e.target.value)
     resetPage()
@@ -313,6 +355,17 @@ export default function Expenses({ headerLeftContent }) {
               />
             </div>
           </FilterPopover>
+
+          <Button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            isLoading={exporting}
+            variant="secondary"
+            icon={<Download className="w-4 h-4" />}
+            className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap"
+          >
+            {exporting ? 'Exporting...' : 'Export'}
+          </Button>
 
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button

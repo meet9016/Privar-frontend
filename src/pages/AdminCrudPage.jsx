@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Edit2, Plus, RefreshCw, Search, Trash2, Settings, ImageOff, Filter, X } from 'lucide-react'
+import { Edit2, Plus, RefreshCw, Search, Trash2, Settings, ImageOff, Filter, X, Download } from 'lucide-react'
 import api, { assetUrl, formatDate } from '../lib/api'
 import Loader from '../components/common/Loader'
 import { confirm } from '../lib/confirm'
@@ -20,7 +20,7 @@ import useDebounce from '../hooks/useDebounce'
 import { transliterateText } from '../utils/transliterate'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({ 
@@ -50,6 +50,40 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const [imagePreview, setImagePreview] = useState(null)
   const [removedImages, setRemovedImages] = useState({})
   const [fieldErrors, setFieldErrors] = useState({})
+  const [exporting, setExporting] = useState(false)
+
+  const handleExportExcel = async () => {
+    if (!exportEndpoint) return
+    try {
+      setExporting(true)
+      const params = { _t: Date.now(), ...(extraParams || {}) }
+      if (search) params.search = search
+      if (supportIsOwn && isOwn) params.is_own = true
+      if (appliedFilterStatus !== '') params.status = appliedFilterStatus
+
+      const response = await api.get(exportEndpoint, { params })
+
+      const payload = response.data?.data || response.data
+      const downloadUrl = payload?.download_url
+      const filename = payload?.filename || `${title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`
+
+      if (downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+
+      toast.success(response.data?.message || `${title} exported successfully`)
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || `Failed to export ${title.toLowerCase()}`)
+      console.error(err)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
@@ -441,6 +475,18 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 ]}
               />
             </FilterPopover>
+          )}
+          {exportEndpoint && (
+            <Button
+              onClick={handleExportExcel}
+              disabled={exporting}
+              isLoading={exporting}
+              variant="secondary"
+              icon={<Download className="w-4 h-4" />}
+              className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap"
+            >
+              {exporting ? 'Exporting...' : 'Export'}
+            </Button>
           )}
           {customHeaderActions}
           {!hideAdd && (

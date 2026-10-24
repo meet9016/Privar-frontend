@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter, X } from 'lucide-react'
+import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter, X, Download } from 'lucide-react'
 import api, { assetUrl, getStudentsList, getCommunitySurname } from '../lib/api'
 import { STUDENT_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
@@ -39,6 +39,7 @@ export default function Students({ headerLeftContent }) {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedStdTab, setSelectedStdTab] = useState('all')
   const [selectedStreamTab, setSelectedStreamTab] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   const [existingStudentImage, setExistingStudentImage] = useState('')
   const [existingResultImage, setExistingResultImage] = useState('')
@@ -308,6 +309,47 @@ export default function Students({ headerLeftContent }) {
     }
   }
 
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true)
+      const params = { _t: Date.now() }
+      if (search && search.trim()) params.search = search.trim()
+      if (filters.status !== undefined && filters.status !== '') params.status = filters.status
+      if (filters.year) params.year = filters.year
+      if (selectedStdTab && selectedStdTab !== 'all') {
+        if ((selectedStdTab === '11' || selectedStdTab === '12') && selectedStreamTab) {
+          params.standard = `Std ${selectedStdTab} (${selectedStreamTab})`
+        } else if (selectedStdTab === '11' || selectedStdTab === '12') {
+          params.standard = `Std ${selectedStdTab}`
+        } else {
+          params.standard = selectedStdTab
+        }
+      }
+
+      const response = await api.get(STUDENT_ENDPOINTS.EXPORT, { params })
+
+      const payload = response.data?.data || response.data
+      const downloadUrl = payload?.download_url
+      const filename = payload?.filename || `Students_Directory_${new Date().toISOString().slice(0, 10)}.xlsx`
+
+      if (downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+
+      toast.success(response.data?.message || 'Students exported successfully')
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to export students')
+      console.error(err)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-6 text-text">
       {/* Header bar */}
@@ -363,6 +405,16 @@ export default function Students({ headerLeftContent }) {
               />
             </div>
           </FilterPopover>
+          <Button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            isLoading={exporting}
+            variant="secondary"
+            icon={<Download className="w-4 h-4" />}
+            className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap"
+          >
+            {exporting ? 'Exporting...' : 'Export'}
+          </Button>
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <Button onClick={handleCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10">
               Add Student

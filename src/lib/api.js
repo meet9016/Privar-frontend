@@ -162,8 +162,8 @@ const api = axios.create({
   }
 })
 
-export const exportDonationsExcel = (search = '') =>
-  api.get('/donations/export', { params: search ? { search } : {}, responseType: 'blob' })
+export const exportDonationsExcel = (params = {}) =>
+  api.get('/donations/export', { params: typeof params === 'string' ? { search: params } : params })
 
 export const memberApi = axios.create({
   baseURL: `${API_BASE}/api`,

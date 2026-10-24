@@ -1,7 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter, X, Download } from 'lucide-react'
-import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import api, { getCommitteeMembersList, getCommunitySurname } from '../lib/api'
 import { COMMITTEE_ENDPOINTS } from '../utils/endpoints'
@@ -206,125 +205,42 @@ export default function CommitteeMembers() {
     }
   };
 
+  const [exporting, setExporting] = useState(false);
+
   const handleExportExcel = async () => {
     try {
-      // Create a new workbook and worksheet
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Committee Members');
+      setExporting(true);
+      const params = { _t: Date.now() };
+      if (search) params.search = search;
+      if (filters.status !== '') params.status = filters.status;
+      if (filters.role) params.role = filters.role;
 
-      // Define columns
-      worksheet.columns = [
-        { header: 'NAME', key: 'name', width: 40 },
-        { header: 'MOBILE NUMBER', key: 'contact', width: 25 },
-        { header: 'EMAIL', key: 'email', width: 35 },
-        { header: 'ASSIGNED ROLE', key: 'role', width: 25 },
-        { header: 'STATUS', key: 'status', width: 20 }
-      ];
+      const response = await api.get(COMMITTEE_ENDPOINTS.EXPORT, { params });
 
-      // Style the header row
-      const headerRow = worksheet.getRow(1);
-      headerRow.eachCell((cell) => {
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF818CF8' } // Lighter Indigo
-        };
-        cell.font = {
-          color: { argb: 'FFFFFFFF' }, // White text
-          bold: true,
-          size: 11
-        };
-        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
-        };
-      });
+      const payload = response.data?.data || response.data;
+      const downloadUrl = payload?.download_url;
+      const filename = payload?.filename || `Committee_Members_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
-      worksheet.autoFilter = 'A1:E1'; // Add filter to all columns
+      if (downloadUrl) {
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (response.data instanceof Blob) {
+        saveAs(response.data, filename);
+      }
 
-      const getExcelRoleStyle = (roleName) => {
-        if (!roleName || roleName === '-') return { bg: 'FFF1F5F9', text: 'FF475569' };
-        const name = roleName.toLowerCase().trim();
-
-        if (name.includes('president') && !name.includes('vice')) return { bg: 'FFFFE4E6', text: 'FFE11D48' }; // rose
-        if (name.includes('vice president')) return { bg: 'FFF5F3FF', text: 'FF7C3AED' }; // violet
-        if (name.includes('manager')) return { bg: 'FFDBEAFE', text: 'FF2563EB' }; // blue
-        if (name.includes('admin')) return { bg: 'FFD1FAE5', text: 'FF059669' }; // emerald
-        if (name.includes('userrole') || name.includes('user')) return { bg: 'FFF1F5F9', text: 'FF475569' }; // slate
-
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        const styles = [
-          { bg: 'FFFEF3C7', text: 'FFD97706' }, // amber
-          { bg: 'FFCFFAFE', text: 'FF0891B2' }, // cyan
-          { bg: 'FFCCFBF1', text: 'FF0D9488' }, // teal
-          { bg: 'FFFCE7F3', text: 'FFDB2777' }, // pink
-          { bg: 'FFE0E7FF', text: 'FF4F46E5' }, // indigo
-          { bg: 'FFFFEDD5', text: 'FFEA580C' }  // orange
-        ];
-        return styles[Math.abs(hash) % styles.length];
-      };
-
-      // Add data rows
-      members.forEach((member) => {
-        const roleName = member.role_name || (roles.find(r => String(r.id || r._id) === String(member.role_id))?.name) || '-';
-        const statusText = Number(member.status ?? 1) === 1 ? 'Active' : 'Inactive';
-        const row = worksheet.addRow({
-          name: `${member.first_name || ''} ${member.middle_name || ''} ${member.last_name || ''}`.trim(),
-          contact: member.number || '-',
-          email: member.email || '-',
-          role: roleName,
-          status: statusText
-        });
-
-        // Formatting and borders for all cells in the row
-        row.eachCell((cell, colNumber) => {
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-            left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-            bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-            right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
-          };
-
-          // Default alignment for data rows
-          if (colNumber > 1) {
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          } else {
-            cell.alignment = { vertical: 'middle', horizontal: 'left' };
-          }
-        });
-
-        // Role color
-        const roleCell = row.getCell('role');
-        const roleStyle = getExcelRoleStyle(roleName);
-        roleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: roleStyle.bg } };
-        roleCell.font = { color: { argb: roleStyle.text }, bold: true };
-        roleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-
-        // Status color
-        const statusCell = row.getCell('status');
-        if (statusText === 'Active') {
-          statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4EA' } }; // Light green
-          statusCell.font = { color: { argb: 'FF137333' }, bold: true };
-        } else {
-          statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE8E6' } }; // Light red
-          statusCell.font = { color: { argb: 'FFC5221F' }, bold: true };
-        }
-      });
-
-      // Generate the file
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      saveAs(blob, `Committee_Members_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success('Excel exported successfully');
+      toast.success(response.data?.message || 'Committee members exported successfully');
     } catch (err) {
-      toast.error('Failed to export Excel');
+      toast.error(err.response?.data?.message || err.message || 'Failed to export Excel from server');
       console.error(err);
+    } finally {
+      setExporting(false);
     }
   };
+
 
   return (
     <div className="space-y-6 text-text">
@@ -386,8 +302,15 @@ export default function CommitteeMembers() {
                 ]}
               />
             </FilterPopover>
-            <Button onClick={handleExportExcel} variant="secondary" icon={<Download className="w-4 h-4" />} className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap">
-              Export
+            <Button 
+              onClick={handleExportExcel} 
+              disabled={exporting}
+              isLoading={exporting}
+              variant="secondary" 
+              icon={<Download className="w-4 h-4" />} 
+              className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap"
+            >
+              {exporting ? 'Exporting...' : 'Export'}
             </Button>
             {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
               <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10 whitespace-nowrap">

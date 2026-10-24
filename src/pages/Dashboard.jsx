@@ -51,11 +51,12 @@ function TableCard({ title, routePath, data = [], columns }) {
 }
 
 /* ─── Animated Stat Card ─────────────────────────────────── */
-function StatCard({ title, value, growth, icon: Icon, gradientClass, lightBorder, chevronBg, chevronColor, delay = 0 }) {
+function StatCard({ title, value, growth, icon: Icon, gradientClass, lightBorder, chevronBg, chevronColor, delay = 0, onClick }) {
   const isPositive = growth >= 0;
-  
+
   return (
     <div
+      onClick={onClick}
       className={`bg-white dark:bg-card border ${lightBorder || 'border-border'} rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between gap-2 transition-all duration-300 hover:shadow-md cursor-pointer`}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -67,13 +68,13 @@ function StatCard({ title, value, growth, icon: Icon, gradientClass, lightBorder
           <p className="text-[13px] font-semibold text-text-secondary mb-0.5">{title}</p>
           <p className="text-[26px] font-bold text-text leading-none mb-1.5">{value}</p>
           <div className={`flex items-center text-[11px] font-bold ${isPositive ? 'text-[#10b981]' : 'text-[#f43f5e]'}`}>
-             <TrendingUp className={`w-3.5 h-3.5 mr-0.5 ${isPositive ? '' : 'rotate-180'}`} />
+            <TrendingUp className={`w-3.5 h-3.5 mr-0.5 ${isPositive ? '' : 'rotate-180'}`} />
             {isPositive ? '+' : '-'}{Math.abs(growth || 0)}%
             <span className="text-text-secondary/60 font-medium ml-1">from last month</span>
           </div>
         </div>
       </div>
-      
+
       <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${chevronBg || 'bg-surface-secondary'}`}>
         <ChevronRight className={`w-3.5 h-3.5 ${chevronColor || 'text-text-secondary'}`} strokeWidth={3} />
       </div>
@@ -307,14 +308,14 @@ export default function Dashboard() {
   const { charts, tables, recentActivity, atAGlance, activitySummaryTotals } = data
 
   const statCards = [
-    { title: 'Total Members', value: activitySummaryTotals?.members?.total || 0, growth: activitySummaryTotals?.members?.growth || 0, icon: Users, gradientClass: 'from-indigo-500 to-violet-500', lightBorder: 'border-indigo-100 dark:border-indigo-500/20', chevronBg: 'bg-indigo-50 dark:bg-indigo-500/10', chevronColor: 'text-indigo-500 dark:text-indigo-400' },
-    { title: 'Businesses', value: activitySummaryTotals?.businesses?.total || 0, growth: activitySummaryTotals?.businesses?.growth || 0, icon: Briefcase, gradientClass: 'from-teal-400 to-emerald-500', lightBorder: 'border-emerald-100 dark:border-emerald-500/20', chevronBg: 'bg-emerald-50 dark:bg-emerald-500/10', chevronColor: 'text-emerald-500 dark:text-emerald-400' },
-    { title: 'Posts', value: activitySummaryTotals?.posts?.total || 0, growth: activitySummaryTotals?.posts?.growth || 0, icon: FileText, gradientClass: 'from-blue-400 to-blue-500', lightBorder: 'border-blue-100 dark:border-blue-500/20', chevronBg: 'bg-blue-50 dark:bg-blue-500/10', chevronColor: 'text-blue-500 dark:text-blue-400' },
-    { title: 'Events', value: activitySummaryTotals?.events?.total || 0, growth: activitySummaryTotals?.events?.growth || 0, icon: Calendar, gradientClass: 'from-orange-400 to-orange-500', lightBorder: 'border-orange-100 dark:border-orange-500/20', chevronBg: 'bg-orange-50 dark:bg-orange-500/10', chevronColor: 'text-orange-500 dark:text-orange-400' },
-    { title: 'Students', value: activitySummaryTotals?.students?.total || 0, growth: activitySummaryTotals?.students?.growth || 0, icon: Users, gradientClass: 'from-rose-400 to-rose-500', lightBorder: 'border-rose-100 dark:border-rose-500/20', chevronBg: 'bg-rose-50 dark:bg-rose-500/10', chevronColor: 'text-rose-500 dark:text-rose-400' },
-    { title: 'Upcoming Events', value: activitySummaryTotals?.upcomingEvents?.total || 0, growth: activitySummaryTotals?.upcomingEvents?.growth || 0, icon: Clock, gradientClass: 'from-cyan-400 to-blue-500', lightBorder: 'border-cyan-100 dark:border-cyan-500/20', chevronBg: 'bg-cyan-50 dark:bg-cyan-500/10', chevronColor: 'text-cyan-500 dark:text-cyan-400' },
-    { title: 'Active Jobs', value: activitySummaryTotals?.activeJobs?.total || 0, growth: activitySummaryTotals?.activeJobs?.growth || 0, icon: Briefcase, gradientClass: 'from-lime-400 to-green-500', lightBorder: 'border-green-100 dark:border-green-500/20', chevronBg: 'bg-green-50 dark:bg-green-500/10', chevronColor: 'text-green-500 dark:text-green-400' },
-    { title: 'Donations', value: activitySummaryTotals?.donations?.total || 0, growth: activitySummaryTotals?.donations?.growth || 0, icon: CreditCard, gradientClass: 'from-amber-400 to-orange-400', lightBorder: 'border-amber-100 dark:border-amber-500/20', chevronBg: 'bg-amber-50 dark:bg-amber-500/10', chevronColor: 'text-amber-500 dark:text-amber-400' },
+    { title: 'Total Members', value: activitySummaryTotals?.members?.total || 0, growth: activitySummaryTotals?.members?.growth || 0, icon: Users, gradientClass: 'from-indigo-500 to-violet-500', lightBorder: 'border-indigo-100 dark:border-indigo-500/20', chevronBg: 'bg-indigo-50 dark:bg-indigo-500/10', chevronColor: 'text-indigo-500 dark:text-indigo-400', onClick: () => navigate('/admin/users') },
+    { title: 'Main Head', value: activitySummaryTotals?.mainHeads?.total ?? activitySummaryTotals?.familyHeads?.total ?? 0, growth: activitySummaryTotals?.mainHeads?.growth ?? 0, icon: Crown, gradientClass: 'from-cyan-400 to-blue-500', lightBorder: 'border-cyan-100 dark:border-cyan-500/20', chevronBg: 'bg-cyan-50 dark:bg-cyan-500/10', chevronColor: 'text-cyan-500 dark:text-cyan-400', onClick: () => navigate('/admin/users') },
+    { title: 'Businesses', value: activitySummaryTotals?.businesses?.total || 0, growth: activitySummaryTotals?.businesses?.growth || 0, icon: Briefcase, gradientClass: 'from-teal-400 to-emerald-500', lightBorder: 'border-emerald-100 dark:border-emerald-500/20', chevronBg: 'bg-emerald-50 dark:bg-emerald-500/10', chevronColor: 'text-emerald-500 dark:text-emerald-400', onClick: () => navigate('/admin/businesses') },
+    { title: 'Posts', value: activitySummaryTotals?.posts?.total || 0, growth: activitySummaryTotals?.posts?.growth || 0, icon: FileText, gradientClass: 'from-blue-400 to-blue-500', lightBorder: 'border-blue-100 dark:border-blue-500/20', chevronBg: 'bg-blue-50 dark:bg-blue-500/10', chevronColor: 'text-blue-500 dark:text-blue-400', onClick: () => navigate('/admin/news') },
+    { title: 'Events', value: activitySummaryTotals?.events?.total || 0, growth: activitySummaryTotals?.events?.growth || 0, icon: Calendar, gradientClass: 'from-orange-400 to-orange-500', lightBorder: 'border-orange-100 dark:border-orange-500/20', chevronBg: 'bg-orange-50 dark:bg-orange-500/10', chevronColor: 'text-orange-500 dark:text-orange-400', onClick: () => navigate('/admin/events') },
+    { title: 'Students', value: activitySummaryTotals?.students?.total || 0, growth: activitySummaryTotals?.students?.growth || 0, icon: Users, gradientClass: 'from-rose-400 to-rose-500', lightBorder: 'border-rose-100 dark:border-rose-500/20', chevronBg: 'bg-rose-50 dark:bg-rose-500/10', chevronColor: 'text-rose-500 dark:text-rose-400', onClick: () => navigate('/admin/students') },
+    { title: 'Active Jobs', value: activitySummaryTotals?.activeJobs?.total || 0, growth: activitySummaryTotals?.activeJobs?.growth || 0, icon: Briefcase, gradientClass: 'from-lime-400 to-green-500', lightBorder: 'border-green-100 dark:border-green-500/20', chevronBg: 'bg-green-50 dark:bg-green-500/10', chevronColor: 'text-green-500 dark:text-green-400', onClick: () => navigate('/admin/job-vacancy') },
+    { title: 'Donations', value: activitySummaryTotals?.donations?.total || 0, growth: activitySummaryTotals?.donations?.growth || 0, icon: CreditCard, gradientClass: 'from-amber-400 to-orange-400', lightBorder: 'border-amber-100 dark:border-amber-500/20', chevronBg: 'bg-amber-50 dark:bg-amber-500/10', chevronColor: 'text-amber-500 dark:text-amber-400', onClick: () => navigate('/admin/donations') },
   ]
 
   const COLORS = ['#8b5cf6', '#f59e0b', '#10b981', '#3b82f6'];
@@ -475,8 +476,8 @@ export default function Dashboard() {
               </div>
               <div className="z-10 mt-2">
                 <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${(activitySummaryTotals?.posts?.growth || 0) >= 0
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
                   <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.posts?.growth || 0) >= 0 ? '' : 'rotate-180'}`} />
                   {(activitySummaryTotals?.posts?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.posts?.growth || 0)}%
@@ -505,8 +506,8 @@ export default function Dashboard() {
               </div>
               <div className="z-10 mt-2">
                 <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${(activitySummaryTotals?.events?.growth || 0) >= 0
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
                   <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.events?.growth || 0) >= 0 ? '' : 'rotate-180'}`} />
                   {(activitySummaryTotals?.events?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.events?.growth || 0)}%
@@ -535,8 +536,8 @@ export default function Dashboard() {
               </div>
               <div className="z-10 mt-2">
                 <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${(activitySummaryTotals?.members?.growth || 0) >= 0
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
                   <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.members?.growth || 0) >= 0 ? '' : 'rotate-180'}`} />
                   {(activitySummaryTotals?.members?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.members?.growth || 0)}%
@@ -565,8 +566,8 @@ export default function Dashboard() {
               </div>
               <div className="z-10 mt-2">
                 <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${(activitySummaryTotals?.businesses?.growth || 0) >= 0
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
                   <TrendingUp className={`w-2.5 h-2.5 ${(activitySummaryTotals?.businesses?.growth || 0) >= 0 ? '' : 'rotate-180'}`} />
                   {(activitySummaryTotals?.businesses?.growth || 0) >= 0 ? '+' : '-'}{Math.abs(activitySummaryTotals?.businesses?.growth || 0)}%

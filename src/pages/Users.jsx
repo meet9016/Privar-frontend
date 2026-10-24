@@ -445,17 +445,27 @@ export default function Users() {
       if (filterStatus !== '') params.status = filterStatus
 
       const response = await api.get(MEMBER_ENDPOINTS.EXPORT_MEMBERS, {
-        params,
-        responseType: 'blob'
+        params
       })
 
-      const blob = new Blob([response.data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      })
-      saveAs(blob, `Family_Registry_${new Date().toISOString().slice(0, 10)}.xlsx`)
-      toast.success('Family registry exported successfully from server')
+      const payload = response.data?.data || response.data
+      const downloadUrl = payload?.download_url
+      const filename = payload?.filename || `Family_Registry_${new Date().toISOString().slice(0, 10)}.xlsx`
+
+      if (downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else if (response.data instanceof Blob) {
+        saveAs(response.data, filename)
+      }
+
+      toast.success(response.data?.message || 'Family registry exported successfully')
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to export Excel from server')
+      toast.error(err.response?.data?.message || err.message || 'Failed to export Excel from server')
       console.error(err)
     } finally {
       setExporting(false)

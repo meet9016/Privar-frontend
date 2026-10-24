@@ -12,7 +12,8 @@ import {
   User2,
   Copy,
   Landmark,
-  FileDown
+  FileDown,
+  Download
 } from 'lucide-react'
 import api, { getDonationsList, getBankDetailsList, exportDonationsExcel, formatDate } from '../lib/api'
 import { DONATION_ENDPOINTS } from '../utils/endpoints'
@@ -187,6 +188,46 @@ export default function Donations({ headerLeftContent }) {
   const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
+  const [exporting, setExporting] = useState(false)
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true)
+      const params = { _t: Date.now() }
+      if (search) params.search = search
+
+      const response = await api.get(DONATION_ENDPOINTS.EXPORT_EXCEL, { params })
+
+      const payload = response.data?.data || response.data
+      const downloadUrl = payload?.download_url
+      const filename = payload?.filename || `Donations_${new Date().toISOString().slice(0, 10)}.xlsx`
+
+      if (downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else if (response.data instanceof Blob) {
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      }
+
+      toast.success(response.data?.message || 'Donations exported successfully')
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to export donations')
+      console.error(err)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const formatAmount = (amount) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0)
 
@@ -211,10 +252,21 @@ export default function Donations({ headerLeftContent }) {
             wrapperClassName="w-64 sm:w-72"
           />
 
+          <Button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            isLoading={exporting}
+            variant="secondary"
+            icon={<Download className="w-4 h-4" />}
+            className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap"
+          >
+            {exporting ? 'Exporting...' : 'Export'}
+          </Button>
+
           {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
             <button
               onClick={handleCreate}
-              className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary cursor-pointer"
+              className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-glow-primary cursor-pointer h-10"
             >
               <Plus className="w-4 h-4" /> Add Donation
             </button>

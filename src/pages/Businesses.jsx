@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { Briefcase, MapPin, Phone, Globe, Trash2, Search, Edit2, RefreshCw, Plus, Eye, Mail, Instagram, Youtube, Facebook, Share2 } from 'lucide-react'
+import { Briefcase, MapPin, Phone, Globe, Trash2, Search, Edit2, RefreshCw, Plus, Eye, Mail, Instagram, Youtube, Facebook, Share2, Download } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api, { assetUrl, formatDate, getBusinessesList } from '../lib/api'
 import { BUSINESS_ENDPOINTS } from '../utils/endpoints'
@@ -188,6 +188,39 @@ export default function Businesses({ headerLeftContent }) {
     }
   }
 
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      const params = { _t: Date.now() };
+      if (search) params.search = search;
+      if (isOwn) params.is_own = true;
+
+      const response = await api.get(BUSINESS_ENDPOINTS.EXPORT, { params });
+
+      const payload = response.data?.data || response.data;
+      const downloadUrl = payload?.download_url;
+      const filename = payload?.filename || `Business_Directory_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      if (downloadUrl) {
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      toast.success(response.data?.message || 'Businesses exported successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to export businesses');
+      console.error(err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const filtered = businesses
 
   return (
@@ -206,12 +239,22 @@ export default function Businesses({ headerLeftContent }) {
           onChange={(e) => setSearch(e.target.value)}
           onClear={() => setSearch('')}
         />
+        <Button
+          onClick={handleExportExcel}
+          disabled={exporting}
+          isLoading={exporting}
+          variant="secondary"
+          icon={<Download className="w-4 h-4" />}
+          className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap"
+        >
+          {exporting ? 'Exporting...' : 'Export'}
+        </Button>
         {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
           <Button
             onClick={handleCreate}
             variant="primary"
             icon={<Plus className="w-4 h-4" />}
-            className="h-10"
+            className="h-10 whitespace-nowrap"
           >
             Add Business
           </Button>

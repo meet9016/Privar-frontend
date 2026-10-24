@@ -1,4 +1,5 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 import { Filter, X, Check, RotateCcw } from 'lucide-react'
 
 export default function FilterPopover({
@@ -14,16 +15,15 @@ export default function FilterPopover({
   className = ''
 }) {
   return (
-    <div className={`relative z-30 ${className}`}>
+    <div className={`relative ${isOpen ? 'z-[60]' : 'z-20'} ${className}`}>
       {/* Trigger Button */}
       <button
         type="button"
         onClick={onToggle}
-        className={`relative flex items-center justify-center h-10 px-3.5 rounded-xl border transition-all duration-200 cursor-pointer select-none bg-primary text-white border-primary shadow-xs hover:bg-primary-dark ${
-          isOpen || activeCount > 0
+        className={`relative flex items-center justify-center h-10 px-3.5 rounded-xl border transition-all duration-200 cursor-pointer select-none bg-primary text-white border-primary shadow-xs hover:bg-primary-dark ${isOpen || activeCount > 0
             ? 'ring-2 ring-primary/30'
             : ''
-        }`}
+          }`}
         title="Filter Records"
       >
         <Filter className="w-4 h-4" />
@@ -36,11 +36,21 @@ export default function FilterPopover({
 
       {isOpen && (
         <>
-          {/* Backdrop Overlay to close on outside click */}
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity duration-200"
-            onClick={onClose}
-          />
+          {/* Backdrop Overlay to close on outside click (rendered to document.body so it covers the entire viewport including Header) */}
+          {typeof document !== 'undefined' ? (
+            ReactDOM.createPortal(
+              <div
+                className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 transition-opacity duration-200"
+                onClick={onClose}
+              />,
+              document.body
+            )
+          ) : (
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity duration-200"
+              onClick={onClose}
+            />
+          )}
 
           {/* Modern Sleek Filter Card */}
           <div
