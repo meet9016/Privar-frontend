@@ -32,7 +32,8 @@ export const MEMBER_ENDPOINTS = {
   MASTERS_STATE: '/masters/state',
   MASTERS_CITY: '/masters/city',
   MASTERS_VILLAGE: '/masters/village',
-  MASTERS_RELATIONSHIP: '/masters/relationship'
+  MASTERS_RELATIONSHIP: '/masters/relationship',
+  MASTERS_EDUCATION: '/masters/education'
 }
 
 // Gallery Module API Endpoints
@@ -141,6 +142,7 @@ export const DONATION_ENDPOINTS = {
 export const MASTER_ENDPOINTS = {
   BUSINESS_CATEGORY: '/masters/business',
   BANK_DETAILS: '/bank-details',
+  EDUCATION: '/masters/education',
   COUNTRY: '/masters/country',
   STATE: '/masters/state',
   CITY: '/masters/city',
@@ -151,6 +153,15 @@ export const MASTER_ENDPOINTS = {
   EXPENSE_CATEGORY: '/masters/expense-category',
   RELATIONSHIP: '/masters/relationship',
   GET_MASTER: (type) => type === 'bank-details' ? '/bank-details' : `/masters/${type}`
+}
+
+// Education Module Dedicated Endpoints
+export const EDUCATION_ENDPOINTS = {
+  GET_EDUCATIONS: '/education',
+  CREATE_EDUCATION: '/education',
+  UPDATE_EDUCATION: (id) => `/education/${id}`,
+  DELETE_EDUCATION: (id) => `/education/${id}`,
+  GET_LEVELS: '/education/levels'
 }
 
 // Mandal / Monthly Contribution Module API Endpoints
@@ -199,6 +210,7 @@ export default {
   DONATION: DONATION_ENDPOINTS,
   MANDAL: MANDAL_ENDPOINTS,
   MASTER: MASTER_ENDPOINTS,
+  EDUCATION: EDUCATION_ENDPOINTS,
   POLL: POLL_ENDPOINTS
 }
 

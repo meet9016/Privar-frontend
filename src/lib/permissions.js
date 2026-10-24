@@ -21,6 +21,7 @@ const legacyPermissionFor = (permission) => {
     'village.': 'masters.manage',
     'area.': 'masters.manage',
     'blood-group.': 'masters.manage',
+    'education.': 'masters.manage',
     'event-category.': 'event-category.manage',
     'donations.': 'donations.manage',
     'birthday.': 'users.manage',

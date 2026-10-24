@@ -19,7 +19,7 @@ import {
   engagementNavigation,
   masterNavigation
 } from '../config/navigation'
-import { Database, CalendarDays } from 'lucide-react'
+import { Database, CalendarDays, GraduationCap } from 'lucide-react'
 
 export const ActivitiesPage = () => {
   const { user } = useContext(AuthContext)
@@ -71,7 +71,7 @@ export const MastersPage = () => {
   const tabs = useMemo(() => masterNavigation.map(m => ({
     id: m.type,
     label: m.label,
-    icon: Database,
+    icon: m.type === 'education' ? GraduationCap : Database,
     permission: m.permission,
     component: (props) => m.type === 'bank-details' ? <ContentPage type="bank-details" {...props} /> : <MasterPage type={m.type} {...props} />
   })).filter(t => hasPermission(user, t.permission)), [user])

@@ -297,6 +297,12 @@ const GENDER_OPTIONS = [
   { label: 'Other', value: 'Other' },
 ]
 
+const MARITAL_STATUS_OPTIONS = [
+  { label: 'Married', value: 'Married' },
+  { label: 'Unmarried', value: 'Unmarried' },
+  { label: 'Divorce', value: 'Divorce' }
+]
+
 export const capitalizeWords = (str) => {
   if (!str) return ''
   return str
@@ -321,6 +327,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const [relationOptions, setRelationOptions] = useState(
     cachedMasters?.relationships?.length ? cachedMasters.relationships : RELATION_OPTIONS
   )
+  const [educationOptions, setEducationOptions] = useState(
+    cachedMasters?.educations?.length ? cachedMasters.educations : []
+  )
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -330,7 +339,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     number: '',
     gender: 'Male',
     dob: '',
+    marital_status: 'Married',
     anniversary: '',
+    education: '',
     blood_group: '',
     relation: 'Self',
     is_committee: false,
@@ -365,6 +376,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         if (cachedMasters.relationships?.length) {
           setRelationOptions(cachedMasters.relationships)
         }
+        if (cachedMasters.educations?.length) {
+          setEducationOptions(cachedMasters.educations)
+        }
         return
       }
 
@@ -374,12 +388,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           api.get(MEMBER_ENDPOINTS.MASTERS_STATE),
           api.get(MEMBER_ENDPOINTS.MASTERS_CITY),
           api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } })),
-          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } }))
+          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_EDUCATION).catch(() => ({ data: { data: [] } }))
         ])
       }
 
       try {
-        const [cRes, sRes, ciRes, vRes, relRes] = await mastersPromise
+        const [cRes, sRes, ciRes, vRes, relRes, eduRes] = await mastersPromise
         const countryList = cRes.data?.data || []
         
         // Merge backend relationships with default RELATION_OPTIONS
@@ -395,12 +410,18 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         fetchedRels.forEach(r => relMap.set(r.value.toLowerCase(), r))
         const mergedRelations = Array.from(relMap.values())
 
+        const fetchedEdus = (eduRes?.data?.data || []).filter(e => e.status !== 0 && e.status !== '0').map(e => ({
+          label: e.level ? `${e.standard || e.name} (${e.level})` : (e.standard || e.name),
+          value: e.standard || e.name
+        }))
+
         cachedMasters = {
           countries: countryList,
           states: sRes.data?.data || [],
           cities: ciRes.data?.data || [],
           villages: vRes.data?.data || [],
-          relationships: mergedRelations
+          relationships: mergedRelations,
+          educations: fetchedEdus
         }
 
         setCountries(cachedMasters.countries)
@@ -408,6 +429,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setCities(cachedMasters.cities)
         setVillages(cachedMasters.villages)
         setRelationOptions(mergedRelations)
+        setEducationOptions(fetchedEdus)
 
         // If country or state not yet selected, default to India and Gujarat
         setFormData(prev => {
@@ -446,6 +468,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         if (!isNaN(d.getTime())) formattedAnniversary = d.toISOString().slice(0, 10)
       }
 
+      const mStatus = user.marital_status || 'Married'
       setFormData({
         first_name: user.first_name || '',
         middle_name: user.middle_name || '',
@@ -454,7 +477,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         number: user.number || '',
         gender: user.gender || 'Male',
         dob: formattedDob,
-        anniversary: formattedAnniversary,
+        marital_status: mStatus,
+        anniversary: mStatus === 'Unmarried' ? '' : formattedAnniversary,
+        education: user.education || '',
         blood_group: user.blood_group || '',
         relation: 'Self',
         is_committee: user.is_committee || false,
@@ -488,6 +513,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                 const d = new Date(m.anniversary)
                 if (!isNaN(d.getTime())) mAnniversary = d.toISOString().slice(0, 10)
               }
+              const childMarital = m.marital_status || (m.relation === 'Wife' || m.relation === 'Husband' ? 'Married' : 'Unmarried')
               return {
                 _id: m.id || m._id,
                 first_name: m.first_name || '',
@@ -496,7 +522,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                 relation: m.relation === 'Spouse' ? 'Wife' : (m.relation || 'Wife'),
                 gender: m.gender || 'Male',
                 dob: mDob,
-                anniversary: mAnniversary,
+                marital_status: childMarital,
+                anniversary: childMarital === 'Unmarried' ? '' : mAnniversary,
+                education: m.education || '',
                 blood_group: m.blood_group || '',
                 number: m.number || '',
                 email: m.email || '',
@@ -531,7 +559,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         number: '',
         gender: 'Male',
         dob: '',
+        marital_status: 'Married',
         anniversary: '',
+        education: '',
         blood_group: '',
         relation: 'Self',
         is_committee: false,
@@ -581,6 +611,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           }
         }
       }
+      if (field === 'marital_status' && value === 'Unmarried') {
+        next.anniversary = ''
+      }
       return next
     })
     setErrors(prev => {
@@ -621,7 +654,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       relation: 'Wife',
       gender: 'Female',
       dob: '',
+      marital_status: 'Married',
       anniversary: '',
+      education: '',
       blood_group: '',
       number: '',
       email: '',
@@ -638,6 +673,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     setEditingMember(prev => {
       if (!prev) return prev
       const current = { ...prev, [field]: value }
+
+      if (field === 'marital_status' && value === 'Unmarried') {
+        current.anniversary = ''
+      }
 
       // Auto set gender and default middle name when relationship changes
       if (field === 'relation') {
@@ -875,6 +914,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       first_name: capitalizeWords(formData.first_name),
       middle_name: capitalizeWords(formData.middle_name),
       last_name: capitalizeWords(formData.last_name),
+      marital_status: formData.marital_status || 'Married',
+      anniversary: formData.marital_status === 'Unmarried' ? null : (formData.anniversary || null),
+      education: formData.education || '',
       familyHead: true,
       relation: 'Self',
       members: currentMembers.map(m => ({
@@ -887,7 +929,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         spouse_id: m.spouse_id || null,
         father_id: m.father_id || null,
         dob: m.dob || null,
-        anniversary: m.anniversary || null,
+        marital_status: m.marital_status || 'Married',
+        anniversary: m.marital_status === 'Unmarried' ? null : (m.anniversary || null),
+        education: m.education || '',
         blood_group: m.blood_group || '',
         number: (m.number || '').trim(),
         email: (m.email || '').trim(),
@@ -1083,8 +1127,32 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           )}
         </div>
 
-        {/* Row 4: Date of Birth, Anniversary Date, Address, Status (4 inputs/columns) */}
+        {/* Row 4: Marital Status, Anniversary Date, Education, Date of Birth (Balanced 4 columns) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
+          <Select
+            label="Marital Status"
+            value={formData.marital_status || 'Married'}
+            onChange={(val) => handleChange('marital_status', val)}
+            options={MARITAL_STATUS_OPTIONS}
+            disabled={isLoading}
+            searchable={false}
+          />
+          <DatePicker
+            label="Anniversary Date"
+            value={formData.marital_status === 'Unmarried' ? '' : formData.anniversary}
+            onChange={(val) => handleChange('anniversary', val)}
+            disabled={isLoading || formData.marital_status === 'Unmarried'}
+            placeholder={formData.marital_status === 'Unmarried' ? 'Disabled for Unmarried' : 'Select Anniversary'}
+          />
+          <Select
+            label="Education"
+            value={formData.education}
+            onChange={(val) => handleChange('education', val)}
+            options={[{ label: 'Select Education', value: '' }, ...educationOptions]}
+            placeholder="Select Education"
+            searchable={true}
+            disabled={isLoading}
+          />
           <DatePicker
             label="Date of Birth"
             required
@@ -1094,28 +1162,29 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             placeholder="Select DOB"
             error={errors.dob}
           />
-          <DatePicker
-            label="Anniversary Date"
-            value={formData.anniversary}
-            onChange={(val) => handleChange('anniversary', val)}
-            disabled={isLoading}
-            placeholder="Select Anniversary"
-          />
-          <Input
-            label="Address"
-            placeholder="Address (Area, Street)"
-            value={formData.address}
-            onChange={(e) => handleChange('address', e.target.value)}
-            disabled={isLoading}
-          />
-          <Switch
-            label="Status"
-            checked={Number(formData.status ?? 1) === 1}
-            onChange={(val) => handleChange('status', val ? 1 : 0)}
-            disabled={isLoading}
-            activeLabel="Active"
-            inactiveLabel="Inactive"
-          />
+        </div>
+
+        {/* Row 5: Address (3 cols), Status (1 col) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
+          <div className="col-span-1 sm:col-span-2 md:col-span-3">
+            <Input
+              label="Address"
+              placeholder="Address (Area, Street, Flat/House No.)"
+              value={formData.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+          <div className="col-span-1">
+            <Switch
+              label="Status"
+              checked={Number(formData.status ?? 1) === 1}
+              onChange={(val) => handleChange('status', val ? 1 : 0)}
+              disabled={isLoading}
+              activeLabel="Active"
+              inactiveLabel="Inactive"
+            />
+          </div>
         </div>
       </div>
 
@@ -1608,8 +1677,32 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                         )
                       })()}
 
-                      {/* Row 2: Gender, Date of Birth, Anniversary Date, Blood Group, Mobile Number (Balanced 5 columns or clean 2+3 layout) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 items-start">
+                      {/* Row 2: Marital Status, Anniversary Date, Education, Gender */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-start">
+                        <Select
+                          label="Marital Status"
+                          value={editingMember.marital_status || 'Married'}
+                          onChange={(val) => handleEditingMemberChange('marital_status', val)}
+                          options={MARITAL_STATUS_OPTIONS}
+                          disabled={isLoading}
+                          searchable={false}
+                        />
+                        <DatePicker
+                          label="Anniversary Date"
+                          value={editingMember.marital_status === 'Unmarried' ? '' : (editingMember.anniversary || '')}
+                          onChange={(val) => handleEditingMemberChange('anniversary', val)}
+                          disabled={isLoading || editingMember.marital_status === 'Unmarried'}
+                          placeholder={editingMember.marital_status === 'Unmarried' ? 'Disabled for Unmarried' : 'Select Anniversary'}
+                        />
+                        <Select
+                          label="Education"
+                          value={editingMember.education || ''}
+                          onChange={(val) => handleEditingMemberChange('education', val)}
+                          options={[{ label: 'Select Education', value: '' }, ...educationOptions]}
+                          placeholder="Select Education"
+                          searchable={true}
+                          disabled={isLoading}
+                        />
                         <Select
                           label="Gender"
                           value={editingMember.gender || 'Male'}
@@ -1617,19 +1710,16 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           options={GENDER_OPTIONS}
                           disabled={isLoading}
                         />
+                      </div>
+
+                      {/* Row 3: Date of Birth, Blood Group, Mobile Number */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-start">
                         <DatePicker
                           label="Date of Birth"
                           value={editingMember.dob || ''}
                           onChange={(val) => handleEditingMemberChange('dob', val)}
                           disabled={isLoading}
                           placeholder="Select DOB"
-                        />
-                        <DatePicker
-                          label="Anniversary Date"
-                          value={editingMember.anniversary || ''}
-                          onChange={(val) => handleEditingMemberChange('anniversary', val)}
-                          disabled={isLoading}
-                          placeholder="Select Anniversary"
                         />
                         <Select
                           label="Blood Group"
@@ -1639,18 +1729,16 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           disabled={isLoading}
                           searchable={true}
                         />
-                        <div className="col-span-1 sm:col-span-2 md:col-span-4 lg:col-span-1">
-                          <Input
-                            label="Mobile Number (Optional)"
-                            type="tel"
-                            maxLength={10}
-                            placeholder="10 digit number"
-                            value={editingMember.number || ''}
-                            onChange={(e) => handleEditingMemberChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                            disabled={isLoading}
-                            error={numErr}
-                          />
-                        </div>
+                        <Input
+                          label="Mobile Number (Optional)"
+                          type="tel"
+                          maxLength={10}
+                          placeholder="10 digit number"
+                          value={editingMember.number || ''}
+                          onChange={(e) => handleEditingMemberChange('number', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          disabled={isLoading}
+                          error={numErr}
+                        />
                       </div>
                     </div>
                   )}
