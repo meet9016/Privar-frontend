@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { normalizeRoleId } from '../lib/roles'
 import api, { getCommunitySurname, formatDate, uploadFileToDigitalks, assetUrl } from '../lib/api'
-import { MEMBER_ENDPOINTS } from '../utils/endpoints'
+import { MEMBER_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
 import Input from './common/Input'
 import Select from './common/Select'
 import Switch from './common/Switch'
@@ -407,15 +407,15 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           api.get(MEMBER_ENDPOINTS.MASTERS_CITY),
           api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } })),
           api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } })),
-          api.get('/masters/standard-level', { params: { status: 1, limit: 500 } }).catch(() => ({ data: { data: [] } })),
-          api.get('/masters/dini-talim', { params: { status: 1, limit: 500 } }).catch(() => ({ data: { data: [] } }))
+          api.get(MEMBER_ENDPOINTS.MASTERS_STANDARD_LEVEL, { params: { status: 1, limit: 500 } }).catch(() => ({ data: { data: [] } })),
+          api.get(MEMBER_ENDPOINTS.MASTERS_DINI_TALIM, { params: { status: 1, limit: 500 } }).catch(() => ({ data: { data: [] } }))
         ])
       }
 
       try {
         const [cRes, sRes, ciRes, vRes, relRes, eduRes, diniRes] = await mastersPromise
         const countryList = cRes.data?.data || []
-        
+
         // Merge backend relationships with default RELATION_OPTIONS
         const fetchedRels = (relRes.data?.data || []).filter(r => r.status !== 0 && r.status !== '0').map(r => ({
           label: getRelationDisplay(r.name, r),
@@ -1062,10 +1062,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       first_name: capitalizeWords(formData.first_name),
       middle_name: capitalizeWords(formData.middle_name),
       last_name: capitalizeWords(formData.last_name),
-      education: (formData.education_id || formData.education || '').trim(),
-      education_id: (formData.education_id || formData.education || '').trim(),
-      dinitalim: (formData.dinitalim_id || formData.dinitalim || '').trim(),
-      dinitalim_id: (formData.dinitalim_id || formData.dinitalim || '').trim(),
+      education_id: (formData.education_id || '').trim(),
+      dinitalim_id: (formData.dinitalim_id || '').trim(),
       marital_status: formData.marital_status || '',
       familyHead: true,
       relation: 'Self',
@@ -1081,10 +1079,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         dob: m.dob || null,
         anniversary: m.anniversary || null,
         blood_group: m.blood_group || '',
-        education: (m.education_id || m.education || '').trim(),
-        education_id: (m.education_id || m.education || '').trim(),
-        dinitalim: (m.dinitalim_id || m.dinitalim || '').trim(),
-        dinitalim_id: (m.dinitalim_id || m.dinitalim || '').trim(),
+        education_id: (m.education_id || '').trim(),
+        dinitalim_id: (m.dinitalim_id || '').trim(),
         marital_status: m.marital_status || '',
         number: (m.number || '').trim(),
         email: (m.email || '').trim(),
@@ -1093,6 +1089,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       })),
       deletedMemberIds
     }
+
+    delete payload.education
+    delete payload.dinitalim
 
     if (!canManageRoleFields || isEditingSelf) {
       delete payload.role_id
@@ -1455,9 +1454,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                   {/* Single Line Member Row Summary */}
                   <div
                     onClick={() => toggleExpandMember(idx)}
-                    className={`grid grid-cols-1 sm:grid-cols-12 gap-2 items-center px-3.5 py-2.5 cursor-pointer hover:bg-surface-secondary/60 transition-colors ${
-                      isExpanded ? 'bg-primary/5 border-l-4 border-l-primary' : ''
-                    } ${hasRowError ? 'bg-error-bg/30 border-l-4 border-l-red-500' : ''}`}
+                    className={`grid grid-cols-1 sm:grid-cols-12 gap-2 items-center px-3.5 py-2.5 cursor-pointer hover:bg-surface-secondary/60 transition-colors ${isExpanded ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+                      } ${hasRowError ? 'bg-error-bg/30 border-l-4 border-l-red-500' : ''}`}
                   >
                     {/* Index */}
                     <div className="col-span-1 flex items-center gap-1.5 sm:justify-center">
@@ -1468,7 +1466,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
 
                     {/* Name with Avatar */}
                     <div className="col-span-3 min-w-0 flex items-center gap-2">
-                      <div 
+                      <div
                         style={{ width: '28px', height: '28px', minWidth: '28px', minHeight: '28px' }}
                         className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-[11px] shrink-0 overflow-hidden shadow-xs"
                       >
@@ -1532,11 +1530,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                       <button
                         type="button"
                         onClick={() => toggleExpandMember(idx)}
-                        className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
-                          isExpanded
+                        className={`p-1.5 rounded-xl border transition-all cursor-pointer ${isExpanded
                             ? 'text-white bg-primary border-primary shadow-xs'
                             : 'text-primary hover:text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'
-                        }`}
+                          }`}
                         title={isExpanded ? 'Done editing' : 'Edit member'}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -1675,8 +1672,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                               <div>
                                 <span className="font-bold text-text">પતિ / ભાઈ (Husband / Brother):</span>
                                 <p className="text-[11px] text-text-secondary mt-0.5">
-                                  {brotherOptions.length > 0 
-                                    ? 'ક્યા ભાઈના પત્ની છે તે પસંદ કરો (Middle Name આપોઆપ આવી જશે):' 
+                                  {brotherOptions.length > 0
+                                    ? 'ક્યા ભાઈના પત્ની છે તે પસંદ કરો (Middle Name આપોઆપ આવી જશે):'
                                     : 'પરિવારમાં કોઈ ભાઈ લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ પતિનું નામ લખી શકો છો.'}
                                 </p>
                               </div>
@@ -1716,8 +1713,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                               <div>
                                 <span className="font-bold text-text">પતિ / દીકરો (Husband / Son):</span>
                                 <p className="text-[11px] text-text-secondary mt-0.5">
-                                  {sonOptions.length > 0 
-                                    ? 'ક્યા દીકરાના પત્ની (પુત્રવધૂ) છે તે પસંદ કરો:' 
+                                  {sonOptions.length > 0
+                                    ? 'ક્યા દીકરાના પત્ની (પુત્રવધૂ) છે તે પસંદ કરો:'
                                     : 'પરિવારમાં કોઈ દીકરો લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ પતિનું નામ લખી શકો છો.'}
                                 </p>
                               </div>
@@ -1757,8 +1754,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                               <div>
                                 <span className="font-bold text-text">કાકા / મોટાબાપા / મામા (Uncle):</span>
                                 <p className="text-[11px] text-text-secondary mt-0.5">
-                                  {uncleOptions.length > 0 
-                                    ? 'પિતરાઈ ભાઈ/બહેન ક્યા કાકાના સંતાન છે તે પસંદ કરો (Middle Name આપોઆપ આવી જશે):' 
+                                  {uncleOptions.length > 0
+                                    ? 'પિતરાઈ ભાઈ/બહેન ક્યા કાકાના સંતાન છે તે પસંદ કરો (Middle Name આપોઆપ આવી જશે):'
                                     : 'પરિવારમાં કાકા (Uncle) લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ કાકાનું નામ લખી શકો છો.'}
                                 </p>
                               </div>
@@ -1798,8 +1795,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                               <div>
                                 <span className="font-bold text-text">પિતા / ભાઈ (Father / Brother):</span>
                                 <p className="text-[11px] text-text-secondary mt-0.5">
-                                  {brotherOptions.length > 0 
-                                    ? 'ભત્રીજા/ભત્રીજીના પિતા (ભાઈ) પસંદ કરો (Middle Name આપોઆપ આવી જશે):' 
+                                  {brotherOptions.length > 0
+                                    ? 'ભત્રીજા/ભત્રીજીના પિતા (ભાઈ) પસંદ કરો (Middle Name આપોઆપ આવી જશે):'
                                     : 'પરિવારમાં કોઈ ભાઈ લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ પિતાનું નામ લખી શકો છો.'}
                                 </p>
                               </div>
@@ -1839,8 +1836,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                               <div>
                                 <span className="font-bold text-text">પિતા / દીકરો (Father / Son):</span>
                                 <p className="text-[11px] text-text-secondary mt-0.5">
-                                  {sonOptions.length > 0 
-                                    ? 'પૌત્ર/પૌત્રીના પિતા (દીકરો) પસંદ કરો (Middle Name આપોઆપ આવી જશે):' 
+                                  {sonOptions.length > 0
+                                    ? 'પૌત્ર/પૌત્રીના પિતા (દીકરો) પસંદ કરો (Middle Name આપોઆપ આવી જશે):'
                                     : 'પરિવારમાં કોઈ દીકરો લિસ્ટેડ નથી. તમે ઉપર Middle Name માં સીધું જ પિતાનું નામ લખી શકો છો.'}
                                 </p>
                               </div>

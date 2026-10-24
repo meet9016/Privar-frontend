@@ -36,6 +36,7 @@ export const MEMBER_ENDPOINTS = {
   MASTERS_PATTI_PARA_PARGANA: '/masters/patti-para-pargana',
   MASTERS_SUB_CASTE: '/masters/sub-caste',
   MASTERS_RELATIONSHIP: '/masters/relationship',
+  MASTERS_STANDARD_LEVEL: '/masters/standard-level',
   MASTERS_DINI_TALIM: '/masters/dini-talim'
 }
 
