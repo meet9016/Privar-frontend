@@ -7,6 +7,12 @@ import api from '../lib/api'
 import { MASTER_ENDPOINTS } from '../utils/endpoints'
 import usePermissions from '../hooks/usePermissions'
 
+export const STANDARD_LEVEL_OPTIONS = [
+  { value: 'Standard / School Level', label: 'Standard / School Level' },
+  { value: 'Graduation (Bachelor Degree)', label: 'Graduation (Bachelor Degree)' },
+  { value: 'Post Graduation (Master Degree)', label: 'Post Graduation (Master Degree)' }
+]
+
 const parentFieldsConfig = {
   state: { source: MASTER_ENDPOINTS.COUNTRY, label: 'Country', key: 'name' },
   city: { source: MASTER_ENDPOINTS.STATE, label: 'State', key: 'name' },
@@ -34,32 +40,70 @@ export default function MasterPage({ type, headerLeftContent }) {
   }, [type, parentConfig])
 
   const fields = useMemo(() => [
-    ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*', className: 'sm:col-span-2' }] : []),
-    { name: 'name', label: `${label} Name (English)`, required: true, placeholder: type === 'relationship' ? 'e.g. Son-in-law, Sister' : `${label} Name` },
-    ...(type === 'relationship' ? [
-      { name: 'gujarati_name', label: 'Gujarati Name (ગુજરાતી નામ)', required: false, placeholder: 'દા.ત. જમાઈ, બહેન', transliterate: 'gu' },
-      { name: 'hindi_name', label: 'Hindi Name (हिंदी नाम - Optional)', required: false, placeholder: 'દા.ત. दामाद, बहन', transliterate: 'hi' },
-      { name: 'description', label: 'Relationship Meaning / Details (સમજૂતી)', type: 'textarea', required: false, placeholder: 'દા.ત. દીકરીના પતિ, પિતાની બહેન...', transliterate: 'gu' }
-    ] : []),
-    ...(parentConfig ? [{ 
-      name: 'parent_id', 
-      label: parentConfig.label,
-      type: 'select-remote',
-      required: true,
-      source: parentConfig.source
-    }] : []),
+    ...(type === 'standard-level' ? [
+      {
+        name: 'level',
+        label: 'Standard / Level',
+        type: 'select',
+        required: true,
+        placeholder: 'Select Standard / Level',
+        options: STANDARD_LEVEL_OPTIONS
+      },
+      {
+        name: 'name',
+        label: 'Name / Degree Title',
+        required: true,
+        placeholder: 'e.g. 10th, 12th, B.Com, B.Sc, M.Sc, MBA'
+      }
+    ] : [
+      ...(type === 'business' ? [{ name: 'image', label: 'Image', type: 'file', accept: 'image/*', className: 'sm:col-span-2' }] : []),
+      { name: 'name', label: `${label} Name (English)`, required: true, placeholder: type === 'relationship' ? 'e.g. Son-in-law, Sister' : `${label} Name` },
+      ...(type === 'relationship' ? [
+        { name: 'gujarati_name', label: 'Gujarati Name (ગુજરાતી નામ)', required: false, placeholder: 'દા.ત. જમાઈ, બહેન', transliterate: 'gu' },
+        { name: 'hindi_name', label: 'Hindi Name (हिंदी नाम - Optional)', required: false, placeholder: 'દા.ત. दामाद, बहन', transliterate: 'hi' },
+        { name: 'description', label: 'Relationship Meaning / Details (સમજૂતી)', type: 'textarea', required: false, placeholder: 'દા.ત. દીકરીના પતિ, પિતાની બહેન...', transliterate: 'gu' }
+      ] : []),
+      ...(parentConfig ? [{ 
+        name: 'parent_id', 
+        label: parentConfig.label,
+        type: 'select-remote',
+        required: true,
+        source: parentConfig.source
+      }] : [])
+    ]),
     { name: 'status', label: 'Status', type: 'select', required: true, defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
   ], [label, type, parentConfig])
 
   const columns = useMemo(() => [
-    ...(type === 'business' ? [{ key: 'image', label: 'Image', type: 'image' }] : []),
-    { key: 'name', label: type === 'relationship' ? 'Relationship (English)' : 'Name' },
-    ...(type === 'relationship' ? [
-      { key: 'gujarati_name', label: 'Gujarati (ગુજરાતી)', render: (row) => row.gujarati_name ? <span className="font-semibold text-primary">({row.gujarati_name})</span> : '-' },
-      { key: 'hindi_name', label: 'Hindi (हिंदी)', render: (row) => row.hindi_name ? <span className="font-medium text-text-secondary">({row.hindi_name})</span> : '-' },
-      { key: 'description', label: 'Meaning (સમજૂતી)', render: (row) => row.description || '-' }
-    ] : []),
-    ...(parentConfig ? [{ key: 'parent_name', label: parentConfig.label, render: (row) => (row.parent_name && !/^[0-9a-fA-F]{24}$/.test(row.parent_name) ? row.parent_name : '-') }] : []),
+    ...(type === 'standard-level' ? [
+      {
+        key: 'level',
+        label: 'Standard / Level',
+        render: (row) => {
+          const badgeStyle = {
+            'Standard / School Level': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+            'Graduation (Bachelor Degree)': 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+            'Post Graduation (Master Degree)': 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800'
+          }[row.level] || 'bg-surface-secondary text-text-secondary border-border';
+
+          return (
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg border font-semibold text-xs transition-all shadow-2xs ${badgeStyle}`}>
+              {row.level || '-'}
+            </span>
+          );
+        }
+      },
+      { key: 'name', label: 'Name / Degree Title' }
+    ] : [
+      ...(type === 'business' ? [{ key: 'image', label: 'Image', type: 'image' }] : []),
+      { key: 'name', label: type === 'relationship' ? 'Relationship (English)' : 'Name' },
+      ...(type === 'relationship' ? [
+        { key: 'gujarati_name', label: 'Gujarati (ગુજરાતી)', render: (row) => row.gujarati_name ? <span className="font-semibold text-primary">({row.gujarati_name})</span> : '-' },
+        { key: 'hindi_name', label: 'Hindi (हिंदी)', render: (row) => row.hindi_name ? <span className="font-medium text-text-secondary">({row.hindi_name})</span> : '-' },
+        { key: 'description', label: 'Meaning (સમજૂતી)', render: (row) => row.description || '-' }
+      ] : []),
+      ...(parentConfig ? [{ key: 'parent_name', label: parentConfig.label, render: (row) => (row.parent_name && !/^[0-9a-fA-F]{24}$/.test(row.parent_name) ? row.parent_name : '-') }] : [])
+    ]),
     { key: 'status', label: 'Status' }
   ], [type, parentConfig])
 
@@ -78,9 +122,18 @@ export default function MasterPage({ type, headerLeftContent }) {
       placeholder={`All ${parentConfig.label}s`}
       options={[{ label: `All ${parentConfig.label}s`, value: '' }, ...parentOptions]}
     />
+  ) : type === 'standard-level' ? (
+    <Select
+      value={filterValue}
+      onChange={setFilterValue}
+      placeholder="All Standard / Levels"
+      options={[{ label: 'All Standard / Levels', value: '' }, ...STANDARD_LEVEL_OPTIONS]}
+    />
   ) : null;
 
-  const extraParams = filterValue ? { parent_id: filterValue } : {};
+  const extraParams = filterValue
+    ? (type === 'standard-level' ? { level: filterValue } : { parent_id: filterValue })
+    : {};
 
   return (
     <AdminCrudPage

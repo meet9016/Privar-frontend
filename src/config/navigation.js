@@ -51,6 +51,7 @@ export const engagementNavigation = [
 ]
 
 export const masterNavigation = [
+  { type: 'standard-level', label: 'Standard / Level', permission: 'masters.list' },
   { type: 'business', label: 'Business', permission: 'masters.list' },
   { type: 'bank-details', label: 'Bank Details', permission: 'masters.list', to: '/admin/bank-details' },
   { type: 'relationship', label: 'Relationship', permission: 'masters.list' },

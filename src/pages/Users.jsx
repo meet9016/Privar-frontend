@@ -246,14 +246,15 @@ export default function Users() {
     setFormLoading(true)
     setError('')
     try {
+      const jsonConfig = { headers: { 'Content-Type': 'application/json' } }
       if (selectedUser) {
         // Edit
         const targetId = selectedUser.id || selectedUser._id
-        await api.put(MEMBER_ENDPOINTS.UPDATE_MEMBER(targetId), formData)
+        await api.put(MEMBER_ENDPOINTS.UPDATE_MEMBER(targetId), formData, jsonConfig)
         toast.success('Member updated successfully')
       } else {
         // Create
-        await api.post(MEMBER_ENDPOINTS.CREATE_MEMBER, formData)
+        await api.post(MEMBER_ENDPOINTS.CREATE_MEMBER, formData, jsonConfig)
         toast.success('Member created successfully')
       }
       setIsModalOpen(false)
@@ -488,6 +489,9 @@ export default function Users() {
         { header: 'Mobile Number*', key: 'number', width: 20 },
         { header: 'Email', key: 'email', width: 28 },
         { header: 'Gender', key: 'gender', width: 14 },
+        { header: 'Marriage Status', key: 'marital_status', width: 18 },
+        { header: 'Education', key: 'education', width: 22 },
+        { header: 'Dini Talim', key: 'dinitalim', width: 20 },
         { header: 'Date of Birth', key: 'dob', width: 18 },
         { header: 'Anniversary', key: 'anniversary', width: 18 },
         { header: 'Blood Group', key: 'blood_group', width: 14 },
@@ -513,17 +517,17 @@ export default function Users() {
       // Example row 1 — Family Head
       ws.addRow([
         'Ramesh', 'Kumar', 'Patel', '9876543210', 'ramesh@email.com',
-        'Male', '15-08-1975', '20-11-2000', 'O+', 'Self', '123 Main Street, Surat', 'Yes'
+        'Male', 'Married', 'B.Com', 'Hafiz', '15-08-1975', '20-11-2000', 'O+', 'Self', '123 Main Street, Surat', 'Yes'
       ])
       // Example row 2 — Family Member
       ws.addRow([
         'Priya', 'Ramesh', 'Patel', '9876543211', '',
-        'Female', '05-06-1978', '', 'B+', 'Spouse', '', 'No'
+        'Female', 'Married', '12th Pass', '', '05-06-1978', '', 'B+', 'Spouse', '', 'No'
       ])
       // Example row 3 — Child
       ws.addRow([
         'Raj', 'Ramesh', 'Patel', '9876543212', '',
-        'Male', '12-03-2005', '', 'A+', 'Son', '', 'No'
+        'Male', 'Unmarried', 'B.Tech', 'Nazra', '12-03-2005', '', 'A+', 'Son', '', 'No'
       ])
 
       // Style example rows
@@ -560,7 +564,7 @@ export default function Users() {
 
   const IMPORT_COLUMNS = [
     'First Name', 'Middle Name', 'Last Name', 'Mobile Number',
-    'Email', 'Gender', 'Date of Birth', 'Anniversary',
+    'Email', 'Gender', 'Marriage Status', 'Education', 'Dini Talim', 'Date of Birth', 'Anniversary',
     'Blood Group', 'Relation', 'Address', 'Is Family Head'
   ]
   const REQUIRED_COLS = ['First Name', 'Mobile Number']
@@ -1831,6 +1835,8 @@ export default function Users() {
                           <th className="p-3.5">Member Name</th>
                           <th className="p-3.5">Relationship</th>
                           <th className="p-3.5">Gender</th>
+                          <th className="p-3.5">Marriage Status</th>
+                          <th className="p-3.5">Education & Dini</th>
                           <th className="p-3.5">Mobile Number</th>
                           <th className="p-3.5 text-center">Status</th>
                         </tr>
@@ -1922,6 +1928,34 @@ export default function Users() {
                                   )}
                                 </td>
                                 <td className="p-3.5 text-text-secondary">{member.gender || '-'}</td>
+                                <td className="p-3.5 text-text-secondary">
+                                  {member.marital_status ? (
+                                    <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${
+                                      member.marital_status === 'Married' ? 'bg-primary/10 text-primary border border-primary/20' :
+                                      member.marital_status === 'Unmarried' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+                                      'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                    }`}>
+                                      {member.marital_status}
+                                    </span>
+                                  ) : (
+                                    <span className="text-text-secondary/60">-</span>
+                                  )}
+                                </td>
+                                <td className="p-3.5 text-text-secondary">
+                                  <div className="flex flex-col gap-0.5 max-w-[160px]">
+                                    {member.education && (
+                                      <span className="text-xs font-medium text-text truncate" title={member.education}>
+                                        {member.education}
+                                      </span>
+                                    )}
+                                    {member.dinitalim && (
+                                      <span className="text-[11px] text-text-secondary font-medium truncate" title={member.dinitalim}>
+                                        દીની: {member.dinitalim}
+                                      </span>
+                                    )}
+                                    {!member.education && !member.dinitalim && <span className="text-text-secondary/60">-</span>}
+                                  </div>
+                                </td>
                                 <td className="p-3.5 text-text-secondary font-mono text-xs">{member.number || member.phone || '-'}</td>
                                 <td className="p-3.5 text-center">
                                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${Number(member.status ?? 1) === 1 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-surface-secondary text-text-secondary'}`}>

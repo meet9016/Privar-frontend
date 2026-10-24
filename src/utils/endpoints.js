@@ -158,6 +158,7 @@ export const MASTER_ENDPOINTS = {
   GALLERY_CATEGORY: '/masters/gallery-category',
   EXPENSE_CATEGORY: '/masters/expense-category',
   RELATIONSHIP: '/masters/relationship',
+  STANDARD_LEVEL: '/masters/standard-level',
   STANDARD: '/masters/standard',
   DEGREE: '/masters/degree',
   BACHELOR_DEGREE: '/masters/bachelor-degree',

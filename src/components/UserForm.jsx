@@ -297,6 +297,21 @@ const GENDER_OPTIONS = [
   { label: 'Other', value: 'Other' },
 ]
 
+export const MARITAL_STATUS_OPTIONS = [
+  { label: 'Married', value: 'Married' },
+  { label: 'Unmarried', value: 'Unmarried' },
+  { label: 'Divorced', value: 'Divorced' },
+]
+
+export const normalizeMaritalStatus = (val) => {
+  if (!val) return ''
+  const s = String(val).trim().toLowerCase()
+  if (s === 'married' || s === 'marrid' || s === 'parinit') return 'Married'
+  if (s === 'unmarried' || s === 'unmerrid' || s === 'single') return 'Unmarried'
+  if (s === 'divorced' || s === 'divose' || s === 'separated') return 'Divorced'
+  return val
+}
+
 export const capitalizeWords = (str) => {
   if (!str) return ''
   return str
@@ -321,6 +336,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   const [relationOptions, setRelationOptions] = useState(
     cachedMasters?.relationships?.length ? cachedMasters.relationships : RELATION_OPTIONS
   )
+  const [educationOptions, setEducationOptions] = useState(
+    cachedMasters?.educationLevels?.length ? cachedMasters.educationLevels : []
+  )
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -332,6 +350,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     dob: '',
     anniversary: '',
     blood_group: '',
+    education: '',
+    education_id: '',
+    dinitalim: '',
+    marital_status: '',
     relation: 'Self',
     is_committee: false,
     committee_role: '',
@@ -365,6 +387,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         if (cachedMasters.relationships?.length) {
           setRelationOptions(cachedMasters.relationships)
         }
+        if (cachedMasters.educationLevels?.length) {
+          setEducationOptions(cachedMasters.educationLevels)
+        }
         return
       }
 
@@ -374,12 +399,13 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           api.get(MEMBER_ENDPOINTS.MASTERS_STATE),
           api.get(MEMBER_ENDPOINTS.MASTERS_CITY),
           api.get(MEMBER_ENDPOINTS.MASTERS_VILLAGE).catch(() => ({ data: { data: [] } })),
-          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } }))
+          api.get(MEMBER_ENDPOINTS.MASTERS_RELATIONSHIP).catch(() => ({ data: { data: [] } })),
+          api.get('/masters/standard-level', { params: { status: 1, limit: 500 } }).catch(() => ({ data: { data: [] } }))
         ])
       }
 
       try {
-        const [cRes, sRes, ciRes, vRes, relRes] = await mastersPromise
+        const [cRes, sRes, ciRes, vRes, relRes, eduRes] = await mastersPromise
         const countryList = cRes.data?.data || []
         
         // Merge backend relationships with default RELATION_OPTIONS
@@ -395,12 +421,27 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         fetchedRels.forEach(r => relMap.set(r.value.toLowerCase(), r))
         const mergedRelations = Array.from(relMap.values())
 
+        // Standard / Level: Only active records are shown in dropdown (inactive must not be shown)
+        const fetchedEdu = (eduRes?.data?.data || eduRes?.data || [])
+          .filter(e => Number(e.status ?? 1) === 1)
+          .map(e => {
+            const masterId = String(e._id || e.id)
+            return {
+              label: e.level ? `${e.name} (${e.level})` : e.name,
+              value: masterId,
+              id: masterId,
+              name: e.name,
+              level: e.level || ''
+            }
+          })
+
         cachedMasters = {
           countries: countryList,
           states: sRes.data?.data || [],
           cities: ciRes.data?.data || [],
           villages: vRes.data?.data || [],
-          relationships: mergedRelations
+          relationships: mergedRelations,
+          educationLevels: fetchedEdu
         }
 
         setCountries(cachedMasters.countries)
@@ -408,6 +449,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         setCities(cachedMasters.cities)
         setVillages(cachedMasters.villages)
         setRelationOptions(mergedRelations)
+        setEducationOptions(fetchedEdu)
 
         // If country or state not yet selected, default to India and Gujarat
         setFormData(prev => {
@@ -456,6 +498,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         dob: formattedDob,
         anniversary: formattedAnniversary,
         blood_group: user.blood_group || '',
+        education: user.education || '',
+        education_id: user.education_id || '',
+        dinitalim: user.dinitalim || '',
+        marital_status: normalizeMaritalStatus(user.marital_status || ''),
         relation: 'Self',
         is_committee: user.is_committee || false,
         committee_role: user.committee_role || '',
@@ -475,6 +521,17 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         api.get(MEMBER_ENDPOINTS.GET_FAMILY_MEMBERS(headId))
           .then(res => {
             const rawList = res.data?.data || res.data || []
+            const headRecord = rawList.find(m => String(m.id || m._id) === String(headId) || m.relation === 'Self')
+            if (headRecord) {
+              setFormData(prev => ({
+                ...prev,
+                education: headRecord.education || prev.education || '',
+                education_id: headRecord.education_id || prev.education_id || '',
+                dinitalim: headRecord.dinitalim !== undefined ? headRecord.dinitalim : prev.dinitalim,
+                marital_status: headRecord.marital_status ? normalizeMaritalStatus(headRecord.marital_status) : prev.marital_status
+              }))
+            }
+
             const childMembers = rawList.filter(m => {
               const mId = String(m.id || m._id)
               return mId !== String(headId) && m.relation !== 'Self'
@@ -499,6 +556,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                 dob: mDob,
                 anniversary: mAnniversary,
                 blood_group: m.blood_group || '',
+                education: m.education || '',
+                education_id: m.education_id || '',
+                dinitalim: m.dinitalim || '',
+                marital_status: normalizeMaritalStatus(m.marital_status || ''),
                 number: m.number || '',
                 email: m.email || '',
                 image: m.image || m.profile_image || '',
@@ -534,6 +595,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         dob: '',
         anniversary: '',
         blood_group: '',
+        education: '',
+        education_id: '',
+        dinitalim: '',
+        marital_status: '',
         relation: 'Self',
         is_committee: false,
         committee_role: '',
@@ -550,9 +615,37 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       setDeletedMemberIds([])
       setExpandedMemberIndex(null)
     }
-  }, [user, targetMemberId, countries, states])
+  }, [user, targetMemberId])
 
   const activeRoles = useMemo(() => roles.filter((role) => Number(role.status ?? 1) === 1), [roles])
+
+  const headEducationOptions = useMemo(() => {
+    const list = [{ label: 'Select Education / Degree', value: '' }, ...educationOptions]
+    const curId = formData.education_id || ''
+    const curName = formData.education || ''
+    const isMatched = educationOptions.some(o =>
+      (curId && (String(o.value) === String(curId) || String(o.id) === String(curId))) ||
+      (curName && String(o.name).toLowerCase() === String(curName).toLowerCase())
+    )
+    if ((curId || curName) && !isMatched) {
+      list.push({ label: curName || curId, value: curId || curName })
+    }
+    return list
+  }, [educationOptions, formData.education, formData.education_id])
+
+  const memberEducationOptions = useMemo(() => {
+    const list = [{ label: 'Select Education / Degree', value: '' }, ...educationOptions]
+    const curId = editingMember?.education_id || ''
+    const curName = editingMember?.education || ''
+    const isMatched = educationOptions.some(o =>
+      (curId && (String(o.value) === String(curId) || String(o.id) === String(curId))) ||
+      (curName && String(o.name).toLowerCase() === String(curName).toLowerCase())
+    )
+    if ((curId || curName) && !isMatched) {
+      list.push({ label: curName || curId, value: curId || curName })
+    }
+    return list
+  }, [educationOptions, editingMember?.education, editingMember?.education_id])
   const isEditingSelf = Boolean(user && loggedInUser && [
     user._id,
     user.id,
@@ -625,6 +718,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       dob: '',
       anniversary: '',
       blood_group: '',
+      education: '',
+      education_id: '',
+      dinitalim: '',
+      marital_status: 'Married',
       number: '',
       email: '',
       image: '',
@@ -646,6 +743,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         const mappedGender = RELATION_GENDER_MAP[value]
         if (mappedGender) {
           current.gender = mappedGender
+        }
+        if (['Wife', 'Husband', 'Spouse', 'Bhabhi', 'Daughter-in-law', 'Son-in-law'].includes(value)) {
+          if (!current.marital_status) current.marital_status = 'Married'
         }
         if (value === 'Brother' || value === 'Sister') {
           const father = members.find((m, i) => m.relation === 'Father' && i !== expandedMemberIndex)
@@ -704,6 +804,9 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           if (field === 'relation') {
             const mappedGender = RELATION_GENDER_MAP[value]
             if (mappedGender) current.gender = mappedGender
+            if (['Wife', 'Husband', 'Spouse', 'Bhabhi', 'Daughter-in-law', 'Son-in-law'].includes(value)) {
+              if (!current.marital_status) current.marital_status = 'Married'
+            }
             if (value === 'Brother' || value === 'Sister') {
               const father = prev.find((m, i) => m.relation === 'Father' && i !== expandedMemberIndex)
               const fatherName = father?.first_name || formData.middle_name || ''
@@ -904,6 +1007,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
       first_name: capitalizeWords(formData.first_name),
       middle_name: capitalizeWords(formData.middle_name),
       last_name: capitalizeWords(formData.last_name),
+      education: (formData.education_id || formData.education || '').trim(),
+      education_id: (formData.education_id || formData.education || '').trim(),
+      dinitalim: (formData.dinitalim || '').trim(),
+      marital_status: formData.marital_status || '',
       familyHead: true,
       relation: 'Self',
       members: currentMembers.map(m => ({
@@ -918,6 +1025,10 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         dob: m.dob || null,
         anniversary: m.anniversary || null,
         blood_group: m.blood_group || '',
+        education: (m.education_id || m.education || '').trim(),
+        education_id: (m.education_id || m.education || '').trim(),
+        dinitalim: (m.dinitalim || '').trim(),
+        marital_status: m.marital_status || '',
         number: (m.number || '').trim(),
         email: (m.email || '').trim(),
         image: m.image || '',
@@ -1017,7 +1128,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           />
         </div>
 
-        {/* Row 2: Email, Blood Group, Gender, Assign Role (4 inputs) */}
+        {/* Row 2: Email, Gender, Marriage Status, Blood Group (4 inputs) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
           <Input
             label="Email Address"
@@ -1030,14 +1141,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             error={errors.email}
           />
           <Select
-            label="Blood Group"
-            value={formData.blood_group}
-            onChange={(val) => handleChange('blood_group', val)}
-            options={[{ label: 'Select Blood Group', value: '' }, ...BLOOD_GROUPS]}
-            disabled={isLoading}
-            searchable={true}
-          />
-          <Select
             label="Gender"
             value={formData.gender}
             onChange={(val) => handleChange('gender', val)}
@@ -1045,22 +1148,74 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             disabled={isLoading}
             searchable={false}
           />
-          {canManageRoleFields ? (
-            <Select
-              label="Assign Role"
-              value={formData.role_id}
-              onChange={(val) => handleChange('role_id', val)}
-              options={roleOptions}
-              placeholder="Select Role (Optional)"
-              disabled={isLoading}
-              searchable={true}
-            />
-          ) : (
-            <div className="hidden md:block" />
-          )}
+          <Select
+            label="Marriage Status"
+            value={formData.marital_status}
+            onChange={(val) => handleChange('marital_status', val)}
+            options={[{ label: 'Select Marriage Status', value: '' }, ...MARITAL_STATUS_OPTIONS]}
+            placeholder="Select Marriage Status"
+            disabled={isLoading}
+            searchable={false}
+          />
+          <Select
+            label="Blood Group"
+            value={formData.blood_group}
+            onChange={(val) => handleChange('blood_group', val)}
+            options={[{ label: 'Select Blood Group', value: '' }, ...BLOOD_GROUPS]}
+            disabled={isLoading}
+            searchable={true}
+          />
         </div>
 
-        {/* Row 3: Country, State, City, Village (4 inputs in 1 line) */}
+        {/* Row 3: Education, Dini Talim, Date of Birth, Anniversary Date (4 inputs) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
+          <Select
+            label="Education"
+            placeholder="Select Education / Degree"
+            value={(() => {
+              const curId = formData.education_id || ''
+              const curName = formData.education || ''
+              const match = educationOptions.find(o =>
+                (curId && (String(o.value) === String(curId) || String(o.id) === String(curId))) ||
+                (curName && String(o.name).toLowerCase() === String(curName).toLowerCase())
+              )
+              return match ? match.value : (curId || curName)
+            })()}
+            onChange={(val) => {
+              const selectedOpt = educationOptions.find(o => String(o.value) === String(val) || String(o.id) === String(val))
+              handleChange('education', selectedOpt?.name || val)
+              handleChange('education_id', val)
+            }}
+            options={headEducationOptions}
+            disabled={isLoading}
+            searchable={true}
+          />
+          <Input
+            label="Dini Talim"
+            placeholder="e.g. Hafiz, Alim, Nazra"
+            value={formData.dinitalim}
+            onChange={(e) => handleChange('dinitalim', e.target.value)}
+            disabled={isLoading}
+          />
+          <DatePicker
+            label="Date of Birth"
+            required
+            value={formData.dob}
+            onChange={(val) => handleChange('dob', val)}
+            disabled={isLoading}
+            placeholder="Select DOB"
+            error={errors.dob}
+          />
+          <DatePicker
+            label="Anniversary Date"
+            value={formData.anniversary}
+            onChange={(val) => handleChange('anniversary', val)}
+            disabled={isLoading}
+            placeholder="Select Anniversary"
+          />
+        </div>
+
+        {/* Row 4: Country, State, City, Village (4 inputs in 1 line) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
           <Select
             label="Country"
@@ -1113,24 +1268,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
           )}
         </div>
 
-        {/* Row 4: Date of Birth, Anniversary Date, Address, Status & Amount (Responsive grid) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 items-end">
-          <DatePicker
-            label="Date of Birth"
-            required
-            value={formData.dob}
-            onChange={(val) => handleChange('dob', val)}
-            disabled={isLoading}
-            placeholder="Select DOB"
-            error={errors.dob}
-          />
-          <DatePicker
-            label="Anniversary Date"
-            value={formData.anniversary}
-            onChange={(val) => handleChange('anniversary', val)}
-            disabled={isLoading}
-            placeholder="Select Anniversary"
-          />
+        {/* Row 5: Address, Assign Role, Status & Amount (4 items) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
           <Input
             label="Address"
             placeholder="Address (Area, Street)"
@@ -1138,6 +1277,19 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
             onChange={(e) => handleChange('address', e.target.value)}
             disabled={isLoading}
           />
+          {canManageRoleFields ? (
+            <Select
+              label="Assign Role"
+              value={formData.role_id}
+              onChange={(val) => handleChange('role_id', val)}
+              options={roleOptions}
+              placeholder="Select Role (Optional)"
+              disabled={isLoading}
+              searchable={true}
+            />
+          ) : (
+            <div className="hidden md:block" />
+          )}
           <Switch
             label="Status"
             checked={Number(formData.status ?? 1) === 1}
@@ -1648,8 +1800,8 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                         )
                       })()}
 
-                      {/* Row 2: Gender, Date of Birth, Anniversary Date, Blood Group, Mobile Number, Email */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-start">
+                      {/* Row 2: Gender, Marriage Status, Education, Dini Talim, Blood Group (5 inputs) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 items-start">
                         <Select
                           label="Gender"
                           value={editingMember.gender || 'Male'}
@@ -1657,6 +1809,55 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           options={GENDER_OPTIONS}
                           disabled={isLoading}
                         />
+                        <Select
+                          label="Marriage Status"
+                          value={editingMember.marital_status || ''}
+                          onChange={(val) => handleEditingMemberChange('marital_status', val)}
+                          options={[{ label: 'Select Marriage Status', value: '' }, ...MARITAL_STATUS_OPTIONS]}
+                          placeholder="Select Marriage Status"
+                          disabled={isLoading}
+                          searchable={false}
+                        />
+                        <Select
+                          label="Education"
+                          placeholder="Select Education / Degree"
+                          value={(() => {
+                            const curId = editingMember?.education_id || ''
+                            const curName = editingMember?.education || ''
+                            const match = educationOptions.find(o =>
+                              (curId && (String(o.value) === String(curId) || String(o.id) === String(curId))) ||
+                              (curName && String(o.name).toLowerCase() === String(curName).toLowerCase())
+                            )
+                            return match ? match.value : (curId || curName)
+                          })()}
+                          onChange={(val) => {
+                            const selectedOpt = educationOptions.find(o => String(o.value) === String(val) || String(o.id) === String(val))
+                            handleEditingMemberChange('education', selectedOpt?.name || val)
+                            handleEditingMemberChange('education_id', val)
+                          }}
+                          options={memberEducationOptions}
+                          disabled={isLoading}
+                          searchable={true}
+                        />
+                        <Input
+                          label="Dini Talim"
+                          placeholder="e.g. Hafiz, Alim, Nazra"
+                          value={editingMember.dinitalim || ''}
+                          onChange={(e) => handleEditingMemberChange('dinitalim', e.target.value)}
+                          disabled={isLoading}
+                        />
+                        <Select
+                          label="Blood Group"
+                          value={editingMember.blood_group || ''}
+                          onChange={(val) => handleEditingMemberChange('blood_group', val)}
+                          options={[{ label: 'Select Blood Group', value: '' }, ...BLOOD_GROUPS]}
+                          disabled={isLoading}
+                          searchable={true}
+                        />
+                      </div>
+
+                      {/* Row 3: Date of Birth, Anniversary Date, Mobile Number, Email (4 inputs) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 items-start">
                         <DatePicker
                           label="Date of Birth"
                           value={editingMember.dob || ''}
@@ -1670,14 +1871,6 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
                           onChange={(val) => handleEditingMemberChange('anniversary', val)}
                           disabled={isLoading}
                           placeholder="Select Anniversary"
-                        />
-                        <Select
-                          label="Blood Group"
-                          value={editingMember.blood_group || ''}
-                          onChange={(val) => handleEditingMemberChange('blood_group', val)}
-                          options={[{ label: 'Select Blood Group', value: '' }, ...BLOOD_GROUPS]}
-                          disabled={isLoading}
-                          searchable={true}
                         />
                         <div>
                           <Input
