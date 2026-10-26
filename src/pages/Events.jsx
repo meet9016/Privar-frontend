@@ -22,6 +22,7 @@ import EventRegistrations from './EventRegistration'
 import Tooltip from '../components/common/Tooltip'
 import { AuthContext } from '../context/AuthContext'
 import usePermissions from '../hooks/usePermissions'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
@@ -66,6 +67,7 @@ export default function Events({ headerLeftContent }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedId, setSelectedId] = useState('')
   const [existingImage, setExistingImage] = useState('')
+  const [previewImage, setPreviewImage] = useState(null)
   const [formData, setFormData] = useState(defaultForm)
   const [fieldErrors, setFieldErrors] = useState({})
   const [categories, setCategories] = useState([])
@@ -139,7 +141,7 @@ export default function Events({ headerLeftContent }) {
     try {
       const res = await api.get(`${MEMBER_ENDPOINTS.GET_MEMBERS}?limit=1000`)
       const list = res.data?.data || []
-      
+
       const heads = list.filter(m => m.familyHead || m.relation === 'Self')
       const nonHeads = list.filter(m => !m.familyHead && m.relation !== 'Self')
 
@@ -149,12 +151,12 @@ export default function Events({ headerLeftContent }) {
       heads.forEach(head => {
         const headId = String(head.id || head._id)
         const headMemberId = String(head.member_id || '')
-        
+
         const children = nonHeads.filter(c => {
           const cHeadId = String(c.family_head?.id || c.family_head?._id || c.family_head_id || '')
           const cParentId = String(c.parent_member_id || '')
           return (cHeadId && (cHeadId === headId || cHeadId === headMemberId)) ||
-                 (cParentId && (cParentId === headMemberId || cParentId === headId))
+            (cParentId && (cParentId === headMemberId || cParentId === headId))
         })
 
         const childIds = children.map(c => String(c.id || c._id))
@@ -467,7 +469,7 @@ export default function Events({ headerLeftContent }) {
       }
 
       Object.entries(bodyFields).forEach(([key, value]) => payload.append(key, value ?? ''))
-      
+
       if (formData.send_notification) {
         payload.append('send_notification', 'true')
         payload.append('target_type', formData.target_type || 'all')
@@ -593,15 +595,28 @@ export default function Events({ headerLeftContent }) {
       <Table
         columns={[
           {
-            header: 'Image',
-            key: 'image',
-            render: (row) => row.image ? (
-              <img src={assetUrl(row.image)} alt={row.title || 'Event'} className="h-12 w-16 rounded-lg object-cover border border-border" />
-            ) : (
+            header: 'Preview',
+            key: 'preview',
+            render: (row) => {
+              const img = row.image || (Array.isArray(row.images) ? row.images[0] : null)
+              return img ? (
+                <div
+                  className="relative inline-block cursor-pointer group"
+                  onClick={() => setPreviewImage({ url: assetUrl(img), title: row.title || 'Event Image' })}
+                  title="Click to preview image (Zoom/Pan)"
+                >
+                  <img
+                    src={assetUrl(img)}
+                    alt={row.title || 'Event'}
+                    className="h-12 w-16 rounded-lg object-cover border border-border group-hover:scale-105 transition-transform"
+                  />
+                </div>
+              ) : (
                 <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
                   <ImageOff className="h-5 w-5 text-text-secondary/40" />
                 </div>
-            )
+              )
+            }
           },
           {
             header: 'Title',
@@ -635,7 +650,7 @@ export default function Events({ headerLeftContent }) {
               const dateStr = formatDate(row.start_time || row.event_date)
               const startTimeStr = formatTime(row.start_time)
               const endTimeStr = formatTime(row.end_time)
-              const timeDisplay = (startTimeStr || endTimeStr) 
+              const timeDisplay = (startTimeStr || endTimeStr)
                 ? `${startTimeStr || ''}${endTimeStr ? ` - ${endTimeStr}` : ''}`
                 : ''
 
@@ -684,33 +699,33 @@ export default function Events({ headerLeftContent }) {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: (row) => ( <div className="flex items-center justify-start gap-2">
+            render: (row) => (<div className="flex items-center justify-start gap-2">
+              <button
+                onClick={() => handleViewRegistrations(row)}
+                className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all"
+                title="View Registrations"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
                 <button
-                  onClick={() => handleViewRegistrations(row)}
-                  className="p-2 text-text hover:text-black bg-white hover:bg-surface-secondary border border-border rounded-xl transition-all"
-                  title="View Registrations"
+                  onClick={() => openEdit(row)}
+                  className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
+                  title="Edit Event"
                 >
-                  <Eye className="w-3.5 h-3.5" />
+                  <Edit2 className="w-3.5 h-3.5" />
                 </button>
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button
-                    onClick={() => openEdit(row)}
-                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
-                    title="Edit Event"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button
-                    onClick={() => handleDelete(row)}
-                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
-                    title="Delete Event"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button
+                  onClick={() => handleDelete(row)}
+                  className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
+                  title="Delete Event"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             )
           }
         ]}
@@ -869,7 +884,7 @@ export default function Events({ headerLeftContent }) {
               ]}
             />
           </div>
-          
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="Venue / Location"
@@ -960,11 +975,10 @@ export default function Events({ headerLeftContent }) {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, target_type: 'all' })}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
-                      formData.target_type === 'all'
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${formData.target_type === 'all'
                         ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
                         : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
-                    }`}
+                      }`}
                   >
                     <Users size={16} className="shrink-0" />
                     <div className="min-w-0">
@@ -976,11 +990,10 @@ export default function Events({ headerLeftContent }) {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, target_type: 'committee' })}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
-                      formData.target_type === 'committee'
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${formData.target_type === 'committee'
                         ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
                         : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
-                    }`}
+                      }`}
                   >
                     <Shield size={16} className="shrink-0" />
                     <div className="min-w-0">
@@ -992,11 +1005,10 @@ export default function Events({ headerLeftContent }) {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, target_type: 'specific' })}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
-                      formData.target_type === 'specific'
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${formData.target_type === 'specific'
                         ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
                         : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
-                    }`}
+                      }`}
                   >
                     <UserCheck size={16} className="shrink-0" />
                     <div className="min-w-0">
@@ -1117,9 +1129,8 @@ export default function Events({ headerLeftContent }) {
                             <td className="px-4 py-2.5 text-text-secondary text-xs font-mono">{reg.number || '-'}</td>
                             <td className="px-4 py-2.5 text-center font-bold text-primary">{reg.total_attendee ?? 1}</td>
                             <td className="px-4 py-2.5 text-center">
-                              <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                reg.status === 'confirmed' ? 'bg-success-bg text-success-text border border-success-border' : 'bg-surface-secondary text-text-secondary'
-                              }`}>
+                              <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-semibold ${reg.status === 'confirmed' ? 'bg-success-bg text-success-text border border-success-border' : 'bg-surface-secondary text-text-secondary'
+                                }`}>
                                 {reg.status || 'confirmed'}
                               </span>
                             </td>
@@ -1140,6 +1151,13 @@ export default function Events({ headerLeftContent }) {
           </div>
         )}
       </Modal>
+
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title || 'Event Image'}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }

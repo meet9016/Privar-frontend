@@ -19,6 +19,7 @@ import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import Tooltip from '../components/common/Tooltip'
 import usePermissions from '../hooks/usePermissions'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 const toDateTimeLocal = (value) => {
   if (!value) return ''
@@ -53,6 +54,7 @@ export default function News({ headerLeftContent }) {
   const [existingImage, setExistingImage] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [memberOptions, setMemberOptions] = useState([])
+  const [previewImage, setPreviewImage] = useState(null)
 
   const emptyNewsForm = {
     title: '',
@@ -410,14 +412,24 @@ export default function News({ headerLeftContent }) {
       <Table
         columns={[
           {
-            header: 'Image',
-            key: 'image',
+            header: 'Preview',
+            key: 'preview',
             render: (row) => row.image ? (
-              <img src={assetUrl(row.image)} alt={row.title || 'Event'} className="h-12 w-16 rounded-lg object-cover border border-border" />
+              <div
+                className="relative inline-block cursor-pointer group"
+                onClick={() => setPreviewImage({ url: assetUrl(row.image), title: row.title || 'News Image' })}
+                title="Click to preview image (Zoom/Pan)"
+              >
+                <img
+                  src={assetUrl(row.image)}
+                  alt={row.title || 'News'}
+                  className="h-12 w-16 rounded-lg object-cover border border-border group-hover:scale-105 transition-transform"
+                />
+              </div>
             ) : (
-                <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
-                  <ImageOff className="h-5 w-5 text-text-secondary/40" />
-                </div>
+              <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
+                <ImageOff className="h-5 w-5 text-text-secondary/40" />
+              </div>
             )
           },
           {
@@ -694,6 +706,13 @@ export default function News({ headerLeftContent }) {
           </div>
         </form>
       </Modal>
+
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title || 'News Image'}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }

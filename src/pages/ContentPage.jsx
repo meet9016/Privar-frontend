@@ -176,7 +176,7 @@ const definitions = {
       { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
     ],
     columns: [
-      { key: 'image', label: 'Image', type: 'image' },
+      { key: 'image', label: 'Preview', type: 'image' },
       { key: 'title', label: 'Title' },
       { key: 'festival_date', label: 'Date', render: (row) => formatDate(row.festival_date) },
       { key: 'status', label: 'Status' }

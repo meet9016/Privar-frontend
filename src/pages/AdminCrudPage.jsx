@@ -18,6 +18,7 @@ import { toast } from '../lib/toast'
 import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
 import { transliterateText } from '../utils/transliterate'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customRowActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName, refreshTrigger }) {
@@ -48,6 +49,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   const [appliedFilterStatus, setAppliedFilterStatus] = useState('')
 
   const [imagePreview, setImagePreview] = useState(null)
+  const [imagePreviewModalState, setImagePreviewModalState] = useState(null)
   const [removedImages, setRemovedImages] = useState({})
   const [fieldErrors, setFieldErrors] = useState({})
 
@@ -510,10 +512,20 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 })()
               ) : c.type === 'image' ? (
                 row[c.key] ? (
-                  <img src={assetUrl(row[c.key])} alt={row.title || title} className="h-8 w-11 rounded-lg object-cover border border-border" />
+                  <div
+                    className="relative inline-block cursor-pointer group"
+                    onClick={() => setImagePreviewModalState({ url: assetUrl(row[c.key]), title: row.title || row.name || title || 'Image' })}
+                    title="Click to preview image (Zoom/Pan)"
+                  >
+                    <img
+                      src={assetUrl(row[c.key])}
+                      alt={row.title || title}
+                      className="h-12 w-16 rounded-lg object-cover border border-border group-hover:scale-105 transition-transform"
+                    />
+                  </div>
                 ) : (
-                  <div className="h-8 w-11 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
-                    <ImageOff className="h-4 w-4 text-text-secondary/40" />
+                  <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
+                    <ImageOff className="h-5 w-5 text-text-secondary/40" />
                   </div>
                 )
               ) : c.type === 'date' || c.key.includes('date') || c.key === 'dob' || c.key === 'anniversary' ? (
@@ -867,6 +879,13 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
           </div>
         </form>
       </Modal>
+
+      <ImagePreviewModal
+        isOpen={Boolean(imagePreviewModalState)}
+        imageUrl={imagePreviewModalState?.url}
+        title={imagePreviewModalState?.title || title || 'Image Preview'}
+        onClose={() => setImagePreviewModalState(null)}
+      />
     </div>
   )
 }

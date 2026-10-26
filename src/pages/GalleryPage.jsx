@@ -457,7 +457,7 @@ export default function GalleryPage({ headerLeftContent }) {
             header: 'Preview',
             key: 'preview',
             render: (row) => row.images?.[0] ? (
-              <div 
+              <div
                 className="relative inline-block cursor-pointer group"
                 onClick={() => setPreviewImage({ url: assetUrl(row.images[0]), title: row.category || 'Gallery Image' })}
                 title="Click to preview image (Zoom/Pan)"
