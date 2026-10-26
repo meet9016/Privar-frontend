@@ -15,6 +15,7 @@ import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import { AuthContext } from '../context/AuthContext'
 import usePermissions from '../hooks/usePermissions'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 export default function Businesses({ headerLeftContent }) {
   const navigate = useNavigate()
@@ -32,6 +33,7 @@ export default function Businesses({ headerLeftContent }) {
   const [selectedBusiness, setSelectedBusiness] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewBusiness, setViewBusiness] = useState(null)
+  const [previewImage, setPreviewImage] = useState(null)
   const location = useLocation()
 
   useEffect(() => {
@@ -271,9 +273,21 @@ export default function Businesses({ headerLeftContent }) {
             render: (biz) => (
               <div className="flex items-center gap-3">
                 {biz.image ? (
-                  <img src={biz.image} alt={biz.business_name} className="w-9 h-9 rounded-full object-cover border border-border shrink-0" />
+                  <img
+                    src={assetUrl(biz.image)}
+                    alt={biz.business_name}
+                    className="w-9 h-9 rounded-lg object-cover border border-border shrink-0 cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setPreviewImage({
+                        url: assetUrl(biz.image),
+                        title: biz.business_name
+                      })
+                    }}
+                    title="Click to zoom image"
+                  />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-surface-secondary border border-border flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-surface-secondary border border-border flex items-center justify-center shrink-0">
                     <Briefcase className="w-4 h-4 text-text-secondary" />
                   </div>
                 )}
@@ -385,9 +399,11 @@ export default function Businesses({ headerLeftContent }) {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
               {viewBusiness.image ? (
                 <img
-                  src={viewBusiness.image}
+                  src={assetUrl(viewBusiness.image)}
                   alt={viewBusiness.business_name}
-                  className="w-24 h-24 rounded-2xl object-cover border-2 border-white shadow-md shrink-0 bg-white"
+                  className="w-24 h-24 rounded-2xl object-cover border-2 border-white shadow-md shrink-0 bg-white cursor-pointer hover:opacity-85 hover:scale-105 transition-all"
+                  onClick={() => setPreviewImage({ url: assetUrl(viewBusiness.image), title: viewBusiness.business_name })}
+                  title="Click to zoom image"
                 />
               ) : (
                 <div className="w-24 h-24 rounded-2xl bg-white border border-border flex items-center justify-center shrink-0 shadow-md">
@@ -542,7 +558,13 @@ export default function Businesses({ headerLeftContent }) {
                 <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs space-y-2">
                   <div className="flex items-center gap-2.5">
                     {viewBusiness.owner_image ? (
-                      <img src={viewBusiness.owner_image} alt={viewBusiness.owner_name} className="w-10 h-10 rounded-full object-cover border border-border shrink-0" />
+                      <img
+                        src={assetUrl(viewBusiness.owner_image)}
+                        alt={viewBusiness.owner_name}
+                        className="w-10 h-10 rounded-full object-cover border border-border shrink-0 cursor-pointer hover:opacity-85 hover:scale-105 transition-all"
+                        onClick={() => setPreviewImage({ url: assetUrl(viewBusiness.owner_image), title: viewBusiness.owner_name })}
+                        title="Click to zoom image"
+                      />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-sm shrink-0">
                         {(viewBusiness.owner_name || 'M').charAt(0).toUpperCase()}
@@ -650,15 +672,14 @@ export default function Businesses({ headerLeftContent }) {
               </h4>
               <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
                 {viewBusiness.gallery_images.map((img, idx) => (
-                  <a
+                  <div
                     key={idx}
-                    href={img}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group relative w-16 h-16 rounded-xl overflow-hidden border border-border bg-surface-secondary hover:border-primary/50 transition-all block shadow-xs shrink-0"
+                    onClick={() => setPreviewImage({ url: assetUrl(img), title: `${viewBusiness.business_name} - Gallery ${idx + 1}` })}
+                    className="group relative w-16 h-16 rounded-xl overflow-hidden border border-border bg-surface-secondary hover:border-primary/50 transition-all block shadow-xs shrink-0 cursor-pointer"
+                    title="Click to zoom image"
                   >
-                    <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  </a>
+                    <img src={assetUrl(img)} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
                 ))}
               </div>
             </div>
@@ -672,6 +693,12 @@ export default function Businesses({ headerLeftContent }) {
         </div>
       )}
     </Modal>
+    <ImagePreviewModal
+      isOpen={Boolean(previewImage)}
+      imageUrl={previewImage?.url}
+      title={previewImage?.title}
+      onClose={() => setPreviewImage(null)}
+    />
   </div>
 )
 }

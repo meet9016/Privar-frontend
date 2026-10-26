@@ -33,6 +33,7 @@ import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import Tooltip from '../components/common/Tooltip'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-shadow'
 
@@ -57,6 +58,7 @@ export default function Expenses({ headerLeftContent }) {
   const [selectedExpense, setSelectedExpense] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [proofImage, setProofImage] = useState(null)
+  const [previewImage, setPreviewImage] = useState(null)
 
   const [removeImage, setRemoveImage] = useState(false)
 
@@ -428,9 +430,21 @@ export default function Expenses({ headerLeftContent }) {
               return (
                 <div className="flex items-center gap-2">
                   {member?.image ? (
-                    <img src={assetUrl(member.image)} alt={expense.committee_member_name} className="w-6 h-6 rounded-full object-cover border border-border" />
+                    <img
+                      src={assetUrl(member.image)}
+                      alt={expense.committee_member_name}
+                      className="w-7 h-7 rounded-lg object-cover border border-border shrink-0 cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPreviewImage({
+                          url: assetUrl(member.image),
+                          title: expense.committee_member_name
+                        })
+                      }}
+                      title="Click to zoom image"
+                    />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                       <User2 className="w-3.5 h-3.5 text-primary" />
                     </div>
                   )}
@@ -626,6 +640,12 @@ export default function Expenses({ headerLeftContent }) {
           </div>
         </form>
       </Modal>
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }

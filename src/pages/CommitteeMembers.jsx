@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter, X, Download } from 'lucide-react'
+import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter, X, Download, FileText } from 'lucide-react'
 import { saveAs } from 'file-saver'
 import api, { getCommitteeMembersList, getCommunitySurname } from '../lib/api'
 import { COMMITTEE_ENDPOINTS } from '../utils/endpoints'
@@ -9,6 +9,7 @@ import { normalizeRoles, unwrapApiData } from '../lib/roles'
 import { hasPermission } from '../lib/permissions'
 import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 import CommitteeMemberForm from '../components/CommitteeMemberForm'
 import Loader from '../components/common/Loader'
 import Button from '../components/common/Button'
@@ -77,6 +78,7 @@ export default function CommitteeMembers() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [previewImage, setPreviewImage] = useState(null)
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -241,6 +243,50 @@ export default function CommitteeMembers() {
     }
   };
 
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    try {
+      setExportingPdf(true);
+      const params = { _t: Date.now() };
+      if (search) params.search = search;
+      if (filters.status !== '') params.status = filters.status;
+      if (filters.role) params.role = filters.role;
+
+      // Pass theme config parameters (logo, phone, email) from theme config
+      const rawLogo = localStorage.getItem('web_webLogo') || localStorage.getItem('web_logo') || localStorage.getItem('web_appLogo') || '';
+      const phone = localStorage.getItem('web_phone') || '';
+      const email = localStorage.getItem('web_email') || '';
+      if (rawLogo) params.logo = rawLogo;
+      if (phone) params.phone = phone;
+      if (email) params.email = email;
+
+      const response = await api.get(COMMITTEE_ENDPOINTS.EXPORT_PDF, { params });
+
+      const payload = response.data?.data || response.data;
+      const downloadUrl = payload?.download_url;
+      const filename = payload?.filename || `Committee_Members_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+      if (downloadUrl) {
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (response.data instanceof Blob) {
+        saveAs(response.data, filename);
+      }
+
+      toast.success(response.data?.message || 'Committee members PDF exported successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to export PDF from server');
+      console.error(err);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
 
   return (
     <div className="space-y-6 text-text">
@@ -302,16 +348,26 @@ export default function CommitteeMembers() {
                 ]}
               />
             </FilterPopover>
-            <Button 
-              onClick={handleExportExcel} 
-              disabled={exporting}
+            <Button
+              onClick={handleExportExcel}
+              disabled={exporting || exportingPdf}
               isLoading={exporting}
-              variant="secondary" 
-              icon={<Download className="w-4 h-4" />} 
+              variant="secondary"
+              icon={<Download className="w-4 h-4" />}
               className="h-10 border-primary text-primary hover:bg-primary hover:text-white whitespace-nowrap"
             >
               {exporting ? 'Exporting...' : 'Export'}
             </Button>
+            {/* <Button 
+              onClick={handleExportPdf} 
+              disabled={exporting || exportingPdf}
+              isLoading={exportingPdf}
+              variant="secondary" 
+              icon={<FileText className="w-4 h-4" />} 
+              className="h-10 border-rose-500 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white whitespace-nowrap"
+            >
+              {exportingPdf ? 'Exporting PDF...' : 'PDF'}
+            </Button> */}
             {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
               <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10 whitespace-nowrap">
                 Add Member
@@ -328,18 +384,33 @@ export default function CommitteeMembers() {
           {
             header: 'Name',
             key: 'name',
-            render: (member) => (
-              <div className="flex items-center gap-3">
-                {member.image ? (
-                  <img src={member.image} alt="" className="h-9 w-9 rounded-lg object-cover border border-border" />
-                ) : (
-                  <div className="h-9 w-9 rounded-lg bg-surface-secondary flex items-center justify-center text-sm font-semibold text-text-secondary">{member.first_name?.slice(0, 1) || 'CM'}</div>
-                )}
-                <div>
-                  <div className="font-semibold text-text">{member.first_name} {member.middle_name} {member.last_name || ''}</div>
+            render: (member) => {
+              const fullName = [member.first_name, member.middle_name, member.last_name].filter(Boolean).join(' ') || 'Member';
+              return (
+                <div className="flex items-center gap-3">
+                  {member.image ? (
+                    <img
+                      src={member.image}
+                      alt={fullName}
+                      className="h-9 w-9 rounded-lg object-cover border border-border cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewImage({
+                          url: member.image,
+                          title: fullName
+                        });
+                      }}
+                      title="Click to zoom image"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-lg bg-surface-secondary flex items-center justify-center text-sm font-semibold text-text-secondary">{member.first_name?.slice(0, 1) || 'CM'}</div>
+                  )}
+                  <div>
+                    <div className="font-semibold text-text">{member.first_name} {member.middle_name} {member.last_name || ''}</div>
+                  </div>
                 </div>
-              </div>
-            )
+              );
+            }
           },
           {
             header: 'Contact',
@@ -436,13 +507,25 @@ export default function CommitteeMembers() {
         renderMobileCard={(member) => {
           const roleName = member.role_name || (roles.find(r => String(r.id || r._id) === String(member.role_id))?.name) || '-';
           const isActive = Number(member.status ?? 1) === 1;
-          
+
           return (
             <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   {member.image ? (
-                    <img src={member.image} alt="" className="h-12 w-12 rounded-lg object-cover border border-border" />
+                    <img
+                      src={member.image}
+                      alt=""
+                      className="h-12 w-12 rounded-lg object-cover border border-border cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewImage({
+                          url: member.image,
+                          title: [member.first_name, member.middle_name, member.last_name].filter(Boolean).join(' ') || 'Member'
+                        });
+                      }}
+                      title="Click to zoom image"
+                    />
                   ) : (
                     <div className="h-12 w-12 rounded-lg bg-surface-secondary flex items-center justify-center text-lg font-semibold text-text-secondary">{member.first_name?.slice(0, 1) || 'CM'}</div>
                   )}
@@ -511,6 +594,14 @@ export default function CommitteeMembers() {
       <Modal isOpen={isModalOpen} maxWidth="max-w-2xl" title={selected ? 'Edit Committee Member' : 'Add Committee Member'} onClose={() => setIsModalOpen(false)}>
         <CommitteeMemberForm member={selected} roles={roles} onSubmit={handleSubmit} isLoading={saving} onCancel={() => setIsModalOpen(false)} />
       </Modal>
+
+      {/* Image Zoom Preview Modal */}
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title || 'Committee Member'}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }

@@ -18,6 +18,7 @@ import { toast } from '../lib/toast'
 import { isValidEmail } from '../lib/validation'
 import useDebounce from '../hooks/useDebounce'
 import { transliterateText } from '../utils/transliterate'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
@@ -51,6 +52,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
   const [removedImages, setRemovedImages] = useState({})
   const [fieldErrors, setFieldErrors] = useState({})
   const [exporting, setExporting] = useState(false)
+  const [zoomImage, setZoomImage] = useState(null)
 
   const handleExportExcel = async () => {
     if (!exportEndpoint) return
@@ -538,13 +540,33 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
                   );
                 })()
               ) : c.type === 'image' ? (
-                row[c.key] ? (
-                  <img src={assetUrl(row[c.key])} alt={row.title || title} className="h-8 w-11 rounded-lg object-cover border border-border" />
-                ) : (
-                  <div className="h-8 w-11 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
-                    <ImageOff className="h-4 w-4 text-text-secondary/40" />
-                  </div>
-                )
+                (() => {
+                  const rawImg = row[c.key] || row.image || row.image_url || row.icon || row.logo;
+                  const targetImg = Array.isArray(rawImg) ? rawImg[0] : rawImg;
+                  const isValid = targetImg && typeof targetImg === 'string' && !['null', 'undefined', '[]', '{}', ''].includes(targetImg.trim());
+                  const url = isValid ? assetUrl(targetImg) : null;
+                  const altTitle = row.title || row.full_name || row.name || row.business || row.category || title || 'Image';
+
+                  return url ? (
+                    <img
+                      src={url}
+                      alt={altTitle}
+                      className="h-9 w-9 rounded-lg object-cover border border-border cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setZoomImage({
+                          url,
+                          title: altTitle
+                        });
+                      }}
+                      title="Click to zoom image"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center shrink-0">
+                      <ImageOff className="h-4 w-4 text-text-secondary/40" />
+                    </div>
+                  );
+                })()
               ) : c.type === 'date' || c.key.includes('date') || c.key === 'dob' || c.key === 'anniversary' ? (
                 <span>{c.render ? c.render(row) : formatDate(row[c.key])}</span>
               ) : c.render ? (
@@ -895,6 +917,12 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
           </div>
         </form>
       </Modal>
+      <ImagePreviewModal
+        isOpen={Boolean(zoomImage)}
+        imageUrl={zoomImage?.url}
+        title={zoomImage?.title}
+        onClose={() => setZoomImage(null)}
+      />
     </div>
   )
 }

@@ -21,6 +21,7 @@ import Button from '../../components/common/Button'
 import usePagination from '../../hooks/usePagination'
 import useDebounce from '../../hooks/useDebounce'
 import { toast } from '../../lib/toast'
+import ImagePreviewModal from '../../components/common/ImagePreviewModal'
 
 const PAYMENT_MODE_OPTIONS = [
   { label: 'All Modes', value: 'All' },
@@ -42,6 +43,38 @@ export default function PaymentHistory() {
   const [month, setMonth] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [previewImage, setPreviewImage] = useState(null)
+  const [themeConfig, setThemeConfig] = useState(() => ({
+    logo: localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || '',
+    name: localStorage.getItem('web_name') || '',
+    email: localStorage.getItem('web_email') || '',
+    phone: localStorage.getItem('web_phone') || ''
+  }))
+  const themeLogo = themeConfig.logo
+
+  useEffect(() => {
+    api.get('/get_app_theme')
+      .then(res => {
+        const d = res.data?.data || {}
+        const l = d.webLogo || d.appLogo || ''
+        const em = d.email || ''
+        const ph = d.phone || ''
+        const nm = d.name || ''
+
+        setThemeConfig(prev => ({
+          logo: l || prev.logo || localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || '',
+          name: nm || prev.name || localStorage.getItem('web_name') || '',
+          email: em || prev.email || localStorage.getItem('web_email') || '',
+          phone: ph || prev.phone || localStorage.getItem('web_phone') || ''
+        }))
+
+        if (l) localStorage.setItem('web_webLogo', l)
+        if (em) localStorage.setItem('web_email', em)
+        if (ph) localStorage.setItem('web_phone', ph)
+        if (nm) localStorage.setItem('web_name', nm)
+      })
+      .catch(() => {})
+  }, [])
 
   const fetchHistory = useCallback(async () => {
     setLoading(true)
@@ -78,29 +111,117 @@ export default function PaymentHistory() {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
 
+    const rawLogo = themeConfig.logo || localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || ''
+    const resolvedLogo = rawLogo ? assetUrl(rawLogo) : ''
+    const email = themeConfig.email || localStorage.getItem('web_email') || ''
+    const phone = themeConfig.phone || localStorage.getItem('web_phone') || ''
+    const orgName = themeConfig.name || localStorage.getItem('web_name') || ''
+
     printWindow.document.write(`
       <html>
         <head>
           <title>Mandal Contribution Receipt - ${payment.member_name}</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1e293b; }
-            .receipt-box { max-width: 500px; margin: 0 auto; border: 2px dashed #94a3b8; border-radius: 16px; padding: 30px; }
-            .header { text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; }
-            .title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
-            .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+            * { box-sizing: border-box; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+              padding: 30px 20px; 
+              color: #1e293b; 
+              background: #fff; 
+              margin: 0;
+            }
+            .receipt-box { 
+              max-width: 580px; 
+              margin: 0 auto; 
+              border: 2px dashed #cbd5e1; 
+              border-radius: 16px; 
+              padding: 24px 28px; 
+              background: #ffffff;
+            }
+            .header { 
+              display: flex; 
+              align-items: center; 
+              justify-content: space-between; 
+              gap: 16px; 
+              border-bottom: 2px solid #f1f5f9; 
+              padding-bottom: 16px; 
+              margin-bottom: 20px; 
+            }
+            .header-left { 
+              flex: 1 1 0; 
+              display: flex; 
+              align-items: center; 
+              justify-content: flex-start; 
+              min-width: 0; 
+            }
+            .logo-img { 
+              max-height: 60px; 
+              max-width: 140px; 
+              object-fit: contain; 
+            }
+            .header-center { 
+              flex: 2 1 0; 
+              text-align: center; 
+              min-width: 0; 
+            }
+            .title { 
+              font-size: 19px; 
+              font-weight: 800; 
+              color: #0f172a; 
+              margin: 0; 
+              line-height: 1.25; 
+            }
+            .subtitle { 
+              font-size: 12px; 
+              font-weight: 600; 
+              color: #64748b; 
+              margin-top: 4px; 
+              letter-spacing: 0.3px; 
+            }
+            .header-right { 
+              flex: 1 1 0; 
+              display: flex; 
+              flex-direction: column; 
+              align-items: flex-end; 
+              justify-content: center; 
+              gap: 4px; 
+              text-align: right; 
+              min-width: 0; 
+              font-size: 11px; 
+              color: #475569; 
+            }
+            .contact-item { 
+              font-weight: 500; 
+              word-break: break-word; 
+            }
             .row { display: flex; justify-content: space-between; margin: 12px 0; font-size: 14px; }
             .label { color: #64748b; font-weight: 500; }
             .val { font-weight: 700; color: #0f172a; }
             .amount-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 15px; text-align: center; margin: 20px 0; }
             .amount { font-size: 24px; font-weight: 900; color: #16a34a; }
             .footer { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+            @media print {
+              body { padding: 0; }
+              .receipt-box { border: 1px dashed #94a3b8; }
+            }
           </style>
         </head>
         <body>
           <div class="receipt-box">
             <div class="header">
-              <h2 class="title">PAYMENT RECEIPT</h2>
-              <div class="subtitle">Mandal Monthly Contribution</div>
+              <div class="header-left">
+                ${resolvedLogo ? `
+                  <img id="receipt-logo" src="${resolvedLogo}" alt="Logo" class="logo-img" />
+                ` : ''}
+              </div>
+              <div class="header-center">
+                <h2 class="title">PAYMENT RECEIPT</h2>
+                <div class="subtitle">Mandal Monthly Contribution</div>
+              </div>
+              <div class="header-right">
+                ${phone ? `<div class="contact-item">${phone}</div>` : ''}
+                ${email ? `<div class="contact-item">${email}</div>` : ''}
+              </div>
             </div>
             
             <div class="row">
@@ -133,11 +254,19 @@ export default function PaymentHistory() {
 
             <div class="footer">
               <p>Thank you for your active participation & support!</p>
-              <p>Parivar Community Platform</p>
+              <p>${orgName || 'Parivar'} Community Platform</p>
             </div>
           </div>
           <script>
-            window.onload = function() { window.print(); }
+            window.onload = function() {
+              var img = document.getElementById('receipt-logo');
+              if (img && !img.complete) {
+                img.onload = function() { window.print(); };
+                img.onerror = function() { window.print(); };
+              } else {
+                setTimeout(function() { window.print(); }, 150);
+              }
+            };
           </script>
         </body>
       </html>
@@ -235,13 +364,25 @@ export default function PaymentHistory() {
               const photo = u.profile_image || u.image
               return (
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                    {photo ? (
-                      <img src={assetUrl(photo)} alt={p.member_name} className="w-full h-full object-cover" />
-                    ) : (
+                  {photo ? (
+                    <img
+                      src={assetUrl(photo)}
+                      alt={p.member_name}
+                      className="w-9 h-9 rounded-lg object-cover border border-border shrink-0 cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPreviewImage({
+                          url: assetUrl(photo),
+                          title: p.member_name
+                        })
+                      }}
+                      title="Click to zoom image"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                       <User2 className="w-4 h-4 text-primary" />
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <div>
                     <p className="font-bold text-text text-sm leading-snug">{p.member_name}</p>
                     <p className="text-xs text-text-secondary">{p.member_number || u.number || '-'}</p>
@@ -329,6 +470,12 @@ export default function PaymentHistory() {
           limit,
           onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
         }}
+      />
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title}
+        onClose={() => setPreviewImage(null)}
       />
     </div>
   )

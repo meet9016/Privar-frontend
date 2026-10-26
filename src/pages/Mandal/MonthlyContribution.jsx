@@ -15,7 +15,8 @@ import {
   Filter,
   X,
   CreditCard,
-  RotateCcw
+  RotateCcw,
+  Download
 } from 'lucide-react'
 import api, { assetUrl, formatDate } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
@@ -31,6 +32,7 @@ import useDebounce from '../../hooks/useDebounce'
 import { toast } from '../../lib/toast'
 import { confirm } from '../../lib/confirm'
 import RecordPaymentModal from './RecordPaymentModal'
+import ImagePreviewModal from '../../components/common/ImagePreviewModal'
 
 const MONTH_OPTIONS = [
   { label: 'All Months', value: '' },
@@ -64,7 +66,7 @@ const PAYMENT_MODE_OPTIONS = [
 
 export default function MonthlyContribution({ mandalId, mandal }) {
   const currentMonthStr = new Date().toISOString().slice(0, 7) // 'YYYY-MM'
-  
+
   // Active Filters
   const [selectedMonth, setSelectedMonth] = useState(currentMonthStr)
   const [statusFilter, setStatusFilter] = useState('All')
@@ -88,6 +90,39 @@ export default function MonthlyContribution({ mandalId, mandal }) {
     payment_date: new Date().toISOString().slice(0, 10)
   })
   const [bulkPaidLoading, setBulkPaidLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [previewImage, setPreviewImage] = useState(null)
+  const [themeConfig, setThemeConfig] = useState(() => ({
+    logo: localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || '',
+    name: localStorage.getItem('web_name') || '',
+    email: localStorage.getItem('web_email') || '',
+    phone: localStorage.getItem('web_phone') || ''
+  }))
+  const themeLogo = themeConfig.logo
+
+  useEffect(() => {
+    api.get('/get_app_theme')
+      .then(res => {
+        const d = res.data?.data || {}
+        const l = d.webLogo || d.appLogo || ''
+        const em = d.email || ''
+        const ph = d.phone || ''
+        const nm = d.name || ''
+
+        setThemeConfig(prev => ({
+          logo: l || prev.logo || localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || '',
+          name: nm || prev.name || localStorage.getItem('web_name') || '',
+          email: em || prev.email || localStorage.getItem('web_email') || '',
+          phone: ph || prev.phone || localStorage.getItem('web_phone') || ''
+        }))
+
+        if (l) localStorage.setItem('web_webLogo', l)
+        if (em) localStorage.setItem('web_email', em)
+        if (ph) localStorage.setItem('web_phone', ph)
+        if (nm) localStorage.setItem('web_name', nm)
+      })
+      .catch(() => { })
+  }, [])
 
   // Table Data & Summary
   const [contributions, setContributions] = useState([])
@@ -136,6 +171,50 @@ export default function MonthlyContribution({ mandalId, mandal }) {
   useEffect(() => {
     fetchContributions()
   }, [fetchContributions])
+
+  // Export Contributions to Excel
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true)
+      const params = {
+        mandal_id: mandalId,
+        month: selectedMonth,
+        _t: Date.now()
+      }
+      if (statusFilter && statusFilter !== 'All') params.status = statusFilter
+      if (paymentModeFilter && paymentModeFilter !== 'All') params.payment_mode = paymentModeFilter
+      if (debouncedSearch) params.search = debouncedSearch
+
+      const response = await api.get(MANDAL_ENDPOINTS.EXPORT_CONTRIBUTIONS, { params })
+      const payload = response.data?.data || response.data
+      const downloadUrl = payload?.download_url
+      const filename = payload?.filename || `Contributions_${selectedMonth || 'all'}.xlsx`
+
+      if (downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else if (response.data instanceof Blob) {
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      }
+
+      toast.success(response.data?.message || 'Contributions exported successfully')
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to export contributions')
+      console.error(err)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   // Filter Popover handlers
   const handleOpenFilter = () => {
@@ -258,32 +337,119 @@ export default function MonthlyContribution({ mandalId, mandal }) {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
 
-    const mandalTitle = mandal?.name || 'Mandal'
+    const mandalTitle = mandal?.name || themeConfig.name || localStorage.getItem('web_name') || 'Mandal'
     const receiptNo = c.receipt_number || `MNDL-${(c.id || c._id).slice(-6).toUpperCase()}`
+    const rawLogo = themeConfig.logo || localStorage.getItem('web_logo') || localStorage.getItem('web_webLogo') || ''
+    const resolvedLogo = rawLogo ? assetUrl(rawLogo) : ''
+    const email = themeConfig.email || localStorage.getItem('web_email') || ''
+    const phone = themeConfig.phone || localStorage.getItem('web_phone') || ''
+    const orgName = themeConfig.name || localStorage.getItem('web_name') || ''
 
     printWindow.document.write(`
       <html>
         <head>
           <title>Mandal Contribution Receipt - ${c.member_name}</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1e293b; background: #fff; }
-            .receipt-box { max-width: 480px; margin: 0 auto; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 28px; }
-            .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
-            .title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
-            .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+            * { box-sizing: border-box; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+              padding: 30px 20px; 
+              color: #1e293b; 
+              background: #fff; 
+              margin: 0;
+            }
+            .receipt-box { 
+              max-width: 580px; 
+              margin: 0 auto; 
+              border: 2px dashed #cbd5e1; 
+              border-radius: 16px; 
+              padding: 24px 28px; 
+              background: #ffffff;
+            }
+            .header { 
+              display: flex; 
+              align-items: center; 
+              justify-content: space-between; 
+              gap: 16px; 
+              border-bottom: 2px solid #f1f5f9; 
+              padding-bottom: 16px; 
+              margin-bottom: 20px; 
+            }
+            .header-left { 
+              flex: 1 1 0; 
+              display: flex; 
+              align-items: center; 
+              justify-content: flex-start; 
+              min-width: 0; 
+            }
+            .logo-img { 
+              max-height: 60px; 
+              max-width: 140px; 
+              object-fit: contain; 
+            }
+            .header-center { 
+              flex: 2 1 0; 
+              text-align: center; 
+              min-width: 0; 
+            }
+            .title { 
+              font-size: 19px; 
+              font-weight: 800; 
+              color: #0f172a; 
+              margin: 0; 
+              line-height: 1.25; 
+            }
+            .subtitle { 
+              font-size: 12px; 
+              font-weight: 600; 
+              color: #64748b; 
+              margin-top: 4px; 
+              letter-spacing: 0.3px; 
+            }
+            .header-right { 
+              flex: 1 1 0; 
+              display: flex; 
+              flex-direction: column; 
+              align-items: flex-end; 
+              justify-content: center; 
+              gap: 4px; 
+              text-align: right; 
+              min-width: 0; 
+              font-size: 11px; 
+              color: #475569; 
+            }
+            .contact-item { 
+              font-weight: 500; 
+              word-break: break-word; 
+            }
             .row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 13px; }
             .label { color: #64748b; font-weight: 500; }
             .val { font-weight: 700; color: #0f172a; }
             .amount-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px; text-align: center; margin: 18px 0; }
             .amount { font-size: 24px; font-weight: 900; color: #16a34a; }
             .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 12px; }
+            @media print {
+              body { padding: 0; }
+              .receipt-box { border: 1px dashed #94a3b8; }
+            }
           </style>
         </head>
         <body>
           <div class="receipt-box">
             <div class="header">
-              <h2 class="title">${mandalTitle}</h2>
-              <div class="subtitle">Monthly Contribution Receipt</div>
+              <div class="header-left">
+                ${resolvedLogo ? `
+                  <img id="receipt-logo" src="${resolvedLogo}" alt="Logo" class="logo-img" />
+                ` : ''}
+              </div>
+              <div class="header-center">
+                <h2 class="title">${mandalTitle}</h2>
+                <div class="subtitle">Monthly Contribution Receipt</div>
+              </div>
+              <div class="header-right">
+                ${phone ? `<div class="contact-item">${phone}</div>` : ''}
+                ${email ? `<div class="contact-item">${email}</div>` : ''}
+              </div>
             </div>
             
             <div class="row">
@@ -316,11 +482,19 @@ export default function MonthlyContribution({ mandalId, mandal }) {
 
             <div class="footer">
               <p>Thank you for your active participation & support!</p>
-              <p>Parivar Community Platform</p>
+              <p>${orgName || 'Parivar'} Community Platform</p>
             </div>
           </div>
           <script>
-            window.onload = function() { window.print(); }
+            window.onload = function() {
+              var img = document.getElementById('receipt-logo');
+              if (img && !img.complete) {
+                img.onload = function() { window.print(); };
+                img.onerror = function() { window.print(); };
+              } else {
+                setTimeout(function() { window.print(); }, 150);
+              }
+            };
           </script>
         </body>
       </html>
@@ -429,6 +603,20 @@ export default function MonthlyContribution({ mandalId, mandal }) {
             </div>
           </FilterPopover>
 
+          {/* Export Excel Button */}
+          <Button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            isLoading={exporting}
+            variant="secondary"
+            size="sm"
+            icon={<Download className="w-4 h-4" />}
+            className="h-10 px-3.5 border-primary/30 text-primary hover:bg-primary hover:text-white whitespace-nowrap shadow-xs font-semibold text-xs rounded-xl"
+            title="Export Monthly Contributions to Excel"
+          >
+            {exporting ? 'Exporting...' : 'Export'}
+          </Button>
+
           {/* Mark All Paid (for entire month when pending members exist) */}
           {summary?.pending_members > 0 && selectedRows.length === 0 && (
             <button
@@ -536,13 +724,25 @@ export default function MonthlyContribution({ mandalId, mandal }) {
               const photo = u.profile_image || u.image
               return (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                    {photo ? (
-                      <img src={assetUrl(photo)} alt={c.member_name} className="w-full h-full object-cover" />
-                    ) : (
+                  {photo ? (
+                    <img
+                      src={assetUrl(photo)}
+                      alt={c.member_name}
+                      className="w-8 h-8 rounded-lg object-cover border border-border shrink-0 cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPreviewImage({
+                          url: assetUrl(photo),
+                          title: c.member_name
+                        })
+                      }}
+                      title="Click to zoom image"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                       <User2 className="w-4 h-4 text-primary" />
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <div>
                     <p className="font-bold text-text text-sm leading-snug">{c.member_name}</p>
                     <p className="text-xs text-text-secondary">{c.member_number || u.number || '-'}</p>
@@ -602,11 +802,10 @@ export default function MonthlyContribution({ mandalId, mandal }) {
             header: 'Status',
             key: 'status',
             render: (c) => (
-              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                c.status === 'Paid'
-                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'
-              }`}>
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${c.status === 'Paid'
+                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'
+                }`}>
                 {c.status === 'Paid' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                 {c.status}
               </span>
@@ -750,6 +949,13 @@ export default function MonthlyContribution({ mandalId, mandal }) {
         onClose={() => setIsModalOpen(false)}
         contribution={activeContribution}
         onSaved={fetchContributions}
+      />
+
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title}
+        onClose={() => setPreviewImage(null)}
       />
     </div>
   )

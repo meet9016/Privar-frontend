@@ -457,15 +457,21 @@ export default function GalleryPage({ headerLeftContent }) {
             header: 'Preview',
             key: 'preview',
             render: (row) => row.images?.[0] ? (
-              <div 
-                className="relative inline-block cursor-pointer group"
-                onClick={() => setPreviewImage({ url: assetUrl(row.images[0]), title: row.category || 'Gallery Image' })}
-                title="Click to preview image (Zoom/Pan)"
-              >
-                <img src={assetUrl(row.images[0])} alt={row.category || 'Gallery'} className="h-12 w-16 rounded-lg object-cover border border-border group-hover:scale-105 transition-transform" />
-              </div>
+              <img
+                src={assetUrl(row.images[0])}
+                alt={row.category || 'Gallery'}
+                className="h-12 w-16 rounded-lg object-cover border border-border cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewImage({
+                    url: assetUrl(row.images[0]),
+                    title: row.category || 'Gallery Image'
+                  });
+                }}
+                title="Click to zoom image"
+              />
             ) : (
-              <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
+              <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center shrink-0">
                 <ImageOff className="h-5 w-5 text-text-secondary/40" />
               </div>
             )

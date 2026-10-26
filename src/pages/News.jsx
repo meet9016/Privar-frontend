@@ -19,6 +19,7 @@ import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import Tooltip from '../components/common/Tooltip'
 import usePermissions from '../hooks/usePermissions'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 const toDateTimeLocal = (value) => {
   if (!value) return ''
@@ -53,6 +54,7 @@ export default function News({ headerLeftContent }) {
   const [existingImage, setExistingImage] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [memberOptions, setMemberOptions] = useState([])
+  const [previewImage, setPreviewImage] = useState(null)
 
   const emptyNewsForm = {
     title: '',
@@ -413,9 +415,21 @@ export default function News({ headerLeftContent }) {
             header: 'Image',
             key: 'image',
             render: (row) => row.image ? (
-              <img src={assetUrl(row.image)} alt={row.title || 'Event'} className="h-12 w-16 rounded-lg object-cover border border-border" />
+              <img
+                src={assetUrl(row.image)}
+                alt={row.title || 'News'}
+                className="h-12 w-16 rounded-lg object-cover border border-border cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setPreviewImage({
+                    url: assetUrl(row.image),
+                    title: row.title || 'News'
+                  })
+                }}
+                title="Click to zoom image"
+              />
             ) : (
-                <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center">
+                <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center shrink-0">
                   <ImageOff className="h-5 w-5 text-text-secondary/40" />
                 </div>
             )
@@ -694,6 +708,12 @@ export default function News({ headerLeftContent }) {
           </div>
         </form>
       </Modal>
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }

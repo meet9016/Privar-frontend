@@ -5,7 +5,8 @@ export const COMMITTEE_ENDPOINTS = {
   UPDATE_MEMBER: (id) => `/committee-members/${id}`,
   DELETE_MEMBER: (id) => `/committee-members/${id}`,
   GET_ROLES: '/roles',
-  EXPORT: '/committee-members/export'
+  EXPORT: '/committee-members/export',
+  EXPORT_PDF: '/committee-members/export-pdf'
 }
 
 // Roles & Permissions Module API Endpoints
@@ -176,6 +177,7 @@ export const MANDAL_ENDPOINTS = {
   TOGGLE_MEMBER: '/mandal/members/toggle',
   BULK_MEMBERS: '/mandal/members/bulk',
   GET_CONTRIBUTIONS: '/mandal/contributions',
+  EXPORT_CONTRIBUTIONS: '/mandal/contributions/export',
   UPDATE_CONTRIBUTION: (id) => `/mandal/contributions/${id}`,
   BULK_MARK_PAID: '/mandal/contributions/bulk-mark-paid',
   GET_HISTORY: '/mandal/history'

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Heart, User, MapPin, Calendar, Phone, Sparkles, Briefcase, GraduationCap } from 'lucide-react'
 import { memberApi, assetUrl, formatDate } from '../../lib/api'
 import { useWebTheme } from '../../hooks/useWebTheme'
+import ImagePreviewModal from '../../components/common/ImagePreviewModal'
 
 const getStoredWebTheme = () => {
   const colorKeys = [
@@ -20,6 +21,7 @@ export default function MatrimonialWebPage() {
   const [profiles, setProfiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [genderFilter, setGenderFilter] = useState('')
+  const [previewImage, setPreviewImage] = useState(null)
 
   useEffect(() => {
     const loadTheme = () => setTheme(getStoredWebTheme())
@@ -135,7 +137,15 @@ export default function MatrimonialWebPage() {
                         <img 
                           src={assetUrl(photo)} 
                           alt={profile.full_name || profile.name} 
-                          className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform duration-500" 
+                          className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform duration-500 cursor-pointer hover:opacity-90" 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPreviewImage({
+                              url: assetUrl(photo),
+                              title: profile.full_name || profile.name
+                            })
+                          }}
+                          title="Click to zoom photo"
                         />
                         <span className={`absolute -bottom-1.5 -right-1.5 p-1 rounded-full text-white shadow-md ${isFemale ? 'bg-pink-500' : 'bg-blue-500'}`}>
                           <Heart className="w-3 h-3 fill-current" />
@@ -233,6 +243,12 @@ export default function MatrimonialWebPage() {
           })}
         </div>
       )}
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }

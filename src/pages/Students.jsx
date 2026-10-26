@@ -18,6 +18,7 @@ import useDebounce from '../hooks/useDebounce'
 
 import { AuthContext } from '../context/AuthContext'
 import usePermissions from '../hooks/usePermissions'
+import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 export default function Students({ headerLeftContent }) {
   const { user: currentUser } = useContext(AuthContext)
@@ -32,6 +33,7 @@ export default function Students({ headerLeftContent }) {
   const [success, setSuccess] = useState('')
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [previewImage, setPreviewImage] = useState(null)
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [filters, setFilters] = useState({ status: '', year: '' })
@@ -474,19 +476,33 @@ export default function Students({ headerLeftContent }) {
           {
             key: 'student',
             header: 'Student',
-            render: (student) => (
-              <div className="flex items-center gap-3">
-                {student.student_image ? (
-                  <img src={assetUrl(student.student_image)} alt={student.student_name}
-                    className="w-9 h-9 rounded-full object-cover border border-border shrink-0" />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-surface-secondary border border-border flex items-center justify-center shrink-0">
-                    <GraduationCap className="w-4 h-4 text-text-secondary" />
-                  </div>
-                )}
-                <span className="font-semibold text-text">{student.surname} {student.student_name}</span>
-              </div>
-            )
+            render: (student) => {
+              const fullName = `${student.surname || ''} ${student.student_name || ''}`.trim() || 'Student';
+              return (
+                <div className="flex items-center gap-3">
+                  {student.student_image ? (
+                    <img
+                      src={assetUrl(student.student_image)}
+                      alt={fullName}
+                      className="w-9 h-9 rounded-lg object-cover border border-border shrink-0 cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewImage({
+                          url: assetUrl(student.student_image),
+                          title: fullName
+                        });
+                      }}
+                      title="Click to zoom image"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-surface-secondary border border-border flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-4 h-4 text-text-secondary" />
+                    </div>
+                  )}
+                  <span className="font-semibold text-text">{fullName}</span>
+                </div>
+              );
+            }
           },
           { key: 'father_name', header: 'Father' },
           { key: 'school_name', header: 'School' },
@@ -863,6 +879,12 @@ export default function Students({ headerLeftContent }) {
 
         </form>
       </Modal>
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }

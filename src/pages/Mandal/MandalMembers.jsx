@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Users, Search, UserCheck, UserMinus, User2, MapPin, Phone, RefreshCw, UserPlus, CheckSquare, Square } from 'lucide-react'
+import { Users, Search, UserCheck, UserMinus, User2, MapPin, Phone, RefreshCw, UserPlus } from 'lucide-react'
 import api, { assetUrl } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
 import Table from '../../components/common/Table'
@@ -10,6 +10,7 @@ import usePagination from '../../hooks/usePagination'
 import useDebounce from '../../hooks/useDebounce'
 import { toast } from '../../lib/toast'
 import { confirm } from '../../lib/confirm'
+import ImagePreviewModal from '../../components/common/ImagePreviewModal'
 
 export default function MandalMembers({ mandalId, mandal }) {
   const [members, setMembers] = useState([])
@@ -22,6 +23,7 @@ export default function MandalMembers({ mandalId, mandal }) {
   const [selectedIds, setSelectedIds] = useState([])
   const [actionLoadingId, setActionLoadingId] = useState(null)
   const [bulkLoading, setBulkLoading] = useState(false)
+  const [previewImage, setPreviewImage] = useState(null)
 
   const fetchMembers = useCallback(async () => {
     setLoading(true)
@@ -138,20 +140,21 @@ export default function MandalMembers({ mandalId, mandal }) {
     }
   }
 
-  const isAllPageSelected = members.length > 0 && members.every(m => selectedIds.includes(m.id || m._id))
+  const isAllPageSelected = members.length > 0 && members.every(m => selectedIds.map(String).includes(String(m.id || m._id)))
 
   const toggleSelectAll = () => {
     if (isAllPageSelected) {
-      const pageIds = members.map(m => m.id || m._id)
-      setSelectedIds(prev => prev.filter(id => !pageIds.includes(id)))
+      const pageIds = members.map(m => String(m.id || m._id))
+      setSelectedIds(prev => prev.filter(id => !pageIds.includes(String(id))))
     } else {
-      const pageIds = members.map(m => m.id || m._id)
-      setSelectedIds(prev => Array.from(new Set([...prev, ...pageIds])))
+      const pageIds = members.map(m => String(m.id || m._id))
+      setSelectedIds(prev => Array.from(new Set([...prev.map(String), ...pageIds])))
     }
   }
 
   const toggleSelectOne = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
+    const sId = String(id)
+    setSelectedIds(prev => prev.map(String).includes(sId) ? prev.filter(i => String(i) !== sId) : [...prev, sId])
   }
 
   return (
@@ -245,53 +248,39 @@ export default function MandalMembers({ mandalId, mandal }) {
 
       {/* Members Table */}
       <Table
+        selectable={true}
+        selectedRows={selectedIds}
+        onSelectionChange={setSelectedIds}
         columns={[
           {
-            header: (
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={toggleSelectAll}
-                  className="p-1 rounded hover:bg-surface-secondary cursor-pointer transition-colors text-text-secondary hover:text-primary"
-                  title={isAllPageSelected ? "Deselect page" : "Select all on page"}
-                >
-                  {isAllPageSelected ? (
-                    <CheckSquare className="w-4 h-4 text-primary" />
-                  ) : (
-                    <Square className="w-4 h-4" />
-                  )}
-                </button>
-                <span>Member</span>
-              </div>
-            ),
+            header: 'Member',
             key: 'member',
             render: (member) => {
-              const id = member.id || member._id
-              const isSelected = selectedIds.includes(id)
               const photo = member.profile_image || member.image
+              const name = member.name || member.full_name || 'Member'
               return (
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => toggleSelectOne(id)}
-                    className="p-1 rounded hover:bg-surface-secondary cursor-pointer transition-colors"
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="w-4 h-4 text-primary" />
-                    ) : (
-                      <Square className="w-4 h-4 text-text-secondary" />
-                    )}
-                  </button>
-                  <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                    {photo ? (
-                      <img src={assetUrl(photo)} alt={member.name} className="w-full h-full object-cover" />
-                    ) : (
+                  {photo ? (
+                    <img
+                      src={assetUrl(photo)}
+                      alt={name}
+                      className="w-9 h-9 rounded-lg object-cover border border-border shrink-0 cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPreviewImage({
+                          url: assetUrl(photo),
+                          title: name
+                        })
+                      }}
+                      title="Click to zoom image"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                       <User2 className="w-4 h-4 text-primary" />
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <div>
-                    <p className="font-bold text-text text-sm leading-snug">{member.name || member.full_name || '-'}</p>
-                    <p className="text-xs text-text-secondary">{member.member_id || member.id_number || member.number || '-'}</p>
+                    <p className="font-bold text-text text-sm leading-snug">{name}</p>
                   </div>
                 </div>
               )
@@ -351,11 +340,10 @@ export default function MandalMembers({ mandalId, mandal }) {
                   type="button"
                   onClick={() => handleToggle(id)}
                   disabled={isActionLoading}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs ${
-                    isEnrolled
-                      ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                      : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/30'
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs ${isEnrolled
+                    ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                    : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/30'
+                    }`}
                 >
                   {isEnrolled ? (
                     <>
@@ -390,6 +378,12 @@ export default function MandalMembers({ mandalId, mandal }) {
           limit,
           onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
         }}
+      />
+      <ImagePreviewModal
+        isOpen={Boolean(previewImage)}
+        imageUrl={previewImage?.url}
+        title={previewImage?.title}
+        onClose={() => setPreviewImage(null)}
       />
     </div>
   )

@@ -905,24 +905,28 @@ export default function Users() {
                     <div className="w-5.5 shrink-0" />
                   )}
                   <div className="flex items-center gap-2.5 whitespace-nowrap">
-                    <div 
-                      onClick={(e) => {
-                        const imgSrc = user.image || user.profile_image ? assetUrl(user.image || user.profile_image) : ''
-                        if (imgSrc) {
+                    {user.image || user.profile_image ? (
+                      <img
+                        src={assetUrl(user.image || user.profile_image)}
+                        alt={user.name || 'Member'}
+                        className="h-9 w-9 rounded-lg object-cover border border-border cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs shrink-0"
+                        onClick={(e) => {
                           e.stopPropagation();
-                          setImagePreview({ url: imgSrc, title: `${user.name} (${user.relation || 'Member'})` });
-                        }
-                      }}
-                      style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', maxWidth: '32px', maxHeight: '32px' }}
-                      className={`w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-xs text-primary shrink-0 overflow-hidden shadow-xs ${user.image || user.profile_image ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all' : ''}`}
-                      title={user.image || user.profile_image ? "Click to view photo (Zoom/Pan)" : ""}
-                    >
-                      {user.image || user.profile_image ? (
-                        <img src={assetUrl(user.image || user.profile_image)} alt={user.name} className="w-full h-full object-cover block" />
-                      ) : (
-                        (user.name || 'U').charAt(0).toUpperCase()
-                      )}
-                    </div>
+                          const imgSrc = assetUrl(user.image || user.profile_image);
+                          if (imgSrc) {
+                            setImagePreview({
+                              url: imgSrc,
+                              title: `${user.name || 'Member'} (${user.relation || 'Member'})`
+                            });
+                          }
+                        }}
+                        title="Click to zoom image"
+                      />
+                    ) : (
+                      <div className="h-9 w-9 rounded-lg bg-surface-secondary flex items-center justify-center font-bold text-xs text-text-secondary shrink-0 border border-border">
+                        {(user.name || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <span className="font-semibold text-text capitalize">{user.name}</span>
                     {user.isGroupParent || user.relation === 'Self' || user.familyHead ? (
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium shrink-0">
@@ -1958,24 +1962,28 @@ export default function Users() {
                                 <td className="p-3.5 text-xs text-text-secondary font-mono text-center">{idx + 1}</td>
                                 <td className="p-3.5 font-medium text-text">
                                   <div className="flex items-center gap-3">
-                                    <div 
-                                      onClick={(e) => {
-                                        const imgSrc = member.image || member.profile_image ? assetUrl(member.image || member.profile_image) : ''
-                                        if (imgSrc) {
+                                    {member.image || member.profile_image ? (
+                                      <img
+                                        src={assetUrl(member.image || member.profile_image)}
+                                        alt={member.name || 'Member'}
+                                        className="h-9 w-9 rounded-lg object-cover border border-border cursor-pointer hover:opacity-85 hover:scale-105 transition-all shadow-xs shrink-0"
+                                        onClick={(e) => {
                                           e.stopPropagation();
-                                          setImagePreview({ url: imgSrc, title: `${member.name || 'Member'} (${member.relation || 'Member'})` });
-                                        }
-                                      }}
-                                      style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', maxWidth: '32px', maxHeight: '32px' }}
-                                      className={`w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0 overflow-hidden shadow-xs ${member.image || member.profile_image ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all' : ''}`}
-                                      title={member.image || member.profile_image ? "Click to view photo (Zoom/Pan)" : ""}
-                                    >
-                                      {member.image || member.profile_image ? (
-                                        <img src={assetUrl(member.image || member.profile_image)} alt={member.name} className="w-full h-full object-cover block" />
-                                      ) : (
-                                        (member.name || 'M').charAt(0).toUpperCase()
-                                      )}
-                                    </div>
+                                          const imgSrc = assetUrl(member.image || member.profile_image);
+                                          if (imgSrc) {
+                                            setImagePreview({
+                                              url: imgSrc,
+                                              title: `${member.name || 'Member'} (${member.relation || 'Member'})`
+                                            });
+                                          }
+                                        }}
+                                        title="Click to zoom image"
+                                      />
+                                    ) : (
+                                      <div className="h-9 w-9 rounded-lg bg-surface-secondary flex items-center justify-center text-text-secondary font-bold text-xs shrink-0 border border-border">
+                                        {(member.name || 'M').charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
                                     <div className="flex items-center gap-2">
                                       <span className="capitalize font-semibold text-text">
                                         {member.name || [member.first_name, member.middle_name, member.last_name].filter(Boolean).join(' ')}
