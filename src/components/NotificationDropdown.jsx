@@ -1,8 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react'
-import { Bell, CheckCheck, Newspaper, Calendar, Megaphone, Cake, Heart } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Bell, CheckCheck, Newspaper, Calendar, Megaphone, Cake, Heart, HeartHandshake } from 'lucide-react'
 import { useNotifications } from '../context/NotificationContext'
 
 const typeIcon = (type) => {
+  if (type === 'appeal' || type === 'help_request') return <HeartHandshake className="w-4 h-4 text-amber-500" />
   if (type === 'news') return <Newspaper className="w-4 h-4 text-blue-500" />
   if (type === 'event') return <Calendar className="w-4 h-4 text-green-500" />
   if (type === 'birthday') return <Cake className="w-4 h-4 text-pink-500" />
@@ -20,6 +22,7 @@ const timeAgo = (date) => {
 }
 
 export default function NotificationDropdown({ variant = 'dark', iconColor, badgeColor }) {
+  const navigate = useNavigate()
   const { notifications, unreadCount, loading, markRead, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -34,6 +37,10 @@ export default function NotificationDropdown({ variant = 'dark', iconColor, badg
 
   const handleClick = (notif) => {
     if (!notif.is_read) markRead(notif._id)
+    setOpen(false)
+    if (notif.type === 'appeal' || notif.type === 'help_request') {
+      navigate('/appeals')
+    }
   }
 
   const btnClass = variant === 'dark'

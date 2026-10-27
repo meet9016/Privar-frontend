@@ -42,7 +42,11 @@ export default function Button({
       {...props}
     >
       {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-      {!isLoading && icon && <span className="mr-2">{icon}</span>}
+      {!isLoading && icon && (
+        <span className="mr-2 inline-flex items-center">
+          {React.isValidElement(icon) ? icon : React.createElement(icon, { className: 'w-4 h-4' })}
+        </span>
+      )}
       {children}
     </button>
   );

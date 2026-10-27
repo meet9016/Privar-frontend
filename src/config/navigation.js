@@ -34,6 +34,7 @@ export const servicesNavigation = [
   { to: '/admin/businesses', label: 'Businesses', icon: Briefcase, title: 'Business Index', permission: 'businesses.list' },
   { to: '/admin/job-vacancy', label: 'Job Vacancies', icon: Briefcase, title: 'Job Vacancies', permission: 'job-vacancy.list' },
   { to: '/admin/matrimonies', label: 'Matrimonies', icon: Users, title: 'Matrimony Profiles', permission: 'matrimonies.list' },
+  { to: '/admin/appeals', label: 'Help Appeals', icon: HeartHandshake, title: 'Appeal & Help Requests', permission: 'appeals.list' },
 ]
 
 export const mediaNavigation = [

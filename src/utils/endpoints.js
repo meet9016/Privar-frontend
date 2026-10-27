@@ -209,6 +209,19 @@ export const REGISTRATION_ENDPOINTS = {
   UPDATE_STATUS: (id) => `/mobile-registration/admin/${id}/status`
 }
 
+// Appeals & Help Requests Module API Endpoints
+export const APPEAL_ENDPOINTS = {
+  GET_APPEALS: '/appeals',
+  GET_MY_APPEALS: '/appeals/my',
+  GET_APPEAL: (id) => `/appeals/${id}`,
+  CREATE_APPEAL: '/appeals',
+  UPDATE_APPEAL: (id) => `/appeals/${id}`,
+  UPDATE_STATUS: (id) => `/appeals/${id}/status`,
+  SEND_NOTIFICATION: (id) => `/appeals/${id}/notify`,
+  GET_NOTIFICATION_HISTORY: (id) => `/appeals/${id}/notifications`,
+  GET_STATS: '/appeals/stats',
+  DELETE_APPEAL: (id) => `/appeals/${id}`
+}
 
 export default {
   COMMITTEE: COMMITTEE_ENDPOINTS,
@@ -229,6 +242,7 @@ export default {
   MANDAL: MANDAL_ENDPOINTS,
   MASTER: MASTER_ENDPOINTS,
   REGISTRATION: REGISTRATION_ENDPOINTS,
-  DEATH: DEATH_ENDPOINTS
+  DEATH: DEATH_ENDPOINTS,
+  APPEALS: APPEAL_ENDPOINTS
 }
 

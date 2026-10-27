@@ -10,6 +10,7 @@ import Posts from './Post'
 import News from './News'
 import Mandal from './Mandal'
 import MasterPage from './MasterPage'
+import AppealsAdminPage from './AppealsAdminPage'
 import { AuthContext } from '../context/AuthContext'
 import { hasPermission } from '../lib/permissions'
 import {
@@ -37,7 +38,8 @@ export const ServicesPage = () => {
   const tabs = useMemo(() => [
     { id: 'businesses', label: 'Businesses', icon: servicesNavigation.find(n => n.to?.includes('businesses'))?.icon, permission: 'businesses.list', component: (props) => <Businesses {...props} /> },
     { id: 'job-vacancy', label: 'Job Vacancies', icon: servicesNavigation.find(n => n.to?.includes('job-vacancy'))?.icon, permission: 'job-vacancy.list', component: (props) => <ContentPage type="job-vacancy" {...props} /> },
-    { id: 'matrimonies', label: 'Matrimonies', icon: servicesNavigation.find(n => n.to?.includes('matrimonies'))?.icon, permission: 'matrimonies.list', component: (props) => <ContentPage type="matrimonies" {...props} /> }
+    { id: 'matrimonies', label: 'Matrimonies', icon: servicesNavigation.find(n => n.to?.includes('matrimonies'))?.icon, permission: 'matrimonies.list', component: (props) => <ContentPage type="matrimonies" {...props} /> },
+    { id: 'appeals', label: 'Help Appeals', icon: servicesNavigation.find(n => n.to?.includes('appeals'))?.icon, permission: 'appeals.list', component: (props) => <AppealsAdminPage {...props} /> }
   ].filter(t => hasPermission(user, t.permission)), [user])
 
   return tabs.length > 0 ? <TabbedPage title="Services" tabs={tabs} storageKey="services" /> : null

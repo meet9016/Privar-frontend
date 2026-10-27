@@ -64,6 +64,7 @@ export default function WebHeader() {
     { label: 'Events', href: '/events', icon: Calendar },
     { label: 'Students', href: '/students', icon: GraduationCap },
     { label: 'Donors', href: '/donors', icon: HeartHandshake },
+    { label: 'Appeals', href: '/appeals', icon: HeartHandshake },
     { label: 'Contact', href: '/contact', icon: MessageSquare },
   ]
 

@@ -37,6 +37,8 @@ import StudentsWebPage from './pages/websitePages/StudentsWebPage'
 import DonorsWebPage from './pages/websitePages/DonorsWebPage'
 import JobVacancyWebPage from './pages/websitePages/JobVacancyWebPage'
 import MatrimonialWebPage from './pages/websitePages/MatrimonialWebPage'
+import AppealsWebPage from './pages/websitePages/AppealsWebPage'
+import AppealsAdminPage from './pages/AppealsAdminPage'
 import ContactUsPage from './pages/websitePages/ContactUsPage'
 import PrivacyPolicy from './components/webComponents/PrivacyAndPolicy'
 import TermsAndConditions from './components/webComponents/TermsAndConditions'
@@ -68,6 +70,7 @@ export default function App() {
           <Route path="/events" element={<EventsWebPage />} />
           <Route path="/students" element={<StudentsWebPage />} />
           <Route path="/donors" element={<DonorsWebPage />} />
+          <Route path="/appeals" element={<AppealsWebPage />} />
           <Route path="/matrimonial" element={<MatrimonialWebPage />} />
           <Route path="/jobs" element={<JobVacancyWebPage />} />
           <Route path="/job-vacancy" element={<JobVacancyWebPage />} />
@@ -116,6 +119,7 @@ export default function App() {
           <Route path="students" element={<Navigate to="/admin/activities?tab=students" replace />} />
           <Route path="expenses" element={<Navigate to="/admin/engagements?tab=expenses" replace />} />
           <Route path="matrimonies" element={<Navigate to="/admin/services?tab=matrimonies" replace />} />
+          <Route path="appeals" element={<Navigate to="/admin/services?tab=appeals" replace />} />
           <Route path="posts" element={<Navigate to="/admin/media?tab=festivals" replace />} />
           <Route path="news" element={<Navigate to="/admin/media?tab=news" replace />} />
           <Route path="festivals" element={<Navigate to="/admin/media?tab=festivals" replace />} />
