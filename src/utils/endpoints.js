@@ -218,7 +218,6 @@ export const APPEAL_ENDPOINTS = {
   UPDATE_APPEAL: (id) => `/appeals/${id}`,
   UPDATE_STATUS: (id) => `/appeals/${id}/status`,
   SEND_NOTIFICATION: (id) => `/appeals/${id}/notify`,
-  GET_NOTIFICATION_HISTORY: (id) => `/appeals/${id}/notifications`,
   GET_STATS: '/appeals/stats',
   DELETE_APPEAL: (id) => `/appeals/${id}`
 }
