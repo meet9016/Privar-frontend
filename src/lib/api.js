@@ -217,8 +217,8 @@ export const getDeathCardDownloadUrl = (id, format = 'png') => {
   return `${API_BASE}/api${DEATH_ENDPOINTS.DOWNLOAD(id, format)}${tokenQuery}`
 }
 
-export const getDeathCardLink = (id) =>
-  api.get(DEATH_ENDPOINTS.DOWNLOAD_LINK(id))
+export const getDeathCardLink = (id, params = {}) =>
+  api.get(DEATH_ENDPOINTS.DOWNLOAD_LINK(id), { params })
 
 export const getCertificateDownloadUrl = (id) => {
   if (!id) return ''

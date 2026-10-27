@@ -11,7 +11,7 @@ import DatePicker from '../components/DatePicker'
 import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck, Eye, Download, Copy } from 'lucide-react'
 import { toast } from '../lib/toast'
 import { confirm } from '../lib/confirm'
-import api, { getCommunityFullName, assetUrl, getUsersList } from '../lib/api'
+import api, { getCommunityFullName, assetUrl, getUsersList, getDeathCardLink, getDeathCardDownloadUrl } from '../lib/api'
 import Modal from '../components/Modal'
 import Button from '../components/common/Button'
 import VafatCardModal from '../components/VafatCardModal'
@@ -155,7 +155,7 @@ export const getAutoIslamicDate = (dateStr) => {
       if (day && m) {
         return `${day} ${m.value}`
       }
-    } catch (_) {}
+    } catch (_) { }
   }
   return ''
 }
@@ -936,6 +936,7 @@ export default function ContentPage({ type, headerLeftContent }) {
     janaza_time: '',
     janaza_place: '',
     kabrastan: '',
+    number: '',
     death_note: MAYYAT_DEFAULT_DUA
   })
   const [savingDeath, setSavingDeath] = useState(false)
@@ -1018,6 +1019,7 @@ export default function ContentPage({ type, headerLeftContent }) {
       janaza_time: '',
       janaza_place: '',
       kabrastan: '',
+      number: '',
       death_note: MAYYAT_DEFAULT_DUA
     })
     setDeathModalOpen(true)
@@ -1035,7 +1037,10 @@ export default function ContentPage({ type, headerLeftContent }) {
     }
   }, [deathModalOpen, isManualEntry, deathModalMode, manualMember.village])
 
-  const handleOpenEditDeathModal = (row) => {
+  const [openedFromVafatCard, setOpenedFromVafatCard] = useState(false)
+
+  const handleOpenEditDeathModal = (row, fromCard = false) => {
+    setOpenedFromVafatCard(Boolean(fromCard))
     setDeathModalMode('edit')
     setSelectedDeathMember(row)
     setIsManualEntry(false)
@@ -1056,6 +1061,7 @@ export default function ContentPage({ type, headerLeftContent }) {
       janaza_time: row.janaza_time || '',
       janaza_place: row.janaza_place || '',
       kabrastan: row.kabrastan || '',
+      number: row.number || row.phone || row.mobile || '',
       death_note: row.death_note || MAYYAT_DEFAULT_DUA
     })
     setDeathModalOpen(true)
@@ -1103,6 +1109,7 @@ export default function ContentPage({ type, headerLeftContent }) {
         janaza_time: deathFormData.janaza_time,
         janaza_place: deathFormData.janaza_place,
         kabrastan: deathFormData.kabrastan,
+        number: deathFormData.number ? deathFormData.number.trim() : '',
         death_note: deathFormData.death_note
       }
 
@@ -1123,9 +1130,38 @@ export default function ContentPage({ type, headerLeftContent }) {
         await api.put(`/users/${memberId}`, deathPayload)
       }
 
+      // Synchronize selectedvafatCardMember with the freshly saved details
+      setSelectedvafatCardMember(prev => {
+        if (!prev) return prev
+        const pId = prev._id || prev.id || prev.member_id
+        const mId = selectedDeathMember?.id || selectedDeathMember?._id
+        if (pId && mId && String(pId) === String(mId)) {
+          return {
+            ...prev,
+            ...deathPayload,
+            name: prev.name || selectedDeathMember?.name || selectedDeathMember?.full_name,
+            death_date: deathFormData.death_date,
+            vaar: deathFormData.vaar,
+            village: deathFormData.village,
+            address: deathFormData.address,
+            janaza_time: deathFormData.janaza_time,
+            janaza_place: deathFormData.janaza_place,
+            kabrastan: deathFormData.kabrastan,
+            number: deathFormData.number
+          }
+        }
+        return prev
+      })
+
       toast.success(deathModalMode === 'edit' ? 'vafat details updated successfully' : 'vafat recorded successfully')
       setDeathModalOpen(false)
       setRefreshTrigger(prev => prev + 1)
+
+      // If user came from the Vafat card view, automatically re-open it updated
+      if (openedFromVafatCard) {
+        setOpenedFromVafatCard(false)
+        setvafatCardModalOpen(true)
+      }
     } catch (err) {
       console.error('Save vafat Error:', err)
       toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to save vafat record')
@@ -1178,9 +1214,41 @@ export default function ContentPage({ type, headerLeftContent }) {
   const [vafatCardModalOpen, setvafatCardModalOpen] = useState(false)
   const [selectedvafatCardMember, setSelectedvafatCardMember] = useState(null)
 
-  const handleOpenvafatCard = (row) => {
-    setSelectedvafatCardMember(row)
+  const handleOpenvafatCard = async (row) => {
+    setSelectedvafatCardMember({ ...row })
     setvafatCardModalOpen(true)
+    const memberId = row?._id || row?.id || row?.member_id
+    if (memberId) {
+      try {
+        const res = await getDeathCardLink(memberId)
+        if (res.data?.data) {
+          setSelectedvafatCardMember(prev => ({
+            ...prev,
+            ...res.data.data
+          }))
+        }
+      } catch (err) {
+        console.warn('API call getDeathCardLink in handleOpenvafatCard:', err)
+      }
+    }
+  }
+
+  const handleEditFromVafatCard = (row) => {
+    const target = row || selectedvafatCardMember
+    if (target) {
+      handleOpenEditDeathModal(target, true)
+      setvafatCardModalOpen(false)
+    }
+  }
+
+  const handleDownloadDeathCardDirect = (row) => {
+    const memberId = row?._id || row?.id || row?.member_id
+    if (!memberId) {
+      handleOpenvafatCard(row)
+      return
+    }
+    const downloadUrl = getDeathCardDownloadUrl(memberId, 'png')
+    window.open(downloadUrl, '_blank')
   }
 
   const copyMayyatText = (row) => {
@@ -1252,15 +1320,15 @@ export default function ContentPage({ type, headerLeftContent }) {
         type="button"
         onClick={() => handleOpenvafatCard(row)}
         className="p-2 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
-        title="View & Download vafat Card / Announcement"
+        title="View & Edit vafat Announcement (API View)"
       >
         <Eye className="w-3.5 h-3.5" />
       </button>
       <button
         type="button"
-        onClick={() => handleOpenvafatCard(row)}
+        onClick={() => handleDownloadDeathCardDirect(row)}
         className="p-2 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-all cursor-pointer"
-        title="Download vafat Announcement"
+        title="Download Official vafat Card (Backend API PNG)"
       >
         <Download className="w-3.5 h-3.5" />
       </button>
@@ -1710,6 +1778,16 @@ export default function ContentPage({ type, headerLeftContent }) {
                   disabled={savingDeath}
                 />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Contact / Mobile Number"
+                  placeholder="e.g. 98250 12345"
+                  value={deathFormData.number}
+                  onChange={(e) => setDeathFormData(prev => ({ ...prev, number: e.target.value }))}
+                  disabled={savingDeath}
+                />
+              </div>
             </div>
 
             {/* Step 4: Dua / Remarks Card */}
@@ -1772,6 +1850,7 @@ export default function ContentPage({ type, headerLeftContent }) {
         <VafatCardModal
           isOpen={vafatCardModalOpen}
           onClose={() => { setvafatCardModalOpen(false); setSelectedvafatCardMember(null); }}
+          onOpenEdit={handleEditFromVafatCard}
           member={selectedvafatCardMember}
         />
       )}
@@ -1876,8 +1955,8 @@ export default function ContentPage({ type, headerLeftContent }) {
                         type="button"
                         onClick={() => handleSendSingleWish(member)}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95 ${cleanPhone
-                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                            : 'bg-surface-secondary text-text-secondary/60 hover:bg-surface-secondary/80 border border-border'
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          : 'bg-surface-secondary text-text-secondary/60 hover:bg-surface-secondary/80 border border-border'
                           }`}
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-white stroke-emerald-600" />
