@@ -1165,42 +1165,119 @@ export default function Users() {
                   const head = allList.find(m => m.relation === 'Self' || m.familyHead || String(m.id || m._id) === String(viewingUser.family_head?.id || viewingUser.id)) || viewingUser
                   const others = allList.filter(m => String(m.id || m._id) !== String(head.id || head._id) && m.relation !== 'Self')
                   
-                  // Categorize relatives (handling multiple naming & case variations)
-                  const isMatchRelation = (rel, target) => {
-                    if (!rel) return false
-                    const clean = rel.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-                    const targetClean = target.toLowerCase().replace(/[^a-z0-9]/g, '')
-                    return clean === targetClean || clean.includes(targetClean)
+                  // Categorize relatives with mutually-exclusive canonical roles (prevents substring matching bugs)
+                  const getCanonicalRole = (rel) => {
+                    if (!rel) return 'other'
+                    const raw = rel.toString().trim().toLowerCase()
+                    const clean = raw.replace(/[^a-z0-9]/g, '')
+
+                    // 1. Specific / Compound in-law & grand relations FIRST (prevents 'daughter-in-law' matching 'daughter')
+                    if (['daughterinlaw', 'vahu', 'bahu', 'putravadhu'].includes(clean) || raw.includes('પુત્રવધૂ') || raw.includes('વહુ')) {
+                      return 'daughter-in-law'
+                    }
+                    if (['soninlaw', 'jamai'].includes(clean) || raw.includes('જમાઈ')) {
+                      return 'son-in-law'
+                    }
+                    if (['granddaughter', 'poutri', 'dohitri'].includes(clean) || raw.includes('પૌત્રી') || raw.includes('દોહિત્રી')) {
+                      return 'granddaughter'
+                    }
+                    if (['grandson', 'poutra', 'dohitra'].includes(clean) || raw.includes('પૌત્ર') || raw.includes('દોહિત્ર')) {
+                      return 'grandson'
+                    }
+                    if (['grandfather', 'dada', 'nana'].includes(clean) || raw.includes('દાદા') || raw.includes('નાના')) {
+                      return 'grandfather'
+                    }
+                    if (['grandmother', 'dadi', 'nani'].includes(clean) || raw.includes('દાદી') || raw.includes('નાની')) {
+                      return 'grandmother'
+                    }
+                    if (['fatherinlaw', 'sasra'].includes(clean) || raw.includes('સસરા')) {
+                      return 'father-in-law'
+                    }
+                    if (['motherinlaw', 'sasu'].includes(clean) || raw.includes('સાસુ')) {
+                      return 'mother-in-law'
+                    }
+                    if (['sisterinlaw', 'bhabhi', 'bhabhiji', 'derani', 'jethani'].includes(clean) || raw.includes('ભાભી') || raw.includes('દેરાણી') || raw.includes('જેઠાણી')) {
+                      return 'bhabhi'
+                    }
+                    if (['brotherinlaw', 'salo', 'banevi', 'jeth', 'diyor'].includes(clean) || raw.includes('બનેવી') || raw.includes('સાળો')) {
+                      return 'brother-in-law'
+                    }
+
+                    // 2. Direct core relations (guaranteed NOT to match in-law or grand)
+                    if (['daughter', 'dikri', 'beti', 'putri'].includes(clean) || raw.includes('દીકરી') || raw.includes('પુત્રી')) {
+                      return 'daughter'
+                    }
+                    if (['son', 'dikro', 'beta', 'putra'].includes(clean) || raw.includes('દીકરો') || raw.includes('પુત્ર')) {
+                      return 'son'
+                    }
+                    if (['spouse', 'wife', 'patni'].includes(clean) || raw.includes('પત્ની')) {
+                      return 'wife'
+                    }
+                    if (['husband', 'pati'].includes(clean) || raw.includes('પતિ')) {
+                      return 'husband'
+                    }
+                    if (['father', 'pappa', 'pitaji', 'bapuji', 'pita'].includes(clean) || raw.includes('પિતા') || raw.includes('બાપુજી') || raw.includes('પપ્પા')) {
+                      return 'father'
+                    }
+                    if (['mother', 'mummy', 'mataji', 'ba', 'mata'].includes(clean) || raw.includes('માતા') || raw.includes('મમ્મી') || raw.includes('બા')) {
+                      return 'mother'
+                    }
+                    if (['brother', 'bhai'].includes(clean) || raw.includes('ભાઈ')) {
+                      return 'brother'
+                    }
+                    if (['sister', 'ben', 'bahen'].includes(clean) || raw.includes('બહેન') || raw.includes('બેન')) {
+                      return 'sister'
+                    }
+                    if (['uncle', 'kaka', 'mama', 'fua', 'masa'].includes(clean) || raw.includes('કાકા') || raw.includes('મામા') || raw.includes('ફુવા') || raw.includes('માસા')) {
+                      return 'uncle'
+                    }
+                    if (['aunt', 'kaki', 'mami', 'foi', 'masi'].includes(clean) || raw.includes('કાકી') || raw.includes('મામી') || raw.includes('ફોઈ') || raw.includes('માસી')) {
+                      return 'aunt'
+                    }
+                    if (['nephew', 'bhatrijo', 'bhano', 'bhanej'].includes(clean) || raw.includes('ભત્રીજો') || raw.includes('ભાણો')) {
+                      return 'nephew'
+                    }
+                    if (['niece', 'bhatriji', 'bhani', 'bhaniji'].includes(clean) || raw.includes('ભત્રીજી') || raw.includes('ભાણી')) {
+                      return 'niece'
+                    }
+                    if (['cousin', 'pitrai', 'pitraibhai', 'pitraiben'].includes(clean) || raw.includes('પિતરાઈ')) {
+                      return 'cousin'
+                    }
+                    if (['child', 'balak'].includes(clean) || raw.includes('બાળક')) {
+                      return 'child'
+                    }
+
+                    return 'other'
                   }
 
-                  const grandfather = others.find(m => isMatchRelation(m.relation, 'grandfather') || isMatchRelation(m.relation, 'dada') || isMatchRelation(m.relation, 'nana'))
-                  const grandmother = others.find(m => isMatchRelation(m.relation, 'grandmother') || isMatchRelation(m.relation, 'dadi') || isMatchRelation(m.relation, 'nani'))
+                  const grandfather = others.find(m => getCanonicalRole(m.relation) === 'grandfather')
+                  const grandmother = others.find(m => getCanonicalRole(m.relation) === 'grandmother')
 
-                  const father = others.find(m => isMatchRelation(m.relation, 'father') || isMatchRelation(m.relation, 'pappa') || isMatchRelation(m.relation, 'pitaji'))
-                  const mother = others.find(m => isMatchRelation(m.relation, 'mother') || isMatchRelation(m.relation, 'mummy') || isMatchRelation(m.relation, 'mataji'))
+                  const father = others.find(m => getCanonicalRole(m.relation) === 'father')
+                  const mother = others.find(m => getCanonicalRole(m.relation) === 'mother')
 
-                  const uncles = others.filter(m => isMatchRelation(m.relation, 'uncle') || isMatchRelation(m.relation, 'kaka') || isMatchRelation(m.relation, 'mama') || isMatchRelation(m.relation, 'fua'))
-                  const aunts = others.filter(m => isMatchRelation(m.relation, 'aunt') || isMatchRelation(m.relation, 'kaki') || isMatchRelation(m.relation, 'mami') || isMatchRelation(m.relation, 'foi'))
+                  const uncles = others.filter(m => getCanonicalRole(m.relation) === 'uncle')
+                  const aunts = others.filter(m => getCanonicalRole(m.relation) === 'aunt')
 
                   // Spouses & In-Laws
-                  const rawSpouses = others.filter(m => ['spouse', 'wife', 'husband', 'patni', 'pati'].some(r => isMatchRelation(m.relation, r)))
-                  const bhabhis = others.filter(m => ['bhabhi', 'bhabhiji', 'sister-in-law', 'sisterinlaw'].some(r => isMatchRelation(m.relation, r)))
+                  const rawSpouses = others.filter(m => ['wife', 'husband'].includes(getCanonicalRole(m.relation)))
+                  const bhabhis = others.filter(m => getCanonicalRole(m.relation) === 'bhabhi')
 
-                  const brothers = others.filter(m => isMatchRelation(m.relation, 'brother') || isMatchRelation(m.relation, 'bhai'))
-                  const sisters = others.filter(m => isMatchRelation(m.relation, 'sister') || isMatchRelation(m.relation, 'ben') || isMatchRelation(m.relation, 'bahen'))
-                  const cousins = others.filter(m => isMatchRelation(m.relation, 'cousin'))
-                  const nephews = others.filter(m => isMatchRelation(m.relation, 'nephew') || isMatchRelation(m.relation, 'bhatrijo'))
-                  const nieces = others.filter(m => isMatchRelation(m.relation, 'niece') || isMatchRelation(m.relation, 'bhatriji'))
+                  const brothers = others.filter(m => getCanonicalRole(m.relation) === 'brother')
+                  const sisters = others.filter(m => getCanonicalRole(m.relation) === 'sister')
+                  const cousins = others.filter(m => getCanonicalRole(m.relation) === 'cousin')
+                  const nephews = others.filter(m => getCanonicalRole(m.relation) === 'nephew')
+                  const nieces = others.filter(m => getCanonicalRole(m.relation) === 'niece')
 
-                  const sons = others.filter(m => isMatchRelation(m.relation, 'son') || isMatchRelation(m.relation, 'dikro') || isMatchRelation(m.relation, 'beta'))
-                  const daughters = others.filter(m => isMatchRelation(m.relation, 'daughter') || isMatchRelation(m.relation, 'dikri') || isMatchRelation(m.relation, 'beti'))
-                  const sonsInLaw = others.filter(m => isMatchRelation(m.relation, 'son-in-law') || isMatchRelation(m.relation, 'jamai'))
-                  const daughtersInLaw = others.filter(m => isMatchRelation(m.relation, 'daughter-in-law') || isMatchRelation(m.relation, 'vahu') || isMatchRelation(m.relation, 'bahu'))
-                  const otherChildren = others.filter(m => isMatchRelation(m.relation, 'child'))
+                  const sons = others.filter(m => getCanonicalRole(m.relation) === 'son')
+                  const daughters = others.filter(m => getCanonicalRole(m.relation) === 'daughter')
+                  const sonsInLaw = others.filter(m => getCanonicalRole(m.relation) === 'son-in-law')
+                  const daughtersInLaw = others.filter(m => getCanonicalRole(m.relation) === 'daughter-in-law')
+                  const otherChildren = others.filter(m => getCanonicalRole(m.relation) === 'child')
                   const allChildren = [...sons, ...daughters, ...sonsInLaw, ...daughtersInLaw, ...otherChildren]
 
-                  const grandsons = others.filter(m => isMatchRelation(m.relation, 'grandson') || isMatchRelation(m.relation, 'poutra') || isMatchRelation(m.relation, 'dohitra'))
-                  const granddaughters = others.filter(m => isMatchRelation(m.relation, 'granddaughter') || isMatchRelation(m.relation, 'poutri') || isMatchRelation(m.relation, 'dohitri'))
+                  const grandsons = others.filter(m => getCanonicalRole(m.relation) === 'grandson')
+                  const granddaughters = others.filter(m => getCanonicalRole(m.relation) === 'granddaughter')
                   const allGrandchildren = [...grandsons, ...granddaughters]
 
                   // Match Head Spouse vs Brother's Wife (Bhabhi)
@@ -1433,25 +1510,38 @@ export default function Users() {
                   // 2. Head's Children Level (Level 4)
                   const pairedChildNodes = []
                   const usedChildIds = new Set()
+                  const usedDilIds = new Set()
                   let attachedGrandchildren = false
 
                   // First: Sons (Beta) + Daughters-in-law (Bahu) -> Grandchildren (Grandson/Granddaughter) attach UNDER SONS!
-                  sons.forEach((s, idx) => {
+                  sons.forEach((s) => {
                     const sId = String(s.id || s._id)
                     usedChildIds.add(sId)
-                    const dil = daughtersInLaw[idx]
+                    const sFirst = (s.first_name || '').toLowerCase()
+
+                    // Match daughter-in-law by spouse_id or husband's name (middle name in Gujarat), or first available
+                    const dil = daughtersInLaw.find(d => {
+                      const dId = String(d.id || d._id)
+                      if (usedDilIds.has(dId)) return false
+                      if (d.spouse_id && String(d.spouse_id) === sId) return true
+                      const dMiddle = (d.middle_name || '').toLowerCase()
+                      if (sFirst && dMiddle && (dMiddle.includes(sFirst) || sFirst.includes(dMiddle))) return true
+                      return false
+                    }) || daughtersInLaw.find(d => !usedDilIds.has(String(d.id || d._id)))
+
                     const childGrandchildren = !attachedGrandchildren && grandchildNodes.length > 0 ? grandchildNodes : []
                     if (childGrandchildren.length > 0) attachedGrandchildren = true
 
                     if (dil) {
                       const dilId = String(dil.id || dil._id)
+                      usedDilIds.add(dilId)
                       usedChildIds.add(dilId)
                       pairedChildNodes.push(
                         renderTreeNode({
                           member1: s,
                           member2: dil,
                           label1: 'Son',
-                          label2: 'Daughter In Law',
+                          label2: 'Daughter-in-law',
                           spouseBadge: 'Married',
                           children: childGrandchildren,
                           childrenBadge: childGrandchildren.length > 0 ? 'Children' : null
@@ -1469,9 +1559,10 @@ export default function Users() {
                     }
                   })
 
-                  // Second: Daughters (Beti) -> Direct child cards in lineage chart (No Son-in-law)
+                  // Second: Daughters (Beti) -> Direct child cards in lineage chart (No Son-in-law, skip already used)
                   daughters.forEach(d => {
                     const dId = String(d.id || d._id)
+                    if (usedChildIds.has(dId)) return
                     usedChildIds.add(dId)
                     pairedChildNodes.push(
                       renderTreeNode({
@@ -1481,10 +1572,39 @@ export default function Users() {
                     )
                   })
 
-                  // Other direct children (excluding in-laws)
+                  // Third: Any unpaired Daughters-in-law (e.g. if son is not present in database)
+                  daughtersInLaw.forEach(dil => {
+                    const dilId = String(dil.id || dil._id)
+                    if (!usedChildIds.has(dilId)) {
+                      usedChildIds.add(dilId)
+                      pairedChildNodes.push(
+                        renderTreeNode({
+                          member1: dil,
+                          label1: 'Daughter-in-law'
+                        })
+                      )
+                    }
+                  })
+
+                  // Fourth: Sons-in-law (if any)
+                  sonsInLaw.forEach(sil => {
+                    const silId = String(sil.id || sil._id)
+                    if (!usedChildIds.has(silId)) {
+                      usedChildIds.add(silId)
+                      pairedChildNodes.push(
+                        renderTreeNode({
+                          member1: sil,
+                          label1: 'Son-in-law'
+                        })
+                      )
+                    }
+                  })
+
+                  // Fifth: Other direct children (excluding in-laws & already used)
                   otherChildren.forEach(c => {
                     const cId = String(c.id || c._id)
                     if (!usedChildIds.has(cId)) {
+                      usedChildIds.add(cId)
                       pairedChildNodes.push(
                         renderTreeNode({
                           member1: c,
