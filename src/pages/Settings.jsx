@@ -282,7 +282,16 @@ const DEFAULT_PRAYER_TIMES = {
   azanOffsetMinutes: 25,
   jamatOffsetMinutes: 15,
   qazaOffsetMinutes: 15,
-  notificationsEnabled: true
+  notificationsEnabled: true,
+  notifications_enabled: true
+}
+
+const isPrayerNotificationsActive = (pt) => {
+  if (!pt) return true
+  if (pt.notificationsEnabled === false || pt.notificationsEnabled === 'false' || pt.notificationsEnabled === 0 || pt.notificationsEnabled === '0') return false
+  if (pt.notifications_enabled === false || pt.notifications_enabled === 'false' || pt.notifications_enabled === 0 || pt.notifications_enabled === '0') return false
+  if (pt.enabled === false || pt.enabled === 'false' || pt.enabled === 0 || pt.enabled === '0') return false
+  return true
 }
 
 const DEFAULT_CONFIG = {
@@ -592,7 +601,7 @@ export default function SettingsPage() {
   const [testingPrayerLoading, setTestingPrayerLoading] = useState(false)
 
   const handleTestPrayerAlert = async () => {
-    if (config.prayerTimes?.notificationsEnabled === false) {
+    if (!isPrayerNotificationsActive(config.prayerTimes)) {
       toast.warning('Push Notifications are currently turned OFF. Turn ON the switch to send notifications.')
       return
     }
@@ -811,7 +820,13 @@ export default function SettingsPage() {
       payload.append('friday_push_time', to12Hour(config.fridayPushTime ?? '10:00 AM'))
 
       // Dynamic Prayer Times config
-      payload.append('prayerTimes', JSON.stringify(config.prayerTimes || DEFAULT_PRAYER_TIMES))
+      const isPtActive = isPrayerNotificationsActive(config.prayerTimes)
+      const prayerTimesToSave = {
+        ...(config.prayerTimes || DEFAULT_PRAYER_TIMES),
+        notificationsEnabled: isPtActive,
+        notifications_enabled: isPtActive
+      }
+      payload.append('prayerTimes', JSON.stringify(prayerTimesToSave))
       if (prayerLogoFile) {
         payload.append('prayerLogo', prayerLogoFile)
       }
@@ -1614,29 +1629,31 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex items-center gap-3 self-end sm:self-auto">
                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 transition-all ${
-                    (config.prayerTimes?.notificationsEnabled !== false)
+                    isPrayerNotificationsActive(config.prayerTimes)
                       ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
                       : 'bg-slate-500/10 text-slate-500 border-slate-500/20'
                   }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${
-                      (config.prayerTimes?.notificationsEnabled !== false)
+                      isPrayerNotificationsActive(config.prayerTimes)
                         ? 'bg-emerald-500 animate-pulse'
                         : 'bg-slate-400'
                     }`}></span>
-                    {(config.prayerTimes?.notificationsEnabled !== false) ? 'Active' : 'Off'}
+                    {isPrayerNotificationsActive(config.prayerTimes) ? 'Active' : 'Off'}
                   </span>
 
                   <label className="relative inline-flex items-center cursor-pointer select-none" title="Toggle Push Notifications ON / OFF">
                     <input
                       type="checkbox"
-                      checked={config.prayerTimes?.notificationsEnabled !== false}
+                      checked={isPrayerNotificationsActive(config.prayerTimes)}
                       onChange={async (e) => {
-                        const newEnabled = e.target.checked
+                        const newEnabled = Boolean(e.target.checked)
                         handlePrayerChange('notificationsEnabled', newEnabled)
+                        handlePrayerChange('notifications_enabled', newEnabled)
                         try {
                           const updatedPrayerTimes = {
                             ...(config.prayerTimes || DEFAULT_PRAYER_TIMES),
-                            notificationsEnabled: newEnabled
+                            notificationsEnabled: newEnabled,
+                            notifications_enabled: newEnabled
                           }
                           const fd = new FormData()
                           fd.append('prayerTimes', JSON.stringify(updatedPrayerTimes))
@@ -1644,6 +1661,7 @@ export default function SettingsPage() {
                           toast.success(newEnabled ? 'Push Notifications turned ON' : 'Push Notifications turned OFF')
                         } catch (err) {
                           console.error('Failed to toggle notification status:', err)
+                          toast.error('Failed to update notification status')
                         }
                       }}
                       className="sr-only peer"
@@ -1653,7 +1671,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {config.prayerTimes?.notificationsEnabled === false && (
+              {!isPrayerNotificationsActive(config.prayerTimes) && (
                 <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                   <span>Push notifications are currently turned <strong>OFF</strong>. Members will not receive any Azan, Jamat, or Qaza reminders on mobile.</span>
@@ -1783,12 +1801,12 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={handleTestPrayerAlert}
-                      disabled={testingPrayerLoading || config.prayerTimes?.notificationsEnabled === false}
+                      disabled={testingPrayerLoading || !isPrayerNotificationsActive(config.prayerTimes)}
                       className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Bell className="w-3.5 h-3.5" />
                       <span>
-                        {config.prayerTimes?.notificationsEnabled === false
+                        {!isPrayerNotificationsActive(config.prayerTimes)
                           ? 'Notifications Disabled (Turn ON to Send)'
                           : testingPrayerLoading
                             ? 'Sending Alert...'
