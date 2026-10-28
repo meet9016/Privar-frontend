@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, CheckCheck, Newspaper, Calendar, Megaphone, Cake, Heart, HeartHandshake } from 'lucide-react'
+import { Bell, CheckCheck, Newspaper, Calendar, Megaphone, Cake, Heart, HeartHandshake, Clock } from 'lucide-react'
 import { useNotifications } from '../context/NotificationContext'
 
 const typeIcon = (type) => {
@@ -9,6 +9,7 @@ const typeIcon = (type) => {
   if (type === 'event') return <Calendar className="w-4 h-4 text-green-500" />
   if (type === 'birthday') return <Cake className="w-4 h-4 text-pink-500" />
   if (type === 'anniversary') return <Heart className="w-4 h-4 text-rose-500" />
+  if (type === 'prayer_reminder') return <Clock className="w-4 h-4 text-emerald-600" />
   return <Megaphone className="w-4 h-4 text-primary" />
 }
 

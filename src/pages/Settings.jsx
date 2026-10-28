@@ -610,7 +610,8 @@ export default function SettingsPage() {
       const res = await api.post('/update_app_theme/test_push', {
         day: 'prayer',
         prayer: testingPrayer,
-        alertType: testingPrayerType
+        alertType: testingPrayerType,
+        prayerTimes: config.prayerTimes
       })
       toast.success(res.data?.message || `Test ${testingPrayerType.toUpperCase()} alert sent successfully! (Key: ${res.data?.key})`)
     } catch (err) {
@@ -1798,21 +1799,32 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleTestPrayerAlert}
-                      disabled={testingPrayerLoading || !isPrayerNotificationsActive(config.prayerTimes)}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Bell className="w-3.5 h-3.5" />
-                      <span>
-                        {!isPrayerNotificationsActive(config.prayerTimes)
-                          ? 'Notifications Disabled (Turn ON to Send)'
-                          : testingPrayerLoading
-                            ? 'Sending Alert...'
-                            : 'Send Test Alert'}
-                      </span>
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button
+                        type="button"
+                        onClick={handleTestPrayerAlert}
+                        disabled={testingPrayerLoading || !isPrayerNotificationsActive(config.prayerTimes)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Bell className="w-3.5 h-3.5" />
+                        <span>
+                          {!isPrayerNotificationsActive(config.prayerTimes)
+                            ? 'Notifications Disabled'
+                            : testingPrayerLoading
+                              ? 'Sending Alert...'
+                              : 'Send Test Alert'}
+                        </span>
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={saveLoading}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#0D7A53] hover:bg-[#0a6343] active:scale-98 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                        title="Save prayer timetable and reminder settings"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>{saveLoading ? 'Saving...' : 'Save Settings'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
