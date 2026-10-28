@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import { assetUrl } from '../lib/api';
 import leavesLeft from '../assets/prayer/leavesLeft.png';
 import leavesRight from '../assets/prayer/leavesRight.png';
-import jamatSealImg from '../assets/prayer/jamatSeal.png';
+import letterpadImg from '../assets/prayer/letterpad.png';
 import dividerFlourishImg from '../assets/prayer/dividerFlourish.png';
 import bottomLeftCornerImg from '../assets/prayer/bottomLeftCorner.png';
 import bottomRightCornerImg from '../assets/prayer/bottomRightCorner.png';
@@ -247,7 +247,7 @@ const NamazTimetableCard = forwardRef(({ prayerTimes = {}, className = "" }, ref
           ) : (
             <div className="relative flex flex-col items-center justify-center">
               <img
-                src={jamatSealImg}
+                src={letterpadImg}
                 alt={pt.title}
                 className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-md"
               />
