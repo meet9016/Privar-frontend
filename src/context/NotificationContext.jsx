@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import api from '../lib/api'
 import { getSocket, joinRoom } from '../lib/socket'
+import { toast } from '../lib/toast'
 import { AuthContext } from './AuthContext'
 
 export const NotificationContext = createContext()
@@ -20,7 +21,7 @@ export function NotificationProvider({ children }) {
       const data = res.data?.data || []
       setNotifications(Array.isArray(data) ? data : [])
       setUnreadCount(res.data?.pagination?.unread || 0)
-    } catch (_) {}
+    } catch (_) { }
     finally { setLoading(false) }
   }, [token])
 
@@ -38,6 +39,9 @@ export function NotificationProvider({ children }) {
     const handleNewNotif = (notif) => {
       setNotifications(prev => [{ ...notif, is_read: false }, ...prev])
       setUnreadCount(prev => prev + 1)
+      if (notif?.title) {
+        toast.info(notif.title + (notif.body ? ': ' + notif.body : ''))
+      }
     }
 
     socket.on('new_notification', handleNewNotif)
@@ -54,7 +58,7 @@ export function NotificationProvider({ children }) {
       await api.post(`/notifications/${id}/read`)
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, is_read: true } : n))
       setUnreadCount(prev => Math.max(0, prev - 1))
-    } catch (_) {}
+    } catch (_) { }
   }
 
   const markAllRead = async () => {
@@ -62,7 +66,7 @@ export function NotificationProvider({ children }) {
       await api.post('/notifications/read-all')
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
       setUnreadCount(0)
-    } catch (_) {}
+    } catch (_) { }
   }
 
   return (
