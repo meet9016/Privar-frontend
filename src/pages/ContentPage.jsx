@@ -1214,23 +1214,9 @@ export default function ContentPage({ type, headerLeftContent }) {
   const [vafatCardModalOpen, setvafatCardModalOpen] = useState(false)
   const [selectedvafatCardMember, setSelectedvafatCardMember] = useState(null)
 
-  const handleOpenvafatCard = async (row) => {
-    setSelectedvafatCardMember({ ...row })
+  const handleOpenvafatCard = (row) => {
+    setSelectedvafatCardMember(row)
     setvafatCardModalOpen(true)
-    const memberId = row?._id || row?.id || row?.member_id
-    if (memberId) {
-      try {
-        const res = await getDeathCardLink(memberId)
-        if (res.data?.data) {
-          setSelectedvafatCardMember(prev => ({
-            ...prev,
-            ...res.data.data
-          }))
-        }
-      } catch (err) {
-        console.warn('API call getDeathCardLink in handleOpenvafatCard:', err)
-      }
-    }
   }
 
   const handleEditFromVafatCard = (row) => {
@@ -1241,14 +1227,37 @@ export default function ContentPage({ type, headerLeftContent }) {
     }
   }
 
-  const handleDownloadDeathCardDirect = (row) => {
+  const handleDownloadDeathCardDirect = async (row) => {
     const memberId = row?._id || row?.id || row?.member_id
     if (!memberId) {
       handleOpenvafatCard(row)
       return
     }
-    const downloadUrl = getDeathCardDownloadUrl(memberId, 'png')
-    window.open(downloadUrl, '_blank')
+    try {
+      const res = await getDeathCardLink(memberId)
+      const downloadUrl = res.data?.data?.download_url || res.data?.data?.png_url || getDeathCardDownloadUrl(memberId, 'png')
+      if (downloadUrl) {
+        const fileRes = await api.get(downloadUrl, { responseType: 'blob' })
+        const safeName = (row.name || [row.first_name, row.last_name].filter(Boolean).join(' ') || 'Member').replace(/[^a-zA-Z0-9_\-\u0A80-\u0AFF]/g, '_')
+        const blob = new Blob([fileRes.data], { type: 'image/png' })
+        const blobUrl = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = blobUrl
+        a.download = `Mayyat_${safeName}.png`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(blobUrl)
+        toast.success('Death card downloaded successfully!')
+      } else {
+        const fallbackUrl = getDeathCardDownloadUrl(memberId, 'png')
+        window.open(fallbackUrl, '_blank')
+      }
+    } catch (err) {
+      console.warn('Direct API download failed, falling back to direct URL:', err)
+      const fallbackUrl = getDeathCardDownloadUrl(memberId, 'png')
+      window.open(fallbackUrl, '_blank')
+    }
   }
 
   const copyMayyatText = (row) => {
