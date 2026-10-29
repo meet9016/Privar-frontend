@@ -4,9 +4,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Printer,
-  FileText,
-  Calendar,
-  IndianRupee,
   RefreshCw
 } from 'lucide-react'
 import api, { formatDate } from '../../lib/api'
@@ -175,11 +172,10 @@ export default function FundLedger() {
             header: 'Type',
             key: 'type',
             render: (entry) => (
-              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                entry.type === 'INFLOW'
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${entry.type === 'INFLOW'
                   ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
                   : 'bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400'
-              }`}>
+                }`}>
                 {entry.type === 'INFLOW' ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                 {entry.type === 'INFLOW' ? 'Collection (+)' : 'Expense (-)'}
               </span>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Users, Calendar, TrendingUp, Clock, CheckCircle2, AlertCircle, Plus, IndianRupee, ArrowRight, ShieldCheck, Wallet } from 'lucide-react'
+import { Users, Calendar, TrendingUp, Clock, CheckCircle2, AlertCircle, Plus, ArrowRight, Wallet } from 'lucide-react'
 import api, { formatDate } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
 import Loader from '../../components/common/Loader'

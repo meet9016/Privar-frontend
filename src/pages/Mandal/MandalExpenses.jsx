@@ -1,10 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
   Receipt,
-  Search,
   Plus,
   IndianRupee,
-  Calendar,
   Trash2,
   Edit2,
   ExternalLink,

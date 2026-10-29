@@ -103,11 +103,10 @@ export default function Mandal({ headerLeftContent }) {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                    isActive
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${isActive
                       ? 'bg-primary text-white shadow-xs'
                       : 'text-text-secondary hover:text-text hover:bg-surface'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {tab.label}
@@ -122,11 +121,10 @@ export default function Mandal({ headerLeftContent }) {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(prev => !prev)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card border text-xs font-semibold shadow-xs transition-all cursor-pointer ${
-                  isDropdownOpen
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card border text-xs font-semibold shadow-xs transition-all cursor-pointer ${isDropdownOpen
                     ? 'border-primary ring-2 ring-primary/20'
                     : 'border-border hover:border-primary/40'
-                }`}
+                  }`}
               >
                 <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span className="text-text-secondary whitespace-nowrap">Active:</span>
@@ -156,11 +154,10 @@ export default function Mandal({ headerLeftContent }) {
                           setSelectedMandalId(mId)
                           setIsDropdownOpen(false)
                         }}
-                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between cursor-pointer ${
-                          isSelected
+                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between cursor-pointer ${isSelected
                             ? 'bg-primary/10 border border-primary/20 text-primary'
                             : 'hover:bg-surface-secondary text-text'
-                        }`}
+                          }`}
                       >
                         <div className="space-y-0.5">
                           <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-primary' : 'text-text'}`}>

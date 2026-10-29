@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Users, Search, UserCheck, UserMinus, User2, MapPin, Phone, RefreshCw, UserPlus } from 'lucide-react'
+import { Users, UserCheck, UserMinus, User2, MapPin, Phone, RefreshCw, UserPlus } from 'lucide-react'
 import api, { assetUrl } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
 import Table from '../../components/common/Table'
@@ -138,23 +138,6 @@ export default function MandalMembers({ mandalId, mandal }) {
     } finally {
       setBulkLoading(false)
     }
-  }
-
-  const isAllPageSelected = members.length > 0 && members.every(m => selectedIds.map(String).includes(String(m.id || m._id)))
-
-  const toggleSelectAll = () => {
-    if (isAllPageSelected) {
-      const pageIds = members.map(m => String(m.id || m._id))
-      setSelectedIds(prev => prev.filter(id => !pageIds.includes(String(id))))
-    } else {
-      const pageIds = members.map(m => String(m.id || m._id))
-      setSelectedIds(prev => Array.from(new Set([...prev.map(String), ...pageIds])))
-    }
-  }
-
-  const toggleSelectOne = (id) => {
-    const sId = String(id)
-    setSelectedIds(prev => prev.map(String).includes(sId) ? prev.filter(i => String(i) !== sId) : [...prev, sId])
   }
 
   return (
