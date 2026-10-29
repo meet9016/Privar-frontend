@@ -1,5 +1,5 @@
 import React from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 
@@ -47,7 +47,7 @@ export default function Layout() {
       <div className="flex-1 flex flex-col h-screen lg:pl-64 transition-all duration-300 overflow-hidden w-full">
         {/* Header remains fixed at the top */}
         <Header onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
-        
+
         {/* Only the page content area scrolls */}
         <main className="flex-1 overflow-y-auto animate-fade-in flex flex-col">
           <div className="flex-1 px-3 sm:px-6 lg:px-8 pt-4 pb-8 max-w-full mx-auto space-y-4 sm:space-y-6 w-full">

@@ -153,7 +153,7 @@ export const getCommunityFullName = () => {
   return surname ? `${surname} Parivar` : 'Parivar'
 }
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: { 'Content-Type': 'multipart/form-data' },
   timeout: 120000, 
@@ -165,14 +165,6 @@ const api = axios.create({
 export const exportDonationsExcel = (params = {}) =>
   api.get('/donations/export', { params: typeof params === 'string' ? { search: params } : params })
 
-export const memberApi = axios.create({
-  baseURL: `${API_BASE}/api`,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 120000, 
-  transitional: {
-    clarifyTimeoutError: true
-  }
-})
 
 // Add token and tenant to all requests
 const setupInterceptors = (axiosInstance) => {
@@ -234,7 +226,7 @@ const setupInterceptors = (axiosInstance) => {
 }
 
 setupInterceptors(api)
-setupInterceptors(memberApi)
+
 
 import { COMMITTEE_ENDPOINTS, MEMBER_ENDPOINTS, EVENT_ENDPOINTS, GALLERY_ENDPOINTS, STUDENT_ENDPOINTS, BUSINESS_ENDPOINTS, POST_ENDPOINTS, NEWS_ENDPOINTS, EXPENSE_ENDPOINTS, DONATION_ENDPOINTS, MASTER_ENDPOINTS, POLL_ENDPOINTS } from '../utils/endpoints'
 

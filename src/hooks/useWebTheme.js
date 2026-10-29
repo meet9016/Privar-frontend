@@ -1,5 +1,50 @@
 import { useState, useEffect } from 'react'
-import { memberApi } from '../lib/api'
+import { api } from '../lib/api'
+
+export const WEB_THEME_KEYS = [
+  'backgroundColor',
+  'borderColor',
+  'buttonColor',
+  'fontColor',
+  'gradientEnd',
+  'gradientStart',
+  'primaryColor',
+  'secondaryColor',
+  'textColor',
+  'name',
+  'webLogo',
+  'favicon',
+  'phone',
+  'email',
+  'facebook',
+  'twitter',
+  'instagram',
+  'youtube',
+  'whatsapp',
+  'android_app_link',
+  'ios_app_link',
+  'playstore_url',
+  'appstore_url',
+  'bannerImages',
+]
+
+/**
+ * Common utility function to get all stored web theme settings from localStorage.
+ * Keys are stored with 'web_' prefix (e.g. 'web_primaryColor').
+ * Used across all website components for initial state and storage event listeners.
+ * 
+ * @returns {Record<string, string>}
+ */
+export const getStoredWebTheme = () => {
+  const loadedTheme = {}
+  WEB_THEME_KEYS.forEach((key) => {
+    const value = localStorage.getItem(`web_${key}`)
+    if (value !== null && value !== undefined && value !== '') {
+      loadedTheme[key] = value
+    }
+  })
+  return loadedTheme
+}
 
 /**
  * Hook to fetch and manage WEBSITE theme colors from backend
@@ -28,7 +73,7 @@ export const useWebTheme = () => {
       setError(null)
 
       // Fetch theme from backend
-      const response = await memberApi.get('/get_app_theme')
+      const response = await api.get('/get_app_theme')
       
       if (response.status === 200 && response.data?.data) {
         const themeData = response.data.data
@@ -57,17 +102,7 @@ export const useWebTheme = () => {
       console.error('Theme fetch error:', err)
 
       // Try to load cached theme from localStorage
-      const cachedTheme = {}
-      const colorKeys = [
-        'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-        'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor'
-      ]
-      
-      colorKeys.forEach((key) => {
-        const value = localStorage.getItem(`web_${key}`)
-        if (value) cachedTheme[key] = value
-      })
-
+      const cachedTheme = getStoredWebTheme()
       if (Object.keys(cachedTheme).length > 0) {
         setTheme(cachedTheme)
       }
@@ -104,18 +139,5 @@ export const getWebThemeColor = (colorKey, fallback = '#000000') => {
  * @returns {object} - object with all web_ prefixed colors
  */
 export const getAllWebThemeColors = () => {
-  const theme = {}
-  const colorKeys = [
-    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor'
-  ]
-
-  colorKeys.forEach((key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    if (value) {
-      theme[key] = value
-    }
-  })
-
-  return theme
+  return getStoredWebTheme()
 }

@@ -13,35 +13,11 @@ import {
   User,
   HeartHandshake
 } from 'lucide-react'
-import { memberApi, getDomainCommunityName, getCommunityFullName } from '../../lib/api'
+import { api, getDomainCommunityName, getCommunityFullName } from '../../lib/api'
 import { useWebTheme } from '../../hooks/useWebTheme'
 import { toast } from '../../lib/toast'
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor',
-    'borderColor',
-    'buttonColor',
-    'fontColor',
-    'gradientEnd',
-    'gradientStart',
-    'primaryColor',
-    'secondaryColor',
-    'textColor',
-    'phone',
-    'email',
-    'name',
-    'facebook',
-    'instagram',
-    'twitter',
-    'youtube',
-    'whatsapp'
-  ]
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
+
 export default function ContactUsPage() {
   useWebTheme()
   const [theme, setTheme] = useState(getStoredWebTheme())
@@ -104,7 +80,7 @@ export default function ContactUsPage() {
           ? `[Subject: ${formData.subject.trim()}] ${formData.note.trim()}`
           : formData.note.trim()
       }
-      await memberApi.post('/inquiry', payload)
+      await api.post('/inquiry', payload)
       setSubmitted(true)
       toast.success('Your message has been sent successfully! Our team will contact you shortly.')
       setFormData({

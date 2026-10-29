@@ -1,19 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Heart, User, MapPin, Calendar, Phone, Sparkles, Briefcase, GraduationCap } from 'lucide-react'
-import { memberApi, assetUrl, formatDate } from '../../lib/api'
+import { api, assetUrl, formatDate } from '../../lib/api'
 import { useWebTheme } from '../../hooks/useWebTheme'
 import ImagePreviewModal from '../../components/common/ImagePreviewModal'
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor'
-  ]
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
+
 
 export default function MatrimonialWebPage() {
   useWebTheme()
@@ -34,7 +25,7 @@ export default function MatrimonialWebPage() {
     const fetchMatrimonials = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/matrimonies?limit=100&status=1')
+        const response = await api.get('/matrimonies?limit=100&status=1')
         const rows = Array.isArray(response.data?.data) ? response.data.data : (response.data || [])
         setProfiles(rows)
       } catch (err) {

@@ -1,8 +1,7 @@
 import React, { useContext, useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { LogOut, Search, Sparkles, KeyRound, ChevronDown, User, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, X, Loader2, Menu } from 'lucide-react'
+import { LogOut, KeyRound, ChevronDown, Eye, EyeOff, CheckCircle2, AlertCircle, X, Loader2, Menu } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
-import { masterLabels, routeTitles } from '../config/navigation'
 import GlobalSearch from './GlobalSearch'
 import { getUserRoleLabel } from '../lib/roles'
 import ThemePicker from './ThemePicker'
@@ -14,8 +13,6 @@ import { toast } from '../lib/toast'
 export default function Header({ onToggleSidebar }) {
   const { logout, user } = useContext(AuthContext)
   const navigate = useNavigate()
-  const location = useLocation()
-  const roleLabel = user ? getUserRoleLabel(user) : ''
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)

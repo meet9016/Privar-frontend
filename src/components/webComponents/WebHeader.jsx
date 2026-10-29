@@ -1,22 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, Menu, X, LogIn, Home, Info, Users, Image as ImageIcon, Calendar, GraduationCap, HeartHandshake, BookOpen, MessageSquare } from 'lucide-react'
-import NotificationDropdown from '../NotificationDropdown'
-import { assetUrl, getCommunitySurname, getCommunityFullName } from '../../lib/api'
-
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
-    'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp',
-  ]
-  const loadedTheme = {}
-  colorKeys.forEach((key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    if (value) loadedTheme[key] = value
-  })
-  return loadedTheme
-}
+import { assetUrl, getCommunityFullName } from '../../lib/api'
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 export default function WebHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)

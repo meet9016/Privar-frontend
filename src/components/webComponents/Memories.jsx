@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Camera, ChevronLeft, ChevronRight, Maximize2, X } from 'lucide-react'
-import { assetUrl, memberApi } from '../../lib/api'
+import { assetUrl, api } from '../../lib/api'
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 const normalizeGalleryMemories = (galleryRows, categories) => {
   const categoryMap = categories.reduce((map, category) => {
@@ -30,24 +31,7 @@ const normalizeGalleryMemories = (galleryRows, categories) => {
   })
 }
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor',
-    'borderColor',
-    'buttonColor',
-    'fontColor',
-    'gradientEnd',
-    'gradientStart',
-    'primaryColor',
-    'secondaryColor',
-    'textColor',
-  ]
 
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
 
 export default function Memories() {
   const [activeTab, setActiveTab] = useState('all')
@@ -56,10 +40,6 @@ export default function Memories() {
   const [categoryTabs, setCategoryTabs] = useState([{ id: 'all', label: 'All' }])
   const [loading, setLoading] = useState(true)
   const [lightboxIndex, setLightboxIndex] = useState(null)
-
-  const sliderRef = useRef(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
 
   useEffect(() => {
     const loadTheme = () => {
@@ -76,8 +56,8 @@ export default function Memories() {
       try {
         setLoading(true)
         const [galleryResponse, categoryResponse] = await Promise.all([
-          memberApi.get('/gallery?status=1&limit=100'),
-          memberApi.get('/gallery-categories?status=1&limit=100'),
+          api.get('/gallery?status=1&limit=100'),
+          api.get('/gallery-categories?status=1&limit=100'),
         ])
 
         const galleryRows = Array.isArray(galleryResponse.data?.data) ? galleryResponse.data.data : []

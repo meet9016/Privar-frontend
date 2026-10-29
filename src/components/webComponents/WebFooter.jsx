@@ -1,22 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Send, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart, Apple, Play } from 'lucide-react';
-import { assetUrl, memberApi } from '../../lib/api';
-
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
-    'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp',
-    'android_app_link', 'ios_app_link', 'playstore_url', 'appstore_url',
-  ];
-  const loadedTheme = {};
-  colorKeys.forEach((key) => {
-    const value = localStorage.getItem(`web_${key}`);
-    if (value) loadedTheme[key] = value;
-  });
-  return loadedTheme;
-};
+import { assetUrl, api } from '../../lib/api';
+import { getStoredWebTheme } from '../../hooks/useWebTheme';
 
 export default function WebFooter() {
   const [theme, setTheme] = useState(getStoredWebTheme);
@@ -29,7 +15,7 @@ export default function WebFooter() {
     // Also fetch latest configuration to stay up to date
     (async () => {
       try {
-        const res = await memberApi.get('/get_app_theme');
+        const res = await api.get('/get_app_theme');
         const data = res.data?.data || res.data;
         if (data) {
           setTheme(prev => ({
@@ -61,14 +47,6 @@ export default function WebFooter() {
     { label: 'Matrimonial', href: '/matrimonial' },
     { label: 'Job Vacancies', href: '/jobs' },
   ];
-
-  const socialLinks = [
-    { icon: Facebook, href: theme?.facebook, label: 'Facebook' },
-    { icon: Instagram, href: theme?.instagram, label: 'Instagram' },
-    { icon: Twitter, href: theme?.twitter, label: 'Twitter' },
-    { icon: Youtube, href: theme?.youtube, label: 'YouTube' },
-    { icon: MessageCircle, href: theme?.whatsapp, label: 'WhatsApp' },
-  ].filter(link => link.href); // Only show social links that are provided
 
   const primaryBg = theme?.primaryColor || '#0a2342';
   const playStoreUrl = theme?.android_app_link || theme?.playstore_url || 'https://play.google.com/store/apps/details?id=com.digitalks.parivar';

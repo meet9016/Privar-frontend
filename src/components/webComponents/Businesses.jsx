@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Building2, Store, MapPin, Phone, Globe, ArrowRight, Sparkles } from 'lucide-react'
-import { memberApi } from '../../lib/api'
+import { api } from '../../lib/api'
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 const normalizeBusiness = (biz, index) => {
   const name = biz.business_name || biz.name || `Enterprise ${index + 1}`
@@ -23,23 +24,7 @@ const normalizeBusiness = (biz, index) => {
   }
 }
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor',
-    'borderColor',
-    'buttonColor',
-    'fontColor',
-    'gradientEnd',
-    'gradientStart',
-    'primaryColor',
-    'secondaryColor',
-    'textColor',
-  ]
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
+
 
 export default function Businesses() {
   const [theme, setTheme] = useState(getStoredWebTheme())
@@ -61,7 +46,7 @@ export default function Businesses() {
     const fetchBusinesses = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/businesses?status=1')
+        const response = await api.get('/businesses')
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         setBusinesses(rows.map(normalizeBusiness))
       } catch (error) {
@@ -120,7 +105,7 @@ export default function Businesses() {
             Our Community Businesses
           </h2>
 
-         
+
         </div>
 
         {/* Loading State */}
@@ -222,7 +207,7 @@ export default function Businesses() {
                       </div>
                     )}
 
-                  
+
                   </div>
 
                   {/* Card Body */}

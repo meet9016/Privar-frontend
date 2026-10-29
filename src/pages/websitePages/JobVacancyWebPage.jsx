@@ -1,18 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Briefcase, MapPin, Building2, Clock, Phone, Mail, ChevronRight, IndianRupee } from 'lucide-react'
-import { memberApi, assetUrl } from '../../lib/api'
+import { api, assetUrl } from '../../lib/api'
 import { useWebTheme } from '../../hooks/useWebTheme'
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor'
-  ]
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
+
 
 export default function JobVacancyWebPage() {
   useWebTheme()
@@ -31,7 +22,7 @@ export default function JobVacancyWebPage() {
     const fetchJobs = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/job-vacancy?limit=100&status=1')
+        const response = await api.get('/job-vacancy?limit=100&status=1')
         const rows = Array.isArray(response.data?.data) ? response.data.data : (response.data || [])
         setJobs(rows)
       } catch (err) {

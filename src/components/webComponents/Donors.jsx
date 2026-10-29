@@ -1,26 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, HeartHandshake, IndianRupee, MapPin, Sparkles } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { memberApi } from '../../lib/api'
-
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor',
-    'borderColor',
-    'buttonColor',
-    'fontColor',
-    'gradientEnd',
-    'gradientStart',
-    'primaryColor',
-    'secondaryColor',
-    'textColor',
-  ]
-
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
+import { api } from '../../lib/api'
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 const shadeColor = (color, percent) => {
   if (!color) return '#000000'
@@ -64,7 +46,7 @@ export default function Donors() {
       try {
         setLoading(true)
         setError('')
-        const response = await memberApi.get('/donations?status=1')
+        const response = await api.get('/donations?status=1')
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active')
         setDonors(activeRows)
@@ -80,10 +62,6 @@ export default function Donors() {
   }, [])
 
   const visibleDonors = isDonorsPage ? donors : donors.slice(0, 4)
-  const totalAmount = useMemo(
-    () => donors.reduce((sum, donor) => sum + Number(donor.donate_amount || 0), 0),
-    [donors]
-  )
 
   return (
     <section

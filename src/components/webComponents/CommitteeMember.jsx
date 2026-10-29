@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Users } from 'lucide-react'
-import { memberApi } from '../../lib/api'
+import { api } from '../../lib/api'
 import { COMMITTEE_ENDPOINTS } from '../../utils/endpoints'
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 const normalizeCommitteeMember = (member, index) => {
   const name = [member.first_name, member.middle_name, member.last_name]
@@ -17,24 +18,7 @@ const normalizeCommitteeMember = (member, index) => {
   }
 }
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor',
-    'borderColor',
-    'buttonColor',
-    'fontColor',
-    'gradientEnd',
-    'gradientStart',
-    'primaryColor',
-    'secondaryColor',
-    'textColor',
-  ]
 
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
 
 const shadeColor = (color, percent) => {
   if (!color) return '#000000'
@@ -239,7 +223,7 @@ export default function Members() {
     const fetchCommitteeMembers = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get(`${COMMITTEE_ENDPOINTS.GET_MEMBERS}?status=1`)
+        const response = await api.get(`${COMMITTEE_ENDPOINTS.GET_MEMBERS}?status=1`)
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows.filter(r =>
           r.status === undefined || r.status === null ||

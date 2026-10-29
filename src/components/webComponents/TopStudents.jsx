@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Award, ChevronLeft, ChevronRight, GraduationCap, Medal, Star, Trophy } from 'lucide-react'
-import { memberApi, getCommunitySurname } from '../../lib/api'
+import { api, getCommunitySurname } from '../../lib/api'
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 const rankLabel = (index) => {
   const rank = index + 1
@@ -24,24 +25,7 @@ const normalizeStudent = (student, index) => ({
   image: student.student_image || "/image.png"
 })
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor',
-    'borderColor',
-    'buttonColor',
-    'fontColor',
-    'gradientEnd',
-    'gradientStart',
-    'primaryColor',
-    'secondaryColor',
-    'textColor',
-  ]
 
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
 
 export default function TopStudents() {
   const [theme, setTheme] = useState(getStoredWebTheme())
@@ -69,7 +53,7 @@ export default function TopStudents() {
     const fetchStudents = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/students?status=1&limit=50')
+        const response = await api.get('/students?status=1&limit=50')
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows
           .filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active')

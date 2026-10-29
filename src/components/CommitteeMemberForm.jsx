@@ -5,10 +5,9 @@ import Select from './common/Select'
 import Button from './common/Button'
 import { isValidEmail } from '../lib/validation'
 import api, { getUsersList } from '../lib/api'
-import { User as UserIcon, Phone, Mail, ShieldCheck } from 'lucide-react'
+import { User as UserIcon, ShieldCheck } from 'lucide-react'
 
 export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLoading, onCancel }) {
-  const { user: loggedInUser } = useContext(AuthContext)
   const [userList, setUserList] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)

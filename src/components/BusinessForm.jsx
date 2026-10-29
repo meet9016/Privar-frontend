@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Trash2, Globe, Facebook, Instagram, Youtube, Share2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import api from '../lib/api'
 import { BUSINESS_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import Input from './common/Input'

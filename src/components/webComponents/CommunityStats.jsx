@@ -1,32 +1,45 @@
 import React, { useEffect, useState } from 'react'
-import { Users, CalendarDays, Store, Briefcase } from 'lucide-react'
-import { memberApi } from '../../lib/api'
+import { Users, CalendarDays, Store, Briefcase, TrendingUp } from 'lucide-react'
+import { api } from '../../lib/api'
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor',
-    'borderColor',
-    'buttonColor',
-    'fontColor',
-    'gradientEnd',
-    'gradientStart',
-    'primaryColor',
-    'secondaryColor',
-    'textColor',
-  ]
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
+function AnimatedNumber({ value, duration = 1000 }) {
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    const target = Number(value) || 0
+    if (target === 0) {
+      setDisplayValue(0)
+      return
+    }
+
+    let startTimestamp = null
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+      setDisplayValue(Math.floor(easeOut * target))
+      if (progress < 1) {
+        window.requestAnimationFrame(step)
+      } else {
+        setDisplayValue(target)
+      }
+    }
+    const frameId = window.requestAnimationFrame(step)
+    return () => window.cancelAnimationFrame(frameId)
+  }, [value, duration])
+
+  return <span>{displayValue.toLocaleString('en-IN')}</span>
 }
 
 export default function CommunityStats() {
   const [theme, setTheme] = useState(getStoredWebTheme())
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
-    members: '5,000+',
-    events: '120+',
-    businesses: '50+',
-    opportunities: '100+',
+    members: 0,
+    events: 0,
+    businesses: 0,
+    opportunities: 0,
   })
 
   useEffect(() => {
@@ -40,71 +53,58 @@ export default function CommunityStats() {
     }
   }, [])
 
-  // Dynamically load community metrics if API endpoints return counts
+  // Dynamically load community metrics from admin panel APIs
   useEffect(() => {
+    let isMounted = true
+
     const fetchCounts = async () => {
       try {
+        setLoading(true)
         const [membersRes, eventsRes, bizRes, jobsRes] = await Promise.allSettled([
-          memberApi.get('/users?familyHead=true&limit=1'),
-          memberApi.get('/events?limit=1'),
-          memberApi.get('/businesses?status=1&limit=1'),
-          memberApi.get('/job-vacancy?limit=1'),
+          api.get('/users?flat=true&limit=1'),
+          api.get('/events?limit=1'),
+          api.get('/businesses?limit=1'),
+          api.get('/job-vacancy?limit=1'),
         ])
 
-        setStats((prev) => {
-          const next = { ...prev }
+        if (!isMounted) return
 
-          if (membersRes.status === 'fulfilled') {
-            const count =
-              membersRes.value?.data?.total ??
-              membersRes.value?.data?.count ??
-              membersRes.value?.data?.pagination?.total
-            if (count && Number(count) > 0) {
-              next.members = `${Number(count).toLocaleString()}+`
-            }
+        const extractCount = (res) => {
+          if (!res || res.status !== 'fulfilled' || !res.value?.data) return 0
+          const d = res.value.data
+          if (d.pagination?.total !== undefined && d.pagination?.total !== null) {
+            return Number(d.pagination.total) || 0
           }
-
-          if (eventsRes.status === 'fulfilled') {
-            const count =
-              eventsRes.value?.data?.total ??
-              eventsRes.value?.data?.count ??
-              eventsRes.value?.data?.pagination?.total ??
-              (Array.isArray(eventsRes.value?.data?.data) ? eventsRes.value.data.data.length : null)
-            if (count && Number(count) > 0) {
-              next.events = `${Number(count).toLocaleString()}+`
-            }
+          if (d.total !== undefined && d.total !== null) {
+            return Number(d.total) || 0
           }
-
-          if (bizRes.status === 'fulfilled') {
-            const count =
-              bizRes.value?.data?.total ??
-              bizRes.value?.data?.count ??
-              bizRes.value?.data?.pagination?.total ??
-              (Array.isArray(bizRes.value?.data?.data) ? bizRes.value.data.data.length : null)
-            if (count && Number(count) > 0) {
-              next.businesses = `${Number(count).toLocaleString()}+`
-            }
+          if (d.count !== undefined && d.count !== null) {
+            return Number(d.count) || 0
           }
-
-          if (jobsRes.status === 'fulfilled') {
-            const count =
-              jobsRes.value?.data?.total ??
-              jobsRes.value?.data?.count ??
-              jobsRes.value?.data?.pagination?.total ??
-              (Array.isArray(jobsRes.value?.data?.data) ? jobsRes.value.data.data.length : null)
-            if (count && Number(count) > 0) {
-              next.opportunities = `${Number(count).toLocaleString()}+`
-            }
+          if (Array.isArray(d.data)) {
+            return d.data.length
           }
+          return 0
+        }
 
-          return next
+        setStats({
+          members: extractCount(membersRes),
+          events: extractCount(eventsRes),
+          businesses: extractCount(bizRes),
+          opportunities: extractCount(jobsRes),
         })
-      } catch {
-        // Keep reference defaults (5,000+, 120+, 50+, 100+)
+      } catch (err) {
+        console.error('Failed to load community impact stats:', err)
+      } finally {
+        if (isMounted) setLoading(false)
       }
     }
 
     fetchCounts()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const primaryColor = theme.primaryColor || '#991B1B'
@@ -113,127 +113,158 @@ export default function CommunityStats() {
   const statItems = [
     {
       id: 'members',
-      label: 'Members',
-      value: stats.members,
+      label: 'Total Members',
+      count: stats.members,
+      desc: 'Registered community members',
       icon: Users,
+      color: primaryColor,
+      bgLight: `${primaryColor}14`,
     },
     {
       id: 'events',
-      label: 'Events',
-      value: stats.events,
+      label: 'Events Organized',
+      count: stats.events,
+      desc: 'Celebrations & gatherings',
       icon: CalendarDays,
+      color: '#EA580C',
+      bgLight: '#EA580C14',
     },
     {
       id: 'businesses',
       label: 'Businesses',
-      value: stats.businesses,
+      count: stats.businesses,
+      desc: 'Community enterprises listed',
       icon: Store,
+      color: '#0D9488',
+      bgLight: '#0D948814',
     },
     {
       id: 'opportunities',
-      label: 'Opportunities',
-      value: stats.opportunities,
+      label: 'Job Vacancies',
+      count: stats.opportunities,
+      desc: 'Career & employment openings',
       icon: Briefcase,
+      color: '#6366F1',
+      bgLight: '#6366F114',
     },
   ]
 
   return (
     <section
       id="community-stats"
-      className="w-full px-4 sm:px-6 lg:px-8 pt-0 pb-12 sm:pb-14 lg:pb-16 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative overflow-hidden"
       style={{
-        backgroundColor: theme.backgroundColor || 'transparent',
-        paddingTop: 0,
-        paddingBottom: '64px',
+        backgroundColor: theme.backgroundColor || '#FFFFFF',
       }}
     >
       <div className="max-w-7xl mx-auto">
-        {/* Main Stats Card Container with Light Dynamic Theme Background, Full 1px Border & Primary Top Border */}
+        {/* Main Stats Card Container */}
         <div
-          className="w-full rounded-2xl sm:rounded-3xl border py-8 sm:py-10 lg:py-8 px-6 sm:px-10 lg:px-12 transition-all duration-300 relative overflow-hidden"
+          className="w-full rounded-3xl border py-8 sm:py-10 px-6 sm:px-8 lg:px-10 transition-all duration-300 relative overflow-hidden shadow-sm"
           style={{
-            background: `linear-gradient(135deg, ${primaryColor}0d 0%, #ffffff 50%, ${primaryColor}08 100%)`,
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            borderColor: `${primaryColor}30`,
+            background: `linear-gradient(135deg, ${primaryColor}08 0%, #ffffff 50%, ${primaryColor}04 100%)`,
+            borderColor: `${primaryColor}25`,
             borderTopWidth: '4px',
             borderTopColor: primaryColor,
           }}
         >
           {/* Subtle Ambient Decorative Glow Blobs */}
           <div
-            className="absolute -top-20 -left-20 w-56 h-56 rounded-full blur-3xl opacity-20 pointer-events-none"
+            className="absolute -top-24 -left-24 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none"
             style={{ backgroundColor: primaryColor }}
           />
           <div
-            className="absolute -bottom-20 -right-20 w-56 h-56 rounded-full blur-3xl opacity-20 pointer-events-none"
+            className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
             style={{ backgroundColor: primaryColor }}
           />
 
-          {/* Section Heading */}
-          <h2
-            className="text-xl sm:text-2xl lg:text-[28px] font-black text-center tracking-tight mb-8 sm:mb-10 lg:mb-12 relative z-10"
-            style={{ color: textColor }}
-          >
-            Our Impact
-          </h2>
+          {/* Section Header */}
+          <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-10">
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold mb-3 px-3.5 py-1.5 rounded-full border bg-white shadow-xs"
+              style={{
+                color: primaryColor,
+                borderColor: `${primaryColor}30`,
+              }}
+            >
+              <TrendingUp className="w-4 h-4" style={{ color: primaryColor }} />
+              <span className="tracking-wide">Community Impact</span>
+            </div>
 
-          {/* 4 Stats Grid */}
-          <div
-            className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-0 lg:divide-x relative z-10"
-            style={{ borderColor: `${primaryColor}18` }}
-          >
+            {/* Heading */}
+            <h2
+              className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight"
+              style={{ color: textColor }}
+            >
+              Our Impact
+            </h2>
+
+            {/* Subtitle */}
+            <p className="mt-2 text-xs sm:text-sm text-gray-500 max-w-xl font-medium">
+              Real-time progress and growth milestones across our Parivar community
+            </p>
+          </div>
+
+          {/* 4 Stats Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 relative z-10">
             {statItems.map((item) => {
               const Icon = item.icon
               return (
                 <div
                   key={item.id}
-                  className="flex flex-col items-center text-center px-4 group select-none"
+                  className="group relative bg-white rounded-2xl p-6 sm:p-7 border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col items-center text-center overflow-hidden"
+                  style={{
+                    borderColor: `${item.color}25`,
+                    boxShadow: '0 4px 18px -2px rgba(0, 0, 0, 0.04)',
+                  }}
                 >
-                  {/* Unique Multi-Layered Executive Icon Badge */}
-                  <div className="relative mb-3.5 flex items-center justify-center">
-                    {/* Soft Ambient Radial Glow behind icon */}
-                    <div
-                      className="absolute -inset-1 rounded-2xl blur-md opacity-25 transition-all duration-300 group-hover:opacity-70 group-hover:blur-lg"
-                      style={{ backgroundColor: `${primaryColor}50` }}
-                    />
+                  {/* Top Subtle Color Accent Bar */}
+                  <div
+                    className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full transition-all duration-300 group-hover:left-3 group-hover:right-3"
+                    style={{ backgroundColor: item.color }}
+                  />
 
-                    {/* Outer Modern Squircle Badge (Layer 1) */}
-                    <div
-                      className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] flex items-center justify-center transition-all duration-300 group-hover:scale-108 group-hover:-translate-y-1 shadow-sm"
-                      style={{
-                        background: `linear-gradient(145deg, #ffffff 0%, ${primaryColor}14 100%)`,
-                        border: `1.5px solid ${primaryColor}35`,
-                        boxShadow: `0 8px 20px -4px ${primaryColor}22, inset 0 1px 1px rgba(255, 255, 255, 0.95)`,
-                      }}
-                    >
-                      {/* Inner Floating Badge (Layer 2) */}
-                      <div
-                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
-                        style={{
-                          backgroundColor: `${primaryColor}16`,
-                          color: primaryColor,
-                          border: `1px solid ${primaryColor}22`,
-                        }}
-                      >
-                        <Icon className="w-5 h-5 sm:w-5.5 sm:h-5.5" strokeWidth={2.2} />
-                      </div>
-
-                    
-                    </div>
+                  {/* Icon Badge */}
+                  <div
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-108 group-hover:rotate-2 shadow-xs"
+                    style={{
+                      backgroundColor: item.bgLight,
+                      color: item.color,
+                      border: `1.5px solid ${item.color}35`,
+                    }}
+                  >
+                    <Icon className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={2.2} />
                   </div>
 
                   {/* Stat Number */}
-                  <h3
-                    className="text-2xl sm:text-3xl lg:text-[32px] font-black tracking-tight mb-1 transition-colors duration-200"
+                  <div
+                    className="text-3xl sm:text-4xl lg:text-[38px] font-black tracking-tight mb-1 flex items-baseline justify-center"
                     style={{ color: textColor }}
                   >
-                    {item.value}
-                  </h3>
+                    {loading ? (
+                      <span className="inline-block w-16 h-9 bg-gray-200 rounded-lg animate-pulse" />
+                    ) : (
+                      <>
+                        <AnimatedNumber value={item.count} />
+                        <span
+                          className="text-2xl sm:text-3xl font-bold ml-0.5"
+                          style={{ color: item.color }}
+                        >
+                          +
+                        </span>
+                      </>
+                    )}
+                  </div>
 
                   {/* Label */}
-                  <p className="text-xs sm:text-sm font-semibold text-gray-500 tracking-wide">
+                  <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-1">
                     {item.label}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                    {item.desc}
                   </p>
                 </div>
               )

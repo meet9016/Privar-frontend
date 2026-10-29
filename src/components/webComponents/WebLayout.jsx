@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { ArrowUp, BookOpen, Sparkles } from 'lucide-react'
+import { ArrowUp, BookOpen } from 'lucide-react'
 import WebHeader from './WebHeader'
 import WebFooter from './WebFooter'
 import { useWebTheme } from '../../hooks/useWebTheme'

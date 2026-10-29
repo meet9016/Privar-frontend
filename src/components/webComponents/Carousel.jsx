@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
-import { assetUrl, memberApi } from '../../lib/api';
+import { assetUrl, api } from '../../lib/api';
 import BannerLightboxModal from './BannerLightboxModal';
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 /**
  * Professional Web Carousel Component
@@ -9,19 +10,7 @@ import BannerLightboxModal from './BannerLightboxModal';
  * - Uses same color scheme as WebHeader (localStorage web_* keys)
  * - Features: Autoplay, Touch/Swipe, Keyboard, Smooth animations, Fullscreen HD Lightbox Preview
  */
-const getInitialWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor', 'borderColor', 'buttonColor', 'fontColor',
-    'gradientEnd', 'gradientStart', 'primaryColor', 'secondaryColor', 'textColor',
-    'name', 'webLogo', 'favicon', 'phone', 'email', 'facebook', 'instagram', 'twitter', 'youtube', 'whatsapp', 'bannerImages'
-  ];
-  const loaded = {};
-  colorKeys.forEach((key) => {
-    const value = localStorage.getItem(`web_${key}`);
-    if (value) loaded[key] = value;
-  });
-  return loaded;
-}
+const getInitialWebTheme = getStoredWebTheme
 
 const normalizeBannerImages = (value) => {
   if (Array.isArray(value)) return value.filter(Boolean).map(assetUrl)
@@ -75,7 +64,7 @@ const Carousel = ({
     let isMounted = true;
     const fetchBannerImages = async () => {
       try {
-        const res = await memberApi.get('/get_app_theme');
+        const res = await api.get('/get_app_theme');
         const data = res.data?.data || res.data || {};
         const bannerImages = normalizeBannerImages(data.bannerImages);
         if (isMounted) {

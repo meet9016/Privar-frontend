@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { ArrowRight, Calendar, CheckCircle, Clock, MapPin, Users, X, AlertCircle, ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { memberApi } from '../../lib/api'
+import { api } from '../../lib/api'
 import { toast } from '../../lib/toast'
+import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 const formatEventDate = (value) => {
   if (!value) return ''
@@ -69,37 +70,6 @@ const normalizeEvent = (event, index) => {
   }
 }
 
-const getStoredWebTheme = () => {
-  const colorKeys = [
-    'backgroundColor',
-    'borderColor',
-    'buttonColor',
-    'fontColor',
-    'gradientEnd',
-    'gradientStart',
-    'primaryColor',
-    'secondaryColor',
-    'textColor',
-  ]
-
-  return colorKeys.reduce((theme, key) => {
-    const value = localStorage.getItem(`web_${key}`)
-    return value ? { ...theme, [key]: value } : theme
-  }, {})
-}
-
-const shadeColor = (color, percent) => {
-  if (!color) return '#000000'
-
-  const num = parseInt(color.replace('#', ''), 16)
-  const amt = Math.round(2.55 * percent)
-  const r = Math.max(0, Math.min(255, (num >> 16) + amt)).toString(16).padStart(2, '0')
-  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt)).toString(16).padStart(2, '0')
-  const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt)).toString(16).padStart(2, '0')
-
-  return `#${r}${g}${b}`
-}
-
 export default function Events() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -139,7 +109,7 @@ export default function Events() {
     const fetchEvents = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/events?status=1')
+        const response = await api.get('/events?status=1')
 
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active' || String(r.status).toLowerCase() === 'approved')
@@ -224,7 +194,7 @@ export default function Events() {
     setSubmitting(true)
     setSubmitError('')
     try {
-      await memberApi.post('/event-registrations', {
+      await api.post('/event-registrations', {
         name: formData.name.trim(),
         email: formData.email.trim(),
         number: formData.phone.trim(),
