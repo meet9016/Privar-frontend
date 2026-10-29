@@ -76,9 +76,25 @@ export default function WebFooter() {
 
   return (
     <footer
-      className="text-white mt-auto pt-16 pb-8 relative overflow-hidden border-t border-white/10"
-      style={{ backgroundColor: '#061527' }}
+      className="text-white mt-auto pt-8 sm:pt-10 pb-10 sm:pb-12 relative overflow-hidden border-t border-white/10"
+      style={{ backgroundColor: '#000000' }}
     >
+      {/* Background Image — Soft, blurred watermark family silhouette (never dark or harsh) */}
+      <div
+        className="absolute bottom-0 left-0 top-0 pointer-events-none z-0 overflow-hidden"
+        style={{
+          width: 'clamp(280px, 28vw, 440px)',
+          backgroundImage: 'url(public/footer_family.jpg)',
+          backgroundSize: 'contain',
+          backgroundPosition: 'left center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.22,
+          filter: 'blur(0.8px)',
+          maskImage: 'radial-gradient(ellipse 90% 90% at 45% 50%, black 25%, transparent 85%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 90% 90% at 45% 50%, black 25%, transparent 85%)',
+        }}
+      />
+
       {/* Decorative Background Accent Glows */}
       <div
         className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[140px] pointer-events-none opacity-20"
@@ -86,11 +102,11 @@ export default function WebFooter() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-10 items-start">
 
           {/* Brand & App Download */}
-          <div className="space-y-4 flex flex-col items-center sm:text-left">
-            <Link to="/" className="inline-block group">
+          <div className="space-y-4 flex flex-col items-start text-left">
+            <Link to="/" className="inline-block group self-start">
               {theme?.webLogo ? (
                 <div className="w-28 h-28 sm:w-32 sm:h-32 p-2 bg-white rounded-2xl shadow-xl border border-white/20 transition-transform group-hover:scale-105 flex items-center justify-center overflow-hidden">
                   <img
@@ -108,7 +124,7 @@ export default function WebFooter() {
 
             {/* App Download Buttons */}
             {(playStoreUrl || appStoreUrl) && (
-              <div className="flex flex-col gap-2 pt-2 items-center sm:items-start">
+              <div className="flex flex-col gap-2 pt-2 items-start">
                 <p className="text-xs font-bold text-white uppercase tracking-wider">Download Our App</p>
                 <div className="flex flex-row items-center gap-3">
                   {playStoreUrl && (

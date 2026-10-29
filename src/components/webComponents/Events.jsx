@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { ArrowRight, Calendar, CheckCircle, Clock, MapPin, Users, X, AlertCircle } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, MapPin, Users, X, AlertCircle, ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { memberApi } from '../../lib/api'
 import { toast } from '../../lib/toast'
@@ -17,10 +17,23 @@ const formatEventDate = (value) => {
 }
 
 const getDatePart = (value, part) => {
+  if (!value) {
+    if (part === 'day') return '01'
+    if (part === 'month') return 'Jan'
+    if (part === 'year') return new Date().getFullYear().toString()
+    return ''
+  }
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return part === 'day' ? '--' : ''
+  if (Number.isNaN(date.getTime())) {
+    if (part === 'day') return '01'
+    if (part === 'month') return 'Jan'
+    if (part === 'year') return new Date().getFullYear().toString()
+    return ''
+  }
   if (part === 'day') return date.toLocaleDateString('en-IN', { day: '2-digit' })
-  return date.toLocaleDateString('en-IN', { month: 'short' })
+  if (part === 'month') return date.toLocaleDateString('en-IN', { month: 'short' })
+  if (part === 'year') return date.toLocaleDateString('en-IN', { year: 'numeric' })
+  return ''
 }
 
 const formatTimeOnly = (dateString) => {
@@ -34,20 +47,27 @@ const formatTimeOnly = (dateString) => {
   });
 }
 
-const normalizeEvent = (event, index) => ({
-  _id: event._id || event.id || '',   // add this line
-  title: event.event_name || event.title || 'Community Event',
-  subtitle: event.title || event.event_name || 'Upcoming Event',
-  category: event.event_category_name || 'Community Event',
-  location: event.event_location || 'Parivar',
-  time: [formatTimeOnly(event.start_time), formatTimeOnly(event.end_time)].filter(Boolean).join(' - ') || 'Time will be announced',
-  date: formatEventDate(event.start_time),
-  day: getDatePart(event.start_time, 'day'),
-  month: getDatePart(event.start_time, 'month'),
-  entry: event.entry_type || 'Free',
-  attendees: 0,
-  image: event.image || `/${(index % 4) + 1}.png`,
-})
+const normalizeEvent = (event, index) => {
+  const startDate = event.start_time || event.date || event.event_date
+  return {
+    _id: event._id || event.id || '',
+    title: event.event_name || event.title || 'Community Event',
+    subtitle: event.title || event.event_name || 'Upcoming Event',
+    description: event.description || event.event_description || '',
+    category: event.event_category_name || event.category || 'Celebration',
+    location: event.event_location || event.venue || event.location || '',
+    venue: event.event_location || event.venue || event.location || '',
+    time: [formatTimeOnly(event.start_time), formatTimeOnly(event.end_time)].filter(Boolean).join(' - ') || (event.time ? String(event.time) : ''),
+    date: formatEventDate(startDate),
+    day: getDatePart(startDate, 'day'),
+    month: getDatePart(startDate, 'month'),
+    year: getDatePart(startDate, 'year'),
+    entry: event.entry_type || event.entry || 'Free',
+    membersCount: event.membersCount || 0,
+    attendees: event.membersCount || 0,
+    image: event.image || event.event_image || `/${(index % 4) + 1}.png`,
+  }
+}
 
 const getStoredWebTheme = () => {
   const colorKeys = [
@@ -88,8 +108,9 @@ export default function Events() {
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState(null)
 
+  const primaryColor = theme.primaryColor || '#991B1B'
   const isEventsPage = location?.pathname === '/events'
-  const visibleEvents = isEventsPage ? events : events.slice(0, 4)
+  const visibleEvents = isEventsPage ? events : events.slice(0, 8)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -107,7 +128,11 @@ export default function Events() {
 
     loadTheme()
     window.addEventListener('storage', loadTheme)
-    return () => window.removeEventListener('storage', loadTheme)
+    window.addEventListener('web-theme-updated', loadTheme)
+    return () => {
+      window.removeEventListener('storage', loadTheme)
+      window.removeEventListener('web-theme-updated', loadTheme)
+    }
   }, [])
 
   useEffect(() => {
@@ -223,17 +248,21 @@ export default function Events() {
   return (
     <section
       id="events"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
-      style={{ backgroundColor: '#FFFFFF' }}
+      className="w-full px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 lg:pt-5 pb-12 sm:pb-14 lg:pb-16 relative overflow-hidden"
+      style={{
+        backgroundColor: '#FFFFFF',
+        paddingTop: '20px',
+        paddingBottom: '64px',
+      }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-10 relative">
-        
+        <div className="text-center mb-6 sm:mb-7 relative">
+
 
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
             <div
-              className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold mb-2.5 sm:mb-3 px-4 py-1.5 rounded-full border bg-white shadow-sm"
               style={{
                 color: theme.primaryColor,
                 borderColor: `${theme.primaryColor}30`,
@@ -253,27 +282,26 @@ export default function Events() {
           </div>
         </div>
 
-        {/* Custom Keyframe for Section-Wide Bottom-to-Top Slide Reveal */}
-        <style>{`
-          @keyframes sectionSlideUp {
-            0% {
-              opacity: 0;
-              transform: translateY(65px);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0px);
-            }
-          }
-        `}</style>
-
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {Array(4).fill(0).map((_, i) => (
-              <div key={`skeleton-${i}`} className="bg-white rounded-tl-[36px] rounded-br-[36px] rounded-tr-xl rounded-bl-xl border border-gray-100 p-4 flex flex-col shadow-sm animate-pulse min-h-[360px]">
-                <div className="w-full h-48 sm:h-52 bg-gray-200 rounded-tl-[28px] rounded-br-[28px] mb-3.5" />
-                <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
-                <div className="h-4 w-1/2 bg-gray-200 rounded mt-auto" />
+              <div
+                key={`skeleton-card-${i}`}
+                className="bg-white rounded-2xl sm:rounded-3xl border animate-pulse flex flex-col justify-between overflow-hidden"
+                style={{ borderColor: theme.borderColor || '#EAEAEA' }}
+              >
+                <div className="bg-gray-100 p-2 sm:p-2.5 flex items-stretch gap-2.5 w-full">
+                  <div className="w-[64px] sm:w-[70px] h-28 sm:h-32 bg-gray-200 rounded-xl sm:rounded-2xl flex-shrink-0" />
+                  <div className="flex-1 h-28 sm:h-32 bg-gray-200 rounded-xl sm:rounded-2xl" />
+                </div>
+                <div className="p-3.5 sm:p-4 space-y-2.5">
+                  <div className="h-4 bg-gray-200 rounded-lg w-3/4" />
+                  <div className="space-y-1.5 py-1">
+                    <div className="h-3.5 bg-gray-100 rounded w-1/2" />
+                    <div className="h-3.5 bg-gray-100 rounded w-2/3" />
+                  </div>
+                  <div className="h-8 bg-gray-200 rounded-xl w-28 mt-2" />
+                </div>
               </div>
             ))}
           </div>
@@ -284,127 +312,130 @@ export default function Events() {
             <p className="text-sm text-gray-500">Check back later for new events and celebrations.</p>
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {visibleEvents.map((event, index) => {
-                return (
-                  <div
-                    key={event._id || `event-${index}`}
-                    className="group bg-white rounded-tl-[36px] rounded-br-[36px] rounded-tr-xl rounded-bl-xl border overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5"
-                    style={{
-                      borderColor: '#f1f5f9',
-                      boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
-                      animation: `sectionSlideUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.12}s`,
-                      opacity: 0,
-                    }}
-                  >
-                    {/* Image / Header Block with curved corners */}
-                    <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-tl-[28px] rounded-br-[28px] m-2" style={{ width: 'calc(100% - 16px)' }}>
-                      {event.image ? (
-                        <img
-                          src={event.image}
-                          alt={event.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center"
-                          style={{
-                            backgroundImage: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.gradientEnd || theme.primaryColor})`
-                          }}
-                        >
-                          <Calendar className="w-16 h-16 text-white/40" />
-                        </div>
-                      )}
-
-                      {/* Date Badge */}
-                      {event.date && (
-                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-md flex items-center gap-1.5 text-xs font-bold" style={{ color: theme.primaryColor }}>
-                          <span className="text-sm leading-none">{getDatePart(event.date, 'day')}</span>
-                          <span className="text-[10px] uppercase tracking-wider opacity-80 leading-none">{getDatePart(event.date, 'month')}</span>
-                        </div>
-                      )}
-
-                      {/* Category Badge */}
-                      {event.category && (
-                        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1 rounded-full">
-                          {event.category}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card Content */}
-                    <div className="p-4 pt-2 flex flex-col flex-grow">
-                      <h3
-                        className="text-base font-bold line-clamp-1 mb-2 group-hover:text-primary transition-colors"
-                        style={{ color: theme.textColor }}
-                      >
-                        {event.title}
-                      </h3>
-
-                      {/* Meta info: Venue, Time, Members */}
-                      <div className="space-y-1.5 mb-4 text-xs text-gray-500">
-                        {event.venue && (
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="truncate">{event.venue}</span>
-                          </div>
-                        )}
-                        {event.time && (
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span>{formatTimeOnly(event.time)}</span>
-                          </div>
-                        )}
-                        {event.membersCount !== undefined && event.membersCount !== null && (
-                          <div className="flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span>{event.membersCount} attending</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Action / Entry Footer */}
-                      <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
-                        <span className="text-xs font-semibold text-gray-500">
-                          Entry: <span className="text-gray-800 font-bold capitalize">{event.entry || 'Free'}</span>
-                        </span>
-
-                        <button
-                          onClick={() => openRegisterDialog(event)}
-                          className="text-xs font-bold px-3 py-1.5 rounded-full transition-all duration-200 hover:shadow-md hover:scale-105"
-                          style={{
-                            backgroundColor: theme.buttonColor || theme.primaryColor,
-                            color: theme.fontColor || '#FFFFFF',
-                          }}
-                        >
-                          Register Now
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* View More Button (Homepage only) */}
-            {!isEventsPage && events.length > 4 && (
-              <div className="mt-10 text-center">
-                <button
-                  onClick={() => navigate('/events')}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold border transition-all duration-200 hover:shadow-md"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            {visibleEvents.map((event, index) => (
+              <div
+                key={event._id || `event-${index}`}
+                className="bg-white rounded-2xl sm:rounded-3xl border shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden group"
+                style={{
+                  borderColor: theme.borderColor || '#EAEAEA',
+                }}
+              >
+                {/* Top Banner (Date Badge + Event Image - flush to card edges to utilize full space) */}
+                <div
+                  className="relative p-2 sm:p-2.5 flex items-stretch gap-2 sm:gap-2.5 overflow-hidden w-full"
                   style={{
-                    color: theme.primaryColor,
-                    borderColor: theme.primaryColor,
-                    backgroundColor: 'transparent',
+                    background: `linear-gradient(135deg, ${primaryColor}14 0%, ${primaryColor}04 100%)`,
                   }}
                 >
-                  <span>View All Events</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                  {/* Date Badge */}
+                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100/80 px-2.5 py-2.5 sm:px-3 sm:py-3 flex flex-col items-center justify-center text-center min-w-[64px] sm:min-w-[70px] flex-shrink-0">
+                    <span
+                      className="text-xl sm:text-2xl font-black leading-none mb-0.5 tracking-tight"
+                      style={{ color: primaryColor }}
+                    >
+                      {event.day}
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-gray-700 leading-tight mb-0.5">
+                      {event.month}
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] font-semibold text-gray-400 leading-tight">
+                      {event.year}
+                    </span>
+                  </div>
+
+                  {/* Event Image */}
+                  <div className="relative flex-1 h-28 sm:h-32 rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100">
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = `/${(index % 4) + 1}.png`
+                      }}
+                      className="w-full h-full object-cover rounded-xl sm:rounded-2xl transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="flex flex-col flex-1 p-3.5 sm:p-4 pt-3">
+                  {/* Event Title */}
+                  <h3
+                    className="text-sm sm:text-base font-bold tracking-tight text-[#0D1527] line-clamp-1 mb-2.5 group-hover:text-primary transition-colors"
+                    style={{ color: theme.textColor || '#0D1527' }}
+                  >
+                    {event.title}
+                  </h3>
+
+                  {/* Location & Time Rows */}
+                  <div className="space-y-1.5 mb-3.5 sm:mb-4">
+                    {/* Location */}
+                    <div className="flex items-center gap-2 text-xs text-gray-600 font-medium">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: `${primaryColor}15`,
+                          color: primaryColor,
+                        }}
+                      >
+                        <MapPin className="w-3 h-3" />
+                      </div>
+                      <span className="truncate">{event.venue || event.location || 'Community Hall'}</span>
+                    </div>
+
+                    {/* Time */}
+                    <div className="flex items-center gap-2 text-xs text-gray-600 font-medium">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: `${primaryColor}15`,
+                          color: primaryColor,
+                        }}
+                      >
+                        <Clock className="w-3 h-3" />
+                      </div>
+                      <span className="truncate">{event.time || '6:00 PM - 10:00 PM'}</span>
+                    </div>
+                  </div>
+
+                  {/* View Details Button */}
+                  <div className="mt-auto pt-1">
+                    <button
+                      type="button"
+                      onClick={() => openRegisterDialog(event)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 sm:px-4.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold text-white shadow-sm transition-all duration-200 hover:opacity-95 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                      style={{
+                        backgroundColor: theme.buttonColor || theme.primaryColor || '#991B1B',
+                        color: theme.fontColor || '#FFFFFF',
+                      }}
+                    >
+                      <span>View Details</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
-          </>
+            ))}
+          </div>
+        )}
+
+        {/* View All Events Button (Centered at bottom, homepage only) */}
+        {!isEventsPage && events.length > 8 && (
+          <div className="mt-6 sm:mt-8 text-center">
+            <button
+              onClick={() => navigate('/events')}
+              className="inline-flex items-center gap-2.5 px-8 py-3 rounded-full text-sm font-semibold border transition-all duration-200 hover:shadow-md hover:scale-105 cursor-pointer"
+              style={{
+                color: primaryColor,
+                borderColor: primaryColor,
+                backgroundColor: 'transparent',
+              }}
+            >
+              <span>View All Events</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -457,11 +488,10 @@ export default function Events() {
                   type="text"
                   value={formData.name}
                   onChange={(event) => handleChange('name', event.target.value)}
-                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${
-                    errors.name
-                      ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
-                      : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
-                  }`}
+                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${errors.name
+                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+                    : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
+                    }`}
                   placeholder="Enter your full name"
                 />
                 {errors.name && (
@@ -482,11 +512,10 @@ export default function Events() {
                     const onlyNums = event.target.value.replace(/\D/g, '')
                     handleChange('phone', onlyNums)
                   }}
-                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${
-                    errors.phone
-                      ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
-                      : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
-                  }`}
+                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${errors.phone
+                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+                    : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
+                    }`}
                   placeholder="Enter 10-digit mobile number"
                 />
                 {errors.phone && (
@@ -503,11 +532,10 @@ export default function Events() {
                   type="email"
                   value={formData.email}
                   onChange={(event) => handleChange('email', event.target.value)}
-                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${
-                    errors.email
-                      ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
-                      : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
-                  }`}
+                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all placeholder:text-gray-400 ${errors.email
+                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+                    : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
+                    }`}
                   placeholder="Enter your email address"
                 />
                 {errors.email && (
@@ -525,11 +553,10 @@ export default function Events() {
                   min="1"
                   value={formData.members}
                   onChange={(event) => handleChange('members', event.target.value)}
-                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all ${
-                    errors.members
-                      ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
-                      : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
-                  }`}
+                  className={`w-full rounded-lg border px-3.5 py-2 text-sm outline-none transition-all ${errors.members
+                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+                    : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
+                    }`}
                   placeholder="1"
                 />
                 {errors.members && (

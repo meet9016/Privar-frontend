@@ -5,6 +5,7 @@ import Members from '../../components/webComponents/CommitteeMember'
 import Memories from '../../components/webComponents/Memories'
 import Events from '../../components/webComponents/Events'
 import TopStudents from '../../components/webComponents/TopStudents'
+import CommunityStats from '../../components/webComponents/CommunityStats'
 import Donors from '../../components/webComponents/Donors'
 import Businesses from '../../components/webComponents/Businesses'
 
@@ -29,6 +30,7 @@ export default function Home() {
       <Memories />
       <Events />
       <TopStudents />
+      <CommunityStats />
       <Businesses />
       <Donors />
     </div>

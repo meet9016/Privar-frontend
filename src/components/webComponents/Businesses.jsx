@@ -1,13 +1,27 @@
 import React, { useEffect, useState } from 'react'
-import { Briefcase } from 'lucide-react'
+import { Building2, Store, MapPin, Phone, Globe, ArrowRight, Sparkles } from 'lucide-react'
 import { memberApi } from '../../lib/api'
 
-const normalizeBusiness = (biz, index) => ({
-  id: biz.id || `${biz.name}-${index}`,
-  name: biz.name || biz.business_name || 'Business',
-  role: biz.category || biz.type || 'Business',
-  image: biz.image || biz.logo || "/image.png",
-})
+const normalizeBusiness = (biz, index) => {
+  const name = biz.business_name || biz.name || `Enterprise ${index + 1}`
+  const category = biz.business_category_name || biz.category_name || biz.category || ''
+  const location = [biz.city_name, biz.state_name].filter(Boolean).join(', ') || biz.address || ''
+  const phone = biz.whatsapp_number || biz.number || ''
+  const image = biz.image || biz.logo || ''
+  const website = biz.website || ''
+  const email = biz.email || ''
+
+  return {
+    id: biz.id || `${name}-${index}`,
+    name,
+    category,
+    location,
+    phone,
+    image,
+    website,
+    email,
+  }
+}
 
 const getStoredWebTheme = () => {
   const colorKeys = [
@@ -27,28 +41,20 @@ const getStoredWebTheme = () => {
   }, {})
 }
 
-const shadeColor = (color, percent) => {
-  if (!color) return '#000000'
-  const num = parseInt(color.replace('#', ''), 16)
-  const amt = Math.round(2.55 * percent)
-  const r = Math.max(0, Math.min(255, (num >> 16) + amt)).toString(16).padStart(2, '0')
-  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt)).toString(16).padStart(2, '0')
-  const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt)).toString(16).padStart(2, '0')
-  return `#${r}${g}${b}`
-}
-
 export default function Businesses() {
   const [theme, setTheme] = useState(getStoredWebTheme())
   const [businesses, setBusinesses] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const loadTheme = () => {
-      setTheme(getStoredWebTheme())
-    }
+    const loadTheme = () => setTheme(getStoredWebTheme())
     loadTheme()
     window.addEventListener('storage', loadTheme)
-    return () => window.removeEventListener('storage', loadTheme)
+    window.addEventListener('web-theme-updated', loadTheme)
+    return () => {
+      window.removeEventListener('storage', loadTheme)
+      window.removeEventListener('web-theme-updated', loadTheme)
+    }
   }, [])
 
   useEffect(() => {
@@ -67,121 +73,220 @@ export default function Businesses() {
     fetchBusinesses()
   }, [])
 
+  const primaryColor = theme.primaryColor || '#991B1B'
+  const textColor = theme.textColor || '#0a2342'
+
   const visibleBusinesses = businesses.length > 0 ? businesses : []
-  // Duplicate items heavily to ensure they fill wide screens and prevent white space.
-  // Using an even number of duplications ensures translateX(-50%) works perfectly.
-  const doubled = Array(12).fill(visibleBusinesses).flat()
+
+  // Ensure base track has at least 8 items so it fills ultrawide screens
+  const repeatCount = visibleBusinesses.length > 0 ? Math.max(2, Math.ceil(8 / visibleBusinesses.length)) : 1
+  const baseList = Array(repeatCount).fill(visibleBusinesses).flat()
+  // Exact 2x duplication for mathematical 100% seamless infinite loop (-50%)
+  const displayBusinesses = [...baseList, ...baseList]
+  // Slow, comfortable reading speed (~8.5 seconds per card, ~37px/second)
+  const scrollDuration = Math.max(50, baseList.length * 8.5)
 
   return (
     <section
       id="businesses"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
+      className="w-full px-4 sm:px-6 lg:px-8 pt-0 pb-12 sm:pb-14 lg:pb-16 relative overflow-hidden"
       style={{
-        backgroundColor: theme.backgroundColor,
+        backgroundColor: theme.backgroundColor || 'transparent',
+        paddingTop: 0,
+        paddingBottom: '64px',
       }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-10">
+        {/* Section Header */}
+        <div className="relative z-10 flex flex-col items-center text-center mb-6 sm:mb-8">
           {/* Badge */}
           <div
-            className="inline-flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-1.5 rounded-full border bg-white shadow-sm"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2.5 px-3.5 py-1.5 rounded-full border shadow-2xs backdrop-blur-sm"
             style={{
-              color: theme.primaryColor,
-              borderColor: `${theme.primaryColor}30`,
+              color: primaryColor,
+              borderColor: `${primaryColor}25`,
+              backgroundColor: `${primaryColor}0a`,
             }}
           >
-            <Briefcase className="w-4 h-4" style={{ color: theme.primaryColor }} />
-            <span>Businesses</span>
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Community Directory</span>
           </div>
 
           {/* Heading */}
           <h2
-            className="text-3xl sm:text-4xl lg:text-4xl font-bold tracking-tight mb-3"
-            style={{ color: theme.textColor }}
+            className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-2"
+            style={{ color: textColor }}
           >
             Our Community Businesses
           </h2>
+
+         
         </div>
+
+        {/* Loading State */}
         {loading ? (
-          <div className="flex gap-[24px] justify-center overflow-hidden px-4 py-2">
+          <div className="flex gap-[24px] justify-center overflow-hidden px-4 py-3">
             {Array(5).fill(0).map((_, i) => (
               <div
                 key={`skeleton-${i}`}
-                className="relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden bg-white border border-gray-100 shadow-sm"
+                className="relative flex-shrink-0 w-[270px] sm:w-[290px] rounded-[26px] overflow-hidden bg-white border shadow-sm animate-pulse p-3"
+                style={{
+                  borderColor: `${primaryColor}15`,
+                }}
               >
-                <div className="w-full aspect-square bg-gray-200 animate-pulse" />
-                <div className="px-4 pt-3 pb-4 flex flex-col items-center bg-white">
-                  <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-3" />
-                  <div className="h-4 w-1/2 bg-gray-200 rounded-full animate-pulse" />
+                <div className="w-full h-[175px] rounded-[20px] bg-gray-200 mb-3" />
+                <div className="px-1 flex flex-col gap-2.5">
+                  <div className="h-5 w-3/4 bg-gray-200 rounded-md" />
+                  <div className="h-4 w-1/2 bg-gray-200 rounded-full" />
+                  <div className="h-8 w-full bg-gray-100 rounded-xl mt-2" />
                 </div>
               </div>
             ))}
           </div>
         ) : visibleBusinesses.length === 0 ? (
-          <div className="text-center py-12 px-4 bg-white rounded-2xl border border-gray-100 shadow-sm max-w-md mx-auto">
-            <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-gray-700 mb-1">No Businesses Listed</h3>
+          <div
+            className="text-center py-12 px-6 bg-white rounded-3xl border shadow-sm max-w-md mx-auto"
+            style={{ borderColor: `${primaryColor}18` }}
+          >
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+              style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}
+            >
+              <Store className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-bold text-gray-800 mb-1">No Businesses Listed Yet</h3>
             <p className="text-xs text-gray-500">Community businesses will appear here once registered.</p>
           </div>
         ) : (
-          <div style={{
-            overflow: 'hidden', position: 'relative',
-            maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-          }}>
+          /* Infinite Scroll Track */
+          <div
+            className="overflow-hidden relative"
+          >
             <div
               style={{
                 display: 'flex',
                 gap: '24px',
                 width: 'max-content',
-                padding: '10px 12px', // 12px + 12px = 24px (equals gap) to make the -50% scroll mathematically seamless
-                animation: 'scroll-left 90s linear infinite', // Slowed down slightly for smoother readability
+                padding: '12px 12px 20px',
+                animation: `scroll-left ${scrollDuration}s linear infinite`,
+                willChange: 'transform',
               }}
-              onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
-              onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
+              onMouseEnter={(e) => (e.currentTarget.style.animationPlayState = 'paused')}
+              onMouseLeave={(e) => (e.currentTarget.style.animationPlayState = 'running')}
             >
-              {doubled.map((biz, i) => (
+              {displayBusinesses.map((biz, i) => (
                 <article
                   key={`${biz.id}-${i}`}
-                  className="group relative flex-shrink-0 w-[220px] sm:w-[240px] rounded-lg overflow-hidden transition-all duration-500 bg-white border"
+                  className="group relative flex-shrink-0 w-[270px] sm:w-[290px] rounded-[26px] overflow-hidden bg-white border transition-all duration-300 select-none flex flex-col cursor-pointer shadow-sm hover:shadow-xl"
                   style={{
-                    borderColor: `${theme.borderColor}50`,
+                    borderColor: `${primaryColor}18`,
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-5px)'
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-6px)'
+                    e.currentTarget.style.boxShadow = `0 20px 38px -8px ${primaryColor}22, 0 4px 12px rgba(0, 0, 0, 0.04)`
+                    e.currentTarget.style.borderColor = `${primaryColor}35`
                   }}
-                  onMouseLeave={e => {
+                  onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0px)'
+                    e.currentTarget.style.boxShadow = '0 8px 22px -4px rgba(0, 0, 0, 0.05)'
+                    e.currentTarget.style.borderColor = `${primaryColor}18`
                   }}
                 >
-                  {/* Flat Square Image (Edge-to-Edge) */}
-                  <div className="relative w-full aspect-square bg-gray-50 overflow-hidden">
+                  {/* Photo Frame (Modern Inset Luxury Card) */}
+                  <div className="relative m-3 mb-2 h-[175px] rounded-[20px] bg-slate-900 overflow-hidden shadow-xs">
                     <img
-                      src={biz.image}
+                      src={biz.image || '/image.png'}
                       alt={biz.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      onError={(e) => {
+                        e.target.src = '/image.png'
+                      }}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                       draggable={false}
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                    {/* Dark Vignette Gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent pointer-events-none" />
+
+                    {/* Category Tag on Top Left (Rendered ONCE with real category) */}
+                    {biz.category && (
+                      <div className="absolute top-2.5 left-2.5 z-10">
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white backdrop-blur-md border border-white/30 shadow-sm"
+                          style={{
+                            backgroundColor: `${primaryColor}e6`,
+                          }}
+                        >
+                          <Store className="w-3 h-3" />
+                          <span className="truncate max-w-[120px]">{biz.category}</span>
+                        </span>
+                      </div>
+                    )}
+
+                  
                   </div>
 
-                  {/* Text Content */}
-                  <div className="px-4 pt-3 pb-4 text-center relative z-20 bg-white flex flex-col items-center">
-                    <h3
-                      className="text-base sm:text-[17px] font-bold mb-1.5 w-full truncate transition-colors duration-300"
-                      style={{ color: theme.primaryColor }}
-                    >
-                      {biz.name}
-                    </h3>
+                  {/* Card Body */}
+                  <div className="px-4 pb-4 pt-1.5 flex flex-col justify-between flex-1">
+                    <div>
+                      {/* Business Name */}
+                      <h3
+                        className="text-base sm:text-[17px] font-black text-gray-900 mb-1.5 leading-snug truncate transition-colors duration-200 group-hover:text-primary"
+                        style={{ color: textColor }}
+                        title={biz.name}
+                      >
+                        {biz.name}
+                      </h3>
+
+                      {/* Location Row (Unique, Not Duplicated!) */}
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
+                        <MapPin className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                        <span className="truncate font-semibold text-gray-600">
+                          {biz.location || 'Community Enterprise'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card Footer: Contact / Phone & Connect Button */}
                     <div
-                      className="inline-flex items-center justify-center text-[11px] sm:text-[12px] font-medium tracking-wide px-3 py-0.5 rounded-full border bg-white"
-                      style={{
-                        color: theme.primaryColor,
-                        borderColor: theme.primaryColor,
-                      }}
+                      className="pt-3 mt-auto border-t flex items-center justify-between gap-2"
+                      style={{ borderColor: `${primaryColor}14` }}
                     >
-                      {biz.role}
+                      {biz.phone ? (
+                        <a
+                          href={`tel:${biz.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-gray-900 transition-colors truncate max-w-[140px]"
+                          title={`Call ${biz.phone}`}
+                        >
+                          <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="truncate">{biz.phone}</span>
+                        </a>
+                      ) : biz.website ? (
+                        <a
+                          href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-gray-600 hover:text-gray-900 transition-colors truncate max-w-[140px]"
+                        >
+                          <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span className="truncate">Visit Website</span>
+                        </a>
+                      ) : (
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider truncate">
+                          Verified Member
+                        </span>
+                      )}
+
+                      <div
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-xs transition-all duration-300 group-hover:scale-105 group-hover:shadow-md shrink-0"
+                        style={{
+                          backgroundColor: primaryColor,
+                        }}
+                      >
+                        <span>Connect</span>
+                        <ArrowRight className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      </div>
                     </div>
                   </div>
                 </article>

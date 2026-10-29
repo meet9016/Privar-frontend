@@ -88,8 +88,12 @@ export default function Donors() {
   return (
     <section
       id="donors"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
-      style={{ backgroundColor: '#FFFFFF' }}
+      className="w-full px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 lg:pt-5 pb-12 sm:pb-14 lg:pb-16 relative overflow-hidden"
+      style={{
+        backgroundColor: '#FFFFFF',
+        paddingTop: '20px',
+        paddingBottom: '64px',
+      }}
     >
       <div className="max-w-7xl mx-auto">
         <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-10">
@@ -118,7 +122,14 @@ export default function Donors() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {Array(4).fill(0).map((_, i) => (
-              <div key={`skeleton-${i}`} className="bg-white rounded-lg border border-gray-100 p-5 flex flex-col min-h-[160px] shadow-sm">
+              <div
+                key={`skeleton-${i}`}
+                className="bg-white rounded-xl border p-5 flex flex-col min-h-[160px] shadow-sm animate-pulse"
+                style={{
+                  borderWidth: '1.5px',
+                  borderColor: theme.borderColor || '#D9E7F5',
+                }}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
                   <div className="w-20 h-6 rounded-full bg-gray-200 animate-pulse" />
@@ -168,8 +179,11 @@ export default function Donors() {
                 return (
                   <article
                     key={donor.id || donor._id}
-                    className="group flex flex-col overflow-hidden bg-white rounded-lg border shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
-                    style={{ borderColor: `${theme.borderColor}40` }}
+                    className="group flex flex-col overflow-hidden bg-white rounded-xl border shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+                    style={{
+                      borderWidth: '1.5px',
+                      borderColor: theme.borderColor || '#D9E7F5',
+                    }}
                   >
                     <div className="p-5 flex-1 flex flex-col">
                       {/* Top Row: Avatar & Amount */}
@@ -216,19 +230,20 @@ export default function Donors() {
               })}
             </div>
 
-            {/* Load More Button */}
+            {/* Load More Button: Transparent bg with border */}
             {!isDonorsPage && donors.length > 4 && (
-              <div className="mt-3 flex justify-center">
+              <div className="mt-8 sm:mt-10 flex justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     navigate('/donors')
                     window.scrollTo({ top: 0, behavior: 'smooth' })
                   }}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-extrabold text-white transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-full text-sm font-semibold border transition-all duration-200 hover:shadow-md hover:scale-105"
                   style={{
-                    backgroundColor: theme.buttonColor || theme.primaryColor || '#0a2342',
-                    color: theme.fontColor || '#FFFFFF',
+                    color: theme.primaryColor || '#2563eb',
+                    borderColor: theme.primaryColor || '#2563eb',
+                    backgroundColor: 'transparent',
                   }}
                 >
                   <span>View All Donors ({donors.length})</span>

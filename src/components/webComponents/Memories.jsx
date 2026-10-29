@@ -17,12 +17,15 @@ const normalizeGalleryMemories = (galleryRows, categories) => {
     const rawCat = row.category || row.category_name || (row.gallery_category_id && categoryMap[categoryId]) || 'General'
     const categoryName = (typeof rawCat === 'object' && rawCat?.name) ? rawCat.name : String(rawCat)
 
+    const titleName = row.title || row.name || row.gallery_name || categoryName
+
     return images.map((image, imageIndex) => ({
       src: assetUrl(image),
       fallback: `/${((rowIndex + imageIndex) % 4) + 1}.png`,
       category: categoryName,
       categoryId: categoryId || categoryName,
-      alt: `${categoryName} memory`,
+      title: titleName,
+      alt: `${titleName} memory`,
     }))
   })
 }
@@ -127,32 +130,14 @@ export default function Memories() {
     )
   }, [activeTab, visibleMemories])
 
-  const checkScroll = () => {
-    if (!sliderRef.current) return
-    const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current
-    setCanScrollLeft(scrollLeft > 10)
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
-  }
-
-  useEffect(() => {
-    checkScroll()
-    const slider = sliderRef.current
-    if (slider) {
-      slider.addEventListener('scroll', checkScroll, { passive: true })
-      window.addEventListener('resize', checkScroll)
+  const displayMemories = useMemo(() => {
+    if (!filteredMemories.length) return []
+    let list = filteredMemories
+    while (list.length < 8) {
+      list = [...list, ...filteredMemories]
     }
-    return () => {
-      if (slider) slider.removeEventListener('scroll', checkScroll)
-      window.removeEventListener('resize', checkScroll)
-    }
+    return [...list, ...list]
   }, [filteredMemories])
-
-  // Reset scroll when tab changes
-  useEffect(() => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollTo({ left: 0, behavior: 'smooth' })
-    }
-  }, [activeTab])
 
   // Lightbox keyboard navigation
   useEffect(() => {
@@ -177,23 +162,17 @@ export default function Memories() {
     }
   }, [lightboxIndex, filteredMemories.length])
 
-  const scroll = (direction) => {
-    if (!sliderRef.current) return
-    const container = sliderRef.current
-    const scrollAmount = container.clientWidth * 0.8
-    container.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth',
-    })
-  }
-
   return (
     <section
       id="gallery"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
-      style={{ backgroundColor: theme.backgroundColor || '#FFFFFF' }}
+      className="w-full pt-3 sm:pt-4 lg:pt-5 pb-12 sm:pb-14 lg:pb-16 relative overflow-hidden"
+      style={{
+        backgroundColor: theme.backgroundColor || '#FFFFFF',
+        paddingTop: '20px',
+        paddingBottom: '64px',
+      }}
     >
-      <div className="max-w-[1600px] mx-auto">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-10">
           {/* Badge */}
@@ -219,7 +198,7 @@ export default function Memories() {
 
         {/* Category Filter Tabs */}
         {visibleTabs.length > 1 && (
-          <div className="flex justify-center mb-6 px-1">
+          <div className="flex justify-center mb-8 px-1">
             <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl sm:rounded-full bg-gray-100/90 border border-gray-200/80 backdrop-blur-md shadow-inner max-w-full">
               {visibleTabs.map((tab) => {
                 const isActive = activeTab === tab.id
@@ -252,7 +231,7 @@ export default function Memories() {
             {Array(4).fill(0).map((_, i) => (
               <div
                 key={`skeleton-${i}`}
-                className="w-[80vw] sm:w-[320px] md:w-[380px] flex-shrink-0 rounded-[28px] bg-gray-200 aspect-[4/3] animate-pulse"
+                className="w-[80vw] sm:w-[320px] md:w-[380px] flex-shrink-0 rounded-[20px] bg-gray-200 aspect-[4/3] animate-pulse"
               />
             ))}
           </div>
@@ -262,85 +241,75 @@ export default function Memories() {
             <h3 className="text-base font-semibold text-gray-700 mb-1">No Gallery Images Found</h3>
             <p className="text-xs text-gray-500">Photos will appear here once added to this category.</p>
           </div>
-        ) : (
-          /* Slider Container */
-          <div className="relative group">
-            {filteredMemories.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => scroll('left')}
-                  disabled={!canScrollLeft}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4 z-20 w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200 shadow-md disabled:opacity-0 disabled:pointer-events-none hover:scale-105 active:scale-95 bg-white"
-                  style={{
-                    borderColor: `${theme.primaryColor || '#0a2342'}25`,
-                    color: theme.primaryColor || '#0a2342',
-                  }}
-                  aria-label="Previous photos"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scroll('right')}
-                  disabled={!canScrollRight}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4 z-20 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-md disabled:opacity-0 disabled:pointer-events-none hover:scale-105 active:scale-95 text-white"
-                  style={{
-                    backgroundColor: theme.primaryColor || '#0a2342',
-                  }}
-                  aria-label="Next photos"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </>
-            )}
-            <div
-              ref={sliderRef}
-              className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory py-3 px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {filteredMemories.map((memory, index) => (
+        ) : null}
+      </div>
+
+      {/* Full-width continuous auto-scroll marquee */}
+      {!loading && filteredMemories.length > 0 && (
+        <div
+          className="w-full overflow-hidden relative py-2"
+          style={{
+            maskImage: 'linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%)',
+          }}
+        >
+          <div
+            className="flex gap-4 sm:gap-6 will-change-transform"
+            style={{
+              width: 'max-content',
+              animation: `scroll-left ${Math.max(30, displayMemories.length * 3.5)}s linear infinite`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.animationPlayState = 'paused'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.animationPlayState = 'running'
+            }}
+          >
+            {displayMemories.map((memory, index) => {
+              const originalIndex = filteredMemories.findIndex((m) => m.src === memory.src)
+              const targetIndex = originalIndex >= 0 ? originalIndex : (index % filteredMemories.length)
+
+              return (
                 <article
                   key={`${activeTab}-${memory.src}-${index}`}
-                  onClick={() => setLightboxIndex(index)}
-                  className="w-[82vw] sm:w-[320px] md:w-[380px] lg:w-[420px] flex-shrink-0 snap-start group/card relative overflow-hidden rounded-[26px] bg-white border shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 p-2.5 cursor-pointer"
-                  style={{
-                    borderColor: `${theme.primaryColor || '#0a2342'}15`,
-                  }}
+                  onClick={() => setLightboxIndex(targetIndex)}
+                  className="flex flex-col w-[260px] sm:w-[320px] md:w-[360px] lg:w-[400px] flex-shrink-0 cursor-pointer group/card select-none"
                 >
                   {/* Photo Container */}
-                  <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[20px] bg-gray-900 shadow-inner">
+                  <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[20px] shadow-sm group-hover/card:shadow-xl transition-all duration-500 bg-gray-900">
                     <img
                       src={memory.src}
                       alt={memory.alt}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
-                      loading={index < 4 ? 'eager' : 'lazy'}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-108"
+                      loading="lazy"
                       onError={(event) => {
                         if (event.currentTarget.src.endsWith(memory.fallback)) return
                         event.currentTarget.src = memory.fallback
                       }}
                     />
 
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover/card:opacity-90 transition-opacity duration-300 pointer-events-none" />
-
                     {/* Expand Icon on Hover */}
-                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md shadow-md flex items-center justify-center text-gray-800 opacity-0 group-hover/card:opacity-100 transition-all duration-300 scale-90 group-hover/card:scale-100">
+                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md shadow-md flex items-center justify-center text-white opacity-0 group-hover/card:opacity-100 transition-all duration-300 scale-90 group-hover/card:scale-100 border border-white/20">
                       <Maximize2 className="w-4 h-4" />
                     </div>
+                  </div>
 
-                    {/* Bottom Category Tag */}
-                    <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-md bg-black/55 border border-white/30">
-                        {memory.category}
-                      </span>
-                    </div>
+                  {/* Only Name in Center with Dynamic Theme Color */}
+                  <div className="pt-3 pb-1 px-2 text-center">
+                    <h4
+                      className="text-base sm:text-lg font-bold truncate transition-transform duration-300 group-hover/card:scale-105"
+                      style={{ color: theme.primaryColor || '#0a2342' }}
+                    >
+                      {memory.title || memory.category}
+                    </h4>
                   </div>
                 </article>
-              ))}
-            </div>
+              )
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Lightbox Fullscreen Modal */}
       {lightboxIndex !== null && filteredMemories[lightboxIndex] && (

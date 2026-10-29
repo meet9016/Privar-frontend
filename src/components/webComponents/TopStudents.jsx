@@ -58,7 +58,11 @@ export default function TopStudents() {
 
     loadTheme()
     window.addEventListener('storage', loadTheme)
-    return () => window.removeEventListener('storage', loadTheme)
+    window.addEventListener('web-theme-updated', loadTheme)
+    return () => {
+      window.removeEventListener('storage', loadTheme)
+      window.removeEventListener('web-theme-updated', loadTheme)
+    }
   }, [])
 
   useEffect(() => {
@@ -114,24 +118,30 @@ export default function TopStudents() {
 
   const visibleStudents = students.length > 0 ? students : []
 
+  const primaryColor = theme.primaryColor || '#991B1B'
+
   return (
     <section
       id="students"
-      className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 relative overflow-hidden"
-      style={{ backgroundColor: theme.backgroundColor || '#FFFFFF' }}
+      className="w-full px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 lg:pt-5 pb-12 sm:pb-14 lg:pb-16 relative overflow-hidden"
+      style={{
+        backgroundColor: theme.backgroundColor || '#FFFFFF',
+        paddingTop: '20px',
+        paddingBottom: '64px',
+      }}
     >
       <div className="max-w-7xl mx-auto">
         {/* Header with Centered Title */}
-        <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-10">
+        <div className="relative z-10 flex flex-col items-center text-center mb-6 sm:mb-7">
           {/* Badge */}
           <div
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold mb-3 px-3.5 py-1.5 rounded-full border bg-white shadow-sm"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold mb-2.5 sm:mb-3 px-3.5 py-1.5 rounded-full border bg-white shadow-sm"
             style={{
-              color: theme.primaryColor || '#0a2342',
-              borderColor: `${theme.primaryColor || '#0a2342'}30`,
+              color: primaryColor,
+              borderColor: `${primaryColor}30`,
             }}
           >
-            <GraduationCap className="w-4 h-4" style={{ color: theme.primaryColor || '#0a2342' }} />
+            <GraduationCap className="w-4 h-4" style={{ color: primaryColor }} />
             <span>Top Achievers</span>
           </div>
 
@@ -150,9 +160,9 @@ export default function TopStudents() {
             {Array(4).fill(0).map((_, i) => (
               <div
                 key={`skeleton-${i}`}
-                className="w-[80vw] sm:w-[300px] lg:w-[calc(25%-15px)] flex-shrink-0 bg-white rounded-[28px] border border-gray-100 p-4 flex flex-col shadow-sm animate-pulse"
+                className="w-[80vw] sm:w-[300px] lg:w-[calc(25%-15px)] h-[380px] sm:h-[400px] flex-shrink-0 bg-white rounded-[26px] border border-gray-100 p-4 flex flex-col shadow-sm animate-pulse"
               >
-                <div className="w-full aspect-[4/3] bg-gray-200 rounded-[20px] mb-4" />
+                <div className="w-full flex-1 bg-gray-200 rounded-[20px] mb-4" />
                 <div className="h-5 w-3/4 bg-gray-200 rounded-full mb-2" />
                 <div className="h-4 w-1/2 bg-gray-200 rounded-full" />
               </div>
@@ -173,10 +183,10 @@ export default function TopStudents() {
                   type="button"
                   onClick={() => scroll('left')}
                   disabled={!canScrollLeft}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4 z-20 w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200 shadow-md disabled:opacity-0 disabled:pointer-events-none hover:scale-105 active:scale-95 bg-white"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4 z-30 w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200 shadow-md disabled:opacity-0 disabled:pointer-events-none hover:scale-105 active:scale-95 bg-white cursor-pointer"
                   style={{
-                    borderColor: `${theme.primaryColor || '#0a2342'}25`,
-                    color: theme.primaryColor || '#0a2342',
+                    borderColor: `${primaryColor}25`,
+                    color: primaryColor,
                   }}
                   aria-label="Previous students"
                 >
@@ -186,9 +196,9 @@ export default function TopStudents() {
                   type="button"
                   onClick={() => scroll('right')}
                   disabled={!canScrollRight}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4 z-20 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-md disabled:opacity-0 disabled:pointer-events-none hover:scale-105 active:scale-95 text-white"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-md disabled:opacity-0 disabled:pointer-events-none hover:scale-105 active:scale-95 text-white cursor-pointer"
                   style={{
-                    backgroundColor: theme.primaryColor || '#0a2342',
+                    backgroundColor: primaryColor,
                   }}
                   aria-label="Next students"
                 >
@@ -198,83 +208,15 @@ export default function TopStudents() {
             )}
             <div
               ref={sliderRef}
-              className="flex gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory py-3 px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory py-4 px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {visibleStudents.map((student, index) => (
-                <article
+                <StudentCard
                   key={`${student.name}-${index}`}
-                  className="w-[82vw] sm:w-[310px] lg:w-[calc(25%-15px)] flex-shrink-0 snap-start group/card relative flex flex-col overflow-hidden bg-white rounded-[28px] border shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 p-3.5"
-                  style={{
-                    borderColor: `${theme.primaryColor || '#0a2342'}18`,
-                  }}
-                >
-                  {/* Photo Header */}
-                  <div className="relative w-full aspect-[4/3] rounded-[22px] overflow-hidden bg-gray-900 mb-3 shadow-inner">
-                    <img
-                      src={student.image}
-                      alt={student.name}
-                      className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover/card:scale-108"
-                      loading={index < 4 ? 'eager' : 'lazy'}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
-
-                    {/* Top-Left Floating Rank Badge */}
-                    <div
-                      className="absolute top-2.5 left-2.5 px-2.5 py-1 text-xs font-bold text-white rounded-full shadow-md z-10 backdrop-blur-md flex items-center gap-1.5 border border-white/30"
-                      style={{ backgroundColor: theme.primaryColor || '#0a2342' }}
-                    >
-                      <Award className="h-3.5 w-3.5" />
-                      <span>{student.rank}</span>
-                    </div>
-
-                    {/* Top-Right Trophy/Medal Icon */}
-                    <div className="absolute top-2.5 right-2.5 flex items-center justify-center w-7 h-7 rounded-full bg-white/95 backdrop-blur-md shadow-md z-10 border border-white/50">
-                      {index === 0 ? (
-                        <Trophy className="h-3.5 w-3.5 text-amber-500" />
-                      ) : (
-                        <Medal className="h-3.5 w-3.5" style={{ color: theme.primaryColor || '#0a2342' }} />
-                      )}
-                    </div>
-
-                    {/* Bottom Standard Tag */}
-                    <div className="absolute bottom-2.5 left-2.5 z-10">
-                      <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-black/50 backdrop-blur-md border border-white/20 truncate max-w-[130px]">
-                        {student.standard}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="flex flex-col flex-1 justify-between px-1">
-                    <div>
-                      <h3
-                        className="text-base font-bold mb-1 leading-snug truncate group-hover/card:text-primary transition-colors"
-                        style={{ color: theme.textColor || '#0a2342' }}
-                      >
-                        {student.name}
-                      </h3>
-
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
-                        <GraduationCap className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                        <span className="truncate">{student.achievement}</span>
-                      </div>
-                    </div>
-
-                    {/* Score Footer */}
-                    <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between mt-auto">
-                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Score</span>
-                      <span
-                        className="inline-flex items-center justify-center px-3 py-1 rounded-lg text-xs font-bold text-white shadow-sm"
-                        style={{
-                          backgroundColor: theme.buttonColor || theme.primaryColor || '#0a2342',
-                          color: theme.fontColor || '#FFFFFF',
-                        }}
-                      >
-                        {student.score}
-                      </span>
-                    </div>
-                  </div>
-                </article>
+                  student={student}
+                  index={index}
+                  primaryColor={primaryColor}
+                />
               ))}
             </div>
           </div>
@@ -283,3 +225,151 @@ export default function TopStudents() {
     </section>
   )
 }
+
+function StudentCard({ student, index, primaryColor }) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <article
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="w-[82vw] sm:w-[300px] lg:w-[calc(25%-15px)] h-[380px] sm:h-[400px] flex-shrink-0 snap-start relative flex flex-col overflow-hidden bg-white rounded-[26px] border select-none cursor-pointer"
+      style={{
+        borderColor: `${primaryColor}20`,
+        boxShadow: hovered
+          ? '0 20px 40px -8px rgba(0, 0, 0, 0.28)'
+          : '0 4px 16px rgba(0, 0, 0, 0.06)',
+        transition: 'box-shadow 0.4s ease',
+      }}
+    >
+      {/* Full Photo Background */}
+      <div className="absolute inset-0 w-full h-full bg-slate-900 overflow-hidden">
+        <img
+          src={student.image}
+          alt={student.name}
+          onError={(e) => {
+            e.target.src = '/image.png'
+          }}
+          className="w-full h-full object-cover"
+          style={{
+            transform: hovered ? 'scale(1.06)' : 'scale(1)',
+            transition: 'transform 0.7s cubic-bezier(0.25, 1, 0.5, 1)',
+          }}
+          loading={index < 4 ? 'eager' : 'lazy'}
+        />
+        {/* Dark Gradient Overlay for bottom text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+      </div>
+
+      {/* Top Badges (Rank & Medal - Always Visible) */}
+      <div className="absolute top-3 inset-x-3 z-20 flex items-center justify-between pointer-events-none">
+        {/* Rank Badge */}
+        <div
+          className="px-3 py-1 text-xs font-extrabold text-white rounded-full shadow-md backdrop-blur-md flex items-center gap-1.5 border border-white/30"
+          style={{ backgroundColor: primaryColor }}
+        >
+          <Award className="h-3.5 w-3.5" />
+          <span>{student.rank}</span>
+        </div>
+
+        {/* Trophy / Medal Badge */}
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/95 backdrop-blur-md shadow-md border border-white/60">
+          {index === 0 ? (
+            <Trophy className="h-4 w-4 text-amber-500" />
+          ) : index === 1 ? (
+            <Medal className="h-4 w-4 text-slate-400" />
+          ) : index === 2 ? (
+            <Medal className="h-4 w-4 text-amber-700" />
+          ) : (
+            <Medal className="h-4 w-4" style={{ color: primaryColor }} />
+          )}
+        </div>
+      </div>
+
+      {/* ================= UNIFIED EXPANDABLE FROSTED GLASS DRAWER ================= */}
+      {/* Smoothly expands upwards on hover with ZERO jerk/jitter! */}
+      <div className="absolute inset-x-3 bottom-3 z-20">
+        <div
+          className="bg-white/95 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/80"
+          style={{
+            boxShadow: '0 10px 30px -4px rgba(0, 0, 0, 0.22)',
+          }}
+        >
+          {/* Top Row: Standard Tag & Score Pill */}
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider"
+              style={{
+                backgroundColor: `${primaryColor}14`,
+                color: primaryColor,
+              }}
+            >
+              <GraduationCap className="h-3 w-3" />
+              <span>{student.standard}</span>
+            </span>
+
+            <span
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black shadow-xs"
+              style={{
+                backgroundColor: primaryColor,
+                color: '#FFFFFF',
+              }}
+            >
+              <Star className="h-3 w-3 fill-amber-300 text-amber-300" />
+              <span>{student.score}</span>
+            </span>
+          </div>
+
+          {/* Student Name */}
+          <h4 className="text-base sm:text-lg font-black text-gray-900 leading-snug truncate">
+            {student.name}
+          </h4>
+
+          {/* Expandable Content (Unfolds butter-smoothly on hover with zero jerk!) */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateRows: hovered ? '1fr' : '0fr',
+              transition: 'grid-template-rows 450ms cubic-bezier(0.25, 1, 0.5, 1)',
+              willChange: 'grid-template-rows',
+            }}
+          >
+            <div style={{ minHeight: 0, overflow: 'hidden' }}>
+              <div
+                style={{
+                  opacity: hovered ? 1 : 0,
+                  transform: hovered ? 'translateY(0)' : 'translateY(8px)',
+                  transition: 'opacity 320ms ease-out 60ms, transform 380ms cubic-bezier(0.25, 1, 0.5, 1) 30ms',
+                }}
+                className="pt-2.5 mt-2 border-t border-gray-100 space-y-1.5"
+              >
+                {/* School / Achievement Box */}
+                <div
+                  className="text-xs text-gray-700 leading-relaxed px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5"
+                  style={{
+                    backgroundColor: `${primaryColor}06`,
+                    borderColor: `${primaryColor}15`,
+                  }}
+                >
+                  <Award className="h-3.5 w-3.5 shrink-0" style={{ color: primaryColor }} />
+                  <span className="font-semibold text-[11px] sm:text-xs truncate">
+                    {student.achievement}
+                  </span>
+                </div>
+
+                {/* Position Badge Row */}
+                <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 px-0.5 pt-0.5">
+                  <span className="uppercase tracking-wider text-[10px] text-gray-400">Position</span>
+                  <span className="font-extrabold" style={{ color: primaryColor }}>
+                    {student.rank} Holder
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}
+
