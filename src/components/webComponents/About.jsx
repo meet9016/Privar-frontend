@@ -3,9 +3,9 @@ import { Smartphone, Bell, Smile, ShieldCheck, ChevronLeft, ChevronRight } from 
 
 const APP_SCREENS = [
   { src: '/Device-1.png', fallback: '/1.png', alt: 'Parivar App - Gallery' },
-  { src: '/Device.png', fallback: '/mobile.png', alt: 'Parivar App - Home Feed' },
-  { src: '/Device-2.png', fallback: '/2.png', alt: 'Parivar App - Events' },
-  { src: '/Device-4.png', fallback: '/3.png', alt: 'Parivar App - Directory' },
+  { src: '/Device.png', fallback: '/1.png', alt: 'Parivar App - Home Feed' },
+  { src: '/Device-2.png', fallback: '/1.png', alt: 'Parivar App - Events' },
+  { src: '/Device-4.png', fallback: '/1.png', alt: 'Parivar App - Directory' },
 ]
 
 const APP_FEATURES = [
