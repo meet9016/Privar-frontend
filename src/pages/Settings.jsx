@@ -9,7 +9,6 @@ import {
 import api, { assetUrl, getSubdomainTenant } from '../lib/api'
 import Loader from '../components/common/Loader'
 import { toast } from '../lib/toast'
-import { AuthContext } from '../context/AuthContext'
 import { confirm } from '../lib/confirm'
 import { compressImage } from '../lib/imageCompressor'
 
@@ -215,9 +214,8 @@ const TextInput = ({ label, icon: Icon, value, keyName, placeholder, type = 'tex
       placeholder={placeholder}
       disabled={disabled}
       onChange={(e) => onChange && onChange(keyName, e.target.value)}
-      className={`bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-primary transition-colors w-full ${
-        disabled ? 'opacity-70 cursor-not-allowed bg-surface-secondary/60 font-semibold text-text' : ''
-      }`}
+      className={`bg-input-bg text-text text-sm py-2 px-3 border border-border rounded-xl outline-none focus:border-primary transition-colors w-full ${disabled ? 'opacity-70 cursor-not-allowed bg-surface-secondary/60 font-semibold text-text' : ''
+        }`}
     />
   </div>
 )
@@ -242,8 +240,6 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('branding') // branding | theme
   const [loading, setLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   useEffect(() => { fetchConfig() }, [])
 
@@ -252,7 +248,7 @@ export default function SettingsPage() {
     try {
       const res = await api.get('/get_app_theme')
       const data = res.data?.data || res.data || {}
-      
+
       const currentSubdomain = getSubdomainTenant()
       let platformName = data.name || ''
       if (currentSubdomain) {
@@ -291,7 +287,6 @@ export default function SettingsPage() {
       setNewBannerFiles([])
       setDeletedBannerUrls([])
     } catch (err) {
-      setError('Failed to fetch platform configurations')
     } finally {
       setLoading(false)
     }
@@ -318,7 +313,6 @@ export default function SettingsPage() {
   }
 
   const handleBannerDelete = (index, type) => {
-    const urlCount = config.bannerImages.filter((_, i) => !deletedBannerUrls.includes(config.bannerImages[i])).length
     const existingUrls = config.bannerImages.filter(u => !deletedBannerUrls.includes(u))
     if (type === 'url') {
       const url = existingUrls[index]
@@ -332,25 +326,23 @@ export default function SettingsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaveLoading(true)
-    setError('')
-    setSuccess('')
     try {
       const payload = new FormData()
 
       // Colors + text fields
-      const textFields = ['primaryColor','secondaryColor','backgroundColor','textColor','buttonColor','fontColor','borderColor','gradientStart','gradientEnd','name','email','phone','facebook','twitter','instagram','youtube','whatsapp','android_app_link','ios_app_link']
+      const textFields = ['primaryColor', 'secondaryColor', 'backgroundColor', 'textColor', 'buttonColor', 'fontColor', 'borderColor', 'gradientStart', 'gradientEnd', 'name', 'email', 'phone', 'facebook', 'twitter', 'instagram', 'youtube', 'whatsapp', 'android_app_link', 'ios_app_link']
       textFields.forEach(key => payload.append(key, config[key] ?? ''))
       payload.append('playstore_url', config.android_app_link || '')
       payload.append('appstore_url', config.ios_app_link || '')
 
-      // Logo files or existing URLs
-      ;['appLogo', 'webLogo', 'favicon'].forEach(field => {
-        if (logoFiles[field]) {
-          payload.append(field, logoFiles[field])
-        } else {
-          payload.append(field, config[field] || '')
-        }
-      })
+        // Logo files or existing URLs
+        ;['appLogo', 'webLogo', 'favicon'].forEach(field => {
+          if (logoFiles[field]) {
+            payload.append(field, logoFiles[field])
+          } else {
+            payload.append(field, config[field] || '')
+          }
+        })
 
       // Existing banner URLs (minus deleted)
       const remainingBanners = config.bannerImages.filter(u => !deletedBannerUrls.includes(u))
@@ -389,7 +381,7 @@ export default function SettingsPage() {
   const existingBanners = config.bannerImages.filter(u => !deletedBannerUrls.includes(u))
 
   if (loading) {
-      return <div className="py-20"><Loader text="Loading settings..." /></div>
+    return <div className="py-20"><Loader text="Loading settings..." /></div>
   }
 
   return (
@@ -536,7 +528,7 @@ export default function SettingsPage() {
 
             {/* Color Form */}
             <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6 shadow-glass-sm space-y-5">
-              
+
               <div className="flex items-center justify-between border-b border-border pb-4 pt-2">
                 <h3 className="text-sm font-semibold text-text flex items-center gap-2">
                   <Settings className="w-4 h-4 text-primary" /> Theme Color Tokens

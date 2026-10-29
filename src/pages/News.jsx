@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter, X, Bell, Users, Shield, UserCheck } from 'lucide-react'
+import { FileText, Trash2, Plus, Edit2, ImageOff, Bell, Users, Shield, UserCheck } from 'lucide-react'
 import api, { assetUrl, getNewsList, formatDate } from '../lib/api'
 import { NEWS_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
-import Loader from '../components/common/Loader'
 import Modal from '../components/Modal'
 import FileDropzone from '../components/common/FileDropzone'
 import Input from '../components/common/Input'
@@ -47,8 +46,6 @@ export default function News({ headerLeftContent }) {
   const [draftFilters, setDraftFilters] = useState({ status: '', category: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [existingImage, setExistingImage] = useState('')
@@ -71,10 +68,7 @@ export default function News({ headerLeftContent }) {
   const [formData, setFormData] = useState(emptyNewsForm)
   const [fieldErrors, setFieldErrors] = useState({})
 
-
-
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
-  const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
   const fetchNews = useCallback(async () => {
@@ -91,7 +85,6 @@ export default function News({ headerLeftContent }) {
       })
     } catch (err) {
       setRows([])
-      setError(err.response?.data?.message || 'Failed to load news')
     } finally {
       setLoading(false)
     }
@@ -101,7 +94,7 @@ export default function News({ headerLeftContent }) {
     try {
       const res = await api.get(`${MEMBER_ENDPOINTS.GET_MEMBERS}?limit=1000`)
       const list = res.data?.data || []
-      
+
       const heads = list.filter(m => m.familyHead || m.relation === 'Self')
       const nonHeads = list.filter(m => !m.familyHead && m.relation !== 'Self')
 
@@ -111,17 +104,16 @@ export default function News({ headerLeftContent }) {
       heads.forEach(head => {
         const headId = String(head.id || head._id)
         const headMemberId = String(head.member_id || '')
-        
+
         const children = nonHeads.filter(c => {
           const cHeadId = String(c.family_head?.id || c.family_head?._id || c.family_head_id || '')
           const cParentId = String(c.parent_member_id || '')
           return (cHeadId && (cHeadId === headId || cHeadId === headMemberId)) ||
-                 (cParentId && (cParentId === headMemberId || cParentId === headId))
+            (cParentId && (cParentId === headMemberId || cParentId === headId))
         })
 
         const childIds = children.map(c => String(c.id || c._id))
         const headName = [head.first_name, head.middle_name, head.last_name].filter(Boolean).join(' ') || head.number || 'Unnamed'
-        const headSubtext = [head.member_id ? `ID: ${head.member_id}` : '', head.number].filter(Boolean).join(' • ')
 
         hierarchicalList.push({
           value: headId,
@@ -204,7 +196,7 @@ export default function News({ headerLeftContent }) {
 
   const openCreate = () => {
     setSelected(null)
-    setSelectedId('')  
+    setSelectedId('')
     setExistingImage('')
     setFormData(emptyNewsForm)
     setFieldErrors({})
@@ -213,7 +205,7 @@ export default function News({ headerLeftContent }) {
 
   const openEdit = (newsItem) => {
     setSelected(newsItem)
-    setSelectedId(newsItem.id || newsItem._id || '') 
+    setSelectedId(newsItem.id || newsItem._id || '')
     setExistingImage(newsItem.image || '')
     setFormData({
       title: newsItem.title || '',
@@ -233,7 +225,6 @@ export default function News({ headerLeftContent }) {
   const handleSave = async (event) => {
     event.preventDefault()
     setSaving(true)
-    setError('')
     setFieldErrors({})
     const errors = {}
     if (!formData.title.trim()) {
@@ -429,9 +420,9 @@ export default function News({ headerLeftContent }) {
                 title="Click to zoom image"
               />
             ) : (
-                <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center shrink-0">
-                  <ImageOff className="h-5 w-5 text-text-secondary/40" />
-                </div>
+              <div className="h-12 w-16 rounded-lg border border-border/60 bg-surface-secondary flex items-center justify-center shrink-0">
+                <ImageOff className="h-5 w-5 text-text-secondary/40" />
+              </div>
             )
           },
           {
@@ -480,18 +471,18 @@ export default function News({ headerLeftContent }) {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: row=> ( <div className="flex items-center justify-start gap-2">
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+            render: row => (<div className="flex items-center justify-start gap-2">
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => openEdit(row)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleDelete(row)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             )
           }
         ]}
@@ -618,11 +609,10 @@ export default function News({ headerLeftContent }) {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, target_type: 'all' })}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
-                      formData.target_type === 'all'
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${formData.target_type === 'all'
                         ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
                         : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
-                    }`}
+                      }`}
                   >
                     <Users size={16} className="shrink-0" />
                     <div className="min-w-0">
@@ -634,11 +624,10 @@ export default function News({ headerLeftContent }) {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, target_type: 'committee' })}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
-                      formData.target_type === 'committee'
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${formData.target_type === 'committee'
                         ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
                         : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
-                    }`}
+                      }`}
                   >
                     <Shield size={16} className="shrink-0" />
                     <div className="min-w-0">
@@ -650,11 +639,10 @@ export default function News({ headerLeftContent }) {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, target_type: 'specific' })}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${
-                      formData.target_type === 'specific'
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all ${formData.target_type === 'specific'
                         ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
                         : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
-                    }`}
+                      }`}
                   >
                     <UserCheck size={16} className="shrink-0" />
                     <div className="min-w-0">

@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit2, Filter, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, X, ImageOff } from 'lucide-react'
+import { Edit2, Image as ImageIcon, Plus, Trash2, ImageOff } from 'lucide-react'
 import api, { assetUrl, getGalleryList, formatDate } from '../lib/api'
 import { GALLERY_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import FileDropzone from '../components/common/FileDropzone'
-import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
@@ -53,14 +52,10 @@ export default function GalleryPage({ headerLeftContent }) {
   const debouncedSearch = useDebounce(search, 400)
   const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
-  const [filterCategories, setFilterCategories] = useState([])
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [selected, setSelected] = useState(null)
   const [previewImage, setPreviewImage] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [formError, setFormError] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [categoryName, setCategoryName] = useState('')
   const [year, setYear] = useState('')
@@ -79,17 +74,7 @@ export default function GalleryPage({ headerLeftContent }) {
   const [fieldErrors, setFieldErrors] = useState({})
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
-  const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
-
-  const emptyState = useMemo(() => ({
-    categoryId: '',
-    categoryName: '',
-    year: '',
-    existingImages: [],
-    newFiles: [],
-    filePreviews: []
-  }), [])
 
   const fetchGallery = useCallback(async () => {
     setLoading(true)
@@ -110,7 +95,6 @@ export default function GalleryPage({ headerLeftContent }) {
     } catch (err) {
       setRows([])
       setPagination({ page, totalPages: 1, total: 0, limit })
-      setError(err.response?.data?.message || 'Failed to load gallery')
     } finally {
       setLoading(false)
     }
@@ -154,31 +138,9 @@ export default function GalleryPage({ headerLeftContent }) {
       const categoryRes = await api.get(GALLERY_ENDPOINTS.GET_CATEGORIES)
       const list = categoryRes.data?.data || []
       setCategories(list)
-      setFilterCategories(list)
     } catch (err) {
     }
   }
-
-  const fetchFilteredCategories = async (year) => {
-    try {
-      if (!year) {
-        setFilterCategories(categories)
-        return
-      }
-      const res = await getGalleryList({ year, limit: 999 })
-      const data = res.data?.data || []
-      const categoryIdSet = new Set(
-        data.map((item) => item.gallery_category_id).filter((id) => id && id !== '')
-      )
-      setFilterCategories(categories.filter((cat) => categoryIdSet.has(cat.id)))
-    } catch (err) {
-      setFilterCategories(categories)
-    }
-  }
-
-  useEffect(() => {
-    fetchFilteredCategories(draftYear)
-  }, [draftYear, categories])
 
   const handleClearFilters = () => {
     setDraftYear('')
@@ -279,8 +241,6 @@ export default function GalleryPage({ headerLeftContent }) {
     event.preventDefault()
     if (saving) return
     setSaving(true)
-    setFormError('')
-    setError('')
     setFieldErrors({})
     try {
       let categoryIdToSave = categoryId
@@ -296,7 +256,6 @@ export default function GalleryPage({ headerLeftContent }) {
 
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors)
-        setFormError('Please fill in all required fields')
         setSaving(false)
         return
       }
@@ -313,7 +272,6 @@ export default function GalleryPage({ headerLeftContent }) {
 
       if (duplicateGallery) {
         setFieldErrors({ category: `"${titleCategory}" already exists in gallery! Please edit existing or select another category.` })
-        setFormError(`"${titleCategory}" already exists in gallery! Duplicate categories are not allowed.`)
         setSaving(false)
         return
       }

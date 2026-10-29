@@ -5,18 +5,10 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Clock,
-  Search,
   RefreshCw,
-  Filter,
   X,
   Users,
   CheckCircle2,
-  AlertCircle,
-  HelpCircle,
-  Calendar,
-  Layers,
-  Check
 } from 'lucide-react'
 import {
   getPollsList,
@@ -36,7 +28,6 @@ import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
 import FilterPopover from '../components/common/FilterPopover'
-import Tooltip from '../components/common/Tooltip'
 import DatePicker from '../components/DatePicker'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'

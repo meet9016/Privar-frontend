@@ -1,17 +1,15 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Edit2, Plus, RefreshCw, Search, Trash2, Users, Filter, X, Download, FileText } from 'lucide-react'
+import { Edit2, Plus, Trash2, Users, Download } from 'lucide-react'
 import { saveAs } from 'file-saver'
-import api, { getCommitteeMembersList, getCommunitySurname } from '../lib/api'
+import api, { getCommitteeMembersList } from '../lib/api'
 import { COMMITTEE_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import { normalizeRoles, unwrapApiData } from '../lib/roles'
-import { hasPermission } from '../lib/permissions'
 import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import ImagePreviewModal from '../components/common/ImagePreviewModal'
 import CommitteeMemberForm from '../components/CommitteeMemberForm'
-import Loader from '../components/common/Loader'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
@@ -60,7 +58,6 @@ const getRoleBadgeColor = (roleName) => {
 };
 
 export default function CommitteeMembers() {
-  const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('committee')
   const [members, setMembers] = useState([])
   const [limit, setLimit] = useState(15)
@@ -77,7 +74,6 @@ export default function CommitteeMembers() {
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [previewImage, setPreviewImage] = useState(null)
 
   const location = useLocation()
@@ -92,7 +88,6 @@ export default function CommitteeMembers() {
   }, [location.state, navigate, location.pathname])
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
-  const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
   const fetchCommitteeMembers = useCallback(async () => {

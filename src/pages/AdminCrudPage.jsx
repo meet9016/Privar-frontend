@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Edit2, Plus, RefreshCw, Search, Trash2, Settings, ImageOff, Filter, X, Download } from 'lucide-react'
+import { Edit2, Plus, Trash2, ImageOff, Download } from 'lucide-react'
 import api, { assetUrl, formatDate } from '../lib/api'
-import Loader from '../components/common/Loader'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
 import usePagination from '../hooks/usePagination'
@@ -24,8 +23,8 @@ const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-borde
 export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
-    return fields.reduce((acc, field) => ({ 
-      ...acc, 
+    return fields.reduce((acc, field) => ({
+      ...acc,
       [field.name]: field.defaultValue ?? (field.name === 'status' ? 1 : '')
     }), {})
   }, [fields])
@@ -36,14 +35,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [selected, setSelected] = useState(null)
   const [formData, setFormData] = useState(emptyForm)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [remoteOptions, setRemoteOptions] = useState({})
   const [isOwn, setIsOwn] = useState(false)
-  const [formError, setFormError] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [draftFilterStatus, setDraftFilterStatus] = useState('')
   const [appliedFilterStatus, setAppliedFilterStatus] = useState('')
@@ -106,7 +102,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
     } catch (err) {
       setRows([])
       setPaginationData({ page: 1, totalPages: 1, total: 0 })
-      setError(err.response?.data?.message || `Failed to load ${title.toLowerCase()}`)
     } finally {
       setLoading(false)
     }
@@ -133,8 +128,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
   useEffect(() => {
     if (!isModalOpen) {
       setFieldErrors({})
-      setFormError('')
-      setError('')
       setImagePreview(null)
       setRemovedImages({})
     }
@@ -144,8 +137,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
     setSelected(null)
     setFormData(emptyForm)
     loadRemoteOptions(fields)
-    setFormError('')
-    setError('')
     setFieldErrors({})
     setIsModalOpen(true)
 
@@ -155,17 +146,15 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
 
   const openEdit = async (row) => {
     setSelected(row)
-    setError('')
-    setFormError('')
     setFieldErrors({})
     setImagePreview(null)
     setRemovedImages({})
 
     const buildFormData = (data) => fields.reduce((acc, field) => {
-      let val = field.type === 'file' 
-        ? '' 
+      let val = field.type === 'file'
+        ? ''
         : (data[field.name] !== undefined && data[field.name] !== null ? data[field.name] : (data[field.fallback] !== undefined && data[field.fallback] !== null ? data[field.fallback] : (field.defaultValue ?? '')))
-      
+
       // For 'name' field on birthday/user records: compose from first_name + last_name if name is empty
       if (field.name === 'name' && !val && (data.first_name || data.last_name)) {
         val = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ')
@@ -218,8 +207,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
   const handleSave = async (event) => {
     event.preventDefault()
     setSaving(true)
-    setError('')
-    setFormError('')
     setFieldErrors({})
 
     // Validate required fields
@@ -246,12 +233,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
 
     if (missingRequired.length > 0) {
       setFieldErrors(missing)
-      const missingNames = missingRequired.map(f => f.label).join(', ')
-      setFormError(
-        missingRequired.length === 1
-          ? `${missingRequired[0].label} is required`
-          : `Please fill all required fields: ${missingNames}`
-      )
       setSaving(false)
       return
     }
@@ -275,7 +256,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
 
       if (duplicateInRows) {
         setFieldErrors({ [nameField.name]: true });
-        setFormError(`"${formData[nameField.name]}" already exists! Duplicate names are not allowed.`);
         setSaving(false);
         return;
       }
@@ -288,7 +268,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
       ))
 
       const rawPayload = hasFiles ? new FormData() : { ...formData }
-      
+
       let payload = rawPayload;
       if (!hasFiles) {
         payload = {}
@@ -302,7 +282,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
           }
           payload[key] = (val && typeof val === 'object' && val.value !== undefined) ? val.value : val
         })
-        
+
         Object.entries(removedImages).forEach(([fieldName, removed]) => {
           if (removed) payload[`remove_${fieldName}`] = 'true'
         })
@@ -311,7 +291,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
         fields.forEach((field) => {
           const rawVal = formData[field.name]
           const value = (rawVal && typeof rawVal === 'object' && rawVal.value !== undefined) ? rawVal.value : rawVal
-          
+
           if (field.type === 'file') {
             const files = value instanceof FileList ? Array.from(value) : Array.isArray(value) ? value : value ? [value] : []
             if (files.length > 0) {
@@ -347,8 +327,6 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
       setIsModalOpen(false)
       setSelected(null)
     } catch (err) {
-      const errorMsg = err.response?.data?.message || err.response?.data?.error || `Failed to save ${title.toLowerCase()}`
-      setFormError(errorMsg)
     } finally {
       setSaving(false)
     }
@@ -584,7 +562,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
                   );
                   const rawString = typeof displayValue === 'string' ? displayValue : (typeof row[c.key] === 'string' ? row[c.key] : '');
                   const hasLongText = rawString && rawString.length > 25;
-                  
+
                   if (hasLongText && rawString !== '-') {
                     return (
                       <Tooltip content={rawString}>
@@ -617,11 +595,10 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
                     <button
                       onClick={() => canEditRow && openEdit(row)}
                       disabled={!canEditRow}
-                      className={`p-2 rounded-xl transition-all border ${
-                        canEditRow
-                          ? 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20 cursor-pointer'
-                          : 'text-text-secondary/40 bg-surface-secondary/40 border-border/40 cursor-not-allowed opacity-50'
-                      }`}
+                      className={`p-2 rounded-xl transition-all border ${canEditRow
+                        ? 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20 cursor-pointer'
+                        : 'text-text-secondary/40 bg-surface-secondary/40 border-border/40 cursor-not-allowed opacity-50'
+                        }`}
                       title={canEditRow ? 'Edit' : 'System default item cannot be edited'}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -631,11 +608,10 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
                     <button
                       onClick={() => canDeleteRow && handleDelete(row)}
                       disabled={!canDeleteRow}
-                      className={`p-2 rounded-xl transition-all border ${
-                        canDeleteRow
-                          ? 'text-error-text bg-error-bg hover:bg-error/20 border-error-border cursor-pointer'
-                          : 'text-text-secondary/40 bg-surface-secondary/40 border-border/40 cursor-not-allowed opacity-50'
-                      }`}
+                      className={`p-2 rounded-xl transition-all border ${canDeleteRow
+                        ? 'text-error-text bg-error-bg hover:bg-error/20 border-error-border cursor-pointer'
+                        : 'text-text-secondary/40 bg-surface-secondary/40 border-border/40 cursor-not-allowed opacity-50'
+                        }`}
                       title={canDeleteRow ? 'Delete' : 'System default item cannot be deleted'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -674,25 +650,219 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
           <div className={`grid grid-cols-1 ${gridCols || (fields.some(f => f.className) ? 'md:grid-cols-2' : fields.length > 10 ? 'sm:grid-cols-2 md:grid-cols-4' : fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2')} gap-3.5`} style={{ overflow: 'visible' }}>
             {fields.map((field, fieldIdx) => {
               const isFullRow = field.type === 'textarea' || (field.type === 'file' && field.multiple);
-              const colSpanClass = field.className || (isFullRow 
+              const colSpanClass = field.className || (isFullRow
                 ? (gridCols ? 'md:col-span-2' : fields.length > 10 ? 'sm:col-span-2 md:col-span-4' : fields.length > 4 ? 'sm:col-span-2 md:col-span-3' : 'md:col-span-2')
                 : '');
               return (
-              <div key={field.name} className={colSpanClass} style={{ zIndex: fields.length - fieldIdx, position: 'relative' }}>
-                {field.type === 'textarea' ? (
-                  <>
-                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">
-                      {field.label} {field.required && <span className="text-red-500">*</span>}
-                    </label>
-                    <textarea 
-                      required={field.required} 
-                      rows={field.rows || 2} 
-                      value={formData[field.name] || ''} 
-                      placeholder={field.placeholder || `Enter ${field.label}`}
-                      onChange={(e) => {
-                        setFormData({ ...formData, [field.name]: e.target.value })
+                <div key={field.name} className={colSpanClass} style={{ zIndex: fields.length - fieldIdx, position: 'relative' }}>
+                  {field.type === 'textarea' ? (
+                    <>
+                      <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                        {field.label} {field.required && <span className="text-red-500">*</span>}
+                      </label>
+                      <textarea
+                        required={field.required}
+                        rows={field.rows || 2}
+                        value={formData[field.name] || ''}
+                        placeholder={field.placeholder || `Enter ${field.label}`}
+                        onChange={(e) => {
+                          setFormData({ ...formData, [field.name]: e.target.value })
+                          if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                        }}
+                        onBlur={async (e) => {
+                          if (field.transliterate && e.target.value && /[a-zA-Z]/.test(e.target.value)) {
+                            try {
+                              const converted = await transliterateText(e.target.value, field.transliterate)
+                              if (converted && converted !== e.target.value) {
+                                setFormData(prev => ({ ...prev, [field.name]: converted }))
+                              }
+                            } catch (err) {
+                              console.error('Transliteration failed:', err)
+                            }
+                          }
+                        }}
+                        className={`${fieldClass} ${fieldErrors[field.name] ? 'border-red-500' : ''}`}
+                        disabled={saving || field.disabled}
+                      />
+                      {fieldErrors[field.name] && <p className="text-red-500 text-xs mt-1 font-semibold">{field.label} is required</p>}
+                    </>
+                  ) : (field.name === 'status' || field.type === 'switch') ? (
+                    <div className="flex flex-col justify-center h-full pt-1">
+                      <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                        {field.label || 'Status'}
+                      </label>
+                      <div className="flex items-center gap-3 py-1">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={Number(formData[field.name] ?? 1) === 1}
+                            onChange={(e) => {
+                              const newStatus = e.target.checked ? 1 : 0;
+                              setFormData({ ...formData, [field.name]: newStatus });
+                              if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false });
+                            }}
+                            disabled={saving || field.disabled}
+                          />
+                          <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                        <span className="text-sm font-semibold text-text">
+                          {Number(formData[field.name] ?? 1) === 1 ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : field.type === 'select' ? (
+                    <Select
+                      label={field.label}
+                      required={field.required}
+                      placement={field.name === 'status' ? 'down' : 'auto'}
+                      value={formData[field.name] ?? ''}
+                      onChange={(val) => {
+                        setFormData({ ...formData, [field.name]: val })
                         if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
-                      }} 
+                      }}
+                      disabled={saving}
+                      options={field.options}
+                      placeholder={field.name === 'status' ? 'Select Status' : 'Select an option'}
+                      error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
+                    />
+                  ) : field.type === 'select-remote' ? (
+                    <Select
+                      label={field.label}
+                      required={field.required}
+                      value={formData[field.name] ?? ''}
+                      onChange={(val) => {
+                        setFormData({ ...formData, [field.name]: val })
+                        if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                      }}
+                      disabled={saving}
+                      options={(remoteOptions[field.name] || []).map((option) => ({
+                        label: option.name || option.country || option.state || option.city || option.business || 'Unnamed',
+                        value: option.id || option._id
+                      }))}
+                      error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
+                    />
+                  ) : field.type === 'file' ? (
+                    <div className="flex flex-col h-full">
+                      <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                        {field.label} {field.required && <span className="text-red-500">*</span>}
+                      </label>
+                      <FileDropzone
+                        className="flex-1"
+                        accept={field.accept || 'image/*'}
+                        multiple={field.multiple}
+                        error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
+                        onFilesSelected={(files) => {
+                          if (field.multiple) {
+                            const current = Array.isArray(formData[field.name]) ? formData[field.name] : []
+                            setFormData({ ...formData, [field.name]: [...current, ...files] })
+                          } else {
+                            const file = files?.[0] || ''
+                            setFormData({ ...formData, [field.name]: file })
+                            if (file) {
+                              setImagePreview((prev) => ({ ...prev, [field.name]: URL.createObjectURL(file) }))
+                              setRemovedImages((prev) => ({ ...prev, [field.name]: false }))
+                            }
+                          }
+                        }}
+                        disabled={saving}
+                        label={`Click or Drag ${field.label}`}
+                        previews={(() => {
+                          if (field.multiple) {
+                            const existingUrls = Array.isArray(selected?.[field.name]) ? selected[field.name] : (selected?.[field.name] ? [selected[field.name]] : [])
+                            const newFiles = Array.isArray(formData[field.name]) ? formData[field.name] : (formData[field.name] ? [formData[field.name]] : [])
+                            const previews = []
+
+                            existingUrls.forEach((url, idx) => {
+                              if (!removedImages[`${field.name}_${idx}`]) {
+                                previews.push({
+                                  url: assetUrl(url),
+                                  onRemove: () => setRemovedImages(prev => ({ ...prev, [`${field.name}_${idx}`]: true }))
+                                })
+                              }
+                            })
+
+                            newFiles.forEach((file, idx) => {
+                              if (file instanceof File) {
+                                previews.push({
+                                  url: URL.createObjectURL(file),
+                                  onRemove: () => {
+                                    const newArr = [...newFiles]
+                                    newArr.splice(idx, 1)
+                                    setFormData(prev => ({ ...prev, [field.name]: newArr }))
+                                  }
+                                })
+                              }
+                            })
+                            return previews
+                          } else {
+                            return [
+                              ...(imagePreview?.[field.name] ? [{
+                                url: imagePreview[field.name],
+                                onRemove: () => {
+                                  setImagePreview((prev) => ({ ...prev, [field.name]: null }))
+                                  setFormData((prev) => ({ ...prev, [field.name]: '' }))
+                                }
+                              }] : (selected?.[field.name] || formData[field.name]) && !removedImages[field.name] ? [{
+                                url: assetUrl(selected?.[field.name] || formData[field.name]),
+                                onRemove: () => {
+                                  setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
+                                }
+                              }] : [])
+                            ]
+                          }
+                        })()}
+                      />
+                      {removedImages[field.name] && !field.multiple && (
+                        <span className="text-xs text-error-text mt-1">Image will be removed on save.</span>
+                      )}
+                    </div>
+                  ) : field.type === 'date' ? (
+                    <>
+                      <label className="block text-sm font-semibold text-text-secondary mb-1.5">
+                        {field.label} {field.required && <span className="text-red-500">*</span>}
+                      </label>
+                      <DatePicker
+                        value={formData[field.name] || ''}
+                        onChange={(val) => {
+                          setFormData({ ...formData, [field.name]: val })
+                          if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                        }}
+                        disabled={saving}
+                        required={field.required}
+                        placeholder="Select Date"
+                        error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
+                      />
+                    </>
+                  ) : (
+                    <Input
+                      type={field.type || 'text'}
+                      label={field.label}
+                      required={field.required}
+                      placeholder={field.placeholder || `Enter ${field.label}`}
+                      value={formData[field.name] || ''}
+                      onChange={(e) => {
+                        let val = e.target.value
+                        const fieldType = (field.type || 'text').toLowerCase()
+                        const nameLower = field.name.toLowerCase()
+
+                        if (fieldType === 'email') {
+                          // Keep email as is
+                        } else if (nameLower === 'ifsc_code' || nameLower.includes('gst')) {
+                          val = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15)
+                        } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower.includes('contact')) {
+                          val = val.replace(/\D/g, '').slice(0, 10)
+                        } else if (nameLower.includes('account_number') || nameLower.includes('pincode') || nameLower.includes('zip')) {
+                          val = val.replace(/\D/g, '').slice(0, 20)
+                        } else if (nameLower.includes('salary') || nameLower.includes('amount') || nameLower.includes('percentage') || nameLower.includes('height') || nameLower.includes('weight')) {
+                          val = val.replace(/[^0-9.]/g, '')
+                        } else if (title && title.toLowerCase().includes('blood group')) {
+                          val = val.replace(/[^a-zA-Z\s+-]/g, '')
+                        }
+
+                        setFormData({ ...formData, [field.name]: val })
+                        if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
+                      }}
                       onBlur={async (e) => {
                         if (field.transliterate && e.target.value && /[a-zA-Z]/.test(e.target.value)) {
                           try {
@@ -705,205 +875,11 @@ export default function AdminCrudPage({ title, subtitle, endpoint, exportEndpoin
                           }
                         }
                       }}
-                      className={`${fieldClass} ${fieldErrors[field.name] ? 'border-red-500' : ''}`} 
-                      disabled={saving || field.disabled} 
-                    />
-                    {fieldErrors[field.name] && <p className="text-red-500 text-xs mt-1 font-semibold">{field.label} is required</p>}
-                  </>
-                ) : (field.name === 'status' || field.type === 'switch') ? (
-                  <div className="flex flex-col justify-center h-full pt-1">
-                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">
-                      {field.label || 'Status'}
-                    </label>
-                    <div className="flex items-center gap-3 py-1">
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={Number(formData[field.name] ?? 1) === 1}
-                          onChange={(e) => {
-                            const newStatus = e.target.checked ? 1 : 0;
-                            setFormData({ ...formData, [field.name]: newStatus });
-                            if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false });
-                          }}
-                          disabled={saving || field.disabled}
-                        />
-                        <div className="w-11 h-6 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                      </label>
-                      <span className="text-sm font-semibold text-text">
-                        {Number(formData[field.name] ?? 1) === 1 ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                  </div>
-                ) : field.type === 'select' ? (
-                  <Select 
-                    label={field.label}
-                    required={field.required}
-                    placement={field.name === 'status' ? 'down' : 'auto'}
-                    value={formData[field.name] ?? ''} 
-                    onChange={(val) => {
-                      setFormData({ ...formData, [field.name]: val })
-                      if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
-                    }} 
-                    disabled={saving}
-                    options={field.options}
-                    placeholder={field.name === 'status' ? 'Select Status' : 'Select an option'}
-                    error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
-                  />
-                ) : field.type === 'select-remote' ? (
-                  <Select 
-                    label={field.label}
-                    required={field.required}
-                    value={formData[field.name] ?? ''} 
-                    onChange={(val) => {
-                      setFormData({ ...formData, [field.name]: val })
-                      if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
-                    }} 
-                    disabled={saving}
-                    options={(remoteOptions[field.name] || []).map((option) => ({
-                      label: option.name || option.country || option.state || option.city || option.business || 'Unnamed',
-                      value: option.id || option._id
-                    }))}
-                    error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
-                  />
-                ) : field.type === 'file' ? (
-                  <div className="flex flex-col h-full">
-                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">
-                      {field.label} {field.required && <span className="text-red-500">*</span>}
-                    </label>
-                    <FileDropzone
-                      className="flex-1"
-                      accept={field.accept || 'image/*'}
-                      multiple={field.multiple}
-                      error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
-                      onFilesSelected={(files) => {
-                        if (field.multiple) {
-                          const current = Array.isArray(formData[field.name]) ? formData[field.name] : []
-                          setFormData({ ...formData, [field.name]: [...current, ...files] })
-                        } else {
-                          const file = files?.[0] || ''
-                          setFormData({ ...formData, [field.name]: file })
-                          if (file) {
-                            setImagePreview((prev) => ({ ...prev, [field.name]: URL.createObjectURL(file) }))
-                            setRemovedImages((prev) => ({ ...prev, [field.name]: false }))
-                          }
-                        }
-                      }}
-                      disabled={saving}
-                      label={`Click or Drag ${field.label}`}
-                      previews={(() => {
-                        if (field.multiple) {
-                          const existingUrls = Array.isArray(selected?.[field.name]) ? selected[field.name] : (selected?.[field.name] ? [selected[field.name]] : [])
-                          const newFiles = Array.isArray(formData[field.name]) ? formData[field.name] : (formData[field.name] ? [formData[field.name]] : [])
-                          const previews = []
-                          
-                          existingUrls.forEach((url, idx) => {
-                            if (!removedImages[`${field.name}_${idx}`]) {
-                              previews.push({
-                                url: assetUrl(url),
-                                onRemove: () => setRemovedImages(prev => ({ ...prev, [`${field.name}_${idx}`]: true }))
-                              })
-                            }
-                          })
-                          
-                          newFiles.forEach((file, idx) => {
-                            if (file instanceof File) {
-                              previews.push({
-                                url: URL.createObjectURL(file),
-                                onRemove: () => {
-                                  const newArr = [...newFiles]
-                                  newArr.splice(idx, 1)
-                                  setFormData(prev => ({ ...prev, [field.name]: newArr }))
-                                }
-                              })
-                            }
-                          })
-                          return previews
-                        } else {
-                          return [
-                            ...(imagePreview?.[field.name] ? [{
-                              url: imagePreview[field.name],
-                              onRemove: () => {
-                                setImagePreview((prev) => ({ ...prev, [field.name]: null }))
-                                setFormData((prev) => ({ ...prev, [field.name]: '' }))
-                              }
-                            }] : (selected?.[field.name] || formData[field.name]) && !removedImages[field.name] ? [{
-                              url: assetUrl(selected?.[field.name] || formData[field.name]),
-                              onRemove: () => {
-                                setRemovedImages((prev) => ({ ...prev, [field.name]: true }))
-                              }
-                            }] : [])
-                          ]
-                        }
-                      })()}
-                    />
-                    {removedImages[field.name] && !field.multiple && (
-                      <span className="text-xs text-error-text mt-1">Image will be removed on save.</span>
-                    )}
-                  </div>
-                ) : field.type === 'date' ? (
-                  <>
-                    <label className="block text-sm font-semibold text-text-secondary mb-1.5">
-                      {field.label} {field.required && <span className="text-red-500">*</span>}
-                    </label>
-                    <DatePicker 
-                      value={formData[field.name] || ''} 
-                      onChange={(val) => {
-                        setFormData({ ...formData, [field.name]: val })
-                        if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
-                      }} 
-                      disabled={saving}
-                      required={field.required}
-                      placeholder="Select Date"
+                      disabled={saving || field.disabled}
                       error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
                     />
-                  </>
-                ) : (
-                  <Input 
-                    type={field.type || 'text'} 
-                    label={field.label}
-                    required={field.required}
-                    placeholder={field.placeholder || `Enter ${field.label}`}
-                    value={formData[field.name] || ''} 
-                    onChange={(e) => {
-                      let val = e.target.value
-                      const fieldType = (field.type || 'text').toLowerCase()
-                      const nameLower = field.name.toLowerCase()
-
-                      if (fieldType === 'email') {
-                        // Keep email as is
-                      } else if (nameLower === 'ifsc_code' || nameLower.includes('gst')) {
-                        val = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15)
-                      } else if (nameLower.includes('mobile') || nameLower.includes('whatsapp') || nameLower.includes('phone') || nameLower.includes('contact')) {
-                        val = val.replace(/\D/g, '').slice(0, 10)
-                      } else if (nameLower.includes('account_number') || nameLower.includes('pincode') || nameLower.includes('zip')) {
-                        val = val.replace(/\D/g, '').slice(0, 20)
-                      } else if (nameLower.includes('salary') || nameLower.includes('amount') || nameLower.includes('percentage') || nameLower.includes('height') || nameLower.includes('weight')) {
-                        val = val.replace(/[^0-9.]/g, '')
-                      } else if (title && title.toLowerCase().includes('blood group')) {
-                        val = val.replace(/[^a-zA-Z\s+-]/g, '')
-                      }
-
-                      setFormData({ ...formData, [field.name]: val })
-                      if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
-                    }} 
-                    onBlur={async (e) => {
-                      if (field.transliterate && e.target.value && /[a-zA-Z]/.test(e.target.value)) {
-                        try {
-                          const converted = await transliterateText(e.target.value, field.transliterate)
-                          if (converted && converted !== e.target.value) {
-                            setFormData(prev => ({ ...prev, [field.name]: converted }))
-                          }
-                        } catch (err) {
-                          console.error('Transliteration failed:', err)
-                        }
-                      }
-                    }}
-                    disabled={saving || field.disabled} 
-                    error={fieldErrors[field.name] ? `${field.label} is required` : undefined}
-                  />
-                )}
-              </div>
+                  )}
+                </div>
               );
             })}
           </div>

@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Eye, RefreshCw, Search, Download, Ticket } from 'lucide-react'
+import { Eye, Download, Ticket } from 'lucide-react'
 import api, { getEventsList } from '../lib/api'
 import { EVENT_ENDPOINTS } from '../utils/endpoints'
 import Modal from '../components/Modal'
 import Loader from '../components/common/Loader'
 import Table from '../components/common/Table'
-import Select from '../components/common/Select'
 import SearchInput from '../components/common/SearchInput'
-import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 
 export default function EventRegistrations({ eventIdProp }) {
@@ -24,11 +22,9 @@ export default function EventRegistrations({ eventIdProp }) {
     const [filterEventId, setFilterEventId] = useState(eventIdProp || '')
 
     const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
-    const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
 
     const setSearch = (value) => { setSearchValue(value); setPage(1) }
-    const setFilterEvent = (value) => { setFilterEventId(value); setPage(1) }
 
     const [initialized, setInitialized] = useState(false)
 
@@ -81,21 +77,21 @@ export default function EventRegistrations({ eventIdProp }) {
         fetchRows()
     }, [fetchRows, initialized])
 
-const handleDownload = async () => {
-  try {
-    const params = new URLSearchParams({ search })
-    if (filterEventId) params.append('event_id', filterEventId)
-    const res = await api.get(EVENT_ENDPOINTS.DOWNLOAD_REGISTRATIONS(params.toString()), { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([res.data]))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'event-registrations.csv'
-    a.click()
-    window.URL.revokeObjectURL(url)
-  } catch {
-    setError('Failed to download registrations')
-  }
-}
+    const handleDownload = async () => {
+        try {
+            const params = new URLSearchParams({ search })
+            if (filterEventId) params.append('event_id', filterEventId)
+            const res = await api.get(EVENT_ENDPOINTS.DOWNLOAD_REGISTRATIONS(params.toString()), { responseType: 'blob' })
+            const url = window.URL.createObjectURL(new Blob([res.data]))
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'event-registrations.csv'
+            a.click()
+            window.URL.revokeObjectURL(url)
+        } catch {
+            setError('Failed to download registrations')
+        }
+    }
 
     return (
         <div className="space-y-6 animate-slide-up text-text">

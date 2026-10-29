@@ -1,5 +1,5 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter, X, Download } from 'lucide-react'
+import React, { useCallback, useEffect, useState } from 'react'
+import { GraduationCap, Trash2, Edit2, Plus, Image as ImageIcon, Download } from 'lucide-react'
 import api, { assetUrl, getStudentsList, getCommunitySurname } from '../lib/api'
 import { STUDENT_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
@@ -15,22 +15,16 @@ import SearchInput from '../components/common/SearchInput'
 import FilterPopover from '../components/common/FilterPopover'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
-
-import { AuthContext } from '../context/AuthContext'
 import usePermissions from '../hooks/usePermissions'
 import ImagePreviewModal from '../components/common/ImagePreviewModal'
 
 export default function Students({ headerLeftContent }) {
-  const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('students')
   const [students, setStudents] = useState([])
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
 
   const [formLoading, setFormLoading] = useState(false)
-
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState(null)
@@ -79,9 +73,6 @@ export default function Students({ headerLeftContent }) {
     { label: 'Post Graduation', value: 'Post Graduation' }
   ]
 
-  const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
-
   const setSearch = (value) => {
     setSearchValue(value)
     setPage(1)
@@ -114,7 +105,6 @@ export default function Students({ headerLeftContent }) {
     } catch (err) {
       setStudents([])
       setPaginationData({ page: 1, totalPages: 1, total: 0 })
-      setError(err.response?.data?.message || 'Failed to load students')
     } finally {
       setLoading(false)
     }
@@ -145,7 +135,6 @@ export default function Students({ headerLeftContent }) {
     setStreamVal('')
     setDegreeVal('')
     setFieldErrors({})
-    setError('')
     setIsModalOpen(true)
   }
 
@@ -155,7 +144,7 @@ export default function Students({ headerLeftContent }) {
     setExistingResultImage(student.result_image || '')
     setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
     setStatusVal(student.status !== undefined && student.status !== null ? Number(student.status) : 1)
-    
+
     const rawStd = student.standard ? String(student.standard) : ''
     // Parse if it was saved like "11 (Commerce)" or "Graduation - B.Com"
     if (rawStd.startsWith('11') || rawStd.startsWith('Std 11')) {
@@ -183,9 +172,8 @@ export default function Students({ headerLeftContent }) {
       setStreamVal('')
       setDegreeVal('')
     }
-    
+
     setFieldErrors({})
-    setError('')
     setIsModalOpen(true)
   }
 
@@ -202,25 +190,11 @@ export default function Students({ headerLeftContent }) {
     setStreamVal('')
     setDegreeVal('')
     setFieldErrors({})
-    setError('')
-  }
-
-  const handleOpenAdd = () => {
-    setSelectedStudent(null)
-    setExistingStudentImage('')
-    setExistingResultImage('')
-    setImageData({ student_image: null, result_image: null, remove_student_image: false, remove_result_image: false })
-    setStatusVal(1)
-    setStandardVal('1')
-    setFieldErrors({})
-    setError('')
-    setIsModalOpen(true)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setFormLoading(true)
-    setError('')
     setFieldErrors({})
     const fields = new FormData(e.target)
 
@@ -436,18 +410,17 @@ export default function Students({ headerLeftContent }) {
                 setSelectedStreamTab('') // Reset stream on tab change
                 setPage(1)
               }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors duration-150 cursor-pointer ${
-                isActive
-                  ? 'bg-primary text-white font-bold shadow-sm'
-                  : 'bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text'
-              }`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors duration-150 cursor-pointer ${isActive
+                ? 'bg-primary text-white font-bold shadow-sm'
+                : 'bg-surface-secondary hover:bg-surface border border-border text-text-secondary hover:text-text'
+                }`}
             >
               {tab.label}
             </button>
           )
         })}
       </div>
-      
+
       {/* Stream Selector for Std 11 & Std 12 */}
       {(selectedStdTab === '11' || selectedStdTab === '12') && (
         <div className="flex items-center gap-2 overflow-x-auto pb-2 animate-in fade-in slide-in-from-top-2 custom-scrollbar -mt-2">
@@ -459,11 +432,10 @@ export default function Students({ headerLeftContent }) {
                 setSelectedStreamTab(stream.value)
                 setPage(1)
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
-                selectedStreamTab === stream.value
-                  ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
-                  : 'bg-surface border-border text-text-secondary hover:bg-surface-secondary hover:text-text'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${selectedStreamTab === stream.value
+                ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
+                : 'bg-surface border-border text-text-secondary hover:bg-surface-secondary hover:text-text'
+                }`}
             >
               {stream.label}
             </button>
@@ -526,7 +498,7 @@ export default function Students({ headerLeftContent }) {
               <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${Number(student.status) === 1
                 ? 'bg-success-bg border-success-border text-success-text'
                 : 'bg-warning/10 border-warning/20 text-warning'
-              }`}>
+                }`}>
                 {Number(student.status) === 1 ? 'Active' : 'Pending'}
               </span>
             )
@@ -536,20 +508,20 @@ export default function Students({ headerLeftContent }) {
             key: 'actions',
             header: 'Actions',
             align: 'left',
-            render: student => ( <div className="flex items-center justify-start gap-2">
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleEdit(student)}
-                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(student.id)}
-                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+            render: student => (<div className="flex items-center justify-start gap-2">
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleEdit(student)}
+                  className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleDelete(student.id)}
+                  className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             )
           }
         ]}
@@ -815,7 +787,7 @@ export default function Students({ headerLeftContent }) {
               />
             </div>
 
-             {/* Result Image */}
+            {/* Result Image */}
             <div>
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">Result Image <span className="text-red-500">*</span></label>
               <FileDropzone

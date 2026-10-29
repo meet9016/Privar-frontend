@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter, X, Bell, Users, Shield, UserCheck } from 'lucide-react'
+import { Calendar, Edit2, Image as ImageIcon, Plus, Trash2, Eye, ImageOff, Bell, Users, Shield, UserCheck } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
 import { EVENT_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
@@ -18,13 +18,10 @@ import { toast } from '../lib/toast'
 import FileDropzone from '../components/common/FileDropzone'
 import DateTimePicker from '../components/common/DateTimePicker'
 import useDebounce from '../hooks/useDebounce'
-import EventRegistrations from './EventRegistration'
 import Tooltip from '../components/common/Tooltip'
 import { AuthContext } from '../context/AuthContext'
 import usePermissions from '../hooks/usePermissions'
 import ImagePreviewModal from '../components/common/ImagePreviewModal'
-
-const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 
 const defaultForm = {
   title: '',
@@ -46,10 +43,7 @@ const defaultForm = {
   target_user_ids: []
 }
 
-
-
 export default function Events({ headerLeftContent }) {
-  const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('events')
   const [rows, setRows] = useState([])
   const [limit, setLimit] = useState(15)
@@ -63,7 +57,6 @@ export default function Events({ headerLeftContent }) {
   const [showFilters, setShowFilters] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedId, setSelectedId] = useState('')
   const [existingImage, setExistingImage] = useState('')
@@ -74,7 +67,6 @@ export default function Events({ headerLeftContent }) {
   const [stateList, setStateList] = useState([])
   const [cityList, setCityList] = useState([])
   const [memberOptions, setMemberOptions] = useState([])
-  const [viewEventDetail, setViewEventDetail] = useState(null)
   const [viewRegistrationsEvent, setViewRegistrationsEvent] = useState(null)
   const [eventRegistrations, setEventRegistrations] = useState([])
   const [registrationsLoading, setRegistrationsLoading] = useState(false)
@@ -97,10 +89,8 @@ export default function Events({ headerLeftContent }) {
       setRegistrationsLoading(false)
     }
   }
-  const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
-  const endpoint = '/events'
   const toDateTimeLocal = (value) => {
     if (!value) return ''
     const d = new Date(value)
@@ -113,9 +103,6 @@ export default function Events({ headerLeftContent }) {
     const min = pad(d.getMinutes())
     return `${y}-${m}-${day}T${h}:${min}`
   }
-
-  const navigate = useNavigate()
-
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -161,8 +148,7 @@ export default function Events({ headerLeftContent }) {
 
         const childIds = children.map(c => String(c.id || c._id))
         const headName = [head.first_name, head.middle_name, head.last_name].filter(Boolean).join(' ') || head.number || 'Unnamed'
-        const headSubtext = [head.member_id ? `ID: ${head.member_id}` : '', head.number].filter(Boolean).join(' • ')
-
+       
         hierarchicalList.push({
           value: headId,
           label: headName,
@@ -266,10 +252,6 @@ export default function Events({ headerLeftContent }) {
     fetchCityList()
     fetchMembers()
   }, [fetchCountryList, fetchStateList, fetchCityList, fetchMembers])
-
-
-
-
 
   useEffect(() => {
     fetchEvents()

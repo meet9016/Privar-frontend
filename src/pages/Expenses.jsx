@@ -1,28 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
-  IndianRupee,
   Trash2,
-  Search,
   Edit2,
-  RefreshCw,
   Plus,
   Download,
   CalendarDays,
   User2,
-  Paperclip,
-  Eye,
   Receipt,
-  Filter,
-  X
 } from 'lucide-react'
-import api, { getExpensesList, getCommitteeMembersList, assetUrl, formatDate, getCommunitySurname } from '../lib/api'
+import api, { getExpensesList, getCommitteeMembersList, assetUrl, formatDate } from '../lib/api'
 import { EXPENSE_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import usePermissions from '../hooks/usePermissions'
 import Modal from '../components/Modal'
 import FileDropzone from '../components/common/FileDropzone'
-import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
@@ -34,8 +26,6 @@ import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import Tooltip from '../components/common/Tooltip'
 import ImagePreviewModal from '../components/common/ImagePreviewModal'
-
-const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10 transition-shadow'
 
 export default function Expenses({ headerLeftContent }) {
   const permissions = usePermissions('expenses')
@@ -49,17 +39,14 @@ export default function Expenses({ headerLeftContent }) {
   const [draftFilters, setDraftFilters] = useState({ month: '', category: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  
+
   // Data for dropdowns
   const [committeeMembers, setCommitteeMembers] = useState([])
   const [expenseCategories, setExpenseCategories] = useState([])
-
   const [selectedExpense, setSelectedExpense] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [proofImage, setProofImage] = useState(null)
   const [previewImage, setPreviewImage] = useState(null)
-
   const [removeImage, setRemoveImage] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -80,7 +67,7 @@ export default function Expenses({ headerLeftContent }) {
       const params = getParams({ search: debouncedSearch })
       if (filters.month) params.month = filters.month
       if (filters.category) params.category = filters.category
-      
+
       const res = await getExpensesList(params)
       const data = res.data?.data || []
       const pagination = res.data?.pagination || {}
@@ -99,7 +86,7 @@ export default function Expenses({ headerLeftContent }) {
         getCommitteeMembersList({ limit: 1500 }),
         api.get(EXPENSE_ENDPOINTS.GET_CATEGORIES, { params: { limit: 1500 } })
       ])
-      
+
       setCommitteeMembers(membersRes.data?.data || membersRes.data || [])
       setExpenseCategories(categoriesRes.data?.data || categoriesRes.data || [])
     } catch (err) {
@@ -173,7 +160,7 @@ export default function Expenses({ headerLeftContent }) {
     const { name, value } = e.target
     setFormData(prev => {
       const updated = { ...prev, [name]: value }
-      
+
       // Auto-update names when IDs change
       if (name === 'expense_category_id') {
         const cat = expenseCategories.find(c => c.id === value || c._id === value)
@@ -183,7 +170,6 @@ export default function Expenses({ headerLeftContent }) {
         const member = committeeMembers.find(m => String(m.id || m._id) === String(value))
         updated.committee_member_name = member ? `${member.first_name || ''} ${member.middle_name || ''} ${member.last_name || ''}`.trim() : ''
       }
-      
       return updated
     })
   }
@@ -216,14 +202,14 @@ export default function Expenses({ headerLeftContent }) {
       payload.append('committee_member_id', formData.committee_member_id)
       payload.append('committee_member_name', formData.committee_member_name)
       payload.append('description', formData.description || '')
-      
+
       if (proofImage) {
         payload.append('image', proofImage)
       }
       if (removeImage) {
         payload.append('remove_image', 'true')
       }
-      
+
       if (selectedExpense) {
         await api.put(EXPENSE_ENDPOINTS.UPDATE_EXPENSE(selectedExpense.id), payload)
         toast.success('Expense updated successfully')
@@ -239,8 +225,6 @@ export default function Expenses({ headerLeftContent }) {
       setFormLoading(false)
     }
   }
-
-
 
   const [exporting, setExporting] = useState(false)
 
@@ -288,13 +272,6 @@ export default function Expenses({ headerLeftContent }) {
     setSearch(e.target.value)
     resetPage()
   }
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
-  }
-
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
-  const currentPage = page
 
   return (
     <div className="space-y-6 animate-slide-up text-text">
@@ -404,7 +381,7 @@ export default function Expenses({ headerLeftContent }) {
                 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
                 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
                 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
-'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800',
+                'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800',
                 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800',
                 'bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/30 dark:text-pink-400 dark:border-pink-800',
                 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800',
@@ -480,18 +457,18 @@ export default function Expenses({ headerLeftContent }) {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: expense => ( <div className="flex items-center justify-start gap-1.5">
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleEdit(expense)} className="p-1.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(expense.id)} className="p-1.5 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-lg transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+            render: expense => (<div className="flex items-center justify-start gap-1.5">
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleEdit(expense)} className="p-1.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleDelete(expense.id)} className="p-1.5 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-lg transition-all" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             )
           }
         ]}
@@ -586,7 +563,7 @@ export default function Expenses({ headerLeftContent }) {
                 disabled={formLoading}
               />
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-text-secondary mb-1.5">
                 Proof / Receipt <span className="text-red-500">*</span>

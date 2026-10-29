@@ -1,12 +1,11 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
-import { Edit2, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from 'lucide-react'
+import { Edit2, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import api from '../lib/api'
 import { ROLES_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import { buildPermissionGroups, normalizeRoles, unwrapApiData } from '../lib/roles'
 import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
-import Loader from '../components/common/Loader'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import SearchInput from '../components/common/SearchInput'
@@ -17,12 +16,9 @@ import Checkbox from '../components/common/Checkbox'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
 
-const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 const emptyRoleForm = { name: '', description: '', status: 1, permissions: [] }
 export default function Roles() {
-  const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('roles')
-  const isSuperAdmin = currentUser?.committee_role === 'President' || currentUser?.role === 'superadmin'
   const [roles, setRoles] = useState([])
   const [limit, setLimit] = useState(15)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 15 })
@@ -34,14 +30,11 @@ export default function Roles() {
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [formData, setFormData] = useState(emptyRoleForm)
   const [formError, setFormError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
-  const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
   const handleSearch = (value) => {
@@ -70,17 +63,13 @@ export default function Roles() {
         limit: Number(pg.limit || limit)
       })
       setPermissionConfig(buildPermissionGroups(unwrapApiData(permissionsRes, { actions: [], modules: [], permissions: [] })))
-      setError('')
     } catch (err) {
       setRoles([])
       setPagination({ page, totalPages: 1, total: 0, limit })
-      setError(err.response?.data?.message || 'Failed to load roles')
     } finally {
       setLoading(false)
     }
   }
-
-
 
   const openCreate = () => {
     setSelected(null)
@@ -176,7 +165,6 @@ export default function Roles() {
     setFormError('')
     setFieldErrors({})
     setSaving(true)
-    setError('')
     try {
       if (selected) {
         await api.put(ROLES_ENDPOINTS.UPDATE_ROLE(selected.id), formData)
@@ -203,11 +191,6 @@ export default function Roles() {
     } catch (err) {
       if (!err.response?.data?.message) toast.error('Failed to delete role')
     }
-  }
-
-  const setSearchValue = (value) => {
-    setSearch(value)
-    setPage(1)
   }
 
   const filteredRoles = useMemo(() => {
@@ -304,18 +287,18 @@ export default function Roles() {
             render: (role) => {
               const isSystemRole = role.name === 'admin' || role.name === 'UserRole';
               return (
-              <div className="flex items-center justify-start gap-2">
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-error-text bg-error-bg hover:bg-error/20 border-error-border'}`} title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+                <div className="flex items-center justify-start gap-2">
+                  {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                    <button onClick={() => openEdit(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20 border-primary/20'}`} title="Edit">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                    <button onClick={() => handleDelete(role)} disabled={isSystemRole} className={`p-2 border rounded-xl transition-all ${isSystemRole ? 'text-text-secondary bg-input-bg border-border opacity-50 cursor-not-allowed' : 'text-error-text bg-error-bg hover:bg-error/20 border-error-border'}`} title="Delete">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               );
             }
           }

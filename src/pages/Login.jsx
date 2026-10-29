@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, Eye, EyeOff, Key } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { toast } from '../lib/toast'
-import { getCommunitySurname, getCommunityFullName, getDomainCommunityName, getSubdomainTenant, getActualSubdomain, assetUrl } from '../lib/api'
+import { getCommunityFullName, getDomainCommunityName, getSubdomainTenant, getActualSubdomain, assetUrl } from '../lib/api'
 
 export default function Login() {
   const { login, token } = useContext(AuthContext)
@@ -11,7 +11,6 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [webTheme, setWebTheme] = useState({ webLogo: '', name: '' })
 
@@ -65,17 +64,14 @@ export default function Login() {
     e.preventDefault()
     if (!email || !password || !email.trim() || !password.trim()) {
       const message = 'Please provide both email and password.'
-      setError(message)
       toast.error(message)
       return
     }
     if (!agree) {
       const message = 'You must agree to the Privacy Policy and Terms & Conditions.'
-      setError(message)
       toast.error(message)
       return
     }
-    setError('')
     setLoading(true)
     try {
       await login(email, password)
@@ -83,7 +79,6 @@ export default function Login() {
       navigate('/admin')
     } catch (err) {
       const message = err.message || 'Access Denied: Invalid administrator credentials.'
-      setError(message)
       toast.error(message)
     } finally {
       setLoading(false)

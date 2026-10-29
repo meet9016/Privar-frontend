@@ -1,26 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
-  HeartHandshake,
   Trash2,
-  Search,
   Edit2,
-  RefreshCw,
   Plus,
   IndianRupee,
-  MapPin,
-  CalendarDays,
-  User2,
   Copy,
   Landmark,
-  FileDown,
   Download
 } from 'lucide-react'
-import api, { getDonationsList, getBankDetailsList, exportDonationsExcel, formatDate } from '../lib/api'
+import api, { getDonationsList, getBankDetailsList, formatDate } from '../lib/api'
 import { DONATION_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import Modal from '../components/Modal'
-import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
 import Input from '../components/common/Input'
@@ -49,15 +41,8 @@ export default function Donations({ headerLeftContent }) {
   const [formLoading, setFormLoading] = useState(false)
   const [dateValue, setDateValue] = useState(new Date().toISOString().slice(0, 10))
   const [paymentMode, setPaymentMode] = useState('Cash')
-  const [filters, setFilters] = useState({
-    donator_name: '',
-    donation_purpose: ''
-  })
-
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 400)
-
-
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [selectedDonation, setSelectedDonation] = useState(null)
@@ -176,16 +161,6 @@ export default function Donations({ headerLeftContent }) {
     }
   }
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target
-    setFilters(prev => ({ ...prev, [name]: value }))
-  }
-
-  const applyFilters = () => { setActiveSearch(search); resetPage() }
-  const resetFilters = () => { setSearch(''); setActiveSearch(''); resetPage() }
-
-
-  const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
   const [exporting, setExporting] = useState(false)
@@ -232,7 +207,6 @@ export default function Donations({ headerLeftContent }) {
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0)
 
   const totalAmount = donations.reduce((sum, d) => sum + Number(d.donate_amount || 0), 0)
-
 
   return (
     <div className="space-y-6 animate-slide-up text-text">
@@ -404,11 +378,10 @@ export default function Donations({ headerLeftContent }) {
             header: 'Status',
             key: 'status',
             render: (donation) => (
-              <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${
-                Number(donation.status ?? 1) === 1
-                  ? 'bg-success-bg border-success-border text-success-text'
-                  : 'bg-surface-secondary border-border text-text-secondary'
-              }`}>
+              <span className={`inline-flex px-2.5 py-1 rounded-lg border text-xs font-semibold ${Number(donation.status ?? 1) === 1
+                ? 'bg-success-bg border-success-border text-success-text'
+                : 'bg-surface-secondary border-border text-text-secondary'
+                }`}>
                 {Number(donation.status ?? 1) === 1 ? 'Active' : 'Inactive'}
               </span>
             )
@@ -417,26 +390,26 @@ export default function Donations({ headerLeftContent }) {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: donation => ( <div className="flex items-center justify-start gap-2">
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button
-                    onClick={() => handleEdit(donation)}
-                    className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
-                    title="Edit Donation"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button
-                    onClick={() => handleDelete(donation.id || donation._id)}
-                    className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
-                    title="Delete Donation"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+            render: donation => (<div className="flex items-center justify-start gap-2">
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                <button
+                  onClick={() => handleEdit(donation)}
+                  className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all"
+                  title="Edit Donation"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button
+                  onClick={() => handleDelete(donation.id || donation._id)}
+                  className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all"
+                  title="Delete Donation"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             )
           }
         ]}

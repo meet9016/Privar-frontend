@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter, X } from 'lucide-react'
+import { FileText, Trash2, Plus, Edit2, ImageOff } from 'lucide-react'
 import api, { assetUrl, getPostsList, formatDate } from '../lib/api'
 import { POST_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
-import Loader from '../components/common/Loader'
 import Modal from '../components/Modal'
 import FileDropzone from '../components/common/FileDropzone'
 import Input from '../components/common/Input'
@@ -12,7 +11,6 @@ import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
 import FilterPopover from '../components/common/FilterPopover'
-import DateTimePicker from '../components/common/DateTimePicker'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
@@ -28,8 +26,6 @@ export default function Post({ headerLeftContent }) {
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [filters, setFilters] = useState({ status: '' })
   const [draftFilters, setDraftFilters] = useState({ status: '' })
   const [showFilters, setShowFilters] = useState(false)
@@ -67,7 +63,6 @@ export default function Post({ headerLeftContent }) {
     } catch (err) {
       setPosts([])
       setPagination({ page, totalPages: 1, total: 0, limit })
-      setError(err.response?.data?.message || 'Failed to load posts')
     } finally {
       setLoading(false)
     }
@@ -94,7 +89,6 @@ export default function Post({ headerLeftContent }) {
     setExistingImage('')
     setFormData(emptyPostForm)
     setFieldErrors({})
-    setError('')
     setIsModalOpen(true)
   }
 
@@ -110,7 +104,6 @@ export default function Post({ headerLeftContent }) {
       remove_image: false
     })
     setFieldErrors({})
-    setError('')
     setIsModalOpen(true)
   }
 
@@ -177,7 +170,7 @@ export default function Post({ headerLeftContent }) {
       setPosts(prevPosts => prevPosts.map(item => {
         if ((item.id || item._id) === id) {
           return { ...item, status: Number(post.status) === 1 ? 1 : 0 }
-        } 
+        }
         return item
       }))
       toast.error(err.response?.data?.message || 'Failed to update status')
@@ -338,18 +331,18 @@ export default function Post({ headerLeftContent }) {
             header: 'Actions',
             key: 'actions',
             align: 'left',
-            render: post=> ( <div className="flex items-center justify-start gap-2">
-                {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleEdit(post)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
-                  <button onClick={() => handleDelete(post.id || post._id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+            render: post => (<div className="flex items-center justify-start gap-2">
+              {!permissions.canEdit && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleEdit(post)} className="p-2 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-all" title="Edit">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!permissions.canDelete && !permissions.isSuperAdmin ? null : (
+                <button onClick={() => handleDelete(post.id || post._id)} className="p-2 text-error-text bg-error-bg hover:bg-error/20 border border-error-border rounded-xl transition-all" title="Delete">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             )
           }
         ]}

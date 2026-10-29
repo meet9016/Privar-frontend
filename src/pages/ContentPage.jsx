@@ -7,7 +7,7 @@ import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
-import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react'
+import { Cake, Heart, PartyPopper, MessageCircle, Phone, Users as UsersIcon, AlertTriangle, CheckCircle } from 'lucide-react'
 import { toast } from '../lib/toast'
 import { getCommunityFullName } from '../lib/api'
 import Modal from '../components/Modal'
@@ -149,14 +149,16 @@ const definitions = {
       { key: 'person_image', label: 'Photo', type: 'image' },
       { key: 'full_name', label: 'Name' },
       { key: 'gender', label: 'Gender' },
-      { key: 'birthdate', label: 'Birthdate', render: (row) => {
-        if (!row.birthdate) return '-'
-        const d = new Date(row.birthdate)
-        if (isNaN(d.getTime())) return row.birthdate
-        const day = String(d.getDate()).padStart(2, '0')
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        return `${day}/${month}/${d.getFullYear()}`
-      }},
+      {
+        key: 'birthdate', label: 'Birthdate', render: (row) => {
+          if (!row.birthdate) return '-'
+          const d = new Date(row.birthdate)
+          if (isNaN(d.getTime())) return row.birthdate
+          const day = String(d.getDate()).padStart(2, '0')
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          return `${day}/${month}/${d.getFullYear()}`
+        }
+      },
       { key: 'marital_status', label: 'Status' },
       { key: 'city', label: 'City' },
       { key: 'mobile_number', label: 'Mobile' }
@@ -202,7 +204,7 @@ const definitions = {
               toast.error(`Phone number not available for ${row.name || 'this member'}`)
               return
             }
-            
+
             const communityName = getCommunityFullName() || 'Our Parivar Community'
             let greeting = ''
             if (isBday && isAnniv) {
@@ -271,7 +273,7 @@ const definitions = {
             days += new Date(today.getFullYear(), today.getMonth(), 0).getDate()
           }
           if (months < 0) { years--; months += 12 }
-          
+
           const parts = []
           if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
           if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
@@ -325,12 +327,12 @@ const definitions = {
           }
           if (months < 0) { years--; months += 12 }
           if (years < 0) return '-'
-          
+
           const parts = []
           if (years > 0) parts.push({ label: years === 1 ? 'Year' : 'Years', value: String(years).padStart(2, '0') })
           if (months > 0) parts.push({ label: months === 1 ? 'Month' : 'Months', value: String(months).padStart(2, '0') })
           if (days > 0) parts.push({ label: days === 1 ? 'Day' : 'Days', value: String(days).padStart(2, '0') })
-          
+
           if (parts.length === 0) {
             parts.push({ label: 'Days', value: '00' })
           }
@@ -361,9 +363,11 @@ const definitions = {
       { name: 'description', label: 'Description', type: 'textarea', rows: 4, required: true, className: 'md:col-span-1' },
       { name: 'image', label: 'Image', type: 'file', className: 'md:col-span-1 md:row-span-2 [&>div]:h-[calc(100%-6px)] [&>div]:min-h-[140px]' },
       { name: 'qualifications', label: 'Qualifications', type: 'textarea', rows: 4, required: true, className: 'md:col-span-1' },
-      { name: 'location', label: 'Location', required: true, className: 'md:col-span-1' }, 
-      { name: 'job_type', label: 'Job Type', type: 'select', required: true, className: 'md:col-span-1',
-        options: [{ value: "full-time", label: 'Full Time' }, { value: "part-time", label: 'Part Time' }, { value: "contract", label: 'Contract' }, { value: "internship", label: 'Internship' }]},
+      { name: 'location', label: 'Location', required: true, className: 'md:col-span-1' },
+      {
+        name: 'job_type', label: 'Job Type', type: 'select', required: true, className: 'md:col-span-1',
+        options: [{ value: "full-time", label: 'Full Time' }, { value: "part-time", label: 'Part Time' }, { value: "contract", label: 'Contract' }, { value: "internship", label: 'Internship' }]
+      },
       { name: 'contact_number', label: 'Contact Number', required: true, className: 'md:col-span-1' },
       { name: 'status', label: 'Status', type: 'select', required: true, className: 'md:col-span-1', options: [{ value: 1, label: 'Approved' }, { value: 0, label: 'Inactive' }] },
       { name: 'salary', label: 'Salary', required: true, className: 'md:col-span-1' },
@@ -393,7 +397,7 @@ const definitions = {
       { name: 'qr_code', label: 'QR Code', type: 'file' },
       { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
     ],
-    columns: [  
+    columns: [
       { key: 'bank_name', label: 'Bank Name' },
       { key: 'account_name', label: 'Account Name' },
       { key: 'account_number', label: 'Account Number' },
@@ -607,15 +611,15 @@ export default function ContentPage({ type, headerLeftContent }) {
 
   return (
     <>
-      <AdminCrudPage 
-        {...definitions[type]} 
+      <AdminCrudPage
+        {...definitions[type]}
         headerLeftContent={headerLeftContent}
         customHeaderActions={customHeaderActions}
         hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}
         hideEdit={definitions[type].hideEdit || (!permissions.canEdit && !permissions.isSuperAdmin)}
-        hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))} 
-        deleteAction={type === 'birthday' ? 'clear-dob' : undefined} 
-        getRowTitle={(row) => row.title || row.full_name || row.subject || row.name} 
+        hideDelete={definitions[type].hideDelete || (type === 'birthday' ? (!permissions.canEdit && !permissions.isSuperAdmin) : (!permissions.canDelete && !permissions.isSuperAdmin))}
+        deleteAction={type === 'birthday' ? 'clear-dob' : undefined}
+        getRowTitle={(row) => row.title || row.full_name || row.subject || row.name}
         extraParams={type === 'birthday' ? birthdayExtraParams : undefined}
         customFilters={customFilters}
         onClearFilters={type === 'birthday' ? handleClear : undefined}
@@ -716,11 +720,10 @@ export default function ContentPage({ type, headerLeftContent }) {
                       <button
                         type="button"
                         onClick={() => handleSendSingleWish(member)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95 ${
-                          cleanPhone
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95 ${cleanPhone
                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                             : 'bg-surface-secondary text-text-secondary/60 hover:bg-surface-secondary/80 border border-border'
-                        }`}
+                          }`}
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-white stroke-emerald-600" />
                         <span>{cleanPhone ? 'Send WhatsApp' : 'No Number (Check)'}</span>
