@@ -45,7 +45,7 @@ export default function CommunityStats() {
     const fetchCounts = async () => {
       try {
         const [membersRes, eventsRes, bizRes, jobsRes] = await Promise.allSettled([
-          memberApi.get('/users?limit=1'),
+          memberApi.get('/users?familyHead=true&limit=1'),
           memberApi.get('/events?limit=1'),
           memberApi.get('/businesses?status=1&limit=1'),
           memberApi.get('/job-vacancy?limit=1'),

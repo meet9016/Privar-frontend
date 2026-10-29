@@ -210,7 +210,11 @@ const setupInterceptors = (axiosInstance) => {
       if (error.response?.status === 401) {
         localStorage.removeItem('auth_token')
         localStorage.removeItem('auth_user')
-        window.location.href = '/login'
+        // Only redirect to /login if user is currently inside the admin panel (/admin/*)
+        // Public website visitors (e.g. /, /about, /events) should NOT be redirected to /login!
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+          window.location.href = '/login'
+        }
         return Promise.reject(error)
       }
 
@@ -219,7 +223,8 @@ const setupInterceptors = (axiosInstance) => {
         error.response?.data?.message ||
         error.response?.data?.error
 
-      if (errorMessage) {
+      // Don't show toast for 401 on public pages
+      if (errorMessage && error.response?.status !== 401) {
         toast.error(errorMessage)
       }
 
