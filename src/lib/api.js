@@ -27,7 +27,7 @@ export const uploadFileToDigitalks = async (file, folder = 'members') => {
   if (url) {
     return url
   }
-  throw new Error(res.data?.message || 'Failed to upload image')
+  throw new Error(res.data?.message || 'Failed to upload file')
 }
 
 /**

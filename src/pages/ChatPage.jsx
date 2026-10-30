@@ -26,7 +26,11 @@ import {
   Trash2,
   LogOut,
   Edit2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Paperclip,
+  FileText,
+  Volume2,
+  Download
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { toast } from '../lib/toast';
@@ -35,6 +39,17 @@ import { confirm } from '../lib/confirm';
 const cleanPhone = (num) => {
   if (!num) return '';
   return String(num).replace(/\D/g, '').slice(-10);
+};
+
+const getAttachmentFileName = (url) => {
+  if (!url) return '';
+  try {
+    const parts = url.split('/');
+    const last = parts[parts.length - 1];
+    return decodeURIComponent(last);
+  } catch (_) {
+    return 'file';
+  }
 };
 
 export default function ChatPage() {
@@ -116,6 +131,57 @@ export default function ChatPage() {
   const sendingRef = useRef(false);
   const activeChatRef = useRef(activeChat);
   const processedMsgIdsRef = useRef(new Set());
+
+  // File attachment state (image, pdf/document, audio)
+  const [attachedFile, setAttachedFile] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const imageInputRef = useRef(null);
+  const docInputRef = useRef(null);
+  const audioInputRef = useRef(null);
+  const attachmentMenuRef = useRef(null);
+
+  // Close attachment menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (attachmentMenuRef.current && !attachmentMenuRef.current.contains(e.target)) {
+        setShowAttachmentMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleFileSelect = (e, forcedType = null) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    let type = forcedType;
+    if (!type) {
+      if (file.type.startsWith('image/')) type = 'image';
+      else if (file.type.startsWith('audio/') || /\.(mp3|wav|m4a|ogg|aac|weba)$/i.test(file.name)) type = 'audio';
+      else type = 'document';
+    }
+
+    const previewUrl = type === 'image' ? URL.createObjectURL(file) : null;
+    setAttachedFile({
+      file,
+      previewUrl,
+      type,
+      name: file.name,
+      size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+    });
+
+    setShowAttachmentMenu(false);
+    e.target.value = '';
+  };
+
+  const cancelAttachment = () => {
+    if (attachedFile?.previewUrl) {
+      URL.revokeObjectURL(attachedFile.previewUrl);
+    }
+    setAttachedFile(null);
+  };
 
   // Chat Wallpaper background state (persisted in localStorage, default: /chat-bg.svg)
   const [chatWallpaper, setChatWallpaper] = useState(() => localStorage.getItem('chat_wallpaper') || '/chat-bg.svg');
@@ -462,15 +528,36 @@ export default function ChatPage() {
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     const trimmed = inputText.trim();
-    if (!trimmed || !activeChat?._id || sendingRef.current) return;
-
+    if (!trimmed && !attachedFile) return;
+    if (sendingRef.current || !activeChat?._id) return;
     sendingRef.current = true;
-    setInputText('');
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     socketRef.current?.emit('typing_stop', { conversationId: activeChat._id });
 
+    let uploadedUrl = null;
+    let finalMessageType = 'text';
+
+    if (attachedFile) {
+      setUploadingFile(true);
+      try {
+        const folderName = attachedFile.type === 'image' ? 'chat/images' :
+                           attachedFile.type === 'audio' ? 'chat/audio' : 'chat/documents';
+        uploadedUrl = await uploadFileToDigitalks(attachedFile.file, folderName);
+        finalMessageType = attachedFile.type;
+      } catch (uploadErr) {
+        console.error('File upload failed:', uploadErr);
+        toast.error(uploadErr.message || 'Failed to upload attachment');
+        setUploadingFile(false);
+        sendingRef.current = false;
+        return;
+      }
+      setUploadingFile(false);
+    }
+
     const tempId = 'temp_' + Date.now();
+    const attachments = uploadedUrl ? [uploadedUrl] : [];
+
     const optimisticMsg = {
       _id: tempId,
       clientTempId: tempId,
@@ -481,20 +568,24 @@ export default function ChatPage() {
         last_name: user?.last_name || ''
       },
       message: trimmed,
-      messageType: 'text',
+      messageType: finalMessageType,
+      attachments,
       createdAt: new Date().toISOString(),
       deliveredTo: [],
       readBy: [{ userId: currentUserId, readAt: new Date().toISOString() }]
     };
 
     setMessages(prev => [...prev, optimisticMsg]);
+    setInputText('');
+    cancelAttachment();
     setTimeout(() => scrollToBottom(true), 20);
 
     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('send_message', {
         conversationId: activeChat._id,
         message: trimmed,
-        messageType: 'text',
+        messageType: finalMessageType,
+        attachments,
         clientTempId: tempId
       }, (res) => {
         sendingRef.current = false;
@@ -515,7 +606,8 @@ export default function ChatPage() {
       try {
         const res = await memberApi.post(`/chat/${activeChat._id}/messages`, {
           message: trimmed,
-          messageType: 'text',
+          messageType: finalMessageType,
+          attachments,
           clientTempId: tempId
         });
         const savedMsg = res.data?.data || res.data;
@@ -952,7 +1044,12 @@ export default function ChatPage() {
                         {isTyping ? (
                           'typing...'
                         ) : chat.lastMessage ? (
-                          chat.lastMessage.message
+                          chat.lastMessage.message || (
+                            chat.lastMessage.messageType === 'image' ? '📷 Photo' :
+                            chat.lastMessage.messageType === 'document' ? '📄 Document' :
+                            chat.lastMessage.messageType === 'audio' ? '🎵 Audio' :
+                            'Attachment'
+                          )
                         ) : (
                           'Tap to send message'
                         )}
@@ -1157,22 +1254,115 @@ export default function ChatPage() {
                           </span>
                         )}
 
-                        <div
-                          className={`max-w-[85%] md:max-w-[70%] px-3 py-1.5 rounded-2xl shadow-xs text-sm relative group ${isMe
-                            ? 'bg-primary text-white rounded-tr-xs ml-auto'
-                            : 'bg-surface border border-border/70 text-text rounded-tl-xs mr-auto'
-                            }`}
-                        >
-                          <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-0.5">
-                            <p className="whitespace-pre-wrap break-words text-[13.5px] leading-snug flex-1 select-text">
-                              {msg.message}
-                            </p>
-                            <div className={`inline-flex items-center gap-1 ml-auto shrink-0 select-none pb-[1px] text-[10.5px] ${isMe ? 'text-white/80' : 'text-text-secondary/80'}`}>
-                              <span className="leading-none">{formatTime(msg.createdAt)}</span>
-                              {isMe && renderMessageStatus(msg)}
+                        {(() => {
+                          const hasAttachments = Array.isArray(msg.attachments) && msg.attachments.length > 0;
+                          const attachmentUrl = hasAttachments ? msg.attachments[0] : null;
+                          const msgType = msg.messageType || (hasAttachments ? (
+                            /\.(jpe?g|png|webp|gif|svg|bmp)$/i.test(attachmentUrl) ? 'image' :
+                            /\.(mp3|wav|m4a|ogg|aac|weba)$/i.test(attachmentUrl) ? 'audio' : 'document'
+                          ) : 'text');
+
+                          return (
+                            <div
+                              className={`max-w-[85%] md:max-w-[70%] p-2 rounded-2xl shadow-xs text-sm relative group ${isMe
+                                ? 'bg-primary text-white rounded-tr-xs ml-auto'
+                                : 'bg-surface border border-border/70 text-text rounded-tl-xs mr-auto'
+                                }`}
+                            >
+                              {/* Image Attachment Rendering */}
+                              {msgType === 'image' && attachmentUrl && (
+                                <div className="rounded-xl overflow-hidden mb-1 cursor-pointer">
+                                  <img
+                                    src={assetUrl(attachmentUrl)}
+                                    alt="Shared Photo"
+                                    className="w-full max-h-72 object-cover rounded-xl hover:opacity-95 transition-opacity"
+                                    onClick={() => window.open(assetUrl(attachmentUrl), '_blank')}
+                                  />
+                                </div>
+                              )}
+
+                              {/* Document / PDF Attachment Rendering */}
+                              {msgType === 'document' && attachmentUrl && (
+                                <div className={`flex items-center gap-2.5 p-2 rounded-xl border mb-1 min-w-[210px] max-w-sm ${
+                                  isMe ? 'bg-white/15 border-white/20 text-white' : 'bg-surface-secondary/50 border-border text-text'
+                                }`}>
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                    isMe ? 'bg-white/20 text-white' : 'bg-rose-500/15 text-rose-600'
+                                  }`}>
+                                    <FileText className="w-4 h-4" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold truncate">
+                                      {getAttachmentFileName(attachmentUrl) || 'Document.pdf'}
+                                    </p>
+                                    <span className={`text-[10px] uppercase font-mono ${isMe ? 'text-white/70' : 'text-text-secondary'}`}>
+                                      PDF Document
+                                    </span>
+                                  </div>
+                                  <a
+                                    href={assetUrl(attachmentUrl)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download
+                                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                                      isMe ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-primary/10 hover:bg-primary hover:text-white text-primary'
+                                    }`}
+                                    title="Download Document"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
+                              )}
+
+                              {/* Audio Attachment Rendering */}
+                              {msgType === 'audio' && attachmentUrl && (
+                                <div className={`p-2 rounded-xl border mb-1 min-w-[240px] max-w-sm ${
+                                  isMe ? 'bg-white/15 border-white/20 text-white' : 'bg-surface-secondary/50 border-border text-text'
+                                }`}>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+                                      isMe ? 'bg-white/20 text-white' : 'bg-amber-500/15 text-amber-600'
+                                    }`}>
+                                      <Volume2 className="w-3.5 h-3.5" />
+                                    </div>
+                                    <span className="text-xs font-semibold truncate flex-1">
+                                      {getAttachmentFileName(attachmentUrl) || 'Audio recording'}
+                                    </span>
+                                    <a
+                                      href={assetUrl(attachmentUrl)}
+                                      download
+                                      className={`p-1 rounded transition-colors ${
+                                        isMe ? 'text-white/80 hover:text-white' : 'text-text-secondary hover:text-primary'
+                                      }`}
+                                      title="Download audio"
+                                    >
+                                      <Download className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                  <audio
+                                    src={assetUrl(attachmentUrl)}
+                                    controls
+                                    className={`w-full h-8 outline-none rounded-lg ${isMe ? 'filter invert contrast-75' : ''}`}
+                                    preload="metadata"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Text Message Content */}
+                              <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-0.5 px-1">
+                                {msg.message && (
+                                  <p className="whitespace-pre-wrap break-words text-[13.5px] leading-snug flex-1 select-text">
+                                    {msg.message}
+                                  </p>
+                                )}
+                                <div className={`inline-flex items-center gap-1 ml-auto shrink-0 select-none pb-[1px] text-[10.5px] ${isMe ? 'text-white/80' : 'text-text-secondary/80'}`}>
+                                  <span className="leading-none">{formatTime(msg.createdAt)}</span>
+                                  {isMe && renderMessageStatus(msg)}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+                          );
+                        })()}
                       </div>
                     );
                   })
@@ -1192,28 +1382,145 @@ export default function ChatPage() {
             </div>
 
             {/* Input Footer */}
-            <div className="p-3 md:p-4 border-t border-border bg-surface">
-              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  value={inputText}
-                  onChange={handleInputChange}
-                  className="flex-1 bg-surface-secondary/50 border border-border rounded-xl px-4 py-2.5 text-sm text-text placeholder:text-text-secondary focus:outline-none focus:border-primary/60 transition-all"
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  disabled={!inputText.trim()}
-                  className={`p-2.5 md:px-5 md:py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm ${inputText.trim()
-                    ? 'bg-primary text-white hover:bg-primary-hover'
-                    : 'bg-surface-secondary text-text-secondary cursor-not-allowed opacity-50'
+            <div className="border-t border-border bg-surface">
+              {/* Attachment Preview Banner */}
+              {attachedFile && (
+                <div className="px-4 py-2.5 bg-surface-secondary/60 border-b border-border flex items-center justify-between gap-3 animate-slide-up">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {attachedFile.type === 'image' ? (
+                      <img
+                        src={attachedFile.previewUrl}
+                        alt="Preview"
+                        className="w-11 h-11 rounded-lg object-cover border border-border shrink-0 shadow-xs"
+                      />
+                    ) : attachedFile.type === 'audio' ? (
+                      <div className="w-11 h-11 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+                        <Volume2 className="w-5 h-5" />
+                      </div>
+                    ) : (
+                      <div className="w-11 h-11 rounded-lg bg-rose-500/15 text-rose-600 flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-text truncate max-w-xs">{attachedFile.name}</p>
+                      <span className="text-[10px] text-text-secondary">{attachedFile.size} • {attachedFile.type.toUpperCase()}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={cancelAttachment}
+                    disabled={uploadingFile}
+                    className="p-1.5 rounded-lg text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Remove attachment"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <div className="p-3 md:p-4">
+                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                  {/* Paperclip Button with Popover Menu */}
+                  <div className="relative" ref={attachmentMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAttachmentMenu(prev => !prev)}
+                      className="p-2.5 rounded-xl text-text-secondary hover:text-primary hover:bg-surface-secondary/70 transition-all cursor-pointer"
+                      title="Attach Photo, PDF, or Audio"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+
+                    {/* Hidden File Inputs */}
+                    <input
+                      type="file"
+                      ref={imageInputRef}
+                      onChange={(e) => handleFileSelect(e, 'image')}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <input
+                      type="file"
+                      ref={docInputRef}
+                      onChange={(e) => handleFileSelect(e, 'document')}
+                      accept="application/pdf,.doc,.docx,.xls,.xlsx,.txt"
+                      className="hidden"
+                    />
+                    <input
+                      type="file"
+                      ref={audioInputRef}
+                      onChange={(e) => handleFileSelect(e, 'audio')}
+                      accept="audio/*,.mp3,.wav,.m4a,.ogg,.weba"
+                      className="hidden"
+                    />
+
+                    {/* Attachment Popover Menu */}
+                    {showAttachmentMenu && (
+                      <div className="absolute bottom-12 left-0 z-30 bg-surface border border-border rounded-2xl shadow-glass-lg p-1.5 w-48 space-y-1 animate-scale-in">
+                        <button
+                          type="button"
+                          onClick={() => { imageInputRef.current?.click(); setShowAttachmentMenu(false); }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-text hover:bg-surface-secondary transition-colors text-left cursor-pointer"
+                        >
+                          <span className="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-600 flex items-center justify-center shrink-0">
+                            <Camera className="w-4 h-4" />
+                          </span>
+                          Photo / Image
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { docInputRef.current?.click(); setShowAttachmentMenu(false); }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-text hover:bg-surface-secondary transition-colors text-left cursor-pointer"
+                        >
+                          <span className="w-7 h-7 rounded-lg bg-rose-500/15 text-rose-600 flex items-center justify-center shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </span>
+                          PDF / Document
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { audioInputRef.current?.click(); setShowAttachmentMenu(false); }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-text hover:bg-surface-secondary transition-colors text-left cursor-pointer"
+                        >
+                          <span className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+                            <Volume2 className="w-4 h-4" />
+                          </span>
+                          Audio File
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder={attachedFile ? "Add a caption... (optional)" : "Type a message..."}
+                    value={inputText}
+                    onChange={handleInputChange}
+                    className="flex-1 bg-surface-secondary/50 border border-border rounded-xl px-4 py-2.5 text-sm text-text placeholder:text-text-secondary focus:outline-none focus:border-primary/60 transition-all"
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    disabled={(!inputText.trim() && !attachedFile) || uploadingFile}
+                    className={`p-2.5 md:px-5 md:py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm ${
+                      (inputText.trim() || attachedFile) && !uploadingFile
+                        ? 'bg-primary text-white hover:bg-primary-hover cursor-pointer'
+                        : 'bg-surface-secondary text-text-secondary cursor-not-allowed opacity-50'
                     }`}
-                >
-                  <Send className="w-4 h-4" />
-                  <span className="hidden md:inline text-sm">Send</span>
-                </button>
-              </form>
+                  >
+                    {uploadingFile ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    <span className="hidden md:inline text-sm">
+                      {uploadingFile ? 'Uploading...' : 'Send'}
+                    </span>
+                  </button>
+                </form>
+              </div>
             </div>
           </>
         ) : (
