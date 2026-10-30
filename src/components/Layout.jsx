@@ -7,6 +7,7 @@ export default function Layout() {
   const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
   const isDocPage = location.pathname === '/admin/documentation'
+  const isChatPage = location.pathname.startsWith('/admin/chat')
 
   // Close sidebar on route change on mobile
   React.useEffect(() => {
@@ -48,9 +49,13 @@ export default function Layout() {
         {/* Header remains fixed at the top */}
         <Header onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
         
-        {/* Only the page content area scrolls */}
-        <main className="flex-1 overflow-y-auto animate-fade-in flex flex-col">
-          <div className="flex-1 px-3 sm:px-6 lg:px-8 pt-4 pb-8 max-w-full mx-auto space-y-4 sm:space-y-6 w-full">
+        {/* Only non-chat page content area scrolls; chat fits 100% full height */}
+        <main className={`flex-1 flex flex-col animate-fade-in ${isChatPage ? 'overflow-hidden min-h-0' : 'overflow-y-auto'}`}>
+          <div className={`flex-1 max-w-full w-full mx-auto ${
+            isChatPage 
+              ? 'p-2 sm:p-4 min-h-0 flex flex-col overflow-hidden h-full' 
+              : 'px-3 sm:px-6 lg:px-8 pt-4 pb-8 space-y-4 sm:space-y-6'
+          }`}>
             <Outlet />
           </div>
         </main>
