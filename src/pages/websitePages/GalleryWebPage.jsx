@@ -3,7 +3,7 @@ import Memories from '../../components/webComponents/Memories'
 
 export default function GalleryWebPage() {
   return (
-    <div className="w-full pt-8 pb-14">
+    <div className="w-full pt-0 pb-0">
       <Memories />
     </div>
   )

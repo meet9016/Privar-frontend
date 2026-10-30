@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 import { assetUrl, api } from '../../lib/api';
+import { THEME_ENDPOINTS } from '../../utils/endpoints';
 import BannerLightboxModal from './BannerLightboxModal';
 import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
@@ -64,7 +65,7 @@ const Carousel = ({
     let isMounted = true;
     const fetchBannerImages = async () => {
       try {
-        const res = await api.get('/get_app_theme');
+        const res = await api.get(THEME_ENDPOINTS.GET_THEME);
         const data = res.data?.data || res.data || {};
         const bannerImages = normalizeBannerImages(data.bannerImages);
         if (isMounted) {

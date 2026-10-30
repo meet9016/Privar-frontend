@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, HeartHandshake, IndianRupee, MapPin, Sparkles } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { DONATION_ENDPOINTS } from '../../utils/endpoints'
 import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 const shadeColor = (color, percent) => {
@@ -46,7 +47,7 @@ export default function Donors() {
       try {
         setLoading(true)
         setError('')
-        const response = await api.get('/donations?status=1')
+        const response = await api.get(`${DONATION_ENDPOINTS.GET_DONATIONS}?status=1`)
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active')
         setDonors(activeRows)

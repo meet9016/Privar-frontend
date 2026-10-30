@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Building2, Store, MapPin, Phone, Globe, ArrowRight, Sparkles } from 'lucide-react'
 import { api } from '../../lib/api'
+import { BUSINESS_ENDPOINTS } from '../../utils/endpoints'
 import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 const normalizeBusiness = (biz, index) => {
@@ -46,7 +47,7 @@ export default function Businesses() {
     const fetchBusinesses = async () => {
       try {
         setLoading(true)
-        const response = await api.get('/businesses')
+        const response = await api.get(BUSINESS_ENDPOINTS.GET_BUSINESSES)
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         setBusinesses(rows.map(normalizeBusiness))
       } catch (error) {

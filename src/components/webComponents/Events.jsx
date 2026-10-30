@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { ArrowRight, Calendar, CheckCircle, Clock, MapPin, Users, X, AlertCircle, ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { EVENT_ENDPOINTS } from '../../utils/endpoints'
 import { toast } from '../../lib/toast'
 import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
@@ -109,7 +110,7 @@ export default function Events() {
     const fetchEvents = async () => {
       try {
         setLoading(true)
-        const response = await api.get('/events?status=1')
+        const response = await api.get(`${EVENT_ENDPOINTS.GET_EVENTS}?status=1`)
 
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active' || String(r.status).toLowerCase() === 'approved')
@@ -194,7 +195,7 @@ export default function Events() {
     setSubmitting(true)
     setSubmitError('')
     try {
-      await api.post('/event-registrations', {
+      await api.post(EVENT_ENDPOINTS.CREATE_REGISTRATION, {
         name: formData.name.trim(),
         email: formData.email.trim(),
         number: formData.phone.trim(),

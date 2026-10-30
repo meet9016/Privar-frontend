@@ -71,6 +71,7 @@ export const EVENT_ENDPOINTS = {
   BULK_DELETE: '/events/bulk',
   GET_CATEGORIES: '/masters/event-category',
   GET_REGISTRATIONS: '/event-registrations',
+  CREATE_REGISTRATION: '/event-registrations',
   DOWNLOAD_REGISTRATIONS: (params) => `/event-registrations/download?${params}`
 }
 
@@ -195,6 +196,12 @@ export const POLL_ENDPOINTS = {
   GET_RESPONSES: (id) => `/polls/${id}/responses`
 }
 
+// Theme & Settings Module API Endpoints
+export const THEME_ENDPOINTS = {
+  GET_THEME: '/get_app_theme',
+  UPDATE_THEME: '/update_app_theme'
+}
+
 export default {
   COMMITTEE: COMMITTEE_ENDPOINTS,
   ROLES: ROLES_ENDPOINTS,
@@ -213,6 +220,7 @@ export default {
   MANDAL: MANDAL_ENDPOINTS,
   MASTER: MASTER_ENDPOINTS,
   EDUCATION: EDUCATION_ENDPOINTS,
-  POLL: POLL_ENDPOINTS
+  POLL: POLL_ENDPOINTS,
+  THEME: THEME_ENDPOINTS
 }
 

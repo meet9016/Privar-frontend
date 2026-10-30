@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { Edit2, Image as ImageIcon, Plus, Trash2, ImageOff } from 'lucide-react'
 import api, { assetUrl, getGalleryList, formatDate } from '../lib/api'
 import { GALLERY_ENDPOINTS } from '../utils/endpoints'
@@ -52,6 +52,13 @@ export default function GalleryPage({ headerLeftContent }) {
   const debouncedSearch = useDebounce(search, 400)
   const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
+  const [categoryPage, setCategoryPage] = useState(1)
+  const [hasMoreCategories, setHasMoreCategories] = useState(true)
+  const [loadingCategories, setLoadingCategories] = useState(false)
+  const [loadingMoreCategories, setLoadingMoreCategories] = useState(false)
+  const [categorySearchQuery, setCategorySearchQuery] = useState('')
+  const categorySearchTimeoutRef = useRef(null)
+  const loadingMoreCatRef = useRef(false)
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
   const [previewImage, setPreviewImage] = useState(null)
@@ -133,14 +140,78 @@ export default function GalleryPage({ headerLeftContent }) {
     }
   }, [filePreviews])
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async (pageNum = 1, search = '', isAppend = false) => {
     try {
-      const categoryRes = await api.get(GALLERY_ENDPOINTS.GET_CATEGORIES)
+      if (isAppend) {
+        setLoadingMoreCategories(true)
+        loadingMoreCatRef.current = true
+      } else {
+        setLoadingCategories(true)
+      }
+
+      const params = {
+        page: pageNum,
+        limit: 10
+      }
+      if (search && search.trim()) {
+        params.search = search.trim()
+      }
+
+      const categoryRes = await api.get(GALLERY_ENDPOINTS.GET_CATEGORIES, { params })
       const list = categoryRes.data?.data || []
-      setCategories(list)
+      const pg = categoryRes.data?.pagination || {}
+
+      const totalPages = Number(pg.totalPages || pg.total_pages || 1)
+      const currentPageNum = Number(pg.page || pageNum)
+      const hasNext = Boolean(
+        pg.hasNextPage !== undefined
+          ? pg.hasNextPage
+          : (totalPages > 1 ? currentPageNum < totalPages : list.length >= 10)
+      )
+
+      setHasMoreCategories(hasNext)
+      setCategoryPage(currentPageNum)
+
+      if (isAppend) {
+        setCategories((prev) => {
+          const existingIds = new Set(prev.map(c => String(c.id || c._id)))
+          const filteredNew = list.filter(c => !existingIds.has(String(c.id || c._id)))
+          return [...prev, ...filteredNew]
+        })
+      } else {
+        setCategories(list)
+      }
     } catch (err) {
+      if (!isAppend) {
+        setCategories([])
+        setHasMoreCategories(false)
+      }
+    } finally {
+      setLoadingCategories(false)
+      setLoadingMoreCategories(false)
+      loadingMoreCatRef.current = false
     }
-  }
+  }, [])
+
+  const handleLoadMoreCategories = useCallback(() => {
+    if (loadingCategories || loadingMoreCategories || loadingMoreCatRef.current || !hasMoreCategories) return
+    const nextPage = categoryPage + 1
+    fetchCategories(nextPage, categorySearchQuery, true)
+  }, [loadingCategories, loadingMoreCategories, hasMoreCategories, categoryPage, categorySearchQuery, fetchCategories])
+
+  const categorySearchRef = useRef('')
+  const handleCategorySearchChange = useCallback((term) => {
+    const cleanTerm = (term || '').trim()
+    if (categorySearchRef.current === cleanTerm) return
+    categorySearchRef.current = cleanTerm
+    setCategorySearchQuery(cleanTerm)
+    if (categorySearchTimeoutRef.current) {
+      clearTimeout(categorySearchTimeoutRef.current)
+    }
+    categorySearchTimeoutRef.current = setTimeout(() => {
+      fetchCategories(1, cleanTerm, false)
+    }, 300)
+  }, [fetchCategories])
 
   const handleClearFilters = () => {
     setDraftYear('')
@@ -557,6 +628,13 @@ export default function GalleryPage({ headerLeftContent }) {
               disabled={saving}
               options={categories.map((item) => ({ label: item.category, value: item.id || item._id }))}
               error={fieldErrors.category}
+              searchable={true}
+              placeholder="Select an option"
+              onLoadMore={handleLoadMoreCategories}
+              hasMore={hasMoreCategories}
+              isLoadingMore={loadingMoreCategories}
+              onSearchChange={handleCategorySearchChange}
+              loading={loadingCategories}
             />
 
             <div>

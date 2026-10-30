@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Users, CalendarDays, Store, Briefcase, TrendingUp } from 'lucide-react'
 import { api } from '../../lib/api'
+import { MEMBER_ENDPOINTS, EVENT_ENDPOINTS, BUSINESS_ENDPOINTS, JOB_VACANCY_ENDPOINTS } from '../../utils/endpoints'
 import { getStoredWebTheme } from '../../hooks/useWebTheme'
 
 function AnimatedNumber({ value, duration = 1000 }) {
@@ -61,10 +62,10 @@ export default function CommunityStats() {
       try {
         setLoading(true)
         const [membersRes, eventsRes, bizRes, jobsRes] = await Promise.allSettled([
-          api.get('/users?flat=true&limit=1'),
-          api.get('/events?limit=1'),
-          api.get('/businesses?limit=1'),
-          api.get('/job-vacancy?limit=1'),
+          api.get(`${MEMBER_ENDPOINTS.GET_MEMBERS}?flat=true&limit=1`),
+          api.get(`${EVENT_ENDPOINTS.GET_EVENTS}?limit=1`),
+          api.get(`${BUSINESS_ENDPOINTS.GET_BUSINESSES}?limit=1`),
+          api.get(`${JOB_VACANCY_ENDPOINTS.GET_VACANCIES}?limit=1`),
         ])
 
         if (!isMounted) return

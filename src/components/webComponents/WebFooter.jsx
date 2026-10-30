@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Send, Facebook, Instagram, Twitter, Youtube, MessageCircle, ChevronRight, Heart, Apple, Play } from 'lucide-react';
 import { assetUrl, api } from '../../lib/api';
+import { THEME_ENDPOINTS } from '../../utils/endpoints';
 import { getStoredWebTheme } from '../../hooks/useWebTheme';
 
 export default function WebFooter() {
@@ -15,7 +16,7 @@ export default function WebFooter() {
     // Also fetch latest configuration to stay up to date
     (async () => {
       try {
-        const res = await api.get('/get_app_theme');
+        const res = await api.get(THEME_ENDPOINTS.GET_THEME);
         const data = res.data?.data || res.data;
         if (data) {
           setTheme(prev => ({
