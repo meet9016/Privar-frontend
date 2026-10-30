@@ -11,19 +11,14 @@ import {
   Check,
   CheckCheck,
   ArrowLeft,
-  Phone,
   X,
-  Smile,
-  Circle,
   Clock,
   Sparkles,
   Camera,
   Info,
   UserMinus,
-  Shield,
   ShieldCheck,
   Plus,
-  Trash2,
   LogOut,
   Edit2,
   Image as ImageIcon,
@@ -94,45 +89,32 @@ export default function ChatPage() {
   const [searchConvQuery, setSearchConvQuery] = useState('');
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
-
-  // Online & Typing tracking
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState({}); // conversationId -> boolean
-
-  // Modals
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [showNewGroupModal, setShowNewGroupModal] = useState(false);
   const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [availableUsers, setAvailableUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-
-  // New Group state
   const [groupName, setGroupName] = useState('');
   const [groupImageFile, setGroupImageFile] = useState(null);
   const [groupImagePreview, setGroupImagePreview] = useState('');
   const [selectedGroupMembers, setSelectedGroupMembers] = useState([]);
   const [creatingGroup, setCreatingGroup] = useState(false);
-
-  // Group Details & Members state
   const [groupMembers, setGroupMembers] = useState([]);
   const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
   const [editGroupNameVal, setEditGroupNameVal] = useState('');
   const [selectedAddMembers, setSelectedAddMembers] = useState([]);
   const [addingMembers, setAddingMembers] = useState(false);
-
-  // Socket reference
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const sendingRef = useRef(false);
   const activeChatRef = useRef(activeChat);
   const processedMsgIdsRef = useRef(new Set());
-
-  // File attachment state (image, pdf/document, audio)
   const [attachedFile, setAttachedFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);

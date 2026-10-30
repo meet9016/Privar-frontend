@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Camera, ChevronLeft, ChevronRight, Maximize2, X } from 'lucide-react'
 import { assetUrl, memberApi } from '../../lib/api'
+import { GALLERY_ENDPOINTS } from '../../utils/endpoints'
 
 const normalizeGalleryMemories = (galleryRows, categories) => {
   const categoryMap = categories.reduce((map, category) => {
@@ -53,7 +54,6 @@ export default function Memories() {
   const [categoryTabs, setCategoryTabs] = useState([{ id: 'all', label: 'All' }])
   const [loading, setLoading] = useState(true)
   const [lightboxIndex, setLightboxIndex] = useState(null)
-
   const sliderRef = useRef(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
@@ -62,7 +62,6 @@ export default function Memories() {
     const loadTheme = () => {
       setTheme(getStoredWebTheme())
     }
-
     loadTheme()
     window.addEventListener('storage', loadTheme)
     return () => window.removeEventListener('storage', loadTheme)
@@ -73,13 +72,12 @@ export default function Memories() {
       try {
         setLoading(true)
         const [galleryResponse, categoryResponse] = await Promise.all([
-          memberApi.get('/gallery?status=1&limit=100'),
-          memberApi.get('/gallery-categories?status=1&limit=100'),
+          memberApi.get(`${GALLERY_ENDPOINTS.GET_GALLERY}?status=1&limit=100`),
+          memberApi.get(`${GALLERY_ENDPOINTS.GET_CATEGORIES}?status=1&limit=100`),
         ])
 
         const galleryRows = Array.isArray(galleryResponse.data?.data) ? galleryResponse.data.data : []
         const categories = Array.isArray(categoryResponse.data?.data) ? categoryResponse.data.data : []
-
         const normalized = normalizeGalleryMemories(galleryRows, categories)
         setMemories(normalized)
 
@@ -223,7 +221,6 @@ export default function Memories() {
             <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl sm:rounded-full bg-gray-100/90 border border-gray-200/80 backdrop-blur-md shadow-inner max-w-full">
               {visibleTabs.map((tab) => {
                 const isActive = activeTab === tab.id
-
                 return (
                   <button
                     key={tab.id}

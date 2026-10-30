@@ -1,12 +1,11 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
-import { Edit2, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from 'lucide-react'
+import { Edit2, Plus,ShieldCheck, Trash2 } from 'lucide-react'
 import api from '../lib/api'
 import { ROLES_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import { buildPermissionGroups, normalizeRoles, unwrapApiData } from '../lib/roles'
 import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
-import Loader from '../components/common/Loader'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import SearchInput from '../components/common/SearchInput'
@@ -17,7 +16,6 @@ import Checkbox from '../components/common/Checkbox'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
 
-const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
 const emptyRoleForm = { name: '', description: '', status: 1, permissions: [] }
 export default function Roles() {
   const { user: currentUser } = useContext(AuthContext)
@@ -35,7 +33,6 @@ export default function Roles() {
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [formData, setFormData] = useState(emptyRoleForm)
   const [formError, setFormError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})

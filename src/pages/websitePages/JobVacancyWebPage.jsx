@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Briefcase, MapPin, Building2, Clock, Phone, Mail, ChevronRight, IndianRupee } from 'lucide-react'
+import { Briefcase, MapPin, Building2, Phone, Mail, ChevronRight } from 'lucide-react'
 import { memberApi, assetUrl } from '../../lib/api'
 import { useWebTheme } from '../../hooks/useWebTheme'
 

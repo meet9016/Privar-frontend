@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Briefcase } from 'lucide-react'
 import { memberApi } from '../../lib/api'
+import { BUSINESS_ENDPOINTS } from '../../utils/endpoints'
 
 const normalizeBusiness = (biz, index) => ({
   id: biz.id || `${biz.name}-${index}`,
@@ -27,16 +28,6 @@ const getStoredWebTheme = () => {
   }, {})
 }
 
-const shadeColor = (color, percent) => {
-  if (!color) return '#000000'
-  const num = parseInt(color.replace('#', ''), 16)
-  const amt = Math.round(2.55 * percent)
-  const r = Math.max(0, Math.min(255, (num >> 16) + amt)).toString(16).padStart(2, '0')
-  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt)).toString(16).padStart(2, '0')
-  const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt)).toString(16).padStart(2, '0')
-  return `#${r}${g}${b}`
-}
-
 export default function Businesses() {
   const [theme, setTheme] = useState(getStoredWebTheme())
   const [businesses, setBusinesses] = useState([])
@@ -55,7 +46,7 @@ export default function Businesses() {
     const fetchBusinesses = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/businesses?status=1')
+        const response = await memberApi.get(`${BUSINESS_ENDPOINTS.GET_BUSINESSES}?status=1`)
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         setBusinesses(rows.map(normalizeBusiness))
       } catch (error) {

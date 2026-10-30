@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { CheckCircle, Heart, Home } from 'lucide-react'
 
-
-
 const features = [
   'Bring Every Generation Onto One Private Space',
   'Plan Events, Share Photos & Preserve Memories',

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Users, Search, UserCheck, UserMinus, User2, MapPin, Phone, RefreshCw, UserPlus, CheckSquare, Square } from 'lucide-react'
+import { Users, UserCheck, UserMinus, User2, MapPin, Phone, RefreshCw, UserPlus, CheckSquare, Square } from 'lucide-react'
 import api, { assetUrl } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
 import Table from '../../components/common/Table'

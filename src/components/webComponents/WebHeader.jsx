@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, Menu, X, LogIn, Home, Info, Users, Image as ImageIcon, Calendar, GraduationCap, HeartHandshake, BookOpen, MessageSquare } from 'lucide-react'
-import NotificationDropdown from '../NotificationDropdown'
-import { assetUrl, getCommunitySurname, getCommunityFullName } from '../../lib/api'
+import { Phone, Mail, Facebook, Instagram, Twitter, Youtube, MessageCircle, Menu, X, LogIn, Home, Info, Users, Image as ImageIcon, Calendar, GraduationCap, HeartHandshake, MessageSquare } from 'lucide-react'
+import { assetUrl,} from '../../lib/api'
 
 const getStoredWebTheme = () => {
   const colorKeys = [

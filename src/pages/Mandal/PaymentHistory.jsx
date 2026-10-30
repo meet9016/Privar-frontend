@@ -1,13 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
   FileText,
-  Search,
   IndianRupee,
-  Calendar,
   User2,
-  CheckCircle2,
-  Download,
-  CreditCard,
   RefreshCw,
   Printer
 } from 'lucide-react'
@@ -17,7 +12,6 @@ import Table from '../../components/common/Table'
 import SearchInput from '../../components/common/SearchInput'
 import Select from '../../components/common/Select'
 import DatePicker from '../../components/DatePicker'
-import Button from '../../components/common/Button'
 import usePagination from '../../hooks/usePagination'
 import useDebounce from '../../hooks/useDebounce'
 import { toast } from '../../lib/toast'
@@ -35,7 +29,6 @@ export default function PaymentHistory() {
   const [totalAmount, setTotalAmount] = useState(0)
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
-
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [paymentMode, setPaymentMode] = useState('All')

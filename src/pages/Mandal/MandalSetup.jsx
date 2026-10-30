@@ -4,10 +4,8 @@ import {
   Plus,
   Edit2,
   Trash2,
-  CheckCircle2,
   Users,
   Calendar,
-  IndianRupee,
   Layers,
   Save,
   X,
@@ -48,13 +46,11 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
   const [mandals, setMandals] = useState([])
   const [loading, setLoading] = useState(true)
   const [membersList, setMembersList] = useState([])
-
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState('create') // 'create' or 'edit'
   const [activeMandalId, setActiveMandalId] = useState(null)
   const [saving, setSaving] = useState(false)
-
   const [formData, setFormData] = useState({
     name: '',
     monthly_amount: 500,

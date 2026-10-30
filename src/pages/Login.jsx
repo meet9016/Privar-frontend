@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, Building2 } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { toast } from '../lib/toast'
 import { getDomainCommunityName, getSubdomainTenant, getActualSubdomain, assetUrl } from '../lib/api'
@@ -48,7 +48,6 @@ export default function Login() {
         localStorage.getItem('web_webLogo') ||
         localStorage.getItem('web_appLogo') ||
         ''
-
       if (actualSubdomain && name && !name.toLowerCase().includes(actualSubdomain.toLowerCase())) {
         name = `${actualSubdomain.charAt(0).toUpperCase() + actualSubdomain.slice(1)} Parivar`
         localStorage.setItem('web_name', name)

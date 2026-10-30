@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react'
 import Select from './common/Select'
 
-/**
- * Reusable year select dropdown component using custom Select design.
- */
+/** Reusable year select dropdown component using custom Select design.*/
 export default function YearSelect({
   value,
   onChange,

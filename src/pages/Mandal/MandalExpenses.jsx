@@ -1,10 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
   Receipt,
-  Search,
   Plus,
   IndianRupee,
-  Calendar,
   Trash2,
   Edit2,
   ExternalLink,
@@ -38,13 +36,11 @@ export default function MandalExpenses() {
   const [totalAmount, setTotalAmount] = useState(0)
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
-
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [category, setCategory] = useState('All')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-
   const [selectedExpense, setSelectedExpense] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 

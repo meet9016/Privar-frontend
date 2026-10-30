@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import {
   Mail,
   Phone,
-  MapPin,
   Send,
   MessageSquare,
   Clock,
@@ -13,7 +12,7 @@ import {
   User,
   HeartHandshake
 } from 'lucide-react'
-import { memberApi, getDomainCommunityName, getCommunityFullName } from '../../lib/api'
+import { memberApi, getCommunityFullName } from '../../lib/api'
 import { useWebTheme } from '../../hooks/useWebTheme'
 import { toast } from '../../lib/toast'
 

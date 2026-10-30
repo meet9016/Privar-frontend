@@ -35,11 +35,9 @@ export default function Documentation() {
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [readingProgress, setReadingProgress] = useState(0)
-
   const contentContainerRef = useRef(null)
   const langDropdownRef = useRef(null)
   const portalMenuRef = useRef(null)
-
   const t = docTranslations[lang] || docTranslations.en
 
   useEffect(() => {

@@ -70,6 +70,7 @@ export const EVENT_ENDPOINTS = {
   BULK_DELETE: '/events/bulk',
   GET_CATEGORIES: '/masters/event-category',
   GET_REGISTRATIONS: '/event-registrations',
+  REGISTER_EVENT: '/event-registrations',
   DOWNLOAD_REGISTRATIONS: (params) => `/event-registrations/download?${params}`
 }
 
@@ -175,7 +176,12 @@ export const MANDAL_ENDPOINTS = {
   GET_CONTRIBUTIONS: '/mandal/contributions',
   UPDATE_CONTRIBUTION: (id) => `/mandal/contributions/${id}`,
   BULK_MARK_PAID: '/mandal/contributions/bulk-mark-paid',
-  GET_HISTORY: '/mandal/history'
+  GET_HISTORY: '/mandal/history',
+  GET_EXPENSES: '/mandal/expenses',
+  CREATE_EXPENSE: '/mandal/expenses',
+  UPDATE_EXPENSE: (id) => `/mandal/expenses/${id}`,
+  DELETE_EXPENSE: (id) => `/mandal/expenses/${id}`,
+  GET_LEDGER: '/mandal/ledger'
 }
 
 // Mobile Registration Portal API Endpoints
@@ -185,7 +191,14 @@ export const REGISTRATION_ENDPOINTS = {
   UPDATE_STATUS: (id) => `/mobile-registration/admin/${id}/status`
 }
 
+// App Theme API Endpoints
+export const THEME_ENDPOINTS = {
+  GET_THEME: '/get_app_theme',
+  UPDATE_THEME: '/update_app_theme'
+}
+
 export default {
+  THEME: THEME_ENDPOINTS,
   COMMITTEE: COMMITTEE_ENDPOINTS,
   ROLES: ROLES_ENDPOINTS,
   MEMBER: MEMBER_ENDPOINTS,

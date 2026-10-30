@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronDown, FolderOpen, CheckSquare, Square, MinusSquare, Trash2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import Checkbox from './Checkbox';
+import { ChevronLeft, ChevronRight, ChevronDown, FolderOpen,  Trash2, CheckCircle2, XCircle,  } from 'lucide-react';
 
 function RowsSelector({ limit, onLimitChange }) {
   const [isOpen, setIsOpen] = useState(false);

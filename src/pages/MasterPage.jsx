@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import { masterLabels } from '../config/navigation'
-import { Filter } from 'lucide-react'
 import Select from '../components/common/Select'
 import api from '../lib/api'
 import { MASTER_ENDPOINTS } from '../utils/endpoints'

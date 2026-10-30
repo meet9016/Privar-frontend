@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { GraduationCap, Phone, Trash2, Search, Edit2, RefreshCw, Plus, Image as ImageIcon, Filter, X } from 'lucide-react'
+import { GraduationCap, Trash2, Edit2, Plus, Image as ImageIcon} from 'lucide-react'
 import api, { assetUrl, getStudentsList, getCommunitySurname } from '../lib/api'
 import { STUDENT_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
@@ -29,7 +29,6 @@ export default function Students({ headerLeftContent }) {
   const [formLoading, setFormLoading] = useState(false)
 
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearchValue] = useState('')

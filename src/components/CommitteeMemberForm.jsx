@@ -1,14 +1,12 @@
-import React, { useContext, useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { AuthContext } from '../context/AuthContext'
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import Input from './common/Input'
 import Select from './common/Select'
 import Button from './common/Button'
 import { isValidEmail } from '../lib/validation'
 import api, { getUsersList } from '../lib/api'
-import { User as UserIcon, Phone, Mail, ShieldCheck } from 'lucide-react'
+import { User as UserIcon,  ShieldCheck } from 'lucide-react'
 
 export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLoading, onCancel }) {
-  const { user: loggedInUser } = useContext(AuthContext)
   const [userList, setUserList] = useState([])
   const [userPage, setUserPage] = useState(1)
   const [hasMoreUsers, setHasMoreUsers] = useState(false)
@@ -538,8 +536,6 @@ export default function CommitteeMemberForm({ member, roles = [], onSubmit, isLo
       village_id: matched ? String(matched._id || matched.id) : ''
     }))
   }
-
-  const fullNameDisplay = [formData.first_name, formData.middle_name, formData.last_name].filter(Boolean).join(' ')
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-text">

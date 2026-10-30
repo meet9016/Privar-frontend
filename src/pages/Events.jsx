@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { Calendar, Edit2, Image as ImageIcon, Plus, RefreshCw, Search, Trash2, Eye, ImageOff, Filter, X, Bell, Users, Shield, UserCheck } from 'lucide-react'
+import { Calendar, Edit2, Image as ImageIcon, Plus, Trash2, Eye, ImageOff,  Bell, Users, Shield, UserCheck } from 'lucide-react'
 import api, { assetUrl, getEventsList } from '../lib/api'
 import { EVENT_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
@@ -18,7 +18,6 @@ import { toast } from '../lib/toast'
 import FileDropzone from '../components/common/FileDropzone'
 import DateTimePicker from '../components/common/DateTimePicker'
 import useDebounce from '../hooks/useDebounce'
-import EventRegistrations from './EventRegistration'
 import Tooltip from '../components/common/Tooltip'
 import { AuthContext } from '../context/AuthContext'
 import usePermissions from '../hooks/usePermissions'
@@ -61,7 +60,6 @@ export default function Events({ headerLeftContent }) {
   const [showFilters, setShowFilters] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedId, setSelectedId] = useState('')
   const [existingImage, setExistingImage] = useState('')
@@ -95,10 +93,8 @@ export default function Events({ headerLeftContent }) {
       setRegistrationsLoading(false)
     }
   }
-  const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
-  const endpoint = '/events'
   const toDateTimeLocal = (value) => {
     if (!value) return ''
     const d = new Date(value)
@@ -111,9 +107,6 @@ export default function Events({ headerLeftContent }) {
     const min = pad(d.getMinutes())
     return `${y}-${m}-${day}T${h}:${min}`
   }
-
-  const navigate = useNavigate()
-
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -139,10 +132,8 @@ export default function Events({ headerLeftContent }) {
     try {
       const res = await api.get(`${MEMBER_ENDPOINTS.GET_MEMBERS}?limit=1000`)
       const list = res.data?.data || []
-      
       const heads = list.filter(m => m.familyHead || m.relation === 'Self')
       const nonHeads = list.filter(m => !m.familyHead && m.relation !== 'Self')
-
       const processedIds = new Set()
       const hierarchicalList = []
 
@@ -159,7 +150,6 @@ export default function Events({ headerLeftContent }) {
 
         const childIds = children.map(c => String(c.id || c._id))
         const headName = [head.first_name, head.middle_name, head.last_name].filter(Boolean).join(' ') || head.number || 'Unnamed'
-        const headSubtext = [head.member_id ? `ID: ${head.member_id}` : '', head.number].filter(Boolean).join(' • ')
 
         hierarchicalList.push({
           value: headId,

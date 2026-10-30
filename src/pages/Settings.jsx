@@ -9,7 +9,6 @@ import {
 import api, { assetUrl, getSubdomainTenant } from '../lib/api'
 import Loader from '../components/common/Loader'
 import { toast } from '../lib/toast'
-import { AuthContext } from '../context/AuthContext'
 import { confirm } from '../lib/confirm'
 import { compressImage } from '../lib/imageCompressor'
 

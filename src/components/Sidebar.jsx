@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Shield, Database, Layers, Activity, CalendarDays, Briefcase } from 'lucide-react'
+import { Database, Layers, Activity, CalendarDays, Briefcase } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { useChat } from '../context/ChatContext'
 import { configurationNavigation, coreNavigation, masterNavigation, mediaNavigation, engagementNavigation, activityNavigation, servicesNavigation } from '../config/navigation'
 import { hasPermission } from '../lib/permissions'
-import { getCommunitySurname, getCommunityFullName, getSubdomainTenant, assetUrl } from '../lib/api'
+import {  getCommunityFullName, getSubdomainTenant, assetUrl } from '../lib/api'
 
 const LinkItem = ({ to, icon: Icon, label, end, onClick, badge }) => {
   const location = useLocation()

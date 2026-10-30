@@ -1,25 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
-  HeartHandshake,
   Trash2,
-  Search,
   Edit2,
-  RefreshCw,
   Plus,
   IndianRupee,
-  MapPin,
-  CalendarDays,
-  User2,
   Copy,
   Landmark,
-  FileDown
 } from 'lucide-react'
-import api, { getDonationsList, getBankDetailsList, exportDonationsExcel, formatDate } from '../lib/api'
+import api, { getDonationsList, getBankDetailsList, formatDate } from '../lib/api'
 import { DONATION_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import usePagination from '../hooks/usePagination'
 import Modal from '../components/Modal'
-import Loader from '../components/common/Loader'
 import DatePicker from '../components/DatePicker'
 import Table from '../components/common/Table'
 import Input from '../components/common/Input'
@@ -44,7 +36,6 @@ export default function Donations({ headerLeftContent }) {
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
   const [bankDetails, setBankDetails] = useState([])
-
   const [formLoading, setFormLoading] = useState(false)
   const [dateValue, setDateValue] = useState(new Date().toISOString().slice(0, 10))
   const [paymentMode, setPaymentMode] = useState('Cash')
@@ -55,8 +46,6 @@ export default function Donations({ headerLeftContent }) {
 
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 400)
-
-
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [selectedDonation, setSelectedDonation] = useState(null)
@@ -74,7 +63,6 @@ export default function Donations({ headerLeftContent }) {
     } catch (err) {
       setDonations([])
       setPaginationData({ page: 1, totalPages: 1, total: 0 })
-      setError(err.response?.data?.message || 'Failed to load donations')
     } finally {
       setLoading(false)
     }

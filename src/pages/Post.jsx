@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter, X } from 'lucide-react'
+import { FileText, Trash2,  Plus, Edit2, ImageOff,  } from 'lucide-react'
 import api, { assetUrl, getPostsList, formatDate } from '../lib/api'
 import { POST_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
@@ -12,7 +12,6 @@ import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
 import FilterPopover from '../components/common/FilterPopover'
-import DateTimePicker from '../components/common/DateTimePicker'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
@@ -29,7 +28,6 @@ export default function Post({ headerLeftContent }) {
   const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [filters, setFilters] = useState({ status: '' })
   const [draftFilters, setDraftFilters] = useState({ status: '' })
   const [showFilters, setShowFilters] = useState(false)
@@ -44,7 +42,6 @@ export default function Post({ headerLeftContent }) {
   }
   const [formData, setFormData] = useState(emptyPostForm)
   const [fieldErrors, setFieldErrors] = useState({})
-
   const [existingImage, setExistingImage] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)

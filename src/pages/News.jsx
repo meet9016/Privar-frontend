@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FileText, Calendar, Trash2, Clock, Search, RefreshCw, Plus, Edit2, ImageOff, Filter, X, Bell, Users, Shield, UserCheck } from 'lucide-react'
+import { FileText, Calendar, Trash2,  Plus, Edit2, ImageOff,  Bell, Users, Shield, UserCheck } from 'lucide-react'
 import api, { assetUrl, getNewsList, formatDate } from '../lib/api'
 import { NEWS_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
-import Loader from '../components/common/Loader'
 import Modal from '../components/Modal'
 import FileDropzone from '../components/common/FileDropzone'
 import Input from '../components/common/Input'
@@ -47,7 +46,6 @@ export default function News({ headerLeftContent }) {
   const [showFilters, setShowFilters] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [existingImage, setExistingImage] = useState('')

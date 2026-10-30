@@ -2,39 +2,27 @@ import React, { useState, useEffect, useCallback, useMemo, useContext } from 're
 import {
   Users,
   Eye,
-  CheckCircle,
   CheckCircle2,
   XCircle,
   AlertTriangle,
   FileText,
-  Download,
   ExternalLink,
-  Search,
   RefreshCw,
   Phone,
   Mail,
   MapPin,
   Briefcase,
-  Calendar,
   Layers,
   Check,
   X,
-  MessageSquare,
   Sparkles,
-  Info,
-  ChevronDown,
   User,
-  Heart,
-  Baby,
   ShieldCheck,
   Building,
   CreditCard,
   FileCheck,
-  ArrowRight,
   Clock,
   Home,
-  Filter,
-  UserPlus
 } from 'lucide-react'
 import api, { formatDate, assetUrl } from '../lib/api'
 import { REGISTRATION_ENDPOINTS } from '../utils/endpoints'
@@ -104,7 +92,6 @@ export default function RegistrationsPage() {
   const [correctionFields, setCorrectionFields] = useState([])
 
   const totalPages = Math.max(Number(pagination.totalPages) || 1, 1)
-  const currentPage = Math.min(Math.max(Number(pagination.page) || page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
   const fetchRegistrations = useCallback(async () => {

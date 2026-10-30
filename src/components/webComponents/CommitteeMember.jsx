@@ -3,8 +3,6 @@ import { Users } from 'lucide-react'
 import { memberApi } from '../../lib/api'
 import { COMMITTEE_ENDPOINTS } from '../../utils/endpoints'
 
-
-
 const normalizeCommitteeMember = (member, index) => {
   const name = [member.first_name, member.middle_name, member.last_name]
     .filter(Boolean)
@@ -30,25 +28,12 @@ const getStoredWebTheme = () => {
     'primaryColor',
     'secondaryColor',
     'textColor',
-
   ]
 
   return colorKeys.reduce((theme, key) => {
     const value = localStorage.getItem(`web_${key}`)
     return value ? { ...theme, [key]: value } : theme
   }, {})
-}
-
-const shadeColor = (color, percent) => {
-  if (!color) return '#000000'
-
-  const num = parseInt(color.replace('#', ''), 16)
-  const amt = Math.round(2.55 * percent)
-  const r = Math.max(0, Math.min(255, (num >> 16) + amt)).toString(16).padStart(2, '0')
-  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt)).toString(16).padStart(2, '0')
-  const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt)).toString(16).padStart(2, '0')
-
-  return `#${r}${g}${b}`
 }
 
 export default function Members() {
@@ -97,11 +82,8 @@ export default function Members() {
       {/* Decorative Blur Orbs */}
       <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-[0.03] blur-3xl pointer-events-none" style={{ backgroundColor: theme.primaryColor }} />
       <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-[0.03] blur-3xl pointer-events-none" style={{ backgroundColor: theme.secondaryColor }} />
-
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-8 sm:mb-10 relative">
-
-
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
             <div
@@ -123,7 +105,6 @@ export default function Members() {
               Meet Our Committee Members
             </h2>
           </div>
-
         </div>
 
         {loading ? (
@@ -191,7 +172,6 @@ export default function Members() {
             ))}
           </div>
         )}
-
       </div>
     </section>
   )

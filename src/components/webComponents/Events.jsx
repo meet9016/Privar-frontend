@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { ArrowRight, Calendar, CheckCircle, Clock, MapPin, Users, X, AlertCircle } from 'lucide-react'
+import { ArrowRight, Calendar, Clock, MapPin, Users, X, AlertCircle } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { memberApi } from '../../lib/api'
+import { EVENT_ENDPOINTS } from '../../utils/endpoints'
 import { toast } from '../../lib/toast'
 
 const formatEventDate = (value) => {
@@ -68,18 +69,6 @@ const getStoredWebTheme = () => {
   }, {})
 }
 
-const shadeColor = (color, percent) => {
-  if (!color) return '#000000'
-
-  const num = parseInt(color.replace('#', ''), 16)
-  const amt = Math.round(2.55 * percent)
-  const r = Math.max(0, Math.min(255, (num >> 16) + amt)).toString(16).padStart(2, '0')
-  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt)).toString(16).padStart(2, '0')
-  const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt)).toString(16).padStart(2, '0')
-
-  return `#${r}${g}${b}`
-}
-
 export default function Events() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -87,7 +76,6 @@ export default function Events() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState(null)
-
   const isEventsPage = location?.pathname === '/events'
   const visibleEvents = isEventsPage ? events : events.slice(0, 4)
   const [formData, setFormData] = useState({
@@ -104,7 +92,6 @@ export default function Events() {
     const loadTheme = () => {
       setTheme(getStoredWebTheme())
     }
-
     loadTheme()
     window.addEventListener('storage', loadTheme)
     return () => window.removeEventListener('storage', loadTheme)
@@ -114,8 +101,7 @@ export default function Events() {
     const fetchEvents = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/events?status=1')
-
+        const response = await memberApi.get(`${EVENT_ENDPOINTS.GET_EVENTS}?status=1`)
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active' || String(r.status).toLowerCase() === 'approved')
         setEvents(activeRows.map(normalizeEvent))
@@ -131,14 +117,11 @@ export default function Events() {
 
   useEffect(() => {
     if (!selectedEvent) return undefined
-
     const handleEscape = (event) => {
       if (event.key === 'Escape') setSelectedEvent(null)
     }
-
     document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', handleEscape)
-
     return () => {
       document.body.style.overflow = ''
       document.removeEventListener('keydown', handleEscape)
@@ -191,7 +174,6 @@ export default function Events() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     if (!validate()) {
       return
     }
@@ -199,7 +181,7 @@ export default function Events() {
     setSubmitting(true)
     setSubmitError('')
     try {
-      await memberApi.post('/event-registrations', {
+      await memberApi.post(EVENT_ENDPOINTS.REGISTER_EVENT, {
         name: formData.name.trim(),
         email: formData.email.trim(),
         number: formData.phone.trim(),
@@ -228,8 +210,6 @@ export default function Events() {
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8 sm:mb-10 relative">
-        
-
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Badge */}
             <div

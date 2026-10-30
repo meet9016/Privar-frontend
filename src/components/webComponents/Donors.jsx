@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, HeartHandshake, IndianRupee, MapPin, Sparkles } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { memberApi } from '../../lib/api'
+import { DONATION_ENDPOINTS } from '../../utils/endpoints'
 
 const getStoredWebTheme = () => {
   const colorKeys = [
@@ -30,7 +31,6 @@ const shadeColor = (color, percent) => {
   const r = Math.max(0, Math.min(255, (num >> 16) + amt)).toString(16).padStart(2, '0')
   const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt)).toString(16).padStart(2, '0')
   const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt)).toString(16).padStart(2, '0')
-
   return `#${r}${g}${b}`
 }
 
@@ -46,14 +46,12 @@ export default function Donors() {
   const [donors, setDonors] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
   const isDonorsPage = location?.pathname === '/donors'
 
   useEffect(() => {
     const loadTheme = () => {
       setTheme(getStoredWebTheme())
     }
-
     loadTheme()
     window.addEventListener('storage', loadTheme)
     return () => window.removeEventListener('storage', loadTheme)
@@ -64,7 +62,7 @@ export default function Donors() {
       try {
         setLoading(true)
         setError('')
-        const response = await memberApi.get('/donations?status=1')
+        const response = await memberApi.get(`${DONATION_ENDPOINTS.GET_DONATIONS}?status=1`)
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows.filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active')
         setDonors(activeRows)
@@ -80,10 +78,6 @@ export default function Donors() {
   }, [])
 
   const visibleDonors = isDonorsPage ? donors : donors.slice(0, 4)
-  const totalAmount = useMemo(
-    () => donors.reduce((sum, donor) => sum + Number(donor.donate_amount || 0), 0),
-    [donors]
-  )
 
   return (
     <section

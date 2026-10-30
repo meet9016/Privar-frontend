@@ -1,17 +1,15 @@
 import React, { useCallback, useContext, useEffect, useState, useMemo, useRef } from 'react'
-import { Edit2, Trash2, Plus, Search, RefreshCw, Sparkles, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet, X, Download, Upload, Network, List, Heart, Baby, ZoomIn, ZoomOut, RotateCcw, Move, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Edit2, Trash2, Plus, RefreshCw, Users as UsersIcon, Eye, CheckCircle, XCircle, Phone, Mail, Crown, MapPin, Calendar, Filter, ChevronDown, User, Droplet, X, Download, Upload, Network, List, Heart, Baby, ZoomIn, ZoomOut, RotateCcw, Move, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react'
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import api, { getUsersList, formatDate, assetUrl } from '../lib/api'
 import { MEMBER_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
-import { getUserRoleLabel, normalizeRoles, unwrapApiData } from '../lib/roles'
-import { hasPermission } from '../lib/permissions'
+import { normalizeRoles, unwrapApiData } from '../lib/roles'
 import { AuthContext } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import UserForm, { getRelationDisplay } from '../components/UserForm'
 import Select from '../components/common/Select'
-import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Table from '../components/common/Table'
 import SearchInput from '../components/common/SearchInput'
@@ -58,18 +56,12 @@ export default function Users() {
   const [filterCities, setFilterCities] = useState([])
   const [filterVillages, setFilterVillages] = useState([])
   const [filterPattis, setFilterPattis] = useState([])
-
-  const filterGender = filters.gender || ''
-  const filterStatus = filters.status || ''
-
   const [roles, setRoles] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [editTargetMemberId, setEditTargetMemberId] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-
   const [selectedUsers, setSelectedUsers] = useState([])
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [viewingUser, setViewingUser] = useState(null)
@@ -81,7 +73,6 @@ export default function Users() {
   const [treePan, setTreePan] = useState({ x: 0, y: 0 })
   const [isTreeDragging, setIsTreeDragging] = useState(false)
   const treeDragStartRef = useRef({ x: 0, y: 0, startPanX: 0, startPanY: 0 })
-
   // --- Bulk Import State ---
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [importStep, setImportStep] = useState('upload') // 'upload' | 'preview' | 'result'
@@ -297,11 +288,6 @@ export default function Users() {
   const setSearchQuery = (value) => {
     setSearchValue(value)
     setPage(1)
-  }
-
-  // Handle Search submit
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
   }
 
   // Create/Update user

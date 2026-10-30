@@ -4,9 +4,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Printer,
-  FileText,
-  Calendar,
-  IndianRupee,
   RefreshCw
 } from 'lucide-react'
 import api, { formatDate } from '../../lib/api'
@@ -23,7 +20,6 @@ export default function FundLedger() {
   const [summary, setSummary] = useState(null)
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams } = usePagination(15)
   const [loading, setLoading] = useState(false)
-
   const [typeFilter, setTypeFilter] = useState('All')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')

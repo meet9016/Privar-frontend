@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Award, ChevronLeft, ChevronRight, GraduationCap, Medal, Star, Trophy } from 'lucide-react'
+import { Award, ChevronLeft, ChevronRight, GraduationCap, Medal, Trophy } from 'lucide-react'
 import { memberApi, getCommunitySurname } from '../../lib/api'
+import { STUDENT_ENDPOINTS } from '../../utils/endpoints'
 
 const rankLabel = (index) => {
   const rank = index + 1
@@ -65,7 +66,7 @@ export default function TopStudents() {
     const fetchStudents = async () => {
       try {
         setLoading(true)
-        const response = await memberApi.get('/students?status=1&limit=50')
+        const response = await memberApi.get(`${STUDENT_ENDPOINTS.GET_STUDENTS}?status=1&limit=50`)
         const rows = Array.isArray(response.data?.data) ? response.data.data : []
         const activeRows = rows
           .filter(r => r.status === undefined || r.status === null || Number(r.status) === 1 || String(r.status).toLowerCase() === 'active')

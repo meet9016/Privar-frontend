@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import {
   Calendar,
   IndianRupee,
-  Search,
   CheckCircle2,
   Clock,
   Edit2,
@@ -12,10 +11,7 @@ import {
   RefreshCw,
   Printer,
   CheckCheck,
-  Filter,
   X,
-  CreditCard,
-  RotateCcw
 } from 'lucide-react'
 import api, { assetUrl, formatDate } from '../../lib/api'
 import { MANDAL_ENDPOINTS } from '../../utils/endpoints'
@@ -31,28 +27,6 @@ import useDebounce from '../../hooks/useDebounce'
 import { toast } from '../../lib/toast'
 import { confirm } from '../../lib/confirm'
 import RecordPaymentModal from './RecordPaymentModal'
-
-const MONTH_OPTIONS = [
-  { label: 'All Months', value: '' },
-  { label: 'January', value: '01' },
-  { label: 'February', value: '02' },
-  { label: 'March', value: '03' },
-  { label: 'April', value: '04' },
-  { label: 'May', value: '05' },
-  { label: 'June', value: '06' },
-  { label: 'July', value: '07' },
-  { label: 'August', value: '08' },
-  { label: 'September', value: '09' },
-  { label: 'October', value: '10' },
-  { label: 'November', value: '11' },
-  { label: 'December', value: '12' }
-]
-
-const currentYearNum = new Date().getFullYear()
-const YEAR_OPTIONS = Array.from({ length: 7 }, (_, i) => {
-  const y = String(currentYearNum - 3 + i)
-  return { label: y, value: y }
-})
 
 const PAYMENT_MODE_OPTIONS = [
   { label: 'All Payment Modes', value: 'All' },

@@ -10,7 +10,6 @@ const typeIcon = (type) => {
   return <Megaphone className="w-4 h-4 text-primary" />
 }
 
-
 const timeAgo = (date) => {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000)
   if (diff < 60) return `${diff}s ago`

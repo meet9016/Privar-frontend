@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { UploadCloud, X, FileText, Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
+import { UploadCloud, X, FileText, Image as ImageIcon} from 'lucide-react';
 import ImagePreviewModal from './ImagePreviewModal';
 
 export default function FileDropzone({

@@ -9,11 +9,10 @@ import Switch from './common/Switch'
 import Button from './common/Button'
 import DatePicker from './DatePicker'
 import { isValidEmail } from '../lib/validation'
-import { Users as UsersIcon, Plus, Trash2, User, ChevronDown, ChevronUp, Edit2, Check, Camera, Image as ImageIcon, X, RefreshCw, Eye, HelpCircle, Languages, Sparkles } from 'lucide-react'
+import { Users as UsersIcon, Plus, Trash2, User,  Edit2, Check, Camera, Image as ImageIcon, RefreshCw, Eye, HelpCircle, Sparkles } from 'lucide-react'
 import { toast } from '../lib/toast'
 import ImagePreviewModal from './common/ImagePreviewModal'
 import RelationshipGuideModal from './common/RelationshipGuideModal'
-import { transliterateText, isIndicText } from '../utils/transliterate'
 
 function MemberAvatarUpload({ value, onChange, name, disabled, label = "Photo", size = 52 }) {
   const fileInputRef = React.useRef(null)
@@ -124,7 +123,6 @@ function MemberAvatarUpload({ value, onChange, name, disabled, label = "Photo", 
 }
 
 let cachedMasters = null;
-let mastersPromise = null;
 
 const RELATION_GENDER_MAP = {
   Spouse: 'Female',

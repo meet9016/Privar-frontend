@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { assetUrl, memberApi } from '../../lib/api';
+import { THEME_ENDPOINTS } from '../../utils/endpoints';
 
 /**
  * Professional Web Carousel Component
@@ -39,7 +40,6 @@ const Carousel = ({
   autoplayInterval = 4000,
   showArrows = true,
   showDots = true,
-  showCounter = false,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -70,7 +70,7 @@ const Carousel = ({
     let isMounted = true;
     const fetchBannerImages = async () => {
       try {
-        const res = await memberApi.get('/get_app_theme');
+        const res = await memberApi.get(THEME_ENDPOINTS.GET_THEME);
         const data = res.data?.data || res.data || {};
         const bannerImages = normalizeBannerImages(data.bannerImages);
         if (isMounted) {

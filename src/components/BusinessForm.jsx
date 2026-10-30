@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Trash2, Globe, Facebook, Instagram, Youtube, Share2 } from 'lucide-react'
+import {  Trash2, } from 'lucide-react'
 import api from '../lib/api'
 import { BUSINESS_ENDPOINTS, MEMBER_ENDPOINTS } from '../utils/endpoints'
 import Input from './common/Input'
@@ -53,12 +53,10 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
   const [states, setStates] = useState([])
   const [districts, setDistricts] = useState([])
   const [cities, setCities] = useState([])
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [pincodeLoading, setPincodeLoading] = useState(false)
   const [profilePreview, setProfilePreview] = useState(null)
   const [galleryPreviews, setGalleryPreviews] = useState([])
-
   const [existingGalleryImages, setExistingGalleryImages] = useState([])
   const newGalleryFiles = (formData.gallery_images || []).filter((img) => img instanceof File)
 
@@ -69,7 +67,6 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       currentFileIndex += 1
       return currentFileIndex !== newIndex
     })
-
     if (galleryPreviews[newIndex]) URL.revokeObjectURL(galleryPreviews[newIndex])
     setGalleryPreviews(galleryPreviews.filter((_, index) => index !== newIndex))
     setFormData({ ...formData, gallery_images: nextGalleryImages })
@@ -92,9 +89,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       const res = await api.get(BUSINESS_ENDPOINTS.GET_CATEGORIES)
       const data = res.data?.data || res.data || []
       setBusinessCategories(data)
-      setError('')
     } catch (err) {
-      setError('Failed to fetch business categories')
       console.error(err)
     } finally {
       setLoading(false)
@@ -106,9 +101,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       const res = await api.get(MEMBER_ENDPOINTS.MASTERS_COUNTRY)
       const data = res.data?.data || res.data || []
       setCountries(data)
-      setError('')
     } catch (err) {
-      setError('Failed to fetch countries')
       console.error(err)
     } finally {
       setLoading(false)
@@ -120,9 +113,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       const res = await api.get(MEMBER_ENDPOINTS.MASTERS_STATE)
       const data = res.data?.data || res.data || []
       setStates(data)
-      setError('')
     } catch (err) {
-      setError('Failed to fetch states')
       console.error(err)
     } finally {
       setLoading(false)
@@ -134,9 +125,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       const res = await api.get(MEMBER_ENDPOINTS.MASTERS_DISTRICT)
       const data = res.data?.data || res.data || []
       setDistricts(data)
-      setError('')
     } catch (err) {
-      setError('Failed to fetch districts')
       console.error(err)
     } finally {
       setLoading(false)
@@ -148,9 +137,7 @@ export default function BusinessForm({ business, onSubmit, isLoading, onCancel }
       const res = await api.get(MEMBER_ENDPOINTS.MASTERS_CITY)
       const data = res.data?.data || res.data || []
       setCities(data)
-      setError('')
     } catch (err) {
-      setError('Failed to fetch cities')
       console.error(err)
     } finally {
       setLoading(false)

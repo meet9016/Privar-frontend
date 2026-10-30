@@ -1,11 +1,10 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'
-import { Briefcase, MapPin, Phone, Globe, Trash2, Search, Edit2, RefreshCw, Plus, Eye, Mail, Instagram, Youtube, Facebook, Share2 } from 'lucide-react'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Briefcase, MapPin, Phone, Globe, Trash2, Edit2, Plus, Eye, Mail, Instagram, Youtube, Facebook, Share2 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import api, { assetUrl, formatDate, getBusinessesList } from '../lib/api'
+import api, { formatDate, getBusinessesList } from '../lib/api'
 import { BUSINESS_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
-import Loader from '../components/common/Loader'
 import BusinessForm from '../components/BusinessForm'
 import usePagination from '../hooks/usePagination'
 import Table from '../components/common/Table'
@@ -13,12 +12,10 @@ import Button from '../components/common/Button'
 import SearchInput from '../components/common/SearchInput'
 import { toast } from '../lib/toast'
 import useDebounce from '../hooks/useDebounce'
-import { AuthContext } from '../context/AuthContext'
 import usePermissions from '../hooks/usePermissions'
 
 export default function Businesses({ headerLeftContent }) {
   const navigate = useNavigate()
-  const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('businesses')
   const [businesses, setBusinesses] = useState([])
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
@@ -27,8 +24,6 @@ export default function Businesses({ headerLeftContent }) {
   const debouncedSearch = useDebounce(search, 400)
   const [isOwn, setIsOwn] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [selectedBusiness, setSelectedBusiness] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewBusiness, setViewBusiness] = useState(null)
@@ -41,8 +36,6 @@ export default function Businesses({ headerLeftContent }) {
       navigate(location.pathname, { replace: true, state: {} })
     }
   }, [location.state, navigate, location.pathname])
-
-  const currentPage = Math.min(Math.max(page || 1, 1), totalPages)
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
   const fetchBusinesses = useCallback(async () => {
@@ -63,7 +56,6 @@ export default function Businesses({ headerLeftContent }) {
     } catch (err) {
       setBusinesses([])
       setPaginationData({ page: 1, totalPages: 1, total: 0 })
-      setError(err.response?.data?.message || 'Failed to load businesses')
     } finally {
       setLoading(false)
     }
@@ -118,23 +110,17 @@ export default function Businesses({ headerLeftContent }) {
     setIsModalOpen(true)
   }
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false)
-    setSelectedBusiness(null)
-  }
-  
   const handleSubmit = async (formData) => {
     setFormLoading(true)
-    setError('')
     try {
       const payload = new FormData()
 
       // Append all text fields
       const textFields = [
-        'business_category_id','business_name','number','whatsapp_number',
-        'GST_number','email','country_id','state_id','district_id','city_id','pincode','address',
-        'location_link','about_us','website','facebook','instagram',
-        'pinterest','youtube','status'
+        'business_category_id', 'business_name', 'number', 'whatsapp_number',
+        'GST_number', 'email', 'country_id', 'state_id', 'district_id', 'city_id', 'pincode', 'address',
+        'location_link', 'about_us', 'website', 'facebook', 'instagram',
+        'pinterest', 'youtube', 'status'
       ]
       textFields.forEach(key => {
         if (formData[key] !== undefined && formData[key] !== null) {
@@ -191,35 +177,35 @@ export default function Businesses({ headerLeftContent }) {
   const filtered = businesses
 
   return (
-  <div className="space-y-6 text-text">
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div className="flex-1 overflow-x-auto hide-scrollbar">
-        {headerLeftContent ? headerLeftContent : (
-          <h2 className="text-2xl font-bold text-text tracking-tight">Business Directory</h2>
-        )}
+    <div className="space-y-6 text-text">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1 overflow-x-auto hide-scrollbar">
+          {headerLeftContent ? headerLeftContent : (
+            <h2 className="text-2xl font-bold text-text tracking-tight">Business Directory</h2>
+          )}
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <SearchInput
+            placeholder="Search listings..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
+          />
+          {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
+            <Button
+              onClick={handleCreate}
+              variant="primary"
+              icon={<Plus className="w-4 h-4" />}
+              className="h-10"
+            >
+              Add Business
+            </Button>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-3 w-full sm:w-auto">
-        <SearchInput
-          placeholder="Search listings..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onClear={() => setSearch('')}
-        />
-        {!permissions.canAdd && !permissions.isSuperAdmin ? null : (
-          <Button
-            onClick={handleCreate}
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-            className="h-10"
-          >
-            Add Business
-          </Button>
-        )}
-      </div>
-    </div>
 
-    {/* Main List */}
-    <Table
+      {/* Main List */}
+      <Table
         columns={[
           {
             header: 'Business',
@@ -264,7 +250,7 @@ export default function Businesses({ headerLeftContent }) {
                 <a href={biz.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs truncate max-w-[120px] inline-block">
                   {biz.website.replace(/^https?:\/\//i, '')}
                 </a>
-              ) : <span className="text-text-secondary text-xs">—</span> 
+              ) : <span className="text-text-secondary text-xs">—</span>
             )
           },
           {
@@ -329,311 +315,310 @@ export default function Businesses({ headerLeftContent }) {
         }}
       />
 
-    <Modal isOpen={isModalOpen} maxWidth="max-w-6xl" title={selectedBusiness ? 'Edit Business Directory' : 'Add New Business Directory'} onClose={() => setIsModalOpen(false)}>
-      <BusinessForm business={selectedBusiness} onSubmit={handleSubmit} isLoading={formLoading} onCancel={() => setIsModalOpen(false)} />
-    </Modal>
+      <Modal isOpen={isModalOpen} maxWidth="max-w-6xl" title={selectedBusiness ? 'Edit Business Directory' : 'Add New Business Directory'} onClose={() => setIsModalOpen(false)}>
+        <BusinessForm business={selectedBusiness} onSubmit={handleSubmit} isLoading={formLoading} onCancel={() => setIsModalOpen(false)} />
+      </Modal>
 
-    <Modal isOpen={!!viewBusiness} maxWidth="max-w-4xl" title="Business Profile Details" onClose={() => setViewBusiness(null)}>
-      {viewBusiness && (
-        <div className="space-y-6 text-sm text-text">
-          {/* Header Banner Card */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-surface to-surface-secondary border border-primary/20 p-5 sm:p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-              {viewBusiness.image ? (
-                <img
-                  src={viewBusiness.image}
-                  alt={viewBusiness.business_name}
-                  className="w-24 h-24 rounded-2xl object-cover border-2 border-white shadow-md shrink-0 bg-white"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-2xl bg-white border border-border flex items-center justify-center shrink-0 shadow-md">
-                  <Briefcase className="w-10 h-10 text-primary/70" />
-                </div>
-              )}
-              <div className="space-y-2 flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h3 className="font-bold text-2xl text-text tracking-tight">{viewBusiness.business_name}</h3>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
-                    Number(viewBusiness.status) === 1
+      <Modal isOpen={!!viewBusiness} maxWidth="max-w-4xl" title="Business Profile Details" onClose={() => setViewBusiness(null)}>
+        {viewBusiness && (
+          <div className="space-y-6 text-sm text-text">
+            {/* Header Banner Card */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-surface to-surface-secondary border border-primary/20 p-5 sm:p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                {viewBusiness.image ? (
+                  <img
+                    src={viewBusiness.image}
+                    alt={viewBusiness.business_name}
+                    className="w-24 h-24 rounded-2xl object-cover border-2 border-white shadow-md shrink-0 bg-white"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-2xl bg-white border border-border flex items-center justify-center shrink-0 shadow-md">
+                    <Briefcase className="w-10 h-10 text-primary/70" />
+                  </div>
+                )}
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h3 className="font-bold text-2xl text-text tracking-tight">{viewBusiness.business_name}</h3>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${Number(viewBusiness.status) === 1
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
                       : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800'
-                  }`}>
-                    <span className={`w-2 h-2 rounded-full mr-1.5 ${Number(viewBusiness.status) === 1 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                    {Number(viewBusiness.status) === 1 ? 'Active Listing' : 'Inactive'}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {viewBusiness.business_category_name && (
-                    <span className="inline-flex items-center gap-1.5 font-semibold px-3 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20">
-                      <Briefcase className="w-3.5 h-3.5" />
-                      {viewBusiness.business_category_name}
+                      }`}>
+                      <span className={`w-2 h-2 rounded-full mr-1.5 ${Number(viewBusiness.status) === 1 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                      {Number(viewBusiness.status) === 1 ? 'Active Listing' : 'Inactive'}
                     </span>
-                  )}
-                  {viewBusiness.GST_number && (
-                    <span className="inline-flex items-center gap-1.5 font-mono text-text-secondary px-3 py-1 rounded-lg bg-surface border border-border">
-                      GST: <strong className="text-text font-semibold">{viewBusiness.GST_number}</strong>
-                    </span>
-                  )}
-                  {viewBusiness.createdAt && (
-                    <span className="inline-flex items-center gap-1 text-text-secondary/80 px-2.5 py-1 text-xs">
-                      Registered: {formatDate(viewBusiness.createdAt)}
-                    </span>
-                  )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {viewBusiness.business_category_name && (
+                      <span className="inline-flex items-center gap-1.5 font-semibold px-3 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                        <Briefcase className="w-3.5 h-3.5" />
+                        {viewBusiness.business_category_name}
+                      </span>
+                    )}
+                    {viewBusiness.GST_number && (
+                      <span className="inline-flex items-center gap-1.5 font-mono text-text-secondary px-3 py-1 rounded-lg bg-surface border border-border">
+                        GST: <strong className="text-text font-semibold">{viewBusiness.GST_number}</strong>
+                      </span>
+                    )}
+                    {viewBusiness.createdAt && (
+                      <span className="inline-flex items-center gap-1 text-text-secondary/80 px-2.5 py-1 text-xs">
+                        Registered: {formatDate(viewBusiness.createdAt)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Left Column (2 cols): Contact, Location, About */}
-            <div className="md:col-span-2 space-y-4">
-              {/* Contact Information Grid */}
-              <div>
-                <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-primary" /> Contact Information
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
-                    <span className="text-[11px] font-medium text-text-secondary block">Primary Phone</span>
-                    {viewBusiness.number ? (
-                      <a href={`tel:${viewBusiness.number}`} className="font-semibold text-text text-xs hover:text-primary transition-colors flex items-center gap-1.5 mt-0.5">
-                        <Phone className="w-3 h-3 text-text-secondary shrink-0" />
-                        <span className="font-mono truncate">{viewBusiness.number}</span>
-                      </a>
-                    ) : (
-                      <span className="text-xs text-text-secondary/60 italic">—</span>
-                    )}
-                  </div>
-
-                  <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
-                    <span className="text-[11px] font-medium text-text-secondary block">WhatsApp</span>
-                    {viewBusiness.whatsapp_number ? (
-                      <a
-                        href={`https://wa.me/${String(viewBusiness.whatsapp_number).replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-semibold text-emerald-600 dark:text-emerald-400 text-xs hover:underline flex items-center gap-1.5 mt-0.5"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="font-mono truncate">{viewBusiness.whatsapp_number}</span>
-                      </a>
-                    ) : (
-                      <span className="text-xs text-text-secondary/60 italic">—</span>
-                    )}
-                  </div>
-
-                  <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
-                    <span className="text-[11px] font-medium text-text-secondary block">Email Address</span>
-                    {viewBusiness.email ? (
-                      <a href={`mailto:${viewBusiness.email}`} className="font-semibold text-text text-xs hover:text-primary transition-colors flex items-center gap-1.5 mt-0.5 truncate" title={viewBusiness.email}>
-                        <Mail className="w-3 h-3 text-text-secondary shrink-0" />
-                        <span className="truncate">{viewBusiness.email}</span>
-                      </a>
-                    ) : (
-                      <span className="text-xs text-text-secondary/60 italic">—</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Location & Address */}
-              <div>
-                <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-primary" /> Location & Address Details
-                </h4>
-                <div className="bg-surface border border-border/80 rounded-xl p-3.5 space-y-2.5 shadow-xs">
-                  <div className="flex items-start gap-2.5">
-                    <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <div className="flex-1 space-y-1">
-                       <p className="text-text font-medium text-xs sm:text-sm leading-relaxed">{viewBusiness.address || 'No street address specified'}</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
-                        <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
-                          <span className="text-[10px] text-text-secondary block font-medium">District</span>
-                          <span className="font-medium text-text text-xs">{viewBusiness.district_name || viewBusiness.district_id?.name || viewBusiness.district || '—'}</span>
-                        </div>
-                        <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
-                          <span className="text-[10px] text-text-secondary block font-medium">City</span>
-                          <span className="font-medium text-text text-xs">{viewBusiness.city_name || viewBusiness.city_id?.name || viewBusiness.city || '—'}</span>
-                        </div>
-                        <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
-                          <span className="text-[10px] text-text-secondary block font-medium">State</span>
-                          <span className="font-medium text-text text-xs">{viewBusiness.state_name || viewBusiness.state_id?.name || viewBusiness.state || '—'}</span>
-                        </div>
-                        <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
-                          <span className="text-[10px] text-text-secondary block font-medium">Country</span>
-                          <span className="font-medium text-text text-xs">{viewBusiness.country_name || viewBusiness.country_id?.name || viewBusiness.country || '—'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  {viewBusiness.location_link && (
-                    <div className="pt-1.5 border-t border-border/60">
-                      <a
-                        href={viewBusiness.location_link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
-                      >
-                        <Globe className="w-3.5 h-3.5" /> View on Google Maps / Navigation Link &rarr;
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* About Us */}
-              {viewBusiness.about_us && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Left Column (2 cols): Contact, Location, About */}
+              <div className="md:col-span-2 space-y-4">
+                {/* Contact Information Grid */}
                 <div>
-                  <h4 className="text-xs font-bold text-text-secondary mb-1.5">About the Business</h4>
-                  <div className="bg-surface border border-border/80 rounded-xl p-3 text-text/90 leading-relaxed whitespace-pre-wrap text-xs max-h-24 overflow-y-auto custom-scrollbar shadow-xs">
-                    {viewBusiness.about_us}
+                  <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-primary" /> Contact Information
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
+                      <span className="text-[11px] font-medium text-text-secondary block">Primary Phone</span>
+                      {viewBusiness.number ? (
+                        <a href={`tel:${viewBusiness.number}`} className="font-semibold text-text text-xs hover:text-primary transition-colors flex items-center gap-1.5 mt-0.5">
+                          <Phone className="w-3 h-3 text-text-secondary shrink-0" />
+                          <span className="font-mono truncate">{viewBusiness.number}</span>
+                        </a>
+                      ) : (
+                        <span className="text-xs text-text-secondary/60 italic">—</span>
+                      )}
+                    </div>
+
+                    <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
+                      <span className="text-[11px] font-medium text-text-secondary block">WhatsApp</span>
+                      {viewBusiness.whatsapp_number ? (
+                        <a
+                          href={`https://wa.me/${String(viewBusiness.whatsapp_number).replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold text-emerald-600 dark:text-emerald-400 text-xs hover:underline flex items-center gap-1.5 mt-0.5"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                          <span className="font-mono truncate">{viewBusiness.whatsapp_number}</span>
+                        </a>
+                      ) : (
+                        <span className="text-xs text-text-secondary/60 italic">—</span>
+                      )}
+                    </div>
+
+                    <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs hover:border-primary/30 transition-colors">
+                      <span className="text-[11px] font-medium text-text-secondary block">Email Address</span>
+                      {viewBusiness.email ? (
+                        <a href={`mailto:${viewBusiness.email}`} className="font-semibold text-text text-xs hover:text-primary transition-colors flex items-center gap-1.5 mt-0.5 truncate" title={viewBusiness.email}>
+                          <Mail className="w-3 h-3 text-text-secondary shrink-0" />
+                          <span className="truncate">{viewBusiness.email}</span>
+                        </a>
+                      ) : (
+                        <span className="text-xs text-text-secondary/60 italic">—</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Right Column (1 col): Owner Profile, Social Handles */}
-            <div className="space-y-4">
-              {/* Registered Member / Owner Card */}
-              <div>
-                <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
-                  <Briefcase className="w-3.5 h-3.5 text-primary" /> Listed By Member
-                </h4>
-                <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs space-y-2">
-                  <div className="flex items-center gap-2.5">
-                    {viewBusiness.owner_image ? (
-                      <img src={viewBusiness.owner_image} alt={viewBusiness.owner_name} className="w-10 h-10 rounded-full object-cover border border-border shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-sm shrink-0">
-                        {(viewBusiness.owner_name || 'M').charAt(0).toUpperCase()}
+                {/* Location & Address */}
+                <div>
+                  <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-primary" /> Location & Address Details
+                  </h4>
+                  <div className="bg-surface border border-border/80 rounded-xl p-3.5 space-y-2.5 shadow-xs">
+                    <div className="flex items-start gap-2.5">
+                      <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <div className="flex-1 space-y-1">
+                        <p className="text-text font-medium text-xs sm:text-sm leading-relaxed">{viewBusiness.address || 'No street address specified'}</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+                          <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
+                            <span className="text-[10px] text-text-secondary block font-medium">District</span>
+                            <span className="font-medium text-text text-xs">{viewBusiness.district_name || viewBusiness.district_id?.name || viewBusiness.district || '—'}</span>
+                          </div>
+                          <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
+                            <span className="text-[10px] text-text-secondary block font-medium">City</span>
+                            <span className="font-medium text-text text-xs">{viewBusiness.city_name || viewBusiness.city_id?.name || viewBusiness.city || '—'}</span>
+                          </div>
+                          <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
+                            <span className="text-[10px] text-text-secondary block font-medium">State</span>
+                            <span className="font-medium text-text text-xs">{viewBusiness.state_name || viewBusiness.state_id?.name || viewBusiness.state || '—'}</span>
+                          </div>
+                          <div className="bg-surface-secondary/50 rounded-lg px-2.5 py-1.5 border border-border/40">
+                            <span className="text-[10px] text-text-secondary block font-medium">Country</span>
+                            <span className="font-medium text-text text-xs">{viewBusiness.country_name || viewBusiness.country_id?.name || viewBusiness.country || '—'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {viewBusiness.location_link && (
+                      <div className="pt-1.5 border-t border-border/60">
+                        <a
+                          href={viewBusiness.location_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                        >
+                          <Globe className="w-3.5 h-3.5" /> View on Google Maps / Navigation Link &rarr;
+                        </a>
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-text text-xs truncate">{viewBusiness.owner_name || 'Community Member'}</div>
-                      <div className="text-[10px] text-text-secondary">ID: {viewBusiness.member_id || '—'}</div>
+                  </div>
+                </div>
+
+                {/* About Us */}
+                {viewBusiness.about_us && (
+                  <div>
+                    <h4 className="text-xs font-bold text-text-secondary mb-1.5">About the Business</h4>
+                    <div className="bg-surface border border-border/80 rounded-xl p-3 text-text/90 leading-relaxed whitespace-pre-wrap text-xs max-h-24 overflow-y-auto custom-scrollbar shadow-xs">
+                      {viewBusiness.about_us}
                     </div>
                   </div>
-                  {(viewBusiness.owner_phone || viewBusiness.owner_email) && (
-                    <div className="pt-1.5 border-t border-border/50 space-y-1 text-xs text-text-secondary">
-                      {viewBusiness.owner_phone && (
-                        <div className="flex items-center gap-1.5">
-                          <Phone className="w-3 h-3 shrink-0 text-text-secondary" />
-                          <span className="font-mono text-text text-[11px]">{viewBusiness.owner_phone}</span>
+                )}
+              </div>
+
+              {/* Right Column (1 col): Owner Profile, Social Handles */}
+              <div className="space-y-4">
+                {/* Registered Member / Owner Card */}
+                <div>
+                  <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
+                    <Briefcase className="w-3.5 h-3.5 text-primary" /> Listed By Member
+                  </h4>
+                  <div className="bg-surface border border-border/80 rounded-xl p-3 shadow-xs space-y-2">
+                    <div className="flex items-center gap-2.5">
+                      {viewBusiness.owner_image ? (
+                        <img src={viewBusiness.owner_image} alt={viewBusiness.owner_name} className="w-10 h-10 rounded-full object-cover border border-border shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-sm shrink-0">
+                          {(viewBusiness.owner_name || 'M').charAt(0).toUpperCase()}
                         </div>
                       )}
-                      {viewBusiness.owner_email && (
-                        <div className="flex items-center gap-1.5 truncate" title={viewBusiness.owner_email}>
-                          <Mail className="w-3 h-3 shrink-0 text-text-secondary" />
-                          <span className="text-text text-[11px] truncate">{viewBusiness.owner_email}</span>
-                        </div>
-                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-text text-xs truncate">{viewBusiness.owner_name || 'Community Member'}</div>
+                        <div className="text-[10px] text-text-secondary">ID: {viewBusiness.member_id || '—'}</div>
+                      </div>
                     </div>
-                  )}
+                    {(viewBusiness.owner_phone || viewBusiness.owner_email) && (
+                      <div className="pt-1.5 border-t border-border/50 space-y-1 text-xs text-text-secondary">
+                        {viewBusiness.owner_phone && (
+                          <div className="flex items-center gap-1.5">
+                            <Phone className="w-3 h-3 shrink-0 text-text-secondary" />
+                            <span className="font-mono text-text text-[11px]">{viewBusiness.owner_phone}</span>
+                          </div>
+                        )}
+                        {viewBusiness.owner_email && (
+                          <div className="flex items-center gap-1.5 truncate" title={viewBusiness.owner_email}>
+                            <Mail className="w-3 h-3 shrink-0 text-text-secondary" />
+                            <span className="text-text text-[11px] truncate">{viewBusiness.owner_email}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Online & Social Media Links */}
+                <div>
+                  <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-primary" /> Social & Web Links
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {viewBusiness.website ? (
+                      <a
+                        href={viewBusiness.website.startsWith('http') ? viewBusiness.website : `https://${viewBusiness.website}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-primary transition-all shadow-xs truncate"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                        <span className="truncate">Website</span>
+                      </a>
+                    ) : null}
+
+                    {viewBusiness.facebook ? (
+                      <a
+                        href={viewBusiness.facebook.startsWith('http') ? viewBusiness.facebook : `https://${viewBusiness.facebook}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-blue-600 transition-all shadow-xs truncate"
+                      >
+                        <Facebook className="w-3.5 h-3.5 text-[#1877F2] shrink-0" />
+                        <span className="truncate">Facebook</span>
+                      </a>
+                    ) : null}
+
+                    {viewBusiness.instagram ? (
+                      <a
+                        href={viewBusiness.instagram.startsWith('http') ? viewBusiness.instagram : `https://${viewBusiness.instagram}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-pink-600 transition-all shadow-xs truncate"
+                      >
+                        <Instagram className="w-3.5 h-3.5 text-[#E4405F] shrink-0" />
+                        <span className="truncate">Instagram</span>
+                      </a>
+                    ) : null}
+
+                    {viewBusiness.youtube ? (
+                      <a
+                        href={viewBusiness.youtube.startsWith('http') ? viewBusiness.youtube : `https://${viewBusiness.youtube}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-red-600 transition-all shadow-xs truncate"
+                      >
+                        <Youtube className="w-3.5 h-3.5 text-[#CD201F] shrink-0" />
+                        <span className="truncate">YouTube</span>
+                      </a>
+                    ) : null}
+
+                    {viewBusiness.pinterest ? (
+                      <a
+                        href={viewBusiness.pinterest.startsWith('http') ? viewBusiness.pinterest : `https://${viewBusiness.pinterest}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-red-500 transition-all shadow-xs truncate"
+                      >
+                        <Share2 className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                        <span className="truncate">Pinterest</span>
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Online & Social Media Links */}
+            {/* Gallery Images */}
+            {Array.isArray(viewBusiness.gallery_images) && viewBusiness.gallery_images.length > 0 && (
               <div>
-                <h4 className="text-xs font-bold text-text-secondary mb-2 flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-primary" /> Social & Web Links
+                <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 flex items-center gap-1.5">
+                  Gallery Photos ({viewBusiness.gallery_images.length})
                 </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {viewBusiness.website ? (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                  {viewBusiness.gallery_images.map((img, idx) => (
                     <a
-                      href={viewBusiness.website.startsWith('http') ? viewBusiness.website : `https://${viewBusiness.website}`}
+                      key={idx}
+                      href={img}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-primary transition-all shadow-xs truncate"
+                      className="group relative w-16 h-16 rounded-xl overflow-hidden border border-border bg-surface-secondary hover:border-primary/50 transition-all block shadow-xs shrink-0"
                     >
-                      <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                      <span className="truncate">Website</span>
+                      <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     </a>
-                  ) : null}
-
-                  {viewBusiness.facebook ? (
-                    <a
-                      href={viewBusiness.facebook.startsWith('http') ? viewBusiness.facebook : `https://${viewBusiness.facebook}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-blue-600 transition-all shadow-xs truncate"
-                    >
-                      <Facebook className="w-3.5 h-3.5 text-[#1877F2] shrink-0" />
-                      <span className="truncate">Facebook</span>
-                    </a>
-                  ) : null}
-
-                  {viewBusiness.instagram ? (
-                    <a
-                      href={viewBusiness.instagram.startsWith('http') ? viewBusiness.instagram : `https://${viewBusiness.instagram}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-pink-600 transition-all shadow-xs truncate"
-                    >
-                      <Instagram className="w-3.5 h-3.5 text-[#E4405F] shrink-0" />
-                      <span className="truncate">Instagram</span>
-                    </a>
-                  ) : null}
-
-                  {viewBusiness.youtube ? (
-                    <a
-                      href={viewBusiness.youtube.startsWith('http') ? viewBusiness.youtube : `https://${viewBusiness.youtube}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-red-600 transition-all shadow-xs truncate"
-                    >
-                      <Youtube className="w-3.5 h-3.5 text-[#CD201F] shrink-0" />
-                      <span className="truncate">YouTube</span>
-                    </a>
-                  ) : null}
-
-                  {viewBusiness.pinterest ? (
-                    <a
-                      href={viewBusiness.pinterest.startsWith('http') ? viewBusiness.pinterest : `https://${viewBusiness.pinterest}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-secondary border border-border text-[11px] font-semibold text-text hover:text-red-500 transition-all shadow-xs truncate"
-                    >
-                      <Share2 className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                      <span className="truncate">Pinterest</span>
-                    </a>
-                  ) : null}
+                  ))}
                 </div>
               </div>
+            )}
+
+            <div className="flex justify-end pt-2 border-t border-border">
+              <Button type="button" variant="primary" onClick={() => setViewBusiness(null)} className="px-5 py-1.5 text-xs">
+                Close
+              </Button>
             </div>
           </div>
-
-          {/* Gallery Images */}
-          {Array.isArray(viewBusiness.gallery_images) && viewBusiness.gallery_images.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 flex items-center gap-1.5">
-                Gallery Photos ({viewBusiness.gallery_images.length})
-              </h4>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                {viewBusiness.gallery_images.map((img, idx) => (
-                  <a
-                    key={idx}
-                    href={img}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group relative w-16 h-16 rounded-xl overflow-hidden border border-border bg-surface-secondary hover:border-primary/50 transition-all block shadow-xs shrink-0"
-                  >
-                    <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end pt-2 border-t border-border">
-            <Button type="button" variant="primary" onClick={() => setViewBusiness(null)} className="px-5 py-1.5 text-xs">
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
-    </Modal>
-  </div>
-)
+        )}
+      </Modal>
+    </div>
+  )
 }
 
 

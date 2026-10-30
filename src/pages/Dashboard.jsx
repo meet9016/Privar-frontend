@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { Users, Briefcase, FileText, ArrowUpRight, Clock, Calendar, Eye, Activity, Shield, TrendingUp, Zap, Phone, Mail, Crown, UserPlus, FileEdit, Settings, CreditCard, ChevronRight } from 'lucide-react'
+import { Users, Briefcase, FileText, Clock, Calendar, Shield, TrendingUp,  UserPlus, FileEdit, Settings, CreditCard, ChevronRight } from 'lucide-react'
 import api from '../lib/api'
-import Table from '../components/common/Table'
 import { useNavigate } from 'react-router-dom'
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import Select from '../components/common/Select'
 
 /* ─── Premium Table Card ─────────────────────────────────── */
