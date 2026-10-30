@@ -514,7 +514,7 @@ export default function ChatPage() {
   const searchUsers = useCallback(async (query) => {
     setLoadingUsers(true);
     try {
-      const res = await memberApi.get(`/chat/users?search=${encodeURIComponent(query || '')}`);
+      const res = await memberApi.get(`/chat/users?all=true&search=${encodeURIComponent(query || '')}`);
       setAvailableUsers(res.data?.data || res.data || []);
     } catch (err) {
       console.error('Failed to search users:', err);
@@ -1331,9 +1331,41 @@ export default function ChatPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-text-secondary block mb-1">
-                  Select Members ({selectedGroupMembers.length} selected)
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-text-secondary">
+                    Select Members ({selectedGroupMembers.length} selected)
+                  </label>
+                  {availableUsers.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const isAllSelected = availableUsers.length > 0 && availableUsers.every(u => selectedGroupMembers.includes(u._id));
+                        if (isAllSelected) {
+                          const currentIds = new Set(availableUsers.map(u => u._id));
+                          setSelectedGroupMembers(prev => prev.filter(id => !currentIds.has(id)));
+                        } else {
+                          const merged = new Set(selectedGroupMembers);
+                          availableUsers.forEach(u => merged.add(u._id));
+                          setSelectedGroupMembers(Array.from(merged));
+                        }
+                      }}
+                      className="text-xs font-bold text-primary hover:text-primary-hover transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${
+                        availableUsers.length > 0 && availableUsers.every(u => selectedGroupMembers.includes(u._id))
+                          ? 'bg-primary border-primary text-white'
+                          : 'border-border bg-surface'
+                      }`}>
+                        {availableUsers.length > 0 && availableUsers.every(u => selectedGroupMembers.includes(u._id)) && (
+                          <Check className="w-2.5 h-2.5" />
+                        )}
+                      </span>
+                      {availableUsers.length > 0 && availableUsers.every(u => selectedGroupMembers.includes(u._id))
+                        ? 'Deselect All'
+                        : `Select All (${availableUsers.length})`}
+                    </button>
+                  )}
+                </div>
                 <div className="relative mb-2">
                   <Search className="w-3.5 h-3.5 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -1611,6 +1643,46 @@ export default function ChatPage() {
             </div>
 
             <div className="p-4 space-y-3">
+              {(() => {
+                const eligibleUsers = availableUsers.filter(u => !groupMembers.some(m => String(m.userId?._id || m.userId?.id || m.userId) === String(u._id)));
+                return (
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-text-secondary">
+                      Select Members ({selectedAddMembers.length} selected)
+                    </label>
+                    {eligibleUsers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const isAllSelected = eligibleUsers.length > 0 && eligibleUsers.every(u => selectedAddMembers.includes(u._id));
+                          if (isAllSelected) {
+                            const eligibleIds = new Set(eligibleUsers.map(u => u._id));
+                            setSelectedAddMembers(prev => prev.filter(id => !eligibleIds.has(id)));
+                          } else {
+                            const merged = new Set(selectedAddMembers);
+                            eligibleUsers.forEach(u => merged.add(u._id));
+                            setSelectedAddMembers(Array.from(merged));
+                          }
+                        }}
+                        className="text-xs font-bold text-primary hover:text-primary-hover transition-colors flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${
+                          eligibleUsers.length > 0 && eligibleUsers.every(u => selectedAddMembers.includes(u._id))
+                            ? 'bg-primary border-primary text-white'
+                            : 'border-border bg-surface'
+                        }`}>
+                          {eligibleUsers.length > 0 && eligibleUsers.every(u => selectedAddMembers.includes(u._id)) && (
+                            <Check className="w-2.5 h-2.5" />
+                          )}
+                        </span>
+                        {eligibleUsers.length > 0 && eligibleUsers.every(u => selectedAddMembers.includes(u._id))
+                          ? 'Deselect All'
+                          : `Select All (${eligibleUsers.length})`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
