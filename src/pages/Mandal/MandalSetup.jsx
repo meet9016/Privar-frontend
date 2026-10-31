@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import {
   Settings,
   Plus,
@@ -48,6 +48,12 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
   const [mandals, setMandals] = useState([])
   const [loading, setLoading] = useState(true)
   const [membersList, setMembersList] = useState([])
+  const [memberPage, setMemberPage] = useState(1)
+  const [hasMoreMembers, setHasMoreMembers] = useState(true)
+  const [loadingMoreMembers, setLoadingMoreMembers] = useState(false)
+  const [memberSearch, setMemberSearch] = useState('')
+  const [selectedMember, setSelectedMember] = useState(null)
+  const searchTimeoutRef = useRef(null)
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -71,18 +77,93 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
     try {
       const [mandalsRes, usersRes] = await Promise.all([
         api.get(MANDAL_ENDPOINTS.GET_LIST),
-        api.get(MEMBER_ENDPOINTS.GET_MEMBERS, { params: { limit: 1500 } })
+        api.get(MEMBER_ENDPOINTS.GET_MEMBERS, { params: { page: 1, limit: 15 } })
       ])
       const mList = mandalsRes.data?.data || []
       setMandals(mList)
       const uList = usersRes.data?.data || usersRes.data || []
-      setMembersList(Array.isArray(uList) ? uList : [])
+      const list = Array.isArray(uList) ? uList : []
+      setMembersList(list)
+      setMemberPage(1)
+      setMemberSearch('')
+      const pagination = usersRes.data?.pagination
+      if (pagination) {
+        setHasMoreMembers(Boolean(pagination.hasNextPage ?? (pagination.page < pagination.totalPages)))
+      } else {
+        setHasMoreMembers(list.length >= 15)
+      }
     } catch {
       toast.error('Failed to load Mandals data')
       setMandals([])
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  const fetchMoreMembers = useCallback(async () => {
+    if (loadingMoreMembers || !hasMoreMembers) return
+    setLoadingMoreMembers(true)
+    try {
+      const nextPage = memberPage + 1
+      const params = { page: nextPage, limit: 15 }
+      if (memberSearch && memberSearch.trim()) {
+        params.search = memberSearch.trim()
+      }
+      const res = await api.get(MEMBER_ENDPOINTS.GET_MEMBERS, { params })
+      const uList = res.data?.data || res.data || []
+      const newList = Array.isArray(uList) ? uList : []
+      if (newList.length === 0) {
+        setHasMoreMembers(false)
+      } else {
+        setMembersList(prev => {
+          const existingIds = new Set(prev.map(u => String(u._id || u.id)))
+          const filteredNew = newList.filter(u => !existingIds.has(String(u._id || u.id)))
+          return [...prev, ...filteredNew]
+        })
+        setMemberPage(nextPage)
+        const pagination = res.data?.pagination
+        if (pagination) {
+          setHasMoreMembers(Boolean(pagination.hasNextPage ?? (pagination.page < pagination.totalPages)))
+        } else {
+          setHasMoreMembers(newList.length >= 15)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load more members:', err)
+    } finally {
+      setLoadingMoreMembers(false)
+    }
+  }, [loadingMoreMembers, hasMoreMembers, memberPage, memberSearch])
+
+  const handleMemberSearch = useCallback((term) => {
+    setMemberSearch(term)
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        setLoadingMoreMembers(true)
+        const params = { page: 1, limit: 15 }
+        if (term && term.trim()) {
+          params.search = term.trim()
+        }
+        const res = await api.get(MEMBER_ENDPOINTS.GET_MEMBERS, { params })
+        const uList = res.data?.data || res.data || []
+        const list = Array.isArray(uList) ? uList : []
+        setMembersList(list)
+        setMemberPage(1)
+        const pagination = res.data?.pagination
+        if (pagination) {
+          setHasMoreMembers(Boolean(pagination.hasNextPage ?? (pagination.page < pagination.totalPages)))
+        } else {
+          setHasMoreMembers(list.length >= 15)
+        }
+      } catch (err) {
+        console.error('Failed to search members:', err)
+      } finally {
+        setLoadingMoreMembers(false)
+      }
+    }, 350)
   }, [])
 
   useEffect(() => {
@@ -92,6 +173,7 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
   const handleOpenCreate = () => {
     setModalMode('create')
     setActiveMandalId(null)
+    setSelectedMember(null)
     setFormData({
       name: '',
       monthly_amount: 500,
@@ -108,11 +190,30 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
   const handleOpenEdit = (m) => {
     setModalMode('edit')
     setActiveMandalId(m.id || m._id)
+    const headId = m.mandal_head_id?._id || m.mandal_head_id || ''
+
+    if (m.mandal_head_id && typeof m.mandal_head_id === 'object') {
+      setSelectedMember(m.mandal_head_id)
+    } else if (headId) {
+      const found = membersList.find(u => String(u._id || u.id) === String(headId))
+      if (found) {
+        setSelectedMember(found)
+      } else if (m.mandal_head_name) {
+        setSelectedMember({
+          _id: headId,
+          first_name: m.mandal_head_name,
+          last_name: ''
+        })
+      }
+    } else {
+      setSelectedMember(null)
+    }
+
     setFormData({
       name: m.name || '',
       monthly_amount: m.monthly_amount !== undefined ? m.monthly_amount : 500,
       start_date: m.start_date ? new Date(m.start_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-      mandal_head_id: m.mandal_head_id?._id || m.mandal_head_id || '',
+      mandal_head_id: headId,
       status: m.status !== undefined ? Number(m.status) : 1,
       description: m.description || '',
       rules: m.rules || ''
@@ -122,10 +223,6 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
   }
 
   const handleDelete = async (mandalId) => {
-    if (mandals.length <= 1) {
-      toast.error('Cannot delete the only existing Mandal. Create another Mandal first.')
-      return
-    }
     const isConfirmed = await confirm('Are you sure you want to delete this Mandal and its records?', {
       confirmText: 'Delete Mandal',
       type: 'danger'
@@ -183,13 +280,19 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
     }
   }
 
-  const memberOptions = [
-    { label: 'None / Select Mandal Head', value: '' },
-    ...membersList.map(u => ({
-      label: `${u.first_name || ''} ${u.middle_name || ''} ${u.last_name || ''} (${u.number || u.member_id || 'Member'})`.trim(),
-      value: u.id || u._id
-    }))
-  ]
+  const memberOptions = useMemo(() => {
+    const list = [...membersList]
+    if (selectedMember && !list.some(m => String(m._id || m.id) === String(selectedMember._id || selectedMember.id))) {
+      list.unshift(selectedMember)
+    }
+    return [
+      { label: 'None / Select Mandal Head', value: '' },
+      ...list.map(u => ({
+        label: `${u.first_name || ''} ${u.middle_name || ''} ${u.last_name || ''} (${u.number || u.member_id || 'Member'})`.trim(),
+        value: u.id || u._id
+      }))
+    ]
+  }, [membersList, selectedMember])
 
   const calculatedNextHapta = getNextHaptaDate(formData.start_date)
   const calculatedNextHaptaStr = calculatedNextHapta ? formatDate(calculatedNextHapta) : '-'
@@ -225,113 +328,119 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
       </div>
 
       {/* Mandals Grid Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mandals.map((m) => {
-          const id = String(m.id || m._id)
-          const isSelected = String(selectedMandalId) === id
-          const headName = m.mandal_head_name || (m.mandal_head_id ? `${m.mandal_head_id.first_name || ''} ${m.mandal_head_id.last_name || ''}`.trim() : 'Not assigned')
-          const cardNextHapta = getNextHaptaDate(m.start_date)
-          const cardNextHaptaStr = cardNextHapta ? formatDate(cardNextHapta) : null
-          const mDay = m.start_date ? new Date(m.start_date).getDate() : (m.due_day || 1)
+      {mandals.length === 0 ? (
+        <div className="p-12 text-center bg-card border border-border rounded-2xl shadow-xs">
+          <Layers className="w-10 h-10 text-text-secondary mx-auto mb-2 opacity-50" />
+          <h4 className="font-bold text-base text-text">No Mandals Created</h4>
+          <p className="text-xs text-text-secondary mt-1">Click "Create New Mandal" above to set up your first community Mandal.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {mandals.map((m) => {
+            const id = String(m.id || m._id)
+            const isSelected = String(selectedMandalId) === id
+            const headName = m.mandal_head_name || (m.mandal_head_id ? `${m.mandal_head_id.first_name || ''} ${m.mandal_head_id.last_name || ''}`.trim() : 'Not assigned')
+            const cardNextHapta = getNextHaptaDate(m.start_date)
+            const cardNextHaptaStr = cardNextHapta ? formatDate(cardNextHapta) : null
+            const mDay = m.start_date ? new Date(m.start_date).getDate() : (m.due_day || 1)
 
-          return (
-            <div
-              key={id}
-              className={`p-5 rounded-2xl bg-card border transition-all flex flex-col justify-between space-y-4 shadow-xs ${
-                isSelected
-                  ? 'border-primary ring-2 ring-primary/20'
-                  : 'border-border hover:border-primary/40'
-              }`}
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="font-bold text-base text-text leading-snug">{m.name}</h4>
-                    <span className="inline-block mt-1 text-xs font-bold text-primary">
-                      ₹{m.monthly_amount || 500} / month
+            return (
+              <div
+                key={id}
+                className={`p-5 rounded-2xl bg-card border transition-all flex flex-col justify-between space-y-4 shadow-xs ${isSelected
+                    ? 'border-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/40'
+                  }`}
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-bold text-base text-text leading-snug">{m.name}</h4>
+                      <span className="inline-block mt-1 text-xs font-bold text-primary">
+                        ₹{m.monthly_amount || 500} / month
+                      </span>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${m.status === 1
+                        ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
+                        : 'bg-amber-500/10 text-amber-600 border border-amber-500/30'
+                      }`}>
+                      {m.status === 1 ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                    m.status === 1
-                      ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
-                      : 'bg-amber-500/10 text-amber-600 border border-amber-500/30'
-                  }`}>
-                    {m.status === 1 ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
 
-                <div className="mt-3 space-y-2 text-xs text-text-secondary pt-3 border-t border-border/60">
-                  <div className="flex items-center gap-2">
-                    <User2 className="w-3.5 h-3.5 shrink-0 text-text-secondary" />
-                    <span>Head: <strong className="text-text font-semibold">{headName}</strong></span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
-                    <span>Monthly Hapta: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{mDay}th of every month</strong></span>
-                  </div>
-                  {cardNextHaptaStr && (
+                  <div className="mt-3 space-y-2 text-xs text-text-secondary pt-3 border-t border-border/60">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 shrink-0 text-primary" />
-                      <span>Next Due Date: <strong className="text-text font-bold">{cardNextHaptaStr}</strong></span>
+                      <User2 className="w-3.5 h-3.5 shrink-0 text-text-secondary" />
+                      <span>Head: <strong className="text-text font-semibold">{headName}</strong></span>
                     </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5 shrink-0 text-text-secondary" />
-                    <span>Enrolled Members: <strong className="text-primary font-bold">{m.members_count || (m.members || []).length}</strong></span>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                      <span>Monthly Hapta: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{mDay}th of every month</strong></span>
+                    </div>
+                    {cardNextHaptaStr && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 shrink-0 text-primary" />
+                        <span>Next Due Date: <strong className="text-text font-bold">{cardNextHaptaStr}</strong></span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5 shrink-0 text-text-secondary" />
+                      <span>Enrolled Members: <strong className="text-primary font-bold">{m.members_count || (m.members || []).length}</strong></span>
+                    </div>
+                    {m.description && (
+                      <p className="text-[11px] text-text-secondary line-clamp-2 mt-2 pt-2 border-t border-border/40">
+                        {m.description}
+                      </p>
+                    )}
                   </div>
-                  {m.description && (
-                    <p className="text-[11px] text-text-secondary line-clamp-2 mt-2 pt-2 border-t border-border/40">
-                      {m.description}
-                    </p>
-                  )}
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-3 border-t border-border">
-                {isSelected ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
-                    <Check className="w-3.5 h-3.5" />
-                    Active View
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onSelectMandal) onSelectMandal(id)
-                      toast.success(`Switched active view to ${m.name}`)
-                    }}
-                    className="text-xs font-semibold text-text-secondary hover:text-primary transition-colors cursor-pointer"
-                  >
-                    Select & View
-                  </button>
-                )}
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(m)}
-                    className="p-1.5 rounded-lg text-text-secondary hover:text-text bg-surface-secondary hover:bg-border/60 border border-border transition-all cursor-pointer"
-                    title="Edit Mandal"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  {mandals.length > 1 && (
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                  {isSelected ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
+                      <Check className="w-3.5 h-3.5" />
+                      Active View
+                    </span>
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => handleDelete(id)}
-                      className="p-1.5 rounded-lg text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all cursor-pointer"
-                      title="Delete Mandal"
+                      onClick={() => {
+                        if (onSelectMandal) onSelectMandal(id)
+                        toast.success(`Switched active view to ${m.name}`)
+                      }}
+                      className="text-xs font-semibold text-text-secondary hover:text-primary transition-colors cursor-pointer"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      Select & View
                     </button>
                   )}
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(m)}
+                      className="p-1.5 rounded-lg text-text-secondary hover:text-text bg-surface-secondary hover:bg-border/60 border border-border transition-all cursor-pointer"
+                      title="Edit Mandal"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    {mandals.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(id)}
+                        className="p-1.5 rounded-lg text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all cursor-pointer"
+                        title="Delete Mandal"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Create / Edit Mandal Modal */}
       {isModalOpen && (
@@ -426,9 +535,18 @@ export default function MandalSetup({ selectedMandalId, onSelectMandal, onMandal
                 <Select
                   label="Mandal Head (Leader)"
                   value={formData.mandal_head_id}
-                  onChange={(val) => setFormData({ ...formData, mandal_head_id: val })}
+                  onChange={(val) => {
+                    setFormData({ ...formData, mandal_head_id: val })
+                    const chosen = membersList.find(u => String(u._id || u.id) === String(val))
+                    if (chosen) setSelectedMember(chosen)
+                    else if (!val) setSelectedMember(null)
+                  }}
                   options={memberOptions}
                   disabled={saving}
+                  onLoadMore={fetchMoreMembers}
+                  hasMore={hasMoreMembers}
+                  loadingMore={loadingMoreMembers}
+                  onSearch={handleMemberSearch}
                 />
 
                 <Select

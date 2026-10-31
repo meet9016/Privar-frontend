@@ -14,13 +14,28 @@ export default function Select({
   disabled = false,
   className = '',
   name,
-  placement = 'auto'
+  placement = 'auto',
+  onLoadMore,
+  hasMore = false,
+  loadingMore = false,
+  onSearch,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [menuStyle, setMenuStyle] = useState({});
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
+  const lastSelectedRef = useRef(null);
+
+  const selectedOption = options.find(opt => String(opt.value) === String(value));
+
+  useEffect(() => {
+    if (selectedOption) {
+      lastSelectedRef.current = selectedOption;
+    }
+  }, [selectedOption]);
+
+  const currentSelected = selectedOption || (value && String(lastSelectedRef.current?.value) === String(value) ? lastSelectedRef.current : null);
 
   const updatePosition = () => {
     if (!triggerRef.current) return;
@@ -91,7 +106,10 @@ export default function Select({
         !menuRef.current.contains(event.target)
       ) {
         setIsOpen(false);
-        setSearchTerm('');
+        if (searchTerm) {
+          setSearchTerm('');
+          if (onSearch) onSearch('');
+        }
       }
     };
 
@@ -103,28 +121,43 @@ export default function Select({
       window.removeEventListener('resize', handleScrollOrResize);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, placement]);
+  }, [isOpen, placement, searchTerm, onSearch]);
 
   const toggleOpen = () => {
     if (disabled) return;
     if (!isOpen) {
-      setSearchTerm('');
+      if (searchTerm) {
+        setSearchTerm('');
+        if (onSearch) onSearch('');
+      }
       updatePosition();
     }
     setIsOpen(!isOpen);
   };
 
-  const filteredOptions = options.filter(option => 
-    String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    String(option.sublabel || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const selectedOption = options.find(opt => String(opt.value) === String(value));
+  const filteredOptions = onSearch
+    ? options
+    : options.filter(option => 
+        String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(option.sublabel || '').toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
   const handleSelect = (val) => { 
     onChange(val);
     setIsOpen(false);
-    setSearchTerm('');
+    if (searchTerm) {
+      setSearchTerm('');
+      if (onSearch) onSearch('');
+    }
+  };
+
+  const handleMenuScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop - clientHeight < 60) {
+      if (onLoadMore && hasMore && !loadingMore) {
+        onLoadMore();
+      }
+    }
   };
 
   const showSearch = searchable;
@@ -149,11 +182,11 @@ export default function Select({
           tabIndex={disabled ? -1 : 0}
         >
           <div className="flex items-center gap-2 min-w-0">
-            {selectedOption?.image && (
-              <img src={selectedOption.image} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 border border-border" />
+            {currentSelected?.image && (
+              <img src={currentSelected.image} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 border border-border" />
             )}
-            <span className={selectedOption ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
-              {selectedOption ? selectedOption.label : placeholder}
+            <span className={currentSelected ? 'text-text font-medium truncate' : 'text-text-secondary truncate'}>
+              {currentSelected ? currentSelected.label : placeholder}
             </span>
           </div>
           <ChevronDown size={16} className={`text-text-secondary shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -174,14 +207,20 @@ export default function Select({
                 className="w-full bg-transparent text-sm outline-none text-text"
                 placeholder="Search..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (onSearch) onSearch(e.target.value);
+                }}
                 onClick={(e) => e.stopPropagation()}
                 autoFocus
               />
             </div>
           )}
           
-          <div className="overflow-y-auto flex-1 custom-scrollbar">
+          <div 
+            className="overflow-y-auto flex-1 custom-scrollbar"
+            onScroll={handleMenuScroll}
+          >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <div 
@@ -212,8 +251,17 @@ export default function Select({
                 </div>
               ))
             ) : (
-              <div className="px-3 py-3 text-sm text-text-secondary text-center">
-                No options found
+              !loadingMore && (
+                <div className="px-3 py-3 text-sm text-text-secondary text-center">
+                  No options found
+                </div>
+              )
+            )}
+
+            {loadingMore && (
+              <div className="py-2.5 px-3 text-center text-xs text-text-secondary flex items-center justify-center gap-2 border-t border-border/40">
+                <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+                <span>Loading more...</span>
               </div>
             )}
           </div>
@@ -225,4 +273,3 @@ export default function Select({
     </div>
   );
 }
-  
