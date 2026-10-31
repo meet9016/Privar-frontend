@@ -103,7 +103,13 @@ export default function Mandal({ headerLeftContent }) {
     }
   }
 
-  if (!loadingMandals && mandals.length === 0) {
+  useEffect(() => {
+    if (!loadingMandals && mandals.length === 0 && isSuperAdmin && activeTab !== 'setup') {
+      setActiveTab('setup')
+    }
+  }, [loadingMandals, mandals.length, isSuperAdmin, activeTab])
+
+  if (!loadingMandals && mandals.length === 0 && !isSuperAdmin) {
     return (
       <div className="space-y-4 text-text animate-slide-up">
         {headerLeftContent && (
