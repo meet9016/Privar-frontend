@@ -789,6 +789,17 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
   }
 
   const handleEditingMemberChange = (field, value) => {
+    if (expandedMemberIndex !== null) {
+      setErrors(prev => {
+        const key = `member_${expandedMemberIndex}_${field}`
+        if (prev[key]) {
+          const next = { ...prev }
+          delete next[key]
+          return next
+        }
+        return prev
+      })
+    }
     setEditingMember(prev => {
       if (!prev) return prev
       const current = { ...prev, [field]: value }
@@ -987,7 +998,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
     const headNumber = (formData.number || '').trim()
     const headEmail = (formData.email || '').trim().toLowerCase()
     const seenNumbers = new Set(headNumber ? [headNumber] : [])
-    const seenEmails = new Set(headEmail ? [headEmail] : [])
+    const seenEmails = new Set()
 
     // Validate family members if any are added
     membersToValidate.forEach((m, idx) => {
@@ -1015,7 +1026,7 @@ export default function UserForm({ user, targetMemberId = null, roles = [], onSu
         if (!isValidEmail(mMail)) {
           newErrors[`member_${idx}_email`] = 'Valid email required'
         } else if (headEmail && mMail === headEmail) {
-          newErrors[`member_${idx}_email`] = 'Cannot be same as Head email'
+          // Allowed: Family members can share the Head's email
         } else if (seenEmails.has(mMail)) {
           newErrors[`member_${idx}_email`] = 'Duplicate email in form'
         } else {
