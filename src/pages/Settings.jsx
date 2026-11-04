@@ -4,7 +4,7 @@ import {
   Upload, X, Globe, Smartphone, Star,
   Image as ImageIcon, Mail, Phone,
   Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2,
-  Apple, Play, Bell, Clock, Calendar, Send,
+  Apple, Play, Bell, Clock, Calendar, Send, AlertCircle,
   Moon, Sun, Sunrise, Sunset, Download, Share2,
   Megaphone, Users, Compass, Eye
 } from 'lucide-react'
@@ -310,6 +310,7 @@ const DEFAULT_CONFIG = {
   playStoreUrl: '',
   appStoreUrl: '',
   bannerImages: [],
+  notificationsEnabled: true,
   // Monday & Friday Push Notification Config - ONLY 3 Keys
   mondayPushTime: '09:00 AM',
   fridayPushKey: 'jummah_mubarak',
@@ -540,6 +541,10 @@ export default function SettingsPage() {
         }
       }
 
+      const notifActive = data.notificationsEnabled !== undefined
+        ? Boolean(data.notificationsEnabled && data.notificationsEnabled !== 'false')
+        : (data.notifications_enabled !== undefined ? Boolean(data.notifications_enabled && data.notifications_enabled !== 'false') : true)
+
       setConfig({
         primaryColor: data.primaryColor || DEFAULT_COLORS.primaryColor,
         secondaryColor: data.secondaryColor || DEFAULT_COLORS.secondaryColor,
@@ -564,6 +569,7 @@ export default function SettingsPage() {
         playStoreUrl: data.playStoreUrl || data.playstore_url || data.android_app_link || '',
         appStoreUrl: data.appStoreUrl || data.appstore_url || data.ios_app_link || '',
         bannerImages: Array.isArray(data.bannerImages) ? data.bannerImages : [],
+        notificationsEnabled: notifActive,
         // Monday & Friday Push Notification Config - ONLY 3 Keys
         mondayPushTime: to12Hour(data.mondayPushTime || '09:00 AM'),
         fridayPushKey: data.fridayPushKey || 'jummah_mubarak',
@@ -585,6 +591,10 @@ export default function SettingsPage() {
   const [testingPushDay, setTestingPushDay] = useState(null)
 
   const handleTestPush = async (day) => {
+    if (config.notificationsEnabled === false) {
+      toast.warning('Push Notifications are currently turned OFF. Turn ON the switch to send notifications.')
+      return
+    }
     try {
       setTestingPushDay(day)
       const res = await api.post('/update_app_theme/test_push', { day })
@@ -601,6 +611,10 @@ export default function SettingsPage() {
   const [testingPrayerLoading, setTestingPrayerLoading] = useState(false)
 
   const handleTestPrayerAlert = async () => {
+    if (config.notificationsEnabled === false) {
+      toast.warning('All platform notifications are currently turned OFF in Branding & Info. Turn ON the switch to send notifications.')
+      return
+    }
     if (!isPrayerNotificationsActive(config.prayerTimes)) {
       toast.warning('Push Notifications are currently turned OFF. Turn ON the switch to send notifications.')
       return
@@ -798,6 +812,20 @@ export default function SettingsPage() {
     }
   }
 
+  const handleToggleAllNotifications = async (newVal) => {
+    setConfig(prev => ({ ...prev, notificationsEnabled: newVal }))
+    try {
+      const fd = new FormData()
+      fd.append('notificationsEnabled', newVal)
+      fd.append('notifications_enabled', newVal)
+      await api.put('/update_app_theme', fd)
+      toast.success(newVal ? 'All notifications turned ON' : 'All notifications turned OFF')
+    } catch (err) {
+      console.error('Failed to toggle notifications:', err)
+      toast.error('Failed to update notification setting')
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaveLoading(true)
@@ -814,6 +842,8 @@ export default function SettingsPage() {
         'mondayPushTime','fridayPushKey','fridayPushTime'
       ]
       textFields.forEach(key => payload.append(key, config[key] ?? ''))
+      payload.append('notificationsEnabled', config.notificationsEnabled ?? true)
+      payload.append('notifications_enabled', config.notificationsEnabled ?? true)
       payload.append('playstore_url', config.playStoreUrl ?? '')
       payload.append('appstore_url', config.appStoreUrl ?? '')
       payload.append('monday_push_time', to12Hour(config.mondayPushTime ?? '09:00 AM'))
@@ -1011,142 +1041,60 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Weekly Scheduled Push Notifications (Monday & Friday Cron Loop) */}
-            <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-glass-sm space-y-4 sm:space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <Bell className="w-4 h-4" />
+            {/* ── 1. ALL NOTIFICATIONS (MASTER SWITCH) ────────────────── */}
+            <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-glass-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+                    (config.notificationsEnabled ?? true)
+                      ? 'bg-emerald-500/10 text-emerald-600'
+                      : 'bg-rose-500/10 text-rose-600'
+                  }`}>
+                    <Bell className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-bold text-text">Weekly Auto Push</h3>
-                    <p className="text-[11px] sm:text-xs text-text-secondary">
-                      Automated weekly scheduled broadcast notifications
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-bold text-text">All Notifications (બધી નોટિફિકેશન)</h3>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold border flex items-center gap-1.5 transition-all ${
+                        (config.notificationsEnabled ?? true)
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                          : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          (config.notificationsEnabled ?? true)
+                            ? 'bg-emerald-500 animate-pulse'
+                            : 'bg-rose-500'
+                        }`}></span>
+                        {(config.notificationsEnabled ?? true) ? 'ON (સક્રિય)' : 'OFF (બંધ)'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] sm:text-xs text-text-secondary mt-1">
+                      આ સ્વિચ બંધ કરવાથી એપ્લિકેશનના બધા જ નોટિફિકેશન (News, Events, Appeals, Namaz Alerts, Birthday Wishes, Weekly Messages) સેન્ડ થવાનું સંપૂર્ણપણે સ્ટોપ થઈ જશે.
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Cron Active (Every 1 min)
+
+                <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+                  <label className="relative inline-flex items-center cursor-pointer select-none" title="Toggle All Notifications ON / OFF">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(config.notificationsEnabled ?? true)}
+                      onChange={(e) => handleToggleAllNotifications(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-12 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
+                  </label>
+                </div>
+              </div>
+
+              {!(config.notificationsEnabled ?? true) && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                  <span>
+                    <strong>બધી નોટિફિકેશન બંધ (OFF) છે:</strong> હાલમાં કોઈ પણ સભ્યને News, Events, Appeals, Mandal posts, Namaz Alerts, કે Weekly Push notifications મોકલવામાં આવશે નહીં.
                   </span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                {/* ── Monday Card ────────────────────────────────────── */}
-                <div className="p-3.5 sm:p-5 rounded-2xl bg-surface-secondary/50 dark:bg-surface/50 border border-border space-y-3.5 sm:space-y-4 relative flex flex-col justify-between hover:border-border/80 transition-all">
-                  <div className="space-y-3 sm:space-y-3.5">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
-                          <Calendar className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-text">Monday Push</h4>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                              Weekly
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-text-secondary">Weekly Monday automated push time</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-primary shrink-0" /> Monday Push Time
-                      </label>
-                      <TimePicker12Hour
-                        value={config.mondayPushTime || '09:00 AM'}
-                        onChange={(val) => handleConfigChange('mondayPushTime', val)}
-                        themeColor="primary"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <span className="text-xs text-text-secondary flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-primary shrink-0" /> 
-                      Scheduled: <strong className="text-primary font-bold">{to12Hour(config.mondayPushTime || '09:00 AM')} IST</strong>
-                    </span>
-                    <button
-                      type="button"
-                      disabled={testingPushDay === 'monday'}
-                      onClick={() => handleTestPush('monday')}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 active:scale-98 px-3.5 py-2 rounded-xl transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
-                    >
-                      <Send className="w-3 h-3 shrink-0" />
-                      <span>{testingPushDay === 'monday' ? 'Sending...' : 'Test Monday Push'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* ── Friday Card ────────────────────────────────────── */}
-                <div className="p-3.5 sm:p-5 rounded-2xl bg-surface-secondary/50 dark:bg-surface/50 border border-border space-y-3.5 sm:space-y-4 relative flex flex-col justify-between hover:border-border/80 transition-all">
-                  <div className="space-y-3 sm:space-y-3.5">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
-                          <Calendar className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-text">Friday Push</h4>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              Jummah
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-text-secondary">Weekly Friday automated push</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 items-start">
-                      <div className="flex flex-col gap-1.5 min-w-0">
-                        <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                          Friday Push Key
-                        </label>
-                        <input
-                          type="text"
-                          value={config.fridayPushKey || 'jummah_mubarak'}
-                          placeholder="e.g. jummah_mubarak"
-                          onChange={(e) => handleConfigChange('fridayPushKey', e.target.value)}
-                          className="w-full bg-input-bg text-text text-xs sm:text-sm py-1.5 px-3 border border-border rounded-xl outline-none focus:border-emerald-600 transition-colors font-mono font-semibold"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5 min-w-0">
-                        <label className="text-xs font-semibold tracking-wide text-text-secondary flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Friday Time
-                        </label>
-                        <TimePicker12Hour
-                          value={config.fridayPushTime || '10:00 AM'}
-                          onChange={(val) => handleConfigChange('fridayPushTime', val)}
-                          themeColor="emerald"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <span className="text-xs text-text-secondary flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      Scheduled: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{to12Hour(config.fridayPushTime || '10:00 AM')} IST</strong>
-                    </span>
-                    <button
-                      type="button"
-                      disabled={testingPushDay === 'friday'}
-                      onClick={() => handleTestPush('friday')}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 active:scale-98 px-3.5 py-2 rounded-xl transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
-                    >
-                      <Send className="w-3 h-3 shrink-0" />
-                      <span>{testingPushDay === 'friday' ? 'Sending...' : 'Test Friday Push'}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Save */}
