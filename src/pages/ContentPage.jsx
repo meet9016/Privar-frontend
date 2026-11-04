@@ -6,12 +6,14 @@ import { formatDate } from '../lib/api'
 import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
+import Switch from '../components/common/Switch'
+import MultiSelect from '../components/common/MultiSelect'
 import TimePicker from '../components/common/TimePicker'
 import DatePicker from '../components/DatePicker'
-import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck, Eye, Download, Copy } from 'lucide-react'
+import { Cake, Heart, Sparkles, PartyPopper, MessageCircle, Phone, Send, Users as UsersIcon, AlertTriangle, CheckCircle, ExternalLink, Plus, Edit2, Trash2, Search, RefreshCw, User, Flower2, ShieldCheck, FileCheck, Eye, Download, Copy, Bell, Shield, UserCheck, Users, Check, X } from 'lucide-react'
 import { toast } from '../lib/toast'
 import { confirm } from '../lib/confirm'
-import api, { getCommunityFullName, assetUrl, getUsersList, getDeathCardLink, getDeathCardDownloadUrl } from '../lib/api'
+import api, { getCommunityFullName, assetUrl, getUsersList, getDeathCardLink, getDeathCardDownloadUrl, getDeathNotificationRecipients } from '../lib/api'
 import Modal from '../components/Modal'
 import Button from '../components/common/Button'
 import VafatCardModal from '../components/VafatCardModal'
@@ -637,6 +639,34 @@ const definitions = {
             </div>
           )
         }
+      },
+      {
+        key: 'notification_recipients_view',
+        label: 'Notification',
+        render: (row) => {
+          const targetType = row.death_notification_target_type || (row.death_notification_target_users?.length ? 'specific' : 'all')
+          const count = row.death_notification_target_users?.length || 0
+
+          return (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleOpenNotificationRecipients(row)
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all cursor-pointer hover:shadow-xs bg-surface-secondary/70 hover:bg-surface-secondary border-border text-text"
+              title="Click to view notification recipients list"
+            >
+              <Bell className="w-3.5 h-3.5 text-primary" />
+              <span>
+                {targetType === 'all' && 'All Members'}
+                {targetType === 'committee' && 'Committee'}
+                {targetType === 'specific' && `Specific (${count})`}
+              </span>
+              <Eye className="w-3 h-3 text-text-muted ml-0.5" />
+            </button>
+          )
+        }
       }
     ]
   },
@@ -915,6 +945,8 @@ export default function ContentPage({ type, headerLeftContent }) {
   const [isManualEntry, setIsManualEntry] = useState(false)
   const [userList, setUserList] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(false)
+  const [recipientSearchTerm, setRecipientSearchTerm] = useState('')
+  const [recipientFilterTab, setRecipientFilterTab] = useState('all') // 'all' | 'selected' | 'unselected'
   const [manualMember, setManualMember] = useState({
     first_name: '',
     middle_name: '',
@@ -937,7 +969,10 @@ export default function ContentPage({ type, headerLeftContent }) {
     janaza_place: '',
     kabrastan: '',
     number: '',
-    death_note: MAYYAT_DEFAULT_DUA
+    death_note: MAYYAT_DEFAULT_DUA,
+    send_notification: true,
+    target_type: 'all',
+    target_user_ids: []
   })
   const [savingDeath, setSavingDeath] = useState(false)
 
@@ -993,6 +1028,114 @@ export default function ContentPage({ type, headerLeftContent }) {
     return `${memberTitle} ગુજરી ગયા છે. બધા સાથીઓ તેમના માટે ખાસ દુઆ કરે, અલ્લાહપાક તેમની મગફિરત કરે અને તેમને જન્નતુલ ફિરદોસમાં આલા મકામ ફરમાવે અને તેમના ઘરવાળાઓને સબર આપે. આમીન!`
   }
 
+  // Living community members (excluding deceased or currently selected deceased member)
+  const eligibleLivingMembers = useMemo(() => {
+    const deceasedId = String(selectedDeathMember?._id || selectedDeathMember?.id || selectedDeathMember?.member_id || deathFormData.id || deathFormData.member_id || '')
+    return userList.filter(u => {
+      const uId = String(u._id || u.id || u.member_id || '')
+      if (deceasedId && uId === deceasedId) return false
+      if (u.is_deceased === true) return false
+      return true
+    })
+  }, [userList, selectedDeathMember, deathFormData.id, deathFormData.member_id])
+
+  // Calculated recipients who will receive the push notification
+  const calculatedRecipients = useMemo(() => {
+    if (!deathFormData.send_notification) return []
+    const type = deathFormData.target_type || 'all'
+
+    if (type === 'all') {
+      return eligibleLivingMembers
+    }
+
+    if (type === 'committee') {
+      return eligibleLivingMembers.filter(u =>
+        u.is_committee === true ||
+        Boolean(u.committee_role) ||
+        ['committee', 'trustee', 'admin'].includes(String(u.role || u.role_name || '').toLowerCase())
+      )
+    }
+
+    if (type === 'specific') {
+      const selectedSet = new Set((deathFormData.target_user_ids || []).map(String))
+      return eligibleLivingMembers.filter(u => {
+        const uId = String(u._id || u.id || u.member_id || '')
+        return selectedSet.has(uId)
+      })
+    }
+
+    return eligibleLivingMembers
+  }, [eligibleLivingMembers, deathFormData.send_notification, deathFormData.target_type, deathFormData.target_user_ids])
+
+  // Filtered members list for display in the notification recipients preview
+  const displayedRecipients = useMemo(() => {
+    const term = recipientSearchTerm.trim().toLowerCase()
+    let baseList = deathFormData.target_type === 'specific'
+      ? eligibleLivingMembers
+      : calculatedRecipients
+
+    if (deathFormData.target_type === 'specific') {
+      const selectedSet = new Set((deathFormData.target_user_ids || []).map(String))
+      if (recipientFilterTab === 'selected') {
+        baseList = baseList.filter(u => selectedSet.has(String(u._id || u.id || u.member_id || '')))
+      } else if (recipientFilterTab === 'unselected') {
+        baseList = baseList.filter(u => !selectedSet.has(String(u._id || u.id || u.member_id || '')))
+      }
+    }
+
+    if (!term) return baseList
+
+    return baseList.filter(u => {
+      const fullName = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ') || u.name || ''
+      const phone = String(u.number || u.phone || '')
+      const village = String(u.village || u.city || '')
+      const role = String(u.committee_role || '')
+      return (
+        fullName.toLowerCase().includes(term) ||
+        phone.includes(term) ||
+        village.toLowerCase().includes(term) ||
+        role.toLowerCase().includes(term)
+      )
+    })
+  }, [deathFormData.target_type, deathFormData.target_user_ids, eligibleLivingMembers, calculatedRecipients, recipientFilterTab, recipientSearchTerm])
+
+  // Toggle recipient in specific mode
+  const handleToggleRecipient = (uId) => {
+    setDeathFormData(prev => {
+      const current = prev.target_user_ids || []
+      const strId = String(uId)
+      const exists = current.some(id => String(id) === strId)
+      const updated = exists
+        ? current.filter(id => String(id) !== strId)
+        : [...current, strId]
+      return { ...prev, target_user_ids: updated }
+    })
+  }
+
+  const handleSelectAllRecipients = () => {
+    const allIds = eligibleLivingMembers.map(u => String(u._id || u.id || u.member_id))
+    setDeathFormData(prev => ({ ...prev, target_user_ids: allIds }))
+  }
+
+  const handleClearAllRecipients = () => {
+    setDeathFormData(prev => ({ ...prev, target_user_ids: [] }))
+  }
+
+  const specificMemberOptions = useMemo(() => {
+    return eligibleLivingMembers.map(u => {
+      const id = String(u._id || u.id || u.member_id)
+      const fullName = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ') || u.name || 'Unnamed Member'
+      const phone = u.number || u.phone || ''
+      const village = u.village || u.city || ''
+      const sub = [phone, village].filter(Boolean).join(' • ')
+      return {
+        value: id,
+        label: fullName,
+        sublabel: sub || undefined
+      }
+    })
+  }, [eligibleLivingMembers])
+
   const handleOpenAddDeathModal = () => {
     setDeathModalMode('add')
     setSelectedDeathMember(null)
@@ -1006,6 +1149,8 @@ export default function ContentPage({ type, headerLeftContent }) {
       village: '',
       relation: ''
     })
+    setRecipientSearchTerm('')
+    setRecipientFilterTab('all')
     const todayStr = new Date().toISOString().split('T')[0]
     setDeathFormData({
       death_date: todayStr,
@@ -1020,7 +1165,10 @@ export default function ContentPage({ type, headerLeftContent }) {
       janaza_place: '',
       kabrastan: '',
       number: '',
-      death_note: MAYYAT_DEFAULT_DUA
+      death_note: MAYYAT_DEFAULT_DUA,
+      send_notification: true,
+      target_type: 'all',
+      target_user_ids: []
     })
     setDeathModalOpen(true)
   }
@@ -1049,6 +1197,10 @@ export default function ContentPage({ type, headerLeftContent }) {
     const calculatedIslamic = rowDate ? getAutoIslamicDate(rowDate) : ''
     const hasValidGujMonth = row.islamic_date && ISLAMIC_MONTHS.some(m => row.islamic_date.includes(m.value))
 
+    setRecipientSearchTerm('')
+    setRecipientFilterTab('all')
+    const prevTargetType = row.death_notification_target_type || (row.death_notification_target_users?.length ? 'specific' : 'all')
+    const prevTargetUsers = Array.isArray(row.death_notification_target_users) ? row.death_notification_target_users.map(String) : []
     setDeathFormData({
       death_date: rowDate,
       death_time: row.death_time || '',
@@ -1062,7 +1214,10 @@ export default function ContentPage({ type, headerLeftContent }) {
       janaza_place: row.janaza_place || '',
       kabrastan: row.kabrastan || '',
       number: row.number || row.phone || row.mobile || '',
-      death_note: row.death_note || MAYYAT_DEFAULT_DUA
+      death_note: row.death_note || MAYYAT_DEFAULT_DUA,
+      send_notification: Boolean(row.death_notification_last_sent),
+      target_type: prevTargetType,
+      target_user_ids: prevTargetUsers
     })
     setDeathModalOpen(true)
   }
@@ -1094,6 +1249,11 @@ export default function ContentPage({ type, headerLeftContent }) {
       return
     }
 
+    if (deathFormData.send_notification && deathFormData.target_type === 'specific' && (!deathFormData.target_user_ids || !deathFormData.target_user_ids.length)) {
+      toast.error('Please select at least one member for specific target audience')
+      return
+    }
+
     setSavingDeath(true)
     try {
       const deathPayload = {
@@ -1110,7 +1270,10 @@ export default function ContentPage({ type, headerLeftContent }) {
         janaza_place: deathFormData.janaza_place,
         kabrastan: deathFormData.kabrastan,
         number: deathFormData.number ? deathFormData.number.trim() : '',
-        death_note: deathFormData.death_note
+        death_note: deathFormData.death_note,
+        send_notification: deathFormData.send_notification,
+        target_type: deathFormData.target_type || 'all',
+        target_user_ids: deathFormData.target_type === 'specific' ? deathFormData.target_user_ids : []
       }
 
       if (isManualEntry && deathModalMode === 'add') {
@@ -1315,6 +1478,75 @@ export default function ContentPage({ type, headerLeftContent }) {
       })
   }
 
+  // View Notification Recipients Modal State
+  const [notificationRecipientsModalOpen, setNotificationRecipientsModalOpen] = useState(false)
+  const [selectedNotificationMember, setSelectedNotificationMember] = useState(null)
+  const [recipientModalData, setRecipientModalData] = useState(null)
+  const [loadingRecipientModal, setLoadingRecipientModal] = useState(false)
+  const [modalSearchTerm, setModalSearchTerm] = useState('')
+
+  const handleOpenNotificationRecipients = async (row) => {
+    setSelectedNotificationMember(row)
+    setNotificationRecipientsModalOpen(true)
+    setLoadingRecipientModal(true)
+    setModalSearchTerm('')
+    setRecipientModalData(null)
+    try {
+      const memberId = row._id || row.id || row.member_id
+      const res = await getDeathNotificationRecipients(memberId)
+      if (res.data?.data) {
+        setRecipientModalData(res.data.data)
+      }
+    } catch (err) {
+      console.warn('Failed to fetch death notification recipients:', err)
+      const targetType = row.death_notification_target_type || (row.death_notification_target_users?.length ? 'specific' : 'all')
+      const targetIds = new Set((row.death_notification_target_users || []).map(String))
+      let fallbackRecipients = []
+      if (targetType === 'specific') {
+        fallbackRecipients = userList.filter(u => targetIds.has(String(u._id || u.id || u.member_id)))
+      } else if (targetType === 'committee') {
+        fallbackRecipients = userList.filter(u => u.is_committee === true || Boolean(u.committee_role))
+      } else {
+        fallbackRecipients = userList.filter(u => String(u._id || u.id) !== String(row._id || row.id) && u.is_deceased !== true)
+      }
+      setRecipientModalData({
+        member: { id: row._id || row.id, name: row.name, death_date: row.death_date, village: row.village },
+        notification: {
+          sent: Boolean(row.death_notification_last_sent),
+          sent_at: row.death_notification_last_sent,
+          title: '',
+          body: '',
+          target_type: targetType,
+          target_user_ids: Array.from(targetIds),
+          recipients_count: fallbackRecipients.length,
+          recipients: fallbackRecipients.map(u => ({
+            id: String(u._id || u.id),
+            name: [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ') || u.name || 'Member',
+            number: u.number || u.phone || '',
+            village: u.village || u.city || '',
+            image: u.image || u.profile_image || '',
+            role: u.committee_role || (u.is_committee ? 'Committee' : '')
+          }))
+        }
+      })
+    } finally {
+      setLoadingRecipientModal(false)
+    }
+  }
+
+  const filteredModalRecipients = useMemo(() => {
+    const list = recipientModalData?.notification?.recipients || []
+    if (!modalSearchTerm.trim()) return list
+    const term = modalSearchTerm.trim().toLowerCase()
+    return list.filter(u => {
+      const name = String(u.name || '').toLowerCase()
+      const phone = String(u.number || '')
+      const village = String(u.village || '').toLowerCase()
+      const role = String(u.role || '').toLowerCase()
+      return name.includes(term) || phone.includes(term) || village.includes(term) || role.includes(term)
+    })
+  }, [recipientModalData, modalSearchTerm])
+
   const deathRowActions = type === 'death' ? (row) => (
     <div className="flex items-center gap-1.5">
       <button
@@ -1332,6 +1564,14 @@ export default function ContentPage({ type, headerLeftContent }) {
         title="View & Edit vafat Announcement (API View)"
       >
         <Eye className="w-3.5 h-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => handleOpenNotificationRecipients(row)}
+        className="p-2 text-violet-600 dark:text-violet-400 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 rounded-xl transition-all cursor-pointer"
+        title="View Notification Recipients List"
+      >
+        <Bell className="w-3.5 h-3.5" />
       </button>
       <button
         type="button"
@@ -1828,6 +2068,354 @@ export default function ContentPage({ type, headerLeftContent }) {
               />
             </div>
 
+            {/* Step 5: Notification & Target Audience */}
+            <div className="bg-surface-secondary/20 border border-border/80 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-xs">
+              <div className="flex items-center justify-between pb-2.5 border-b border-border/70">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                    <Bell className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-text">Notification & Target Audience</h4>
+                    <p className="text-xs text-text-secondary">Send push notification to mobile app users</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={deathFormData.send_notification}
+                    onChange={(checked) => setDeathFormData(prev => ({ ...prev, send_notification: checked }))}
+                    label=""
+                  />
+                  <span className="text-xs font-semibold text-text">
+                    {deathFormData.send_notification ? 'Notification ON' : 'Notification OFF'}
+                  </span>
+                </div>
+              </div>
+
+              {deathFormData.send_notification && (
+                <div className="space-y-3 pt-1 animate-fade-in">
+                  <label className="block text-xs font-bold text-text uppercase tracking-wider">
+                    Target Audience
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDeathFormData(prev => ({ ...prev, target_type: 'all' }))}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${deathFormData.target_type === 'all'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
+                        : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
+                        }`}
+                    >
+                      <Users className="w-4 h-4 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold leading-tight">All Members</div>
+                        <div className="text-[10px] opacity-75 truncate">Broadcast to everyone</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeathFormData(prev => ({ ...prev, target_type: 'committee' }))}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${deathFormData.target_type === 'committee'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
+                        : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
+                        }`}
+                    >
+                      <Shield className="w-4 h-4 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold leading-tight">Committee Members</div>
+                        <div className="text-[10px] opacity-75 truncate">Trustees & Committee only</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeathFormData(prev => ({ ...prev, target_type: 'specific' }))}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${deathFormData.target_type === 'specific'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
+                        : 'border-border bg-input-bg text-text-secondary hover:border-primary/40'
+                        }`}
+                    >
+                      <UserCheck className="w-4 h-4 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold leading-tight">Specific Members</div>
+                        <div className="text-[10px] opacity-75 truncate">Select recipients</div>
+                      </div>
+                    </button>
+                  </div>
+
+                  {deathFormData.target_type === 'specific' && (
+                    <div className="mt-2 animate-fade-in">
+                      <MultiSelect
+                        label="Select Specific Members"
+                        required
+                        options={specificMemberOptions}
+                        values={deathFormData.target_user_ids || []}
+                        onChange={(selectedIds) => {
+                          setDeathFormData(prev => ({ ...prev, target_user_ids: selectedIds }))
+                        }}
+                        placeholder="Search and pick members..."
+                        disabled={savingDeath}
+                      />
+                    </div>
+                  )}
+
+                  {/* Dynamic Recipients List Preview Card */}
+                  <div className="mt-3 bg-surface border border-border/80 rounded-xl p-3.5 space-y-3">
+                    {/* Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-border/60">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-md bg-primary/10 text-primary">
+                          <Users className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-text">
+                              {deathFormData.target_type === 'all' && 'All Recipients List'}
+                              {deathFormData.target_type === 'committee' && 'Committee Recipients List'}
+                              {deathFormData.target_type === 'specific' && 'Selected Recipients List'}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                              {deathFormData.target_type === 'specific'
+                                ? `${deathFormData.target_user_ids?.length || 0} / ${eligibleLivingMembers.length} Selected`
+                                : `${calculatedRecipients.length} Members`}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-text-secondary mt-0.5">
+                            {deathFormData.target_type === 'all' && 'All registered living members will receive this push notification.'}
+                            {deathFormData.target_type === 'committee' && 'Only trustees and committee members will receive this notification.'}
+                            {deathFormData.target_type === 'specific' && 'Only members selected below will receive this notification.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Quick Action Buttons for Specific Mode */}
+                      {deathFormData.target_type === 'specific' && (
+                        <div className="flex items-center gap-1.5 ml-auto">
+                          <button
+                            type="button"
+                            onClick={handleSelectAllRecipients}
+                            className="px-2.5 py-1 text-xs font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleClearAllRecipients}
+                            className="px-2.5 py-1 text-xs font-medium rounded-lg bg-surface-secondary text-text-secondary hover:text-text hover:bg-surface-secondary/80 transition-colors cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Search Bar & Filter Tabs */}
+                    <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+                      <div className="relative flex-1">
+                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                        <input
+                          type="text"
+                          value={recipientSearchTerm}
+                          onChange={(e) => setRecipientSearchTerm(e.target.value)}
+                          placeholder={
+                            deathFormData.target_type === 'committee'
+                              ? 'Search committee members...'
+                              : 'Search recipient by name, phone, village...'
+                          }
+                          className="w-full pl-8 pr-8 py-1.5 text-xs rounded-lg border border-border bg-input-bg text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary"
+                        />
+                        {recipientSearchTerm && (
+                          <button
+                            type="button"
+                            onClick={() => setRecipientSearchTerm('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Filter tabs for specific mode */}
+                      {deathFormData.target_type === 'specific' && (
+                        <div className="flex items-center bg-surface-secondary/60 p-0.5 rounded-lg border border-border/60 text-[11px] shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setRecipientFilterTab('all')}
+                            className={`px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${recipientFilterTab === 'all'
+                              ? 'bg-surface text-primary shadow-xs font-semibold'
+                              : 'text-text-secondary hover:text-text'
+                              }`}
+                          >
+                            All ({eligibleLivingMembers.length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRecipientFilterTab('selected')}
+                            className={`px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${recipientFilterTab === 'selected'
+                              ? 'bg-surface text-primary shadow-xs font-semibold'
+                              : 'text-text-secondary hover:text-text'
+                              }`}
+                          >
+                            Selected ({deathFormData.target_user_ids?.length || 0})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRecipientFilterTab('unselected')}
+                            className={`px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${recipientFilterTab === 'unselected'
+                              ? 'bg-surface text-primary shadow-xs font-semibold'
+                              : 'text-text-secondary hover:text-text'
+                              }`}
+                          >
+                            Unselected ({Math.max(0, eligibleLivingMembers.length - (deathFormData.target_user_ids?.length || 0))})
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Scrollable Recipients List */}
+                    <div className="max-h-56 overflow-y-auto rounded-xl border border-border/80 bg-surface divide-y divide-border/50">
+                      {loadingUsers ? (
+                        <div className="py-8 text-center text-xs text-text-muted">
+                          <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-2 text-primary" />
+                          Loading community members...
+                        </div>
+                      ) : displayedRecipients.length === 0 ? (
+                        <div className="py-8 text-center px-4">
+                          {deathFormData.target_type === 'committee' && calculatedRecipients.length === 0 ? (
+                            <div className="space-y-1">
+                              <AlertTriangle className="w-5 h-5 text-amber-500 mx-auto" />
+                              <p className="text-xs font-medium text-text">No Committee Members Found</p>
+                              <p className="text-[11px] text-text-secondary">
+                                No users are currently marked as committee members. You can select All Members or pick Specific Members.
+                              </p>
+                            </div>
+                          ) : deathFormData.target_type === 'specific' && recipientFilterTab === 'selected' && (deathFormData.target_user_ids?.length || 0) === 0 ? (
+                            <div className="space-y-1">
+                              <UserCheck className="w-5 h-5 text-text-muted mx-auto" />
+                              <p className="text-xs font-medium text-text">No Members Selected</p>
+                              <p className="text-[11px] text-text-secondary">
+                                Switch to "All" tab or use the dropdown to select members who should receive this notification.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <Search className="w-5 h-5 text-text-muted mx-auto" />
+                              <p className="text-xs font-medium text-text">No Members Found</p>
+                              <p className="text-[11px] text-text-secondary">
+                                No members matched "{recipientSearchTerm}".
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => setRecipientSearchTerm('')}
+                                className="text-xs text-primary font-semibold hover:underline mt-1 cursor-pointer"
+                              >
+                                Clear Search
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        displayedRecipients.map((u) => {
+                          const uId = String(u._id || u.id || u.member_id)
+                          const isSelected = (deathFormData.target_user_ids || []).some(id => String(id) === uId)
+                          const fullName = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ') || u.name || 'Unnamed Member'
+                          const phone = u.number || u.phone || ''
+                          const village = u.village || u.city || ''
+                          const role = u.committee_role || (u.is_committee ? 'Committee' : '')
+                          const initials = ((u.first_name?.[0] || '') + (u.last_name?.[0] || '')).toUpperCase() || 'M'
+                          const avatar = u.image || u.profile_image
+
+                          const isSpecific = deathFormData.target_type === 'specific'
+
+                          return (
+                            <div
+                              key={uId}
+                              onClick={() => {
+                                if (isSpecific) handleToggleRecipient(uId)
+                              }}
+                              className={`flex items-center justify-between gap-3 px-3 py-2 text-xs transition-colors ${isSpecific ? 'cursor-pointer hover:bg-surface-secondary/50' : 'hover:bg-surface-secondary/30'
+                                } ${isSpecific && isSelected ? 'bg-primary/5' : ''}`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {/* Checkbox for specific mode */}
+                                {isSpecific && (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleToggleRecipient(uId)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-4 h-4 rounded text-primary border-border focus:ring-primary/40 cursor-pointer"
+                                  />
+                                )}
+
+                                {/* Avatar / Initials */}
+                                {avatar ? (
+                                  <img
+                                    src={assetUrl(avatar)}
+                                    alt=""
+                                    className="w-7 h-7 rounded-full object-cover shrink-0 border border-border"
+                                  />
+                                ) : (
+                                  <div className="w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center shrink-0 border border-primary/20">
+                                    {initials}
+                                  </div>
+                                )}
+
+                                {/* Member Details */}
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-text truncate leading-tight flex items-center gap-1.5">
+                                    <span className="truncate">{fullName}</span>
+                                    {role && (
+                                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 shrink-0">
+                                        {role}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-text-secondary truncate mt-0.5">
+                                    {[phone, village].filter(Boolean).join(' • ') || 'No contact details'}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Right Status Badge */}
+                              <div className="shrink-0">
+                                {deathFormData.target_type === 'all' && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                    <CheckCircle className="w-3 h-3 text-emerald-500" />
+                                    Will Receive
+                                  </span>
+                                )}
+                                {deathFormData.target_type === 'committee' && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                                    <Shield className="w-3 h-3 text-primary" />
+                                    Committee
+                                  </span>
+                                )}
+                                {deathFormData.target_type === 'specific' && (
+                                  isSelected ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                      <CheckCircle className="w-3 h-3 text-emerald-500" />
+                                      Selected
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-text-muted bg-surface-secondary/60 border border-border/60">
+                                      Not Selected
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Modal Footer Buttons */}
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-border mt-3">
               <Button
@@ -1863,6 +2451,141 @@ export default function ContentPage({ type, headerLeftContent }) {
           member={selectedvafatCardMember}
         />
       )}
+
+      {/* View Notification Recipients Modal */}
+      <Modal
+        isOpen={notificationRecipientsModalOpen}
+        onClose={() => setNotificationRecipientsModalOpen(false)}
+        title={
+          <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-primary" />
+            <span>Notification</span>
+          </div>
+        }
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-4 text-text">
+          {/* Summary Box */}
+          <div className="bg-surface-secondary/40 border border-border/80 rounded-2xl p-4 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="text-sm font-bold text-text">
+                  {selectedNotificationMember?.name || 'Deceased Member'}
+                </div>
+                <div className="text-xs text-text-secondary mt-0.5">
+                  {[
+                    selectedNotificationMember?.village ? `Village: ${selectedNotificationMember.village}` : '',
+                    selectedNotificationMember?.death_date ? `Vafat: ${formatDate(selectedNotificationMember.death_date)}` : ''
+                  ].filter(Boolean).join(' • ')}
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                  {recipientModalData?.notification?.target_type === 'committee'
+                    ? '🛡️ Committee Members'
+                    : recipientModalData?.notification?.target_type === 'specific'
+                      ? `👤 Specific Members (${recipientModalData?.notification?.recipients_count || 0})`
+                      : `👥 All Members (${recipientModalData?.notification?.recipients_count || 0})`}
+                </span>
+                {recipientModalData?.notification?.sent_at && (
+                  <div className="text-[11px] text-text-secondary mt-1">
+                    Sent: {new Date(recipientModalData.notification.sent_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* {recipientModalData?.notification?.body && (
+              <div className="text-xs bg-surface/80 p-2.5 rounded-xl border border-border/60 text-text-secondary italic">
+                "{recipientModalData.notification.body}"
+              </div>
+            )} */}
+          </div>
+
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input
+              type="text"
+              value={modalSearchTerm}
+              onChange={(e) => setModalSearchTerm(e.target.value)}
+              placeholder="Search recipient by name, phone, village, or role..."
+              className="w-full pl-8 pr-8 py-2 text-xs rounded-xl border border-border bg-input-bg text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary"
+            />
+            {modalSearchTerm && (
+              <button
+                type="button"
+                onClick={() => setModalSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Recipients List */}
+          <div className="max-h-72 overflow-y-auto rounded-xl border border-border/80 bg-surface divide-y divide-border/50">
+            {loadingRecipientModal ? (
+              <div className="py-10 text-center text-xs text-text-muted">
+                <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-primary" />
+                Loading recipient members...
+              </div>
+            ) : filteredModalRecipients.length === 0 ? (
+              <div className="py-10 text-center px-4">
+                <Search className="w-5 h-5 text-text-muted mx-auto mb-1" />
+                <p className="text-xs font-semibold text-text">No Recipients Found</p>
+                <p className="text-[11px] text-text-secondary mt-0.5">
+                  {modalSearchTerm ? `No members matched "${modalSearchTerm}"` : 'No recipients recorded for this notification.'}
+                </p>
+              </div>
+            ) : (
+              filteredModalRecipients.map((u, idx) => (
+                <div key={u.id || idx} className="flex items-center justify-between gap-3 px-3 py-2.5 text-xs hover:bg-surface-secondary/40 transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {u.image ? (
+                      <img src={assetUrl(u.image)} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 border border-border" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                        {((u.first_name?.[0] || u.name?.[0] || '') + (u.last_name?.[0] || '')).toUpperCase() || 'M'}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-semibold text-text truncate flex items-center gap-1.5">
+                        <span className="truncate">{u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim()}</span>
+                        {u.role && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 shrink-0">
+                            {u.role}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-text-secondary truncate mt-0.5">
+                        {[u.number, u.village].filter(Boolean).join(' • ') || 'No contact details'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shrink-0">
+                    <CheckCircle className="w-3 h-3 text-emerald-500" />
+                    Selected for Notification
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex justify-between items-center pt-2 border-t border-border">
+            <span className="text-xs text-text-secondary">
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setNotificationRecipientsModalOpen(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Marriage NOC Certificate Modal */}
       {type === 'matrimonies' && (

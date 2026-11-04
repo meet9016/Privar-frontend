@@ -220,6 +220,9 @@ export const getDeathCardDownloadUrl = (id, format = 'png') => {
 export const getDeathCardLink = (id, params = {}) =>
   api.get(DEATH_ENDPOINTS.DOWNLOAD_LINK(id), { params })
 
+export const getDeathNotificationRecipients = (id) =>
+  api.get(`/users/death/${id}/notification-recipients`)
+
 export const getCertificateDownloadUrl = (id) => {
   if (!id) return ''
   const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || ''

@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react'
 import Modal from './Modal'
 import Button from './common/Button'
-import { Download, Edit2, Copy, RefreshCw } from 'lucide-react'
-import api, { API_BASE, formatDate, getDeathCardDownloadUrl, getDeathCardLink } from '../lib/api'
+import { Download, Edit2, Copy, RefreshCw, Bell, Users, Search, CheckCircle, Shield, UserCheck, X, AlertTriangle } from 'lucide-react'
+import api, { API_BASE, formatDate, getDeathCardDownloadUrl, getDeathCardLink, getDeathNotificationRecipients, assetUrl } from '../lib/api'
 import { toast } from '../lib/toast'
 
 const GUJARATI_DAYS = ['રવિવાર', 'સોમવાર', 'મંગળવાર', 'બુધવાર', 'ગુરુવાર', 'શુક્રવાર', 'શનિવાર']
@@ -53,6 +53,13 @@ export default function VafatCardModal({ isOpen, onClose, member, onOpenEdit }) 
   const [updateKey, setUpdateKey] = useState(Date.now())
   const [loadingCard, setLoadingCard] = useState(true)
 
+  // Notification recipients tab state
+  const [activeTab, setActiveTab] = useState('card') // 'card' | 'recipients'
+  const [notificationInfo, setNotificationInfo] = useState(null)
+  const [recipientsList, setRecipientsList] = useState([])
+  const [loadingRecipients, setLoadingRecipients] = useState(false)
+  const [recipientSearchTerm, setRecipientSearchTerm] = useState('')
+
   // Direct card edit state so user can write/edit directly on the card
   const [cardData, setCardData] = useState({
     date: '',
@@ -98,6 +105,10 @@ export default function VafatCardModal({ isOpen, onClose, member, onOpenEdit }) 
     if (!isOpen) {
       fetchedMemberIdRef.current = null
       setLoadingCard(true)
+      setActiveTab('card')
+      setNotificationInfo(null)
+      setRecipientsList([])
+      setRecipientSearchTerm('')
       return
     }
     if (!member) return
@@ -182,13 +193,36 @@ export default function VafatCardModal({ isOpen, onClose, member, onOpenEdit }) 
               kabrastan: d.kabrastan !== undefined ? d.kabrastan : prev.kabrastan,
               mobile: d.number !== undefined ? d.number : prev.mobile
             }))
+            if (d.notification_info) {
+              setNotificationInfo(d.notification_info)
+            }
           }
         })
         .catch(err => {
           console.warn('Backend death card API fetch:', err)
         })
+
+      // Fetch full recipient list
+      fetchRecipients(memberId)
     }
   }, [member, isOpen])
+
+  const fetchRecipients = async (mId) => {
+    const id = mId || member?._id || member?.id || member?.member_id
+    if (!id) return
+    setLoadingRecipients(true)
+    try {
+      const res = await getDeathNotificationRecipients(id)
+      if (res.data?.data) {
+        setNotificationInfo(res.data.data.notification || null)
+        setRecipientsList(res.data.data.notification?.recipients || [])
+      }
+    } catch (err) {
+      console.warn('Failed to load notification recipients:', err)
+    } finally {
+      setLoadingRecipients(false)
+    }
+  }
 
   if (!isOpen || !member) return null
 
@@ -341,10 +375,49 @@ export default function VafatCardModal({ isOpen, onClose, member, onOpenEdit }) 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="મૈયત સમાચાર - Mayyat Announcement Card (Editable Form)"
+      title="મૈયત સમાચાર - Mayyat Announcement & Notification"
       maxWidth="max-w-4xl"
     >
       <div className="space-y-4">
+        {/* View Mode Navigation Tabs */}
+        <div className="flex items-center gap-2 border-b border-border pb-2.5">
+          <button
+            type="button"
+            onClick={() => setActiveTab('card')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'card'
+                ? 'bg-primary text-white shadow-xs'
+                : 'bg-surface-secondary text-text-secondary hover:text-text'
+            }`}
+          >
+            <span>🖼️ Vafat Announcement Card</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('recipients')
+              if (!recipientsList.length) fetchRecipients()
+            }}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'recipients'
+                ? 'bg-primary text-white shadow-xs'
+                : 'bg-surface-secondary text-text-secondary hover:text-text'
+            }`}
+          >
+            <Bell className="w-3.5 h-3.5" />
+            <span>Notification Recipients</span>
+            {notificationInfo?.recipients_count !== undefined && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                activeTab === 'recipients' ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+              }`}>
+                {notificationInfo.recipients_count}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {activeTab === 'card' ? (
+          <>
         {/* Actions Bar at Top - All on ONE single line */}
         <div className="flex flex-nowrap items-center justify-between gap-3 p-2.5 sm:p-3 bg-surface-secondary/60 rounded-2xl border border-border/80 overflow-x-auto">
           <div className="flex items-center gap-2 shrink-0">
@@ -437,6 +510,180 @@ export default function VafatCardModal({ isOpen, onClose, member, onOpenEdit }) 
             )}
           </div>
         </div>
+        </>
+        ) : (
+          /* ═══════════════════════════════════════════════════════════════════
+             NOTIFICATION RECIPIENTS VIEW PANEL
+             Displays exact list of members who received or were selected
+          ════════════════════════════════════════════════════════════════════ */
+          <div className="space-y-4 animate-fade-in text-text">
+            {/* Notification Status & Target Overview Box */}
+            <div className="bg-surface-secondary/40 border border-border/80 rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/70">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-text">Push Notification Target Audience</h4>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      Recipients who were selected or received this vafat push notification
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                    {notificationInfo?.target_type === 'committee' && '🛡️ Committee Members'}
+                    {notificationInfo?.target_type === 'specific' && `👤 Specific Members (${recipientsList.length})`}
+                    {(!notificationInfo?.target_type || notificationInfo?.target_type === 'all') && `👥 All Members (${recipientsList.length})`}
+                  </span>
+
+                  {onOpenEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onOpenEdit(member)}
+                      className="text-xs font-bold"
+                      icon={<Edit2 className="w-3.5 h-3.5" />}
+                    >
+                      Change Recipients
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {notificationInfo?.body && (
+                <div className="text-xs bg-surface p-3 rounded-xl border border-border/60 text-text-secondary italic">
+                  "{notificationInfo.body}"
+                </div>
+              )}
+
+              {notificationInfo?.sent_at && (
+                <div className="text-[11px] text-text-secondary flex items-center gap-1.5">
+                  <span>📅 Sent Date:</span>
+                  <span className="font-semibold text-text">
+                    {new Date(notificationInfo.sent_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Search Input for Recipients */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input
+                type="text"
+                value={recipientSearchTerm}
+                onChange={(e) => setRecipientSearchTerm(e.target.value)}
+                placeholder="Search recipient by name, phone, village, role..."
+                className="w-full pl-9 pr-9 py-2 text-xs rounded-xl border border-border bg-input-bg text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary"
+              />
+              {recipientSearchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setRecipientSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Scrollable List of Recipients */}
+            <div className="max-h-80 overflow-y-auto rounded-xl border border-border/80 bg-surface divide-y divide-border/50">
+              {loadingRecipients ? (
+                <div className="py-12 text-center text-xs text-text-muted">
+                  <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-primary" />
+                  Loading notification recipients list...
+                </div>
+              ) : recipientsList.length === 0 ? (
+                <div className="py-12 text-center px-4 space-y-1">
+                  <AlertTriangle className="w-6 h-6 text-amber-500 mx-auto" />
+                  <p className="text-xs font-bold text-text">No Recipients Found</p>
+                  <p className="text-[11px] text-text-secondary">
+                    No recipients are recorded for this announcement yet. You can click "Change Recipients" above to configure notification.
+                  </p>
+                </div>
+              ) : (
+                (() => {
+                  const filtered = recipientsList.filter(u => {
+                    if (!recipientSearchTerm.trim()) return true
+                    const term = recipientSearchTerm.trim().toLowerCase()
+                    const fullName = u.name || [u.first_name, u.last_name].filter(Boolean).join(' ') || ''
+                    const phone = String(u.number || '')
+                    const village = String(u.village || '')
+                    const role = String(u.role || '')
+                    return fullName.toLowerCase().includes(term) || phone.includes(term) || village.toLowerCase().includes(term) || role.toLowerCase().includes(term)
+                  })
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="py-10 text-center px-4 space-y-1">
+                        <Search className="w-5 h-5 text-text-muted mx-auto" />
+                        <p className="text-xs font-bold text-text">No Matching Recipients</p>
+                        <p className="text-[11px] text-text-secondary">No members matched "{recipientSearchTerm}".</p>
+                        <button
+                          type="button"
+                          onClick={() => setRecipientSearchTerm('')}
+                          className="text-xs text-primary font-semibold hover:underline mt-1 cursor-pointer"
+                        >
+                          Clear Search
+                        </button>
+                      </div>
+                    )
+                  }
+
+                  return filtered.map((u, idx) => {
+                    const fullName = u.name || [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Community Member'
+                    const initials = (fullName.slice(0, 1) || 'M').toUpperCase()
+
+                    return (
+                      <div
+                        key={u.id || idx}
+                        className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-xs hover:bg-surface-secondary/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {u.image ? (
+                            <img
+                              src={assetUrl(u.image)}
+                              alt=""
+                              className="w-8 h-8 rounded-full object-cover shrink-0 border border-border"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20">
+                              {initials}
+                            </div>
+                          )}
+
+                          <div className="min-w-0">
+                            <div className="font-semibold text-text truncate flex items-center gap-1.5">
+                              <span className="truncate">{fullName}</span>
+                              {u.role && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 shrink-0">
+                                  {u.role}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-text-secondary truncate mt-0.5">
+                              {[u.number, u.village].filter(Boolean).join(' • ') || 'No contact details'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shrink-0">
+                          <CheckCircle className="w-3 h-3 text-emerald-500" />
+                          Selected for Notification
+                        </span>
+                      </div>
+                    )
+                  })
+                })()
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   )
