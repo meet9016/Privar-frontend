@@ -10,7 +10,7 @@ export default function FilterPopover({
   onClear,
   onApply,
   children,
-  width = 'w-[320px] sm:w-[580px]',
+  width = 'w-[290px] sm:w-[320px]',
   className = ''
 }) {
   const containerRef = useRef(null)
@@ -64,7 +64,7 @@ export default function FilterPopover({
             className={`absolute top-full right-0 mt-2.5 ${width} max-w-[92vw] bg-card border border-border/90 rounded-2xl shadow-2xl z-50 animate-fade-in overflow-hidden flex flex-col max-h-[85vh]`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 bg-surface border-b border-border shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-text">{title}</span>
                 {activeCount > 0 && (
@@ -102,12 +102,12 @@ export default function FilterPopover({
             </div>
 
             {/* Filter Content */}
-            <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+            <div className="p-4 space-y-3.5 overflow-y-auto custom-scrollbar flex-1">
               {children}
             </div>
 
             {/* Footer with Clear & Apply */}
-            <div className="px-5 py-3.5 bg-surface-secondary/40 border-t border-border flex items-center gap-2.5 shrink-0">
+            <div className="px-4 py-3 bg-surface-secondary/40 border-t border-border flex items-center gap-2 shrink-0">
               {onClear && (
                 <button
                   type="button"

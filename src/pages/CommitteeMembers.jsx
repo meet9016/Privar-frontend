@@ -335,7 +335,7 @@ export default function CommitteeMembers() {
               onClear={() => setSearch('')}
             />
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto hide-scrollbar pb-1 sm:pb-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
             <FilterPopover
               isOpen={showFilters}
               onToggle={() => {
