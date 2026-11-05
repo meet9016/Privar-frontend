@@ -2,12 +2,12 @@ import React, { useState, useMemo, useCallback } from 'react'
 import AdminCrudPage from './AdminCrudPage'
 import GalleryPage from './GalleryPage'
 import { GALLERY_ENDPOINTS, BIRTHDAY_ENDPOINTS, JOB_VACANCY_ENDPOINTS, MATRIMONY_ENDPOINTS, FEEDBACK_ENDPOINTS, MASTER_ENDPOINTS } from '../utils/endpoints'
-import { formatDate } from '../lib/api'
+import api, { formatDate } from '../lib/api'
 import usePermissions from '../hooks/usePermissions'
 import Input from '../components/common/Input'
 import Select from '../components/common/Select'
 import DatePicker from '../components/DatePicker'
-import { Cake, Heart, PartyPopper, MessageCircle, Phone, Users as UsersIcon, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Cake, Heart, PartyPopper, MessageCircle, Phone, Users as UsersIcon, AlertTriangle, CheckCircle, Copy, Check } from 'lucide-react'
 import { toast } from '../lib/toast'
 import { getCommunityFullName } from '../lib/api'
 import Modal from '../components/Modal'
@@ -41,7 +41,133 @@ export const isSameDayAndMonth = (dateStr) => {
   )
 }
 
+const SuvicharInlineCopyButton = ({ text }) => {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = (e) => {
+    e?.stopPropagation()
+    const textToCopy = String(text || '').trim()
+    if (!textToCopy || textToCopy === '-') {
+      toast.error('No suvichar to copy')
+      return
+    }
+
+    const onCopied = () => {
+      setCopied(true)
+      toast.success('Suvichar copied successfully')
+      setTimeout(() => setCopied(false), 2000)
+    }
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(textToCopy).then(onCopied).catch(() => fallbackCopy(textToCopy, onCopied))
+    } else {
+      fallbackCopy(textToCopy, onCopied)
+    }
+  }
+
+  const fallbackCopy = (str, callback) => {
+    try {
+      const el = document.createElement('textarea')
+      el.value = str
+      el.setAttribute('readonly', '')
+      el.style.position = 'fixed'
+      el.style.left = '-9999px'
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+      callback()
+    } catch (_) {
+      toast.error('Failed to copy')
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className={`inline-flex items-center justify-center p-1 rounded-md transition-all cursor-pointer shrink-0 active:scale-95 ${
+        copied
+          ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/20'
+          : 'text-text-secondary hover:text-primary hover:bg-primary/10'
+      }`}
+      title={copied ? 'Copied!' : 'Copy suvichar'}
+    >
+      {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  )
+}
+
 const definitions = {
+  suvichar: {
+    title: 'Suvichar',
+    subtitle: 'Create and manage daily thoughts and quotes',
+    endpoint: '/suvichar',
+    selectable: true,
+    allowDuplicate: true,
+    allowMultipleAdd: true,
+    allowBulkImport: true,
+    fields: [
+      { name: 'suvichar', label: 'Suvichar', type: 'textarea', rows: 4, required: true },
+      { name: 'author', label: 'Author / By' },
+      { name: 'date', label: 'Date', type: 'date', defaultValue: new Date().toISOString().split('T')[0] },
+      {
+        name: 'var',
+        label: 'Day',
+        type: 'select',
+        defaultValue: ['રવિવાર', 'સોમવાર', 'મંગળવાર', 'બુધવાર', 'ગુરુવાર', 'શુક્રવાર', 'શનિવાર'][new Date().getDay()],
+        options: [
+          { value: 'રવિવાર', label: 'રવિવાર (Sunday)' },
+          { value: 'સોમવાર', label: 'સોમવાર (Monday)' },
+          { value: 'મંગળવાર', label: 'મંગળવાર (Tuesday)' },
+          { value: 'બુધવાર', label: 'બુધવાર (Wednesday)' },
+          { value: 'ગુરુવાર', label: 'ગુરુવાર (Thursday)' },
+          { value: 'શુક્રવાર', label: 'શુક્રવાર (Friday)' },
+          { value: 'શનિવાર', label: 'શનિવાર (Saturday)' }
+        ]
+      },
+      { name: 'status', label: 'Status', type: 'select', defaultValue: 1, options: [{ value: 1, label: 'Active' }, { value: 0, label: 'Inactive' }] }
+    ],
+    columns: [
+      {
+        key: 'suvichar',
+        label: 'Suvichar',
+        render: (row) => {
+          const text = row.suvichar || row.description || '-'
+          if (!text || text === '-') return '-'
+          return (
+            <div className="inline">
+              <span>{text}</span>
+              <span className="inline-block ml-1.5 align-middle">
+                <SuvicharInlineCopyButton text={text} />
+              </span>
+            </div>
+          )
+        }
+      },
+      { key: 'author', label: 'Author', render: (row) => row.author || '-' },
+      {
+        key: 'date_var',
+        label: 'Date & Day',
+        render: (row) => {
+          const formattedDate = row.date ? formatDate(row.date) : '-';
+          const gujaratiDays = ['રવિવાર', 'સોમવાર', 'મંગળવાર', 'બુધવાર', 'ગુરુવાર', 'શુક્રવાર', 'શનિવાર'];
+          const v = row.var || row.vaar || (row.date ? gujaratiDays[new Date(row.date).getDay()] : '');
+          return (
+            <div className="flex flex-col gap-0.5 whitespace-nowrap">
+              <span className="font-medium text-text">{formattedDate}</span>
+              {v && (
+                <span className="inline-flex items-center gap-1 w-fit px-1.5 py-0.5 rounded text-[11px] font-semibold bg-primary/10 text-primary">
+                  {v}
+                </span>
+              )}
+            </div>
+          );
+        }
+      },
+      { key: 'status', label: 'Status' }
+    ]
+  },
   festivals: {
     title: 'Festivals',
     subtitle: 'Create and maintain festival announcements',
@@ -644,6 +770,11 @@ export default function ContentPage({ type, headerLeftContent }) {
     <>
       <AdminCrudPage 
         {...definitions[type]} 
+        selectable={definitions[type]?.selectable}
+        allowDuplicate={definitions[type]?.allowDuplicate}
+        allowMultipleAdd={definitions[type]?.allowMultipleAdd}
+        allowBulkImport={definitions[type]?.allowBulkImport}
+        customRowActions={definitions[type]?.customRowActions}
         headerLeftContent={headerLeftContent}
         customHeaderActions={customHeaderActions}
         hideAdd={definitions[type].hideAdd || (!permissions.canAdd && !permissions.isSuperAdmin)}

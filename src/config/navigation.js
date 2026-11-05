@@ -15,7 +15,8 @@ import {
   IndianRupee,
   BookOpen,
   UserPlus,
-  MessageSquare
+  MessageSquare,
+  Quote
 } from 'lucide-react'
 
 export const coreNavigation = [

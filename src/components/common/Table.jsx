@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronDown, FolderOpen,  Trash2, CheckCircle2, XCircle,  } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, FolderOpen, Trash2, CheckCircle2, XCircle, CopyPlus } from 'lucide-react';
 
 function RowsSelector({ limit, onLimitChange }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -140,6 +140,8 @@ export default function Table({
   onSelectionChange,
   onBulkStatus,
   onBulkDelete,
+  onBulkDuplicate,
+  customBulkActions,
   hasStatusColumn,
   renderMobileCard,
   disableMobileCard = false
@@ -158,7 +160,7 @@ export default function Table({
     }
   };
 
-  const getRowId = (row) => String(row[keyField] || row._id || row.id);
+  const getRowId = (row) => String(row._id || row.id || (keyField ? row[keyField] : '') || '');
 
   const allPageIds = useMemo(() => data.map(getRowId), [data, keyField]);
   const isAllSelected = data.length > 0 && allPageIds.every(id => effectiveSelected.includes(id));
@@ -306,7 +308,7 @@ export default function Table({
                 const isSelected = effectiveSelected.includes(id);
                 return (
                   <tr
-                    key={row[keyField] || i}
+                    key={id || i}
                     className={`hover:bg-surface-secondary/80 even:bg-slate-50/70 text-sm font-medium text-text transition-colors ${isSelected ? 'bg-primary/10' : ''} ${rowClassName ? rowClassName(row, i) : ''}`}
                   >
                     {finalColumns.map((col, idx) => {
@@ -450,6 +452,18 @@ export default function Table({
           </div>
 
           <div className="flex items-center gap-2">
+            {onBulkDuplicate && (
+              <button
+                type="button"
+                onClick={() => onBulkDuplicate(effectiveSelected)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                title="Duplicate selected records"
+              >
+                <CopyPlus className="w-3.5 h-3.5" />
+                <span>Duplicate</span>
+              </button>
+            )}
+            {customBulkActions && (typeof customBulkActions === 'function' ? customBulkActions(effectiveSelected) : customBulkActions)}
             {showStatusBulk && onBulkStatus && (
               <>
                 <button

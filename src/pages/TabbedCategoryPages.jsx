@@ -18,7 +18,7 @@ import {
   engagementNavigation,
   masterNavigation
 } from '../config/navigation'
-import { Database, CalendarDays } from 'lucide-react'
+import { Database, CalendarDays, Quote } from 'lucide-react'
 
 export const ActivitiesPage = () => {
   const { user } = useContext(AuthContext)

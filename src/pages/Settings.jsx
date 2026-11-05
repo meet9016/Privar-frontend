@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import ContentPage from './ContentPage'
 import {
   Settings, Save, Sparkles, RefreshCw, Info,
   Upload, X, Globe, Smartphone, Star,
   Image as ImageIcon, Mail, Phone,
   Facebook, Twitter, Instagram, Youtube, MessageCircle, Building2,
-  Play, Apple
+  Play, Apple, Quote
 } from 'lucide-react'
 import api, { assetUrl, getSubdomainTenant } from '../lib/api'
 import Loader from '../components/common/Loader'
@@ -238,7 +240,22 @@ export default function SettingsPage() {
   // Track which existing banner URLs were deleted
   const [deletedBannerUrls, setDeletedBannerUrls] = useState([])
 
-  const [activeTab, setActiveTab] = useState('branding') // branding | theme
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(
+    tabFromUrl && ['branding', 'theme', 'suvichar'].includes(tabFromUrl) ? tabFromUrl : 'branding'
+  )
+
+  useEffect(() => {
+    if (tabFromUrl && ['branding', 'theme', 'suvichar'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl)
+    }
+  }, [tabFromUrl])
+
+  const handleTabChange = (key) => {
+    setActiveTab(key)
+    setSearchParams({ tab: key }, { replace: true })
+  }
   const [loading, setLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
   const [error, setError] = useState('')
@@ -399,11 +416,12 @@ export default function SettingsPage() {
         {[
           { key: 'branding', label: 'Branding & Info', icon: Building2 },
           { key: 'theme', label: 'Theme Colors', icon: Settings },
+          { key: 'suvichar', label: 'Suvichar', icon: Quote },
         ].map(tab => (
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabChange(tab.key)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px
               ${activeTab === tab.key
                 ? 'border-primary text-primary'
@@ -415,7 +433,10 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit}>
+      {activeTab === 'suvichar' ? (
+        <ContentPage type="suvichar" />
+      ) : (
+        <form onSubmit={handleSubmit}>
 
         {/* ── TAB: BRANDING & INFO ─────────────────────────────────────── */}
         {activeTab === 'branding' && (
@@ -633,6 +654,7 @@ export default function SettingsPage() {
         )}
 
       </form>
+      )}
     </div>
   )
 }

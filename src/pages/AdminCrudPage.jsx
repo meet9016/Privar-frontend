@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Edit2, Plus, Trash2, ImageOff, } from 'lucide-react'
+import { Edit2, Plus, Trash2, ImageOff, CopyPlus, Upload, Download, FileSpreadsheet, AlertCircle, X } from 'lucide-react'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 import api, { assetUrl, formatDate } from '../lib/api'
 import { confirm } from '../lib/confirm'
 import Modal from '../components/Modal'
@@ -19,7 +21,7 @@ import useDebounce from '../hooks/useDebounce'
 import { transliterateText } from '../utils/transliterate'
 
 const fieldClass = 'w-full px-3 py-2.5 bg-input-bg text-text border border-border focus:border-primary/50 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/10'
-export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName }) {
+export default function AdminCrudPage({ title, subtitle, endpoint, fields, columns, getRowTitle, supportIsOwn, hideAdd, hideDelete, hideActions, hideEdit, hideFilter, deleteAction, gridCols, customHeaderActions, customFilters, extraParams, onClearFilters, onApplyFilters, onToggleFilters, extraActiveFiltersCount, headerLeftContent, isRowEditable, isRowDeletable, transformData, rowClassName, customRowActions, selectable = false, allowDuplicate = false, onBulkDuplicate, allowMultipleAdd = false, allowBulkImport = false }) {
   const shouldHideActions = hideActions || (hideEdit && hideDelete)
   const emptyForm = useMemo(() => {
     return fields.reduce((acc, field) => ({
@@ -29,12 +31,20 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
   }, [fields])
 
   const [rows, setRows] = useState([])
+  const [selectedRows, setSelectedRows] = useState([])
   const { page, totalPages, total, setPage, limit, setLimit, setPaginationData, getParams, resetPage } = usePagination(15)
   const [loading, setLoading] = useState(false)
   const [search, setSearchValue] = useState('')
   const debouncedSearch = useDebounce(search, 400)
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [isDuplicate, setIsDuplicate] = useState(false)
+  const [multipleItems, setMultipleItems] = useState([])
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false)
+  const [bulkImportFile, setBulkImportFile] = useState(null)
+  const [bulkImportLoading, setBulkImportLoading] = useState(false)
+  const [bulkImportPreview, setBulkImportPreview] = useState([])
+  const [bulkImportError, setBulkImportError] = useState('')
   const [formData, setFormData] = useState(emptyForm)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [remoteOptions, setRemoteOptions] = useState({})
@@ -95,54 +105,73 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     }
   }, [isModalOpen])
 
+  const buildFormData = useCallback((data) => fields.reduce((acc, field) => {
+    let val = field.type === 'file'
+      ? ''
+      : (data[field.name] !== undefined && data[field.name] !== null ? data[field.name] : (data[field.fallback] !== undefined && data[field.fallback] !== null ? data[field.fallback] : (field.defaultValue ?? '')))
+
+    // If field expects name (e.g. location fields), check if explicit name field is available
+    if (field.valueKey === 'name') {
+      const explicitName = data[`${field.name}_name`]
+      if (explicitName) {
+        val = explicitName
+      } else if (typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val.trim()) && data[`${field.name}_name`]) {
+        val = data[`${field.name}_name`]
+      }
+    }
+
+    // If field expects ID, but val is empty, check ${field.name}_id
+    if (field.type === 'select-remote' && field.valueKey !== 'name' && !val && data[`${field.name}_id`]) {
+      val = data[`${field.name}_id`]
+    }
+
+    // For 'name' field on birthday/user records: compose from first_name + last_name if name is empty
+    if (field.name === 'name' && !val && (data.first_name || data.last_name)) {
+      val = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ')
+    }
+    // Format ISO dates to YYYY-MM-DD for date fields
+    if (field.type === 'date' && val && typeof val === 'string' && val.includes('T')) {
+      const d = new Date(val)
+      if (!isNaN(d.getTime())) val = d.toISOString().slice(0, 10)
+    }
+    return { ...acc, [field.name]: val }
+  }, {}), [fields])
+
   const openCreate = () => {
     setSelected(null)
+    setIsDuplicate(false)
     setFormData(emptyForm)
     loadRemoteOptions(fields)
     setFieldErrors({})
-    setIsModalOpen(true)
-
     setImagePreview(null)
     setRemovedImages({})
+    if (allowMultipleAdd) {
+      const today = new Date().toISOString().split('T')[0]
+      const gujaratiDays = ['રવિવાર', 'સોમવાર', 'મંગળવાર', 'બુધવાર', 'ગુરુવાર', 'શુક્રવાર', 'શનિવાર']
+      const todayVar = gujaratiDays[new Date().getDay()]
+      setMultipleItems([
+        {
+          ...emptyForm,
+          date: today,
+          var: todayVar,
+          vaar: todayVar,
+          status: 1,
+          _tempId: Date.now()
+        }
+      ])
+    } else {
+      setMultipleItems([])
+    }
+    setIsModalOpen(true)
   }
 
   const openEdit = async (row) => {
     setSelected(row)
+    setIsDuplicate(false)
+    setMultipleItems([])
     setFieldErrors({})
     setImagePreview(null)
     setRemovedImages({})
-
-    const buildFormData = (data) => fields.reduce((acc, field) => {
-      let val = field.type === 'file'
-        ? ''
-        : (data[field.name] !== undefined && data[field.name] !== null ? data[field.name] : (data[field.fallback] !== undefined && data[field.fallback] !== null ? data[field.fallback] : (field.defaultValue ?? '')))
-
-      // If field expects name (e.g. location fields), check if explicit name field is available
-      if (field.valueKey === 'name') {
-        const explicitName = data[`${field.name}_name`]
-        if (explicitName) {
-          val = explicitName
-        } else if (typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val.trim()) && data[`${field.name}_name`]) {
-          val = data[`${field.name}_name`]
-        }
-      }
-
-      // If field expects ID, but val is empty, check ${field.name}_id
-      if (field.type === 'select-remote' && field.valueKey !== 'name' && !val && data[`${field.name}_id`]) {
-        val = data[`${field.name}_id`]
-      }
-
-      // For 'name' field on birthday/user records: compose from first_name + last_name if name is empty
-      if (field.name === 'name' && !val && (data.first_name || data.last_name)) {
-        val = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ')
-      }
-      // Format ISO dates to YYYY-MM-DD for date fields
-      if (field.type === 'date' && val && typeof val === 'string' && val.includes('T')) {
-        const d = new Date(val)
-        if (!isNaN(d.getTime())) val = d.toISOString().slice(0, 10)
-      }
-      return { ...acc, [field.name]: val }
-    }, {})
 
     // Set initial values from the row list data immediately
     const initialForm = buildFormData(row)
@@ -164,6 +193,238 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
       }
     }
     loadRemoteOptions(fields)
+  }
+
+  const handleDuplicateRow = async (row) => {
+    setSelected(null)
+    setIsDuplicate(true)
+    setMultipleItems([])
+    setFieldErrors({})
+    setImagePreview(null)
+    setRemovedImages({})
+
+    const initialForm = buildFormData(row)
+    setFormData(initialForm)
+    setIsModalOpen(true)
+    loadRemoteOptions(fields)
+  }
+
+  const addAnotherItem = () => {
+    const gujaratiDays = ['રવિવાર', 'સોમવાર', 'મંગળવાર', 'બુધવાર', 'ગુરુવાર', 'શુક્રવાર', 'શનિવાર']
+    const lastItem = multipleItems[multipleItems.length - 1]
+    let nextDate = new Date().toISOString().split('T')[0]
+    if (lastItem && lastItem.date) {
+      const d = new Date(lastItem.date)
+      if (!isNaN(d.getTime())) {
+        d.setDate(d.getDate() + 1)
+        nextDate = d.toISOString().split('T')[0]
+      }
+    }
+    const nextVar = gujaratiDays[new Date(nextDate).getDay()]
+
+    setMultipleItems(prev => [
+      ...prev,
+      {
+        ...emptyForm,
+        date: nextDate,
+        var: nextVar,
+        vaar: nextVar,
+        author: lastItem?.author || '',
+        status: 1,
+        _tempId: Date.now() + Math.random()
+      }
+    ])
+  }
+
+  const removeItem = (idx) => {
+    if (multipleItems.length <= 1) return
+    setMultipleItems(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const updateItemField = (idx, fieldName, value) => {
+    setMultipleItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item
+      const updated = { ...item, [fieldName]: value }
+      if (fieldName === 'date') {
+        const gujaratiDays = ['રવિવાર', 'સોમવાર', 'મંગળવાર', 'બુધવાર', 'ગુરુવાર', 'શુક્રવાર', 'શનિવાર']
+        const d = new Date(value)
+        if (!isNaN(d.getTime())) {
+          const v = gujaratiDays[d.getDay()]
+          updated.var = v
+          updated.vaar = v
+        }
+      }
+      return updated
+    }))
+  }
+
+  const downloadSampleTemplate = async () => {
+    try {
+      const wb = new ExcelJS.Workbook()
+      const ws = wb.addWorksheet(title || 'Data')
+
+      const gujaratiDays = ['રવિવાર', 'સોમવાર', 'મંગળવાર', 'બુધવાર', 'ગુરુવાર', 'શુક્રવાર', 'શનિવાર']
+      const today = new Date().toISOString().split('T')[0]
+      const todayVar = gujaratiDays[new Date().getDay()]
+
+      ws.columns = [
+        { header: `${title} / Thought*`, key: 'suvichar', width: 45 },
+        { header: 'Author / By', key: 'author', width: 22 },
+        { header: 'Date (YYYY-MM-DD)', key: 'date', width: 20 },
+        { header: 'Day / Var', key: 'var', width: 18 },
+        { header: 'Status (1=Active, 0=Inactive)', key: 'status', width: 25 },
+      ]
+
+      const headerRow = ws.getRow(1)
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+      headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1565C0' } }
+      headerRow.height = 24
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+
+      const sampleRows = [
+        {
+          suvichar: 'Learn from yesterday, live for today, hope for tomorrow.',
+          author: 'Albert Einstein',
+          date: today,
+          var: todayVar,
+          status: 1
+        },
+        {
+          suvichar: 'જેનું મન શુદ્ધ છે, તેનું સમગ્ર જીવન ઉત્સવ છે.',
+          author: 'ગાંધીજી',
+          date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+          var: gujaratiDays[new Date(Date.now() + 86400000).getDay()],
+          status: 1
+        }
+      ]
+
+      sampleRows.forEach(sr => ws.addRow(sr))
+
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      saveAs(blob, `${title}_Import_Template.xlsx`)
+      toast.success('Template downloaded successfully!')
+    } catch (err) {
+      toast.error('Failed to download template')
+    }
+  }
+
+  const handleBulkFileChange = async (file) => {
+    if (!file) return
+    const ext = file.name.split('.').pop().toLowerCase()
+    if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+      setBulkImportError('Please upload an Excel file (.xlsx or .xls)')
+      return
+    }
+
+    setBulkImportFile(file)
+    setBulkImportError('')
+    setBulkImportLoading(true)
+
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const wb = new ExcelJS.Workbook()
+      await wb.xlsx.load(arrayBuffer)
+      const ws = wb.worksheets[0]
+      if (!ws) {
+        setBulkImportError('No worksheet found in Excel file')
+        setBulkImportPreview([])
+        setBulkImportLoading(false)
+        return
+      }
+
+      const headers = []
+      ws.getRow(1).eachCell((cell, col) => {
+        headers[col] = String(cell.value || '').trim()
+      })
+
+      const rows = []
+      ws.eachRow((row, rowIndex) => {
+        if (rowIndex === 1) return // header
+        const obj = {}
+        headers.forEach((h, col) => {
+          if (!h) return
+          let val = row.getCell(col).value
+          if (val && typeof val === 'object' && val.text) val = val.text
+          if (val instanceof Date) {
+            val = val.toISOString().split('T')[0]
+          }
+          obj[h] = val !== undefined && val !== null ? String(val).trim() : ''
+        })
+
+        const textKey = Object.keys(obj).find(k => {
+          const l = k.toLowerCase()
+          return l.includes('suvichar') || l.includes('thought') || l.includes('quote') || l.includes('description') || l.includes('title')
+        })
+        const authorKey = Object.keys(obj).find(k => k.toLowerCase().includes('author') || k.toLowerCase().includes('by') || k.toLowerCase().includes('લેખક'))
+        const dateKey = Object.keys(obj).find(k => k.toLowerCase().includes('date') || k.toLowerCase().includes('તારીખ'))
+        const varKey = Object.keys(obj).find(k => k.toLowerCase().includes('var') || k.toLowerCase().includes('vaar') || k.toLowerCase().includes('day') || k.toLowerCase().includes('વાર'))
+        const statusKey = Object.keys(obj).find(k => k.toLowerCase().includes('status'))
+
+        const suvicharVal = textKey ? obj[textKey] : Object.values(obj)[0] || ''
+        if (suvicharVal && !suvicharVal.startsWith('*')) {
+          rows.push({
+            suvichar: suvicharVal,
+            author: authorKey ? obj[authorKey] : '',
+            date: dateKey ? obj[dateKey] : '',
+            var: varKey ? obj[varKey] : '',
+            status: statusKey ? (obj[statusKey] === '0' || String(obj[statusKey]).toLowerCase() === 'inactive' ? 0 : 1) : 1
+          })
+        }
+      })
+
+      if (rows.length === 0) {
+        setBulkImportError('No valid suvichar records found in this file')
+      }
+      setBulkImportPreview(rows)
+    } catch (err) {
+      setBulkImportError('Could not read Excel file. Please use the sample template.')
+    } finally {
+      setBulkImportLoading(false)
+    }
+  }
+
+  const handleBulkImportSubmit = async () => {
+    if (!bulkImportFile) {
+      toast.error('Please select an Excel file to upload')
+      return
+    }
+
+    setBulkImportLoading(true)
+    setBulkImportError('')
+
+    try {
+      const cleanEndpoint = endpoint.split('?')[0]
+      const formData = new FormData()
+      formData.append('file', bulkImportFile)
+
+      const token = localStorage.getItem('auth_token')
+      const headers = { 'Content-Type': 'multipart/form-data' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      let res
+      try {
+        res = await api.post(`${cleanEndpoint}/bulk-import`, formData, { headers })
+      } catch (postErr) {
+        if (bulkImportPreview.length > 0) {
+          res = await api.post(`${cleanEndpoint}/bulk-create`, { items: bulkImportPreview })
+        } else {
+          throw postErr
+        }
+      }
+
+      toast.success(res.data?.message || 'Suvichars uploaded and saved successfully!')
+      setIsBulkImportModalOpen(false)
+      setBulkImportFile(null)
+      setBulkImportPreview([])
+      await fetchRows()
+    } catch (err) {
+      const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to upload Excel file'
+      setBulkImportError(msg)
+      toast.error(msg)
+    } finally {
+      setBulkImportLoading(false)
+    }
   }
 
   const loadRemoteOptions = async (fieldsList) => {
@@ -230,6 +491,48 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     event.preventDefault()
     setSaving(true)
     setFieldErrors({})
+
+    if (allowMultipleAdd && !selected && !isDuplicate) {
+      const emptyItemIndex = multipleItems.findIndex(it => {
+        const val = it.suvichar || it.description || it.title || ''
+        return !String(val).trim()
+      })
+      if (emptyItemIndex !== -1) {
+        setFormError(`Please enter suvichar for item #${emptyItemIndex + 1}`)
+        setSaving(false)
+        return
+      }
+
+      try {
+        const cleanEndpoint = endpoint.split('?')[0]
+        const token = localStorage.getItem('auth_token')
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+
+        try {
+          const res = await api.post(`${cleanEndpoint}/bulk-create`, { items: multipleItems }, { headers })
+          toast.success(res.data?.message || `${multipleItems.length} record(s) added successfully`)
+        } catch (_) {
+          try {
+            const res2 = await api.post(cleanEndpoint, { items: multipleItems }, { headers })
+            toast.success(res2.data?.message || `${multipleItems.length} record(s) added successfully`)
+          } catch (__) {
+            await Promise.all(multipleItems.map(item => api.post(cleanEndpoint, item, { headers })))
+            toast.success(`${multipleItems.length} record(s) added successfully`)
+          }
+        }
+
+        await fetchRows()
+        setIsModalOpen(false)
+        setSelected(null)
+        setMultipleItems([])
+      } catch (err) {
+        const errorMsg = err.response?.data?.message || err.response?.data?.error || `Failed to save ${title.toLowerCase()}`
+        setFormError(errorMsg)
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
 
     // Validate required fields
     const missing = {}
@@ -436,6 +739,7 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     try {
       await Promise.all(ids.map(id => api.put(`${cleanEndpoint}/${id}`, { status: newStatus })))
       toast.success(`${ids.length} record(s) status updated`)
+      setSelectedRows([])
       fetchRows()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update status')
@@ -448,9 +752,33 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
     try {
       await Promise.all(ids.map(id => api.delete(`${cleanEndpoint}/${id}`)))
       toast.success(`${ids.length} record(s) deleted`)
+      setSelectedRows([])
       fetchRows()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete records')
+    }
+  }
+
+  const handleBulkDuplicate = async (ids) => {
+    if (!ids || ids.length === 0) return
+    const cleanEndpoint = endpoint.split('?')[0]
+    setLoading(true)
+    try {
+      const res = await api.post(`${cleanEndpoint}/bulk-duplicate`, { ids })
+      toast.success(res.data?.message || `${ids.length} record(s) duplicated successfully`)
+      setSelectedRows([])
+      await fetchRows()
+    } catch (err) {
+      try {
+        await Promise.all(ids.map(id => api.post(`${cleanEndpoint}/${id}/duplicate`)))
+        toast.success(`${ids.length} record(s) duplicated successfully`)
+        setSelectedRows([])
+        await fetchRows()
+      } catch (fallbackErr) {
+        toast.error(err.response?.data?.message || 'Failed to duplicate selected records')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -510,6 +838,22 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                 ]}
               />
             </FilterPopover>
+          )}
+          {allowBulkImport && (
+            <Button
+              type="button"
+              onClick={() => {
+                setBulkImportFile(null)
+                setBulkImportPreview([])
+                setBulkImportError('')
+                setIsBulkImportModalOpen(true)
+              }}
+              variant="outline"
+              icon={<FileSpreadsheet className="w-4 h-4 text-emerald-600" />}
+              className="h-10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/10 font-bold"
+            >
+              Bulk
+            </Button>
           )}
           {customHeaderActions}
           {!hideAdd && (
@@ -614,6 +958,17 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               const canDeleteRow = isRowDeletable ? isRowDeletable(row) : true
               return (
                 <div className="flex items-center justify-start gap-2">
+                  {customRowActions && customRowActions(row)}
+                  {allowDuplicate && (
+                    <button
+                      type="button"
+                      onClick={() => handleDuplicateRow(row)}
+                      className="p-2 rounded-xl transition-all border text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 cursor-pointer active:scale-95"
+                      title="Duplicate"
+                    >
+                      <CopyPlus className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   {!hideEdit && (
                     <button
                       onClick={() => canEditRow && openEdit(row)}
@@ -649,6 +1004,10 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
         keyField="id"
         loading={loading}
         rowClassName={rowClassName}
+        selectable={selectable || allowDuplicate}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        onBulkDuplicate={allowDuplicate || onBulkDuplicate ? (onBulkDuplicate || handleBulkDuplicate) : undefined}
         onBulkStatus={columns.some(c => c.key === 'status') ? handleBulkStatus : undefined}
         onBulkDelete={!hideDelete ? handleBulkDelete : undefined}
         emptyState={{
@@ -668,8 +1027,130 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
           onLimitChange: (newLimit) => { setLimit(newLimit); setPage(1); }
         }}
       />
-      <Modal isOpen={isModalOpen} maxWidth={fields.length > 10 ? 'max-w-7xl' : fields.length > 5 ? 'max-w-5xl' : 'max-w-3xl'} title={selected ? `Edit ${title}` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
+      <Modal isOpen={isModalOpen} maxWidth={allowMultipleAdd && !selected && !isDuplicate ? 'max-w-5xl' : fields.length > 10 ? 'max-w-7xl' : fields.length > 5 ? 'max-w-5xl' : 'max-w-3xl'} title={selected ? `Edit ${title}` : isDuplicate ? `Duplicate ${title}` : (allowMultipleAdd && multipleItems.length > 1) ? `Add Multiple ${title}s (${multipleItems.length})` : `Add ${title}`} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="space-y-3.5 text-text" noValidate>
+          {allowMultipleAdd && !selected && !isDuplicate ? (
+            <div className="space-y-4 max-h-[72vh] overflow-y-auto px-1 custom-scrollbar">
+              {formError && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 text-xs font-semibold">
+                  {formError}
+                </div>
+              )}
+              {multipleItems.map((item, idx) => (
+                <div key={item._tempId || idx} className="p-4 rounded-2xl bg-surface-secondary/40 border border-border space-y-3.5 relative shadow-xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-bold text-xs tracking-wide">
+                        #{idx + 1} {title}
+                      </span>
+                      {item.date && (
+                        <span className="text-xs text-text-secondary font-medium">
+                          {item.date} {item.var ? `• ${item.var}` : ''}
+                        </span>
+                      )}
+                    </div>
+                    {multipleItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(idx)}
+                        className="p-1.5 rounded-lg text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        title="Remove this item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-text-secondary mb-1">
+                      Suvichar <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={item.suvichar || ''}
+                      placeholder="Enter suvichar thought / quote..."
+                      onChange={(e) => updateItemField(idx, 'suvichar', e.target.value)}
+                      className={`${fieldClass} text-sm`}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-text-secondary mb-1">
+                        Author / By
+                      </label>
+                      <input
+                        type="text"
+                        value={item.author || ''}
+                        placeholder="Author name"
+                        onChange={(e) => updateItemField(idx, 'author', e.target.value)}
+                        className={`${fieldClass} text-sm h-10`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-text-secondary mb-1">
+                        Date
+                      </label>
+                      <DatePicker
+                        value={item.date || ''}
+                        onChange={(val) => updateItemField(idx, 'date', val)}
+                        placeholder="Select Date"
+                      />
+                    </div>
+
+                    <div>
+                      <Select
+                        label="Day"
+                        value={item.var || ''}
+                        onChange={(val) => updateItemField(idx, 'var', val)}
+                        options={[
+                          { value: 'રવિવાર', label: 'રવિવાર (Sunday)' },
+                          { value: 'સોમવાર', label: 'સોમવાર (Monday)' },
+                          { value: 'મંગળવાર', label: 'મંગળવાર (Tuesday)' },
+                          { value: 'બુધવાર', label: 'બુધવાર (Wednesday)' },
+                          { value: 'ગુરુવાર', label: 'ગુરુવાર (Thursday)' },
+                          { value: 'શુક્રવાર', label: 'શુક્રવાર (Friday)' },
+                          { value: 'શનિવાર', label: 'શનિવાર (Saturday)' }
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-text-secondary mb-1">
+                        Status
+                      </label>
+                      <div className="flex items-center gap-3 pt-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={Number(item.status ?? 1) === 1}
+                            onChange={(e) => updateItemField(idx, 'status', e.target.checked ? 1 : 0)}
+                          />
+                          <div className="w-9 h-5 bg-surface-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                        <span className="text-xs font-semibold text-text">
+                          {Number(item.status ?? 1) === 1 ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* + Add Another Suvichar Button */}
+              <button
+                type="button"
+                onClick={addAnotherItem}
+                className="w-full py-3 px-4 border-2 border-dashed border-primary/40 hover:border-primary bg-primary/5 hover:bg-primary/10 rounded-2xl flex items-center justify-center gap-2 text-primary font-bold text-sm transition-all cursor-pointer group active:scale-[0.99]"
+              >
+                <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span>+ Add Another {title}</span>
+              </button>
+            </div>
+          ) : (
           <div className={`grid grid-cols-1 ${gridCols || (fields.length > 10 ? 'sm:grid-cols-2 md:grid-cols-4' : fields.length > 4 ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2')} gap-3.5`} style={{ overflow: 'visible' }}>
             {fields.map((field, fieldIdx) => {
               const isFullRow = field.type === 'textarea' || (field.type === 'file' && field.multiple);
@@ -1037,7 +1518,17 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
                       <DatePicker
                         value={formData[field.name] || ''}
                         onChange={(val) => {
-                          setFormData({ ...formData, [field.name]: val })
+                          const updates = { [field.name]: val }
+                          if (field.name === 'date' && (fields.some(f => f.name === 'vaar') || fields.some(f => f.name === 'var'))) {
+                            const gujaratiDays = ['રવિવાર', 'સોમવાર', 'મંગળવાર', 'બુધવાર', 'ગુરુવાર', 'શુક્રવાર', 'શનિવાર']
+                            const d = new Date(val)
+                            if (!isNaN(d.getTime())) {
+                              const dayName = gujaratiDays[d.getDay()]
+                              updates.var = dayName
+                              updates.vaar = dayName
+                            }
+                          }
+                          setFormData({ ...formData, ...updates })
                           if (fieldErrors[field.name]) setFieldErrors({ ...fieldErrors, [field.name]: false })
                         }}
                         disabled={saving}
@@ -1095,16 +1586,170 @@ export default function AdminCrudPage({ title, subtitle, endpoint, fields, colum
               );
             })}
           </div>
+          )}
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={saving}>
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Saving...' : (allowMultipleAdd && !selected && !isDuplicate && multipleItems.length > 1) ? `Save All (${multipleItems.length}) ${title}s` : selected ? 'Save Changes' : `Add ${title}`}
             </Button>
           </div>
         </form>
       </Modal>
+
+      {/* ── BULK EXCEL IMPORT MODAL ────────────────────────── */}
+      {allowBulkImport && (
+        <Modal
+          isOpen={isBulkImportModalOpen}
+          maxWidth="max-w-2xl"
+          title={`Bulk Upload ${title} (Excel)`}
+          onClose={() => {
+            if (!bulkImportLoading) setIsBulkImportModalOpen(false)
+          }}
+        >
+          <div className="space-y-4 text-text">
+            {/* Top Info & Download Template */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-primary/5 border border-primary/20">
+              <div>
+                <p className="text-xs font-bold text-text">Excel Sheet Template</p>
+                <p className="text-xs text-text-secondary mt-0.5">Download our sample Excel template with predefined columns.</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={downloadSampleTemplate}
+                icon={<Download className="w-3.5 h-3.5 text-primary" />}
+                className="shrink-0 text-xs font-semibold h-8"
+              >
+                Download Sample
+              </Button>
+            </div>
+
+            {/* File Dropzone */}
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5">
+                Upload Excel File (.xlsx, .xls) <span className="text-red-500">*</span>
+              </label>
+              <div
+                className={`relative border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${
+                  bulkImportFile
+                    ? 'border-emerald-500 bg-emerald-500/5'
+                    : 'border-border hover:border-primary/50 bg-surface-secondary/40'
+                }`}
+                onClick={() => document.getElementById('admin-bulk-file-input')?.click()}
+              >
+                <input
+                  id="admin-bulk-file-input"
+                  type="file"
+                  accept=".xlsx, .xls, .csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) handleBulkFileChange(f)
+                  }}
+                  disabled={bulkImportLoading}
+                />
+
+                {bulkImportFile ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600">
+                      <FileSpreadsheet className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-text truncate max-w-xs">{bulkImportFile.name}</p>
+                      <p className="text-xs text-text-secondary">{(bulkImportFile.size / 1024).toFixed(1)} KB • Ready to import</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setBulkImportFile(null)
+                        setBulkImportPreview([])
+                        setBulkImportError('')
+                      }}
+                      className="p-1.5 rounded-lg text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors ml-2"
+                      title="Remove file"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-text">Click to choose Excel sheet or drag and drop</p>
+                      <p className="text-xs text-text-secondary mt-0.5">Supports .xlsx, .xls files</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {bulkImportError && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{bulkImportError}</span>
+              </div>
+            )}
+
+            {/* Preview Section */}
+            {bulkImportPreview.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-text">
+                    Preview ({bulkImportPreview.length} {title.toLowerCase()}{bulkImportPreview.length > 1 ? 's' : ''} found):
+                  </span>
+                  <span className="text-[11px] text-text-secondary font-medium">Showing first {Math.min(bulkImportPreview.length, 3)} rows</span>
+                </div>
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-border divide-y divide-border text-xs custom-scrollbar">
+                  {bulkImportPreview.slice(0, 3).map((row, idx) => (
+                    <div key={idx} className="p-2.5 bg-surface-secondary/30 space-y-1">
+                      <p className="font-semibold text-text line-clamp-2">"{row.suvichar}"</p>
+                      <div className="flex items-center gap-3 text-text-secondary text-[11px]">
+                        {row.author && <span>✍️ {row.author}</span>}
+                        {row.date && <span>📅 {row.date}</span>}
+                        {row.var && <span>• {row.var}</span>}
+                      </div>
+                    </div>
+                  ))}
+                  {bulkImportPreview.length > 3 && (
+                    <div className="p-2 text-center text-text-secondary font-semibold text-xs bg-surface-secondary/50">
+                      + {bulkImportPreview.length - 3} more {title.toLowerCase()}s in file
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Modal Footer Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsBulkImportModalOpen(false)}
+                disabled={bulkImportLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleBulkImportSubmit}
+                isLoading={bulkImportLoading}
+                disabled={!bulkImportFile || bulkImportLoading}
+                icon={<Upload className="w-4 h-4" />}
+              >
+                {bulkImportLoading ? 'Importing...' : bulkImportPreview.length > 0 ? `Add (${bulkImportPreview.length}) ${title}s` : `Add ${title}s`}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
