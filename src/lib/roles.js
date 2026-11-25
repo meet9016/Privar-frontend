@@ -3,12 +3,16 @@ export const unwrapApiData = (response, fallback = []) => response?.data?.data ?
 export const normalizeRole = (role = {}) => {
   const id = role.id || role._id || ''
   const permissions = Array.isArray(role.permissions) ? role.permissions : []
+  const roleType = role.role_type || (role.is_trust_role ? 'trust' : 'general')
+  const isTrust = Boolean(role.is_trust_role || roleType === 'trust')
 
   return {
     ...role,
     id: String(id),
     name: role.name || role.role_name || '',
     description: role.description || '',
+    role_type: roleType,
+    is_trust_role: isTrust,
     permissions,
     permission_count: Number(role.permission_count ?? permissions.length),
     status: Number(role.status ?? 1)

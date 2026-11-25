@@ -819,7 +819,7 @@ export default function Users() {
 
           <FilterPopover
             isOpen={showFilters}
-            width="w-[340px] sm:w-[560px]"
+            width="w-[300px] sm:w-[480px]"
             onToggle={() => {
               setDraftFilters(filters)
               setShowFilters(!showFilters)

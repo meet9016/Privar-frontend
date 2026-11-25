@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
-import { Edit2, Plus,ShieldCheck, Trash2 } from 'lucide-react'
+import { Building2, Edit2, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import api from '../lib/api'
 import { ROLES_ENDPOINTS } from '../utils/endpoints'
 import { confirm } from '../lib/confirm'
@@ -16,7 +16,7 @@ import Checkbox from '../components/common/Checkbox'
 import useDebounce from '../hooks/useDebounce'
 import usePermissions from '../hooks/usePermissions'
 
-const emptyRoleForm = { name: '', description: '', status: 1, permissions: [] }
+const emptyRoleForm = { name: '', description: '', status: 1, permissions: [], role_type: 'general', is_trust_role: false }
 export default function Roles() {
   const { user: currentUser } = useContext(AuthContext)
   const permissions = usePermissions('roles')
@@ -29,6 +29,7 @@ export default function Roles() {
   const [permissionConfig, setPermissionConfig] = useState({ actions: [], modules: [] })
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 400)
+  const [activeTab, setActiveTab] = useState('general') // 'general' | 'trust'
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -48,13 +49,15 @@ export default function Roles() {
 
   useEffect(() => {
     fetchAll()
-  }, [page, debouncedSearch, limit])
+  }, [page, debouncedSearch, limit, activeTab])
 
   const fetchAll = async () => {
     setLoading(true)
     try {
       const [rolesRes, permissionsRes] = await Promise.all([
-        api.get(ROLES_ENDPOINTS.GET_ROLES, { params: { page, limit, search: debouncedSearch } }),
+        api.get(ROLES_ENDPOINTS.GET_ROLES, {
+          params: { page, limit, search: debouncedSearch, role_type: activeTab }
+        }),
         api.get(ROLES_ENDPOINTS.GET_PERMISSIONS)
       ])
       const data = rolesRes.data?.data || rolesRes.data || []
@@ -77,11 +80,19 @@ export default function Roles() {
     }
   }
 
-
-
   const openCreate = () => {
     setSelected(null)
-    setFormData(emptyRoleForm)
+    setActiveTab('general')
+    setFormData({ ...emptyRoleForm, role_type: 'general', is_trust_role: false })
+    setFormError('')
+    setFieldErrors({})
+    setIsModalOpen(true)
+  }
+
+  const openCreateTrustRole = () => {
+    setSelected(null)
+    setActiveTab('trust')
+    setFormData({ ...emptyRoleForm, role_type: 'trust', is_trust_role: true })
     setFormError('')
     setFieldErrors({})
     setIsModalOpen(true)
@@ -89,11 +100,14 @@ export default function Roles() {
 
   const openEdit = (role) => {
     setSelected(role)
+    const roleType = role.role_type || (role.is_trust_role ? 'trust' : 'general')
     setFormData({
       name: role.name || '',
       description: role.description || '',
       status: Number(role.status ?? 1),
-      permissions: Array.isArray(role.permissions) ? role.permissions : []
+      permissions: Array.isArray(role.permissions) ? role.permissions : [],
+      role_type: roleType,
+      is_trust_role: roleType === 'trust'
     })
     setFormError('')
     setFieldErrors({})
@@ -175,13 +189,23 @@ export default function Roles() {
     setSaving(true)
     setError('')
     try {
+      const payload = {
+        ...formData,
+        role_type: formData.role_type || (formData.is_trust_role ? 'trust' : 'general'),
+        is_trust_role: Boolean(formData.role_type === 'trust' || formData.is_trust_role)
+      }
       if (selected) {
-        await api.put(ROLES_ENDPOINTS.UPDATE_ROLE(selected.id), formData)
+        await api.put(ROLES_ENDPOINTS.UPDATE_ROLE(selected.id), payload)
       } else {
-        await api.post(ROLES_ENDPOINTS.CREATE_ROLE, formData)
+        await api.post(ROLES_ENDPOINTS.CREATE_ROLE, payload)
+      }
+      if (payload.role_type === 'trust') {
+        setActiveTab('trust')
+      } else {
+        setActiveTab('general')
       }
       await fetchAll()
-      toast.success('Role saved successfully')
+      toast.success(payload.role_type === 'trust' ? 'Trust Role saved successfully' : 'Role saved successfully')
       setIsModalOpen(false)
       setSelected(null)
     } catch (err) {
@@ -208,8 +232,16 @@ export default function Roles() {
   }
 
   const filteredRoles = useMemo(() => {
-    return roles.filter((role) => JSON.stringify(role).toLowerCase().includes(search.toLowerCase()))
-  }, [roles, search])
+    return roles.filter((role) => {
+      const matchesSearch = JSON.stringify(role).toLowerCase().includes(search.toLowerCase())
+      if (!matchesSearch) return false
+      if (activeTab === 'trust') {
+        return role.role_type === 'trust' || role.is_trust_role === true
+      } else {
+        return !(role.role_type === 'trust' || role.is_trust_role === true)
+      }
+    })
+  }, [roles, search, activeTab])
   const permissionGridStyle = {
     gridTemplateColumns: `minmax(150px, 1fr) repeat(${permissionConfig.actions.length}, minmax(64px, 72px))`
   }
@@ -239,8 +271,23 @@ export default function Roles() {
           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto hide-scrollbar pb-1 sm:pb-0">
             {(!permissions.canAdd && !permissions.isSuperAdmin) ? null : (
               <>
-                <Button onClick={openCreate} variant="primary" icon={<Plus className="w-4 h-4" />} className="h-10 whitespace-nowrap">
+                <Button
+                  onClick={openCreate}
+                  disabled={activeTab !== 'general'}
+                  variant={activeTab === 'general' ? 'primary' : 'outline'}
+                  icon={<Plus className="w-4 h-4" />}
+                  className="h-10 whitespace-nowrap"
+                >
                   Add Role
+                </Button>
+                <Button
+                  onClick={openCreateTrustRole}
+                  disabled={activeTab === 'general'}
+                  variant={activeTab === 'trust' ? 'primary' : 'outline'}
+                  icon={<Plus className="w-4 h-4" />}
+                  className="h-10 whitespace-nowrap"
+                >
+                  Add Trust Role
                 </Button>
               </>
             )}
@@ -248,7 +295,36 @@ export default function Roles() {
         </div>
       </div>
 
-      {/* Quick Setup Presets Banner */}
+      {/* 2 Tabs: General Role & Trust Role (No All Role) */}
+      <div className="flex items-center gap-2 border-b border-border pb-3">
+        <button
+          type="button"
+          onClick={() => { setActiveTab('general'); setPage(1); }}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs tracking-tight transition-all ${
+            activeTab === 'general'
+              ? 'bg-primary text-white shadow-sm border border-primary'
+              : 'bg-transparent border border-border text-text-secondary hover:text-text hover:bg-surface-secondary/40'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          General Role
+        </button>
+        <button
+          type="button"
+          onClick={() => { setActiveTab('trust'); setPage(1); }}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs tracking-tight transition-all ${
+            activeTab === 'trust'
+              ? 'bg-primary text-white shadow-sm border border-primary'
+              : 'bg-transparent border border-border text-text-secondary hover:text-text hover:bg-surface-secondary/40'
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          Trust Role
+        </button>
+      </div>
+
+      {/* Quick Setup Presets Banner (Only on General Role tab) */}
+      {activeTab === 'general' && (
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-text flex items-center gap-1.5">
@@ -292,7 +368,9 @@ export default function Roles() {
                     name: preset.name,
                     description: preset.desc,
                     status: 1,
-                    permissions: defaultPerms
+                    permissions: defaultPerms,
+                    role_type: 'general',
+                    is_trust_role: false
                   })
                   setFormError('')
                   setFieldErrors({})
@@ -306,23 +384,34 @@ export default function Roles() {
           ))}
         </div>
       </div>
+      )}
 
       <Table
         columns={[
           {
             header: 'Role Name',
             key: 'name',
-            render: (role) => (
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <ShieldCheck className="w-4 h-4 text-primary" />
+            render: (role) => {
+              const isTrust = role.role_type === 'trust' || role.is_trust_role === true
+              return (
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg border border-primary/20 bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    {isTrust ? <Building2 className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-text">{role.name}</span>
+                      {isTrust && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/30">
+                          Trust Role
+                        </span>
+                      )}
+                    </div>
+                    {role.description && <div className="mt-0.5 text-sm text-text-secondary">{role.description}</div>}
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-text">{role.name}</div>
-                  {role.description && <div className="mt-0.5 text-sm text-text-secondary">{role.description}</div>}
-                </div>
-              </div>
-            )
+              )
+            }
           },
           {
             header: 'Permissions',
@@ -382,11 +471,11 @@ export default function Roles() {
         keyField="id"
         loading={loading}
         emptyState={{
-          icon: ShieldCheck,
-          title: 'No roles found',
-          description: 'Try expanding your search criteria or create a new role',
-          actionLabel: 'Add Role',
-          onAction: openCreate
+          icon: activeTab === 'trust' ? Building2 : ShieldCheck,
+          title: activeTab === 'trust' ? 'No trust roles found' : 'No general roles found',
+          description: activeTab === 'trust' ? 'Create a trust role for committee members' : 'Try expanding your search criteria or create a new role',
+          actionLabel: activeTab === 'trust' ? 'Add Trust Role' : 'Add Role',
+          onAction: activeTab === 'trust' ? openCreateTrustRole : openCreate
         }}
         pagination={{
           currentPage: page,
@@ -401,16 +490,24 @@ export default function Roles() {
         renderMobileCard={(role) => {
           const isSystemRole = role.name === 'admin' || role.name === 'UserRole';
           const isActive = Number(role.status ?? 1) === 1;
+          const isTrust = role.role_type === 'trust' || role.is_trust_role === true;
 
           return (
             <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="w-5 h-5 text-primary" />
+                  <div className="h-10 w-10 rounded-lg border border-primary/20 bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    {isTrust ? <Building2 className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
                   </div>
                   <div>
-                    <div className="font-semibold text-text text-base leading-tight">{role.name}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-text text-base leading-tight">{role.name}</div>
+                      {isTrust && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/30">
+                          Trust
+                        </span>
+                      )}
+                    </div>
                     {role.description && <div className="text-xs text-text-secondary mt-0.5 line-clamp-1">{role.description}</div>}
                   </div>
                 </div>
@@ -460,7 +557,7 @@ export default function Roles() {
         }}
       />
 
-      <Modal isOpen={isModalOpen} maxWidth="max-w-4xl" title={selected ? 'Edit Role' : 'Add Role'} onClose={() => setIsModalOpen(false)}>
+      <Modal isOpen={isModalOpen} maxWidth="max-w-4xl" title={selected ? (formData.role_type === 'trust' ? 'Edit Trust Role' : 'Edit Role') : (formData.role_type === 'trust' ? 'Add Trust Role' : 'Add Role')} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSave} className="text-text relative flex flex-col" style={{ maxHeight: 'calc(92vh - 80px)' }}>
           {formError && (
             <div className="bg-error-bg border border-error-border text-error-text px-3 py-2 rounded-xl text-xs mb-2">{formError}</div>

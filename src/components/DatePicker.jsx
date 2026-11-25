@@ -16,8 +16,10 @@ export default function DatePicker({
   error,
   label,
   required,
+  minDate,
   maxDate,
   disableFuture = false,
+  disablePast = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [popoverStyle, setPopoverStyle] = useState({});
@@ -96,23 +98,6 @@ export default function DatePicker({
     }
   }, [isOpen]);
   
-  // Calculate maximum allowed date only if explicitly requested
-  const getMaxAllowedDate = () => {
-    if (maxDate) {
-      if (maxDate instanceof Date) return maxDate;
-      const p = String(maxDate).split('-');
-      if (p.length === 3) return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10), 23, 59, 59, 999);
-    }
-    if (disableFuture) {
-      const today = new Date();
-      today.setHours(23, 59, 59, 999);
-      return today;
-    }
-    return null;
-  };
-
-  const maxAllowed = getMaxAllowedDate();
-
   const parseDate = (val) => {
     if (!val) return new Date();
     if (val instanceof Date) return isNaN(val.getTime()) ? new Date() : val;
@@ -136,10 +121,48 @@ export default function DatePicker({
     return new Date();
   };
 
+  // Calculate maximum allowed date only if explicitly requested
+  const getMaxAllowedDate = () => {
+    if (maxDate) {
+      if (maxDate instanceof Date) return maxDate;
+      const parsed = parseDate(maxDate);
+      if (!isNaN(parsed.getTime())) {
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 23, 59, 59, 999);
+      }
+    }
+    if (disableFuture) {
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      return today;
+    }
+    return null;
+  };
+
+  // Calculate minimum allowed date only if explicitly requested
+  const getMinAllowedDate = () => {
+    if (minDate) {
+      if (minDate instanceof Date) return minDate;
+      const parsed = parseDate(minDate);
+      if (!isNaN(parsed.getTime())) {
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0, 0);
+      }
+    }
+    if (disablePast) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return today;
+    }
+    return null;
+  };
+
+  const maxAllowed = getMaxAllowedDate();
+  const minAllowed = getMinAllowedDate();
+
   // The date that drives the currently viewed month/year in the calendar popover
   const [viewDate, setViewDate] = useState(() => {
     const initial = parseDate(value);
     if (maxAllowed && initial.getTime() > maxAllowed.getTime()) return new Date(maxAllowed);
+    if (minAllowed && initial.getTime() < minAllowed.getTime()) return new Date(minAllowed);
     return initial;
   });
 
@@ -199,8 +222,24 @@ export default function DatePicker({
   };
 
   // View navigation
+  const isPrevDisabled = () => {
+    if (!minAllowed) return false;
+    const d = new Date(viewDate);
+    if (viewMode === 'year') {
+      const startCurrentYearGroup = Math.floor(d.getFullYear() / 12) * 12;
+      return new Date(startCurrentYearGroup, 11, 31, 23, 59, 59, 999).getTime() < minAllowed.getTime();
+    } else if (viewMode === 'month') {
+      const prevYearEnd = new Date(d.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+      return prevYearEnd.getTime() < minAllowed.getTime();
+    } else {
+      const prevMonthEnd = new Date(d.getFullYear(), d.getMonth(), 0, 23, 59, 59, 999);
+      return prevMonthEnd.getTime() < minAllowed.getTime();
+    }
+  };
+
   const prev = (e) => {
     if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (isPrevDisabled()) return;
     const d = new Date(viewDate);
     if (viewMode === 'year') d.setFullYear(d.getFullYear() - 12);
     else if (viewMode === 'month') d.setFullYear(d.getFullYear() - 1);
@@ -279,7 +318,9 @@ export default function DatePicker({
         {years.map(y => {
           const isSelected = y === selectedYear;
           const startOfYear = new Date(y, 0, 1, 0, 0, 0, 0);
-          const isDisabled = maxAllowed && startOfYear.getTime() > maxAllowed.getTime();
+          const endOfYear = new Date(y, 11, 31, 23, 59, 59, 999);
+          const isDisabled = (maxAllowed && startOfYear.getTime() > maxAllowed.getTime()) ||
+                             (minAllowed && endOfYear.getTime() < minAllowed.getTime());
 
           return (
             <button
@@ -316,7 +357,9 @@ export default function DatePicker({
         {MONTHS.map((m, i) => {
           const isSelected = i === selectedMonth && viewDate.getFullYear() === selectedYear;
           const startOfMonth = new Date(viewDate.getFullYear(), i, 1, 0, 0, 0, 0);
-          const isDisabled = maxAllowed && startOfMonth.getTime() > maxAllowed.getTime();
+          const endOfMonth = new Date(viewDate.getFullYear(), i + 1, 0, 23, 59, 59, 999);
+          const isDisabled = (maxAllowed && startOfMonth.getTime() > maxAllowed.getTime()) ||
+                             (minAllowed && endOfMonth.getTime() < minAllowed.getTime());
 
           return (
             <button
@@ -369,7 +412,9 @@ export default function DatePicker({
               d.getDate() === selectedDateObj.getDate();
             const isToday = new Date().toDateString() === d.toDateString();
             const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-            const isDisabled = maxAllowed && dStart.getTime() > maxAllowed.getTime();
+            const dEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+            const isDisabled = (maxAllowed && dStart.getTime() > maxAllowed.getTime()) ||
+                               (minAllowed && dEnd.getTime() < minAllowed.getTime());
             
             let btnClass = 'w-8 h-8 flex items-center justify-center text-sm rounded-full transition-colors ';
             if (isDisabled) {
@@ -434,7 +479,14 @@ export default function DatePicker({
         >
           {/* Header */}
           <div className="flex items-center justify-between p-3 border-b border-border bg-surface-secondary/50">
-            <button type="button" onClick={prev} className="p-1.5 hover:bg-surface rounded-lg text-text-secondary hover:text-text transition-colors">
+            <button
+              type="button"
+              disabled={isPrevDisabled()}
+              onClick={prev}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isPrevDisabled() ? 'opacity-30 cursor-not-allowed pointer-events-none text-text-secondary' : 'hover:bg-surface text-text-secondary hover:text-text'
+              }`}
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
             

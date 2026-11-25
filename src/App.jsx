@@ -17,6 +17,7 @@ import Settings from './pages/Settings'
 import CommitteeMembers from './pages/CommitteeMembers'
 import Roles from './pages/Roles'
 import ContentPage from './pages/ContentPage'
+import TrustPage from './pages/TrustPage'
 import Events from './pages/Events'
 import EventRegistrations from './pages/EventRegistration'
 import MasterPage from './pages/MasterPage'
@@ -130,6 +131,7 @@ export default function App() {
               <Route path="bank-details" element={<PermissionRoute permission="masters.list"><ContentPage type="bank-details" /></PermissionRoute>} />
 
               {/* Other standalone routes */}
+              <Route path="trust" element={<TrustPage />} />
               <Route path="contact-inquiries" element={<PermissionRoute permission="contact-inquiries.list"><ContentPage type="inquiries" /></PermissionRoute>} />
               <Route path="event-registrations" element={<PermissionRoute permission="events.list"><EventRegistrations /></PermissionRoute>} />
               <Route path="settings" element={<PermissionRoute permission="settings.edit"><Settings /></PermissionRoute>} />

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Database, Layers, Activity, CalendarDays, Briefcase } from 'lucide-react'
+import { Database, Layers, Activity, CalendarDays, Briefcase, Landmark } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { useChat } from '../context/ChatContext'
 import { configurationNavigation, coreNavigation, masterNavigation, mediaNavigation, engagementNavigation, activityNavigation, servicesNavigation } from '../config/navigation'
@@ -229,6 +229,10 @@ export default function Sidebar({ isOpen, onClose }) {
             <LinkItem to="/admin/engagements" label="Expense & Donations" icon={Activity} onClick={handleLinkClick} />
           </div>
         )}
+
+        <div className="space-y-1">
+          <LinkItem to="/admin/trust" label="Trust" icon={Landmark} onClick={handleLinkClick} />
+        </div>
 
         {visibleMasterNavigation.length > 0 && (
           <CollapsibleFolder

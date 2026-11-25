@@ -16,7 +16,8 @@ import {
   BookOpen,
   UserPlus,
   MessageSquare,
-  Quote
+  Quote,
+  Landmark
 } from 'lucide-react'
 
 export const coreNavigation = [
@@ -53,6 +54,10 @@ export const engagementNavigation = [
   { to: '/admin/donations', label: 'Donations', icon: HeartHandshake, title: 'Donations', permission: 'donations.list' },
 ]
 
+export const trustNavigation = [
+  { to: '/admin/trust', label: 'Trust', icon: Landmark, title: 'Trust & Organization (સંગઠન)', permission: 'committee.list' }
+]
+
 export const masterNavigation = [
   { type: 'business', label: 'Business', permission: 'masters.list' },
   { type: 'bank-details', label: 'Bank Details', permission: 'masters.list', to: '/admin/bank-details' },
@@ -82,6 +87,7 @@ export const routeTitles = [
   ...servicesNavigation,
   ...mediaNavigation,
   ...engagementNavigation,
+  ...trustNavigation,
   ...configurationNavigation
 ].reduce((acc, item) => ({ ...acc, [item.to]: item.title }), {})
 

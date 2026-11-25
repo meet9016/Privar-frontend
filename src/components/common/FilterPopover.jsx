@@ -10,7 +10,7 @@ export default function FilterPopover({
   onClear,
   onApply,
   children,
-  width = 'w-[290px] sm:w-[320px]',
+  width = 'w-[240px] sm:w-[260px]',
   className = ''
 }) {
   const containerRef = useRef(null)
@@ -64,11 +64,11 @@ export default function FilterPopover({
             className={`absolute top-full right-0 mt-2.5 ${width} max-w-[92vw] bg-card border border-border/90 rounded-2xl shadow-2xl z-50 animate-fade-in overflow-hidden flex flex-col max-h-[85vh]`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border shrink-0">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-3.5 py-2.5 bg-surface border-b border-border shrink-0">
+              <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold uppercase tracking-wider text-text">{title}</span>
                 {activeCount > 0 && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
                     {activeCount} applied
                   </span>
                 )}
@@ -84,7 +84,7 @@ export default function FilterPopover({
                         console.error('Error clearing filters:', err)
                       }
                     }}
-                    className="text-[11px] font-medium text-text-secondary hover:text-error transition-colors px-1.5 py-0.5 rounded cursor-pointer"
+                    className="text-[11px] font-medium text-text-secondary hover:text-error transition-colors px-1 py-0.5 rounded cursor-pointer"
                     title="Clear All Filters"
                   >
                     Clear all
@@ -102,12 +102,12 @@ export default function FilterPopover({
             </div>
 
             {/* Filter Content */}
-            <div className="p-4 space-y-3.5 overflow-y-auto custom-scrollbar flex-1">
+            <div className="p-3.5 space-y-3 overflow-y-auto custom-scrollbar flex-1">
               {children}
             </div>
 
             {/* Footer with Clear & Apply */}
-            <div className="px-4 py-3 bg-surface-secondary/40 border-t border-border flex items-center gap-2 shrink-0">
+            <div className="px-3.5 py-2.5 bg-surface-secondary/40 border-t border-border flex items-center gap-2 shrink-0">
               {onClear && (
                 <button
                   type="button"
@@ -118,7 +118,7 @@ export default function FilterPopover({
                       console.error('Error clearing filters:', err)
                     }
                   }}
-                  className="flex-1 py-2.5 px-3 text-xs font-semibold rounded-xl bg-card hover:bg-surface-secondary border border-border text-text-secondary hover:text-text transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.99]"
+                  className="flex-1 py-2 px-2 text-xs font-semibold rounded-xl bg-card hover:bg-surface-secondary border border-border text-text-secondary hover:text-text transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap active:scale-[0.99]"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Clear
                 </button>
@@ -133,7 +133,7 @@ export default function FilterPopover({
                     console.error('Error applying filters:', err)
                   }
                 }}
-                className={`${onClear ? 'flex-1' : 'w-full'} py-2.5 px-4 text-xs font-bold rounded-xl bg-primary hover:bg-primary-hover text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]`}
+                className={`${onClear ? 'flex-1' : 'w-full'} py-2 px-2.5 text-xs font-bold rounded-xl bg-primary hover:bg-primary-hover text-white transition-all flex items-center justify-center gap-1 cursor-pointer shadow-xs whitespace-nowrap active:scale-[0.99]`}
               >
                 <Check className="w-3.5 h-3.5" /> Apply Filters
               </button>
